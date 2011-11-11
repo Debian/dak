@@ -156,13 +156,20 @@ WITH
 
 SELECT
   (SELECT
-     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY mk.ordering, mk.key)
+     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY ordering, key)
    FROM
-     binaries_metadata bm
-     JOIN metadata_keys mk ON mk.key_id = bm.key_id
-   WHERE
-     bm.bin_id = tmp.binary_id
-     AND key != ALL (:metadata_skip)
+     (SELECT key, ordering,
+        CASE WHEN :include_long_description = 'false' AND key = 'Description'
+          THEN SUBSTRING(value FROM E'\\A[^\n]*')
+          ELSE value
+        END AS value
+      FROM
+        binaries_metadata bm
+        JOIN metadata_keys mk ON mk.key_id = bm.key_id
+      WHERE
+        bm.bin_id = tmp.binary_id
+        AND key != ALL (:metadata_skip)
+     ) AS metadata
   )
   || COALESCE(E'\n' || (SELECT
      STRING_AGG(key || '\: ' || value, E'\n' ORDER BY key)
@@ -214,16 +221,15 @@ def generate_packages(suite_id, component_id, architecture_id, type_name, use_de
     architecture = session.query(Architecture).get(architecture_id)
 
     overridesuite_id = suite.get_overridesuite().suite_id
+    include_long_description = suite.include_long_description or not use_description_md5
 
     # We currently filter out the "Tag" line. They are set by external
     # overrides and NOT by the maintainer. And actually having it set by
     # maintainer means we output it twice at the moment -> which breaks
     # dselect.
     metadata_skip = ["Section", "Priority", "Tag"]
-    if suite.include_long_description or not use_description_md5:
+    if include_long_description:
         metadata_skip.append("Description-md5")
-    else:
-        metadata_skip.append("Description")
 
     writer = PackagesFileWriter(suite=suite.suite_name, component=component.component_name,
             architecture=architecture.arch_string, debtype=type_name)
@@ -231,7 +237,8 @@ def generate_packages(suite_id, component_id, architecture_id, type_name, use_de
 
     r = session.execute(_packages_query, {"suite": suite_id, "component": component_id,
         "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id,
-        "overridesuite": overridesuite_id, "metadata_skip": metadata_skip})
+        "overridesuite": overridesuite_id, "metadata_skip": metadata_skip,
+        "include_long_description": 'true' if include_long_description else 'false'})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
