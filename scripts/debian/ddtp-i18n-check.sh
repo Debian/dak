@@ -417,7 +417,7 @@ while read f; do
 			IDX=$(dirname $f)
 			tf_name=$(basename $fbz)
 			tf_sha1=$(sha1sum $fbz)
-			tf_size=$(du $fbz)
+			tf_size=$(du --bytes $fbz)
 			printf ' %s % 7s %s\n' "${tf_sha1% *}" \
 				"${tf_size%	*}" "${tf_name}" >> "$IDX/Index"
 		fi
