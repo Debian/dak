@@ -67,6 +67,7 @@ $statusdelay = 30;
               "/srv/keyring.debian.org/keyrings/debian-maintainers.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-alpha-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-amd64-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-armhf-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-armel-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-arm-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-hppa-keyring.gpg",
@@ -79,6 +80,7 @@ $statusdelay = 30;
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-mips-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-powerpc-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-s390-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-s390x-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-sparc-keyring.gpg");
 
 # our log file
