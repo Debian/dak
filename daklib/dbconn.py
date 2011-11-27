@@ -2556,11 +2556,12 @@ def source_exists(source, source_version, suites = ["any"], session=None):
         if suite != "any":
             # source must exist in 'suite' or a suite that is enhanced by 'suite'
             s = get_suite(suite, session)
-            enhances_vcs = session.query(VersionCheck).filter(VersionCheck.suite==s).filter_by(check='Enhances')
-            considered_suites = [ vc.reference for vc in enhances_vcs ]
-            considered_suites.append(s)
+            if s:
+                enhances_vcs = session.query(VersionCheck).filter(VersionCheck.suite==s).filter_by(check='Enhances')
+                considered_suites = [ vc.reference for vc in enhances_vcs ]
+                considered_suites.append(s)
 
-            q = q.filter(DBSource.suites.any(Suite.suite_id.in_([s.suite_id for s in considered_suites])))
+                q = q.filter(DBSource.suites.any(Suite.suite_id.in_([s.suite_id for s in considered_suites])))
 
         if q.count() > 0:
             continue
