@@ -45,6 +45,7 @@ lintian:
     - not-allowed-control-file
     - control-file-has-bad-permissions
     - control-file-has-bad-owner
+    - control-file-is-not-a-file
     - no-copyright-file
     - copyright-refers-to-old-directory
     - copyright-file-compressed
