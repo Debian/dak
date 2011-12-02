@@ -77,6 +77,8 @@
     allow from 192.33.98.55
     ## back / mozart (xen domains; NOT .debian.org)
     allow from 80.87.129.151
+    # ironforge.sceen.net.
+    allow from 46.105.42.111
 
     # ia64
     ## mundi
