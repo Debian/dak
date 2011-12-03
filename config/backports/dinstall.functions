@@ -121,7 +121,7 @@ function filelist() {
 
 function fingerprints() {
     log "Updating fingerprints"
-    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
+    dak import-keyring -L /srv/backports-master.debian.org/keyrings/keyring.gpg
 
     OUTFILE=$(mktemp)
     dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
@@ -129,7 +129,7 @@ function fingerprints() {
     if [ -s "${OUTFILE}" ]; then
         /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
 From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
-To: <debian-project@lists.debian.org>
+To: <debian-backports@lists.debian.org>
 Subject: Debian Maintainers Keyring changes
 Content-Type: text/plain; charset=utf-8
 X-Debian: DAK

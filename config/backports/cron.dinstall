@@ -231,13 +231,13 @@ GO=(
 )
 stage $GO
 
-# GO=(
-#     FUNC="fingerprints"
-#     TIME="import-keyring"
-#     ARGS=""
-#     ERR="false"
-# )
-# stage $GO
+GO=(
+    FUNC="fingerprints"
+    TIME="import-keyring"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
 
 GO=(
     FUNC="overrides"
