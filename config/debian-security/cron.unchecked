@@ -55,6 +55,8 @@ if ! $doanything; then
   exit 0
 fi
 
+dak manage-build-queues -a
+
 if [ "x${dopolicy}x" = "xtruex" ]; then
     # We had something approved from a policy queue, push out new archive
     dak dominate

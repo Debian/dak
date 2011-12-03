@@ -14,53 +14,23 @@ if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
     exit 0
 fi
 
-for dist in $DISTS; do
-    eval SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
-    eval PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
-done
-
-cd $configdir
-apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate apt.conf.buildd
-
-cd  ${base}/buildd
-for dist in $DISTS; do
-    rm -f $dist/Release*
-    darchs=$(dak admin s-a list-arch $dist | tr '\n' ' ')
-    codename=$(dak admin s show ${dist} | grep ^Codename | awk '{print $2}')
-    apt-ftparchive -qq -o APT::FTPArchive::Release::Codename="${codename}" -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $dist security" -o APT::FTPArchive::Release::Architectures="${darchs}" release $dist > Release
-    gpg --secret-keyring ${base}/s3kr1t/dot-gnupg/secring.gpg --keyring ${base}/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o Release.gpg Release
-    mv Release* $dist/.
-done
-
 dists=
-
+now=$(date +%s)
+check=$(( now - 3*60 ))
 
 for dist in $DISTS; do
-    eval NEW_SOURCES_$dist=`stat -c "%Y" $base/buildd/$dist/Sources.gz`
-    eval NEW_PACKAGES_$dist=`stat -c "%Y" $base/buildd/$dist/Packages.gz`
-    old=SOURCES_$dist
-    new=NEW_$old
-    if [ ${!new} -gt ${!old} ]; then
-        if [ -z "$dists" ]; then
-            dists="$dist"
-        else
-            dists="$dists $dist"
-        fi
-        continue
-    fi
-    old=PACKAGES_$dist
-    new=NEW_$old
-    if [ ${!new} -gt ${!old} ]; then
-        if [ -z "$dists" ]; then
-            dists="$dist"
-        else
-            dists="$dists $dist"
-        fi
+    smodtime=$(stat -c "%Y" $base/buildd/$dist/Sources.gz)
+    pmodtime=$(stat -c "%Y" $base/buildd/$dist/Packages.gz)
+
+    if [ ${smodtime} -gt ${check} ] || [ ${pmodtime} -gt ${check} ]; then
+        # Packages/Sources changed in the last minutes
+        dists="${dists} ${dist}"
+    else
         continue
     fi
 done
 
-if [ ! -z "$dists" ]; then
+if [ ! -z "${dists}" ]; then
     # setup ssh master process
     ssh wbadm@buildd -S $SSH_SOCKET -MN 2> /dev/null &
     SSH_PID=$!
@@ -68,8 +38,8 @@ if [ ! -z "$dists" ]; then
         sleep 1
     done
     trap 'kill -TERM $SSH_PID' 0
-    for d in $dists; do
-        case $d in
+    for d in ${dists}; do
+        case ${d} in
             oldstable)
                 send=lenny
                 ;;
@@ -77,7 +47,7 @@ if [ ! -z "$dists" ]; then
                 send=squeeze
                 ;;
             testing)
-                send=testing
+                send=wheezy
                 ;;
             *)
                 send=unknown
