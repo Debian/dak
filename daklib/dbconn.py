@@ -878,7 +878,6 @@ class BuildQueue(object):
         # Prepare BuildQueueFile object
         qf = BuildQueueFile()
         qf.build_queue_id = self.queue_id
-        qf.lastused = datetime.now()
         qf.filename = poolfile_basename
 
         targetpath = poolfile.fullpath
