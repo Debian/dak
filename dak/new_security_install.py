@@ -102,11 +102,12 @@ def _do_Approve():
     # 4. Run all the steps that are needed to publish the changed archive
     print "Domination"
     spawn("dak dominate")
-    print "Generating filelist for apt-ftparchive"
-    spawn("dak generate-filelist")
+#    print "Generating filelist for apt-ftparchive"
+#    spawn("dak generate-filelist")
     print "Updating Packages and Sources files... This may take a while, be patient"
     spawn("/srv/security-master.debian.org/dak/config/debian-security/map.sh")
-    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
+#    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
+    spawn("dak generate-packages-sources2")
     print "Updating Release files..."
     spawn("dak generate-releases")
     print "Triggering security mirrors... (this may take a while)"
