@@ -92,7 +92,7 @@ def is_unembargo(u):
 
    # If we dont have the disembargo queue we are not on security and so not interested
    # in doing any security queue handling
-   disembargo_queue = get_policy_queue("disembargo")
+   disembargo_queue = get_policy_queue("unembargoed")
    if not disembargo_queue:
        return False
 
@@ -128,7 +128,7 @@ def is_unembargo(u):
    return ret
 
 def do_unembargo(u, summary, short_summary, chg, session=None):
-    polq=get_policy_queue('disembargo')
+    polq=get_policy_queue('unembargoed')
     package_to_queue(u, summary, short_summary,
                      polq, chg, session,
                      announce=None)
@@ -140,7 +140,7 @@ def is_embargo(u):
    # last in line, so if that exists, return true
    # Of course do not return true when we accept from out of newstage, as that means
    # it just left embargo and we want it in the archive
-   if get_policy_queue('embargo'):
+   if get_policy_queue('embargoed'):
        session = DBConn().session()
        dbc = get_dbchange(u.pkg.changes_file, session)
        if dbc and dbc.in_queue.queue_name in [ 'newstage' ]:
@@ -149,7 +149,7 @@ def is_embargo(u):
        return True
 
 def do_embargo(u, summary, short_summary, chg, session=None):
-    polq=get_policy_queue('embargo')
+    polq=get_policy_queue('embargoed')
     package_to_queue(u, summary, short_summary,
                      polq, chg, session,
                      announce=None)
