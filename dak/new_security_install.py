@@ -87,8 +87,8 @@ def sudo(arg, fn, exit):
 def do_Approve(): sudo("A", _do_Approve, True)
 def _do_Approve():
     # 1. use process-policy to go through the COMMENTS dir
-    spawn("dak process-policy embargo")
-    spawn("dak process-policy disembargo")
+    spawn("dak process-policy embargoed")
+    spawn("dak process-policy unembargoed")
     newstage=get_policy_queue('newstage')
 
     # 2. sync the stuff to ftpmaster
