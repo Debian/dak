@@ -369,7 +369,7 @@ GO=(
     ARGS=""
     ERR=""
 )
-stage $GO &
+#stage $GO &
 
 # GO=(
 #     FUNC="dm"
