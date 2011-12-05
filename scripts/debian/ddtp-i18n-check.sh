@@ -25,10 +25,6 @@ DEBUG=0
 # files.
 DRY_RUN=0
 
-# When GEN_IDX=1, we create the Index files.  There is a runtime option
-# to not create/generate the Index file.
-GEN_IDX=1
-
 dists_parent_dir=""
 # If no argument indicates the PACKAGES_LISTS_DIR then use '.'
 PACKAGES_LISTS_DIR=""
@@ -39,7 +35,6 @@ usage () {
 	echo "    --debug      Debug mode: do not stop after the first error" >&2
 	echo "    --dry-run    Do not generate the compressed version of the " >&2
 	echo "                 Translation files">&2
-	echo "    --no-index   Do not generate the Index files" >&2
 	exit 1
 }
 
@@ -51,9 +46,6 @@ for opt; do
 			;;
 		"--dry-run")
 			DRY_RUN=1
-			;;
-		"--no-index")
-			GEN_IDX=0
 			;;
 		"-*")
 			usage
@@ -355,14 +347,6 @@ while read f; do
 		if ! is_dirname_okay "$f"; then
 			echo "Wrong directory name: $f" >&2
 			exit 1
-		else
-			# If the directory name is OK, and if it's name is i18n
-			# and GEN_IDX is enabled, we generate the header of the
-			# Index file
-			if [ "$(basename $f)" = "i18n" -a "$GEN_IDX" = "1" ];
-			then
-				echo "SHA1:" > "$f/Index"
-			fi
 		fi
 	elif [ -f "$f" ]; then
 		# If $f is in $SPECIAL_FILES, we skip to the next loop because
@@ -409,17 +393,6 @@ while read f; do
 		if [ "$DRY_RUN" = "0" ]; then
 			# Now generate the compressed files
 			bzip2 "$f"
-		fi
-
-		# Create Index
-		if [ "$GEN_IDX" = "1" ]; then
-			fbz=${f}.bz2
-			IDX=$(dirname $f)
-			tf_name=$(basename $fbz)
-			tf_sha1=$(sha1sum $fbz)
-			tf_size=$(du --bytes $fbz)
-			printf ' %s % 7s %s\n' "${tf_sha1% *}" \
-				"${tf_size%	*}" "${tf_name}" >> "$IDX/Index"
 		fi
 	else
 		echo "Neither a file or directory: $f" >&2

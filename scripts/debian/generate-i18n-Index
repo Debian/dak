@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+# Copyright (C) 2011, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# On Debian systems, you can find the full text of the license in
+# /usr/share/common-licenses/GPL-2
+
+set -eu
+export LC_ALL=C
+
+usage () {
+	echo "Usage: $0 <dist-directory>" >&2
+	exit 1
+}
+
+# Parse options
+if [ $# != 1 ] ; then
+	usage
+fi
+if [ ! -d "$1" ] ; then
+	echo "$1 does not exist or is not a directory." >&2
+	usage
+fi
+if [ ! -d "$1"/main/i18n ] ; then
+	echo "No main/i18n directory in $1." >&2
+	usage
+fi
+cd "$1/main/i18n"
+
+# If it's trapped, something bad happened.
+trap_exit () {
+	rm -f Index
+	exit 1
+}
+trap trap_exit EXIT HUP INT QUIT TERM
+
+exec 3>Index
+
+echo "SHA1:" >&3
+for file in Translation-* ; do
+	sha=$(sha1sum "$file"); sha="${sha%% *}"
+	size=$(du --bytes "$file"); size="${size%%[^0-9]*}"
+	printf ' %s % 7s %s\n' "$sha" "$size" "$file" >&3
+done
+
+exec 3>&-
+
+trap - EXIT
