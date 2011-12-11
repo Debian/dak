@@ -44,7 +44,7 @@ exec 3>Index
 echo "SHA1:" >&3
 for file in Translation-* ; do
 	sha=$(sha1sum "$file"); sha="${sha%% *}"
-	size=$(du --bytes "$file"); size="${size%%[^0-9]*}"
+	size=$(stat -c %s "${file}")
 	printf ' %s % 7s %s\n' "$sha" "$size" "$file" >&3
 done
 
