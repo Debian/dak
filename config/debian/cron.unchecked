@@ -97,7 +97,15 @@ trap cleanup 0
 
 
 pg_timestamp preunchecked >/dev/null
+
+# Process policy queues
+punew proposedupdates
+opunew oldproposedupdates
+
+# Now process the NEW staging area
 do_newstage
+
+# Finally deal with unchecked
 do_unchecked
 
 if [ ! -z "$changes" ]; then

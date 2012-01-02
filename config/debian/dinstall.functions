@@ -53,23 +53,6 @@ function updates() {
     $scriptsdir/update-pseudopackages.sh
 }
 
-# Process (oldstable)-proposed-updates "NEW" queue
-function punew_do() {
-    date -u -R >> REPORT
-    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in $1" debian-release@lists.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
-    echo >> REPORT
-}
-function punew() {
-    log "Doing automated p-u-new processing"
-    cd "${queuedir}/p-u-new"
-    punew_do "$1"
-}
-function opunew() {
-    log "Doing automated o-p-u-new processing"
-    cd "${queuedir}/o-p-u-new"
-    punew_do "$1"
-}
-
 # The first i18n one, syncing new descriptions
 function i18n1() {
     log "Synchronizing i18n package descriptions"
