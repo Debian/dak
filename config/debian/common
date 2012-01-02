@@ -56,13 +56,17 @@ function punew_do() {
 
 # These versions used in dinstall
 function punew() {
-    log "Doing automated p-u-new processing"
+    if [ "${PROGRAM}" = "dinstall" ]; then
+        log "Doing automated p-u-new processing"
+    fi
     cd "${queuedir}/p-u-new"
     punew_do "$1"
 }
 
 function opunew() {
-    log "Doing automated o-p-u-new processing"
+    if [ "${PROGRAM}" = "dinstall" ]; then
+        log "Doing automated o-p-u-new processing"
+    fi
     cd "${queuedir}/o-p-u-new"
     punew_do "$1"
 }
