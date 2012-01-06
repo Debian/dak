@@ -290,9 +290,9 @@ class TarTime(object):
 
     def callback(self, member, data):
         if member.mtime > self.future_cutoff:
-            self.future_files[Name] = MTime
+            self.future_files[Name] = member.mtime
         if member.mtime < self.past_cutoff:
-            self.ancient_files[Name] = MTime
+            self.ancient_files[Name] = member.mtime
 
 ###############################################################################
 
