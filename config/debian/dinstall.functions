@@ -74,7 +74,7 @@ function i18n1() {
                 for dir in wheezy sid; do
                     if [ -d dists/${dir}/ ]; then
                         cd dists/${dir}/main/i18n
-                        rsync -aq --delete --delete-after  . ${ftpdir}/dists/${dir}/main/i18n/.
+                        rsync -aq --delete --delete-after --exclude Translation-en.bz2 . ${ftpdir}/dists/${dir}/main/i18n/.
                     fi
                     cd ${scriptdir}/i18nsync
                 done
@@ -166,7 +166,12 @@ function pdiff() {
 function release() {
     # XXX: disable once we can remove i18n/Index (#649314)
     log "Generating i18n/Index"
-    (cd "$ftpdir/dists"; for dist in testing unstable; do $scriptsdir/generate-i18n-Index $dist; done)
+    (
+        cd "$ftpdir/dists";
+        for dist in testing unstable experimental proposed-updates testing-proposed-updates; do
+            $scriptsdir/generate-i18n-Index $dist;
+        done
+    )
     log "Generating Release files"
     dak generate-releases
 }
