@@ -29,7 +29,9 @@ dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/Ch
 cat ${pusuite}.list | dak control-suite --add ${suite}
 dak control-suite --remove ${pusuite} < ${pusuite}.list
 
-- sync with stable RM if there is any propup needed. do it, if so.
+- sync with stable RM if there is any propup needed. do it, if so:
+like, cat /srv/release.debian.org/www/squeeze/6.0/6.0.4/propup.unstable | dak control-suite --add unstable
+Note: unstable first, then testing
 - ask rms if they have RMs to do.
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
@@ -77,6 +79,18 @@ dak generate-filelist -s ${suite}
 
 - then:
 dak generate-packages-sources -s ${suite} ; dak contents generate -f -s ${suite}
+
+cd $ftpdir/dists/${suite}
+for carch in $(dak admin s-a list-arch ${suite}); do
+  echo doing ${carch}
+  cp $base/dak/templates/contents Contents-${carch}.new;
+  zcat {main,contrib,non-free}/Contents-${carch}.gz | ~joerg/mergecontents.pl | sort >> Contents-${carch}.new;
+  gzip -9v Contents-${carch}.new;
+  mv Contents-${carch}.new.gz Contents-${carch}.gz;
+done
+
+rm {main,contrib,non-free}/Contents-*
+
 dak generate-releases -f -s ${suite}
 
 - have the SRMs sign it and put the signature in.
