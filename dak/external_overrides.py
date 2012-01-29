@@ -51,6 +51,48 @@ should be given as lines of the form 'PACKAGE KEY VALUE'.
 
 #############################################################################
 
+class ExternalOverrideReader(object):
+    """
+    Parses an external override file
+    """
+    def __init__(self, fh):
+        self.fh = fh
+        self.package = None
+        self.key = None
+        self.value = []
+
+    def _flush(self):
+        """
+        Return the parsed line that is being built and start parsing a new line
+        """
+        res = self.package, self.key, "\n".join(self.value)
+        self.package = self.key = None
+        self.value = []
+        return res
+
+    def __iter__(self):
+        """
+        returns a (package, key, value) tuple for every entry in the external
+        override file
+        """
+        for line in self.fh:
+            if not line: continue
+            if line[0] in (" ", "\t"):
+                # Continuation line
+                self.value.append(line.rstrip())
+            else:
+                if self.package is not None:
+                    yield self._flush()
+
+                # New line
+                (self.package, self.key, value) = line.rstrip().split(None, 2)
+                self.value = [value]
+
+        if self.package is not None:
+            yield self._flush()
+
+#############################################################################
+
 def external_overrides_copy(from_suite_name, to_suite_name, force = False):
     session = DBConn().session()
 
@@ -92,8 +134,7 @@ def external_overrides_import(suite_name, component_name, key, file, force = Fal
 
     session.query(ExternalOverride).filter_by(suite=suite,component=component,key=key).delete()
 
-    for line in file:
-        (package, key, value) = line.strip().split(None, 2)
+    for package, key, value in ExternalOverrideReader(file):
         eo = ExternalOverride()
         eo.suite = suite
         eo.component = component
