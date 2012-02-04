@@ -1657,6 +1657,9 @@ class Upload(object):
                     self.rejects.append("%s: deb contents timestamp check failed [%s: %s]" % (filename, sys.exc_info()[0], sys.exc_info()[1]))
 
     def check_if_upload_is_sponsored(self, uid_email, uid_name):
+        for key in "maintaineremail", "changedbyemail", "maintainername", "changedbyname":
+            if not self.pkg.changes.has_key(key):
+                return False
         uid_email = '@'.join(uid_email.split('@')[:2])
         if uid_email in [self.pkg.changes["maintaineremail"], self.pkg.changes["changedbyemail"]]:
             sponsored = False
