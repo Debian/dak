@@ -79,10 +79,12 @@ class BugClassifier(object):
     rm_re = re.compile( "^RM" )
     dak_re = re.compile( "^\[dak\]" )
     arch_re = re.compile( "^\[Architectures\]" )
+    override_re = re.compile( "^override" )
 
     classifiers = { rm_re: 'remove',
                     dak_re: 'dak',
-                    arch_re: 'archs'}
+                    arch_re: 'archs',
+                    override_re: 'override'}
 
     def unclassified_bugs(self):
         """
@@ -116,7 +118,7 @@ class BugClassifier(object):
         if retval:
             log.info(retval)
         else:
-            log.debug("Unmatched: [%s] %s" % (bug.bug_num, bug.summary))
+            log.debug("Unmatched: [%s] %s" % (bug.bug_num, bug.subject))
 
         return retval
 
