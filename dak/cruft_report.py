@@ -58,7 +58,7 @@ def usage(exit_code=0):
 Check for obsolete or duplicated packages.
 
   -h, --help                show this help and exit.
-  -m, --mode=MODE           chose the MODE to run in (full or daily).
+  -m, --mode=MODE           chose the MODE to run in (full, daily, bdo).
   -s, --suite=SUITE         check suite SUITE.
   -w, --wanna-build-dump    where to find the copies of http://buildd.debian.org/stats/*.txt"""
     sys.exit(exit_code)
@@ -538,8 +538,10 @@ def main ():
         checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu" ]
     elif Options["Mode"] == "full":
         checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
+    elif Options["Mode"] == "bdo":
+        checks = [ "nbs",  "obsolete source" ]
     else:
-        utils.warn("%s is not a recognised mode - only 'full' or 'daily' are understood." % (Options["Mode"]))
+        utils.warn("%s is not a recognised mode - only 'full', 'daily' or 'bdo' are understood." % (Options["Mode"]))
         usage(1)
 
     session = DBConn().session()
