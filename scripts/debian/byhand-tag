@@ -44,7 +44,6 @@ mv "$OUTNONFREE"        "$TARGET"tag.non-free
 
 chmod 644 "$TARGET"tag "$TARGET"tag.contrib "$TARGET"tag.non-free
 
-(cd $TARGET && $scriptsdir/mk-extra-overrides.sh)
 (cd "$TARGET" \
   && dak external-overrides import unstable main Tag <tag \
   && dak external-overrides import unstable contrib Tag <tag.contrib \
