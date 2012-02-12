@@ -16,7 +16,7 @@ CHECKRE='^[a-z0-9A-Z.+-]+[[:space:]]+Tag[[:space:]]+[a-z0-9:. ,{}+-]+$'
 TARGET=/srv/ftp-master.debian.org/scripts/external-overrides/
 
 # Read the main directory from the tarball
-DIR="`tar ztf \"$INPUT\" | tac | tail -n 1`"
+DIR="`tar ztf \"$INPUT\" | tail -n 1 | cut -d/ -f1`"
 
 # Create temporary files where to store the validated data
 umask 002
@@ -33,9 +33,9 @@ cleanup() {
 trap cleanup EXIT
 
 # Extract the data into the temporary files
-tar -O -zxf "$INPUT" "$DIR"tag | grep -E "$CHECKRE" > "$OUTMAIN"
-tar -O -zxf "$INPUT" "$DIR"tag.contrib | grep -E "$CHECKRE" > "$OUTCONTRIB"
-tar -O -zxf "$INPUT" "$DIR"tag.non-free | grep -E "$CHECKRE" > "$OUTNONFREE"
+tar -O -zxf "$INPUT" "$DIR"/tag | grep -E "$CHECKRE" > "$OUTMAIN"
+tar -O -zxf "$INPUT" "$DIR"/tag.contrib | grep -E "$CHECKRE" > "$OUTCONTRIB"
+tar -O -zxf "$INPUT" "$DIR"/tag.non-free | grep -E "$CHECKRE" > "$OUTNONFREE"
 
 # Move the data to the final location
 mv "$OUTMAIN"           "$TARGET"tag
