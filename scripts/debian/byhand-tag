@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/bash
 
 set -u
 set -e
+set -o pipefail
 
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
