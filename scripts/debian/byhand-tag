@@ -33,9 +33,18 @@ cleanup() {
 trap cleanup EXIT
 
 # Extract the data into the temporary files
-tar -O -zxf "$INPUT" "$DIR"/tag | grep -E "$CHECKRE" > "$OUTMAIN"
-tar -O -zxf "$INPUT" "$DIR"/tag.contrib | grep -E "$CHECKRE" > "$OUTCONTRIB"
-tar -O -zxf "$INPUT" "$DIR"/tag.non-free | grep -E "$CHECKRE" > "$OUTNONFREE"
+tar -O -zxf "$INPUT" "$DIR"/tag > "$OUTMAIN"
+tar -O -zxf "$INPUT" "$DIR"/tag.contrib > "$OUTCONTRIB"
+tar -O -zxf "$INPUT" "$DIR"/tag.non-free > "$OUTNONFREE"
+
+# check temporary files for invalid contents
+status=0
+grep -vq -E "$CHECKRE" "$OUTMAIN" "$OUTCONTRIB" "$OUTNONFREE" || status=$?
+# checking just $? != 0 is not enough. grep can return 2 on other errors.
+if [ $status != 1 ]; then
+        echo "Aborting automatic import (invalid data found)." >&2
+        exit 1
+fi
 
 # Move the data to the final location
 mv "$OUTMAIN"           "$TARGET"tag
