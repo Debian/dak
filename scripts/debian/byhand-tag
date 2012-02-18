@@ -10,7 +10,7 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 INPUT="${1:?"Usage: $0 filename"}"
 
 # Regular expression used to validate tag lines
-CHECKRE='^([a-z0-9A-Z.+-]+[[:space:]]+Tag)?[[:space:]]+[a-z0-9:. ,{}+-]+$'
+CHECKRE='^([a-z0-9A-Z.+-]+[[:space:]]+Tag)?[[:space:]]+[A-Za-z0-9:. ,{}+-]+$'
 
 # This must end with /
 TARGET=/srv/ftp-master.debian.org/scripts/external-overrides/
