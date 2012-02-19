@@ -506,6 +506,77 @@ def get_suite_binaries(suite, session):
 
 ################################################################################
 
+def report_outdated_nonfree(suite, session):
+
+    packages = {}
+    query = """WITH outdated_sources AS (
+                 SELECT s.source, s.version, s.id
+                 FROM source s
+                 JOIN src_associations sa ON sa.source = s.id
+                 WHERE sa.suite IN (
+                   SELECT id
+                   FROM suite
+                   WHERE suite_name = :suite )
+                 AND sa.created < (now() - interval :delay)
+                 EXCEPT SELECT s.source, max(s.version) AS version, max(s.id)
+                 FROM source s
+                 JOIN src_associations sa ON sa.source = s.id
+                 WHERE sa.suite IN (
+                   SELECT id
+                   FROM suite
+                   WHERE suite_name = :suite )
+                 AND sa.created < (now() - interval :delay)
+                 GROUP BY s.source ),
+               binaries AS (
+                 SELECT b.package, s.source, (
+                   SELECT a.arch_string
+                   FROM architecture a
+                   WHERE a.id = b.architecture ) AS arch
+                 FROM binaries b
+                 JOIN outdated_sources s ON s.id = b.source
+                 JOIN bin_associations ba ON ba.bin = b.id
+                 JOIN override o ON o.package = b.package AND o.suite = ba.suite
+                 WHERE ba.suite IN (
+                   SELECT id
+                   FROM suite
+                   WHERE suite_name = :suite )
+                 AND o.component IN (
+                   SELECT id
+                   FROM component
+                   WHERE name = 'non-free' ) )
+               SELECT DISTINCT package, source, arch
+               FROM binaries
+               ORDER BY source, package, arch"""
+
+    res = session.execute(query, {'suite': suite, 'delay': "'15 days'"})
+    for package in res:
+        binary = package[0]
+        source = package[1]
+        arch = package[2]
+        if arch == 'all':
+            continue
+        if not source in packages:
+            packages[source] = {}
+        if not binary in packages[source]:
+            packages[source][binary] = set()
+        packages[source][binary].add(arch)
+    if packages:
+        title = 'Outdated non-free binaries in suite %s' % suite
+        message = '"[auto-cruft] outdated non-free binaries"'
+        print '%s\n%s\n' % (title, '-' * len(title))
+        for source in sorted(packages):
+            archs = set()
+            binaries = set()
+            print '* package %s has outdated non-free binaries' % source
+            print '  - suggested command:'
+            for binary in sorted(packages[source]):
+                binaries.add(binary)
+                archs = archs.union(packages[source][binary])
+            print '    dak rm -m %s -s %s -a %s -p -R -b %s\n' % \
+                   (message, suite, ','.join(archs), ' '.join(binaries))
+
+################################################################################
+
 def main ():
     global suite, suite_id, source_binaries, source_versions
 
@@ -535,9 +606,9 @@ def main ():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu" ]
+        checks = [ "nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu" ]
     elif Options["Mode"] == "full":
-        checks = [ "nbs", "nviu", "nvit", "obsolete source", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
+        checks = [ "nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
     elif Options["Mode"] == "bdo":
         checks = [ "nbs",  "obsolete source" ]
     else:
@@ -569,6 +640,9 @@ def main ():
 
     if "nbs" in checks:
         reportAllNBS(suite_name, suite_id, session)
+
+    if "outdated non-free" in checks:
+        report_outdated_nonfree(suite_name, session)
 
     bin_not_built = {}
 
