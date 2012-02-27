@@ -95,26 +95,34 @@ def _do_Approve():
     print "Sync stuff for upload to ftpmaster"
     spawn("rsync -a -q %s/. /srv/queued/ftpmaster/." % (newstage.path))
 
-    # 3. Now run process-upload in the newstage dir
-    print "Now put it into the security archive"
-    spawn("dak process-upload -a -d %s" % (newstage.path))
+    print "Locking unchecked"
+    lockfile='/srv/security-master.debian.org/lock/unchecked.lock'
+    spawn("lockfile -r8 {0}".format(lockfile))
 
-    # 4. Run all the steps that are needed to publish the changed archive
-    print "Domination"
-    spawn("dak dominate")
-#    print "Generating filelist for apt-ftparchive"
-#    spawn("dak generate-filelist")
-    print "Updating Packages and Sources files... This may take a while, be patient"
-    spawn("/srv/security-master.debian.org/dak/config/debian-security/map.sh")
-#    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
-    spawn("dak generate-packages-sources2")
-    print "Updating Release files..."
-    spawn("dak generate-releases")
-    print "Triggering security mirrors... (this may take a while)"
-    spawn("/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh")
-    spawn("sudo -u archvsync -H /home/archvsync/signal_security")
-    print "Triggering metadata export for packages.d.o and other consumers"
-    spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
+    try:
+        # 3. Now run process-upload in the newstage dir
+        print "Now put it into the security archive"
+        spawn("dak process-upload -a -d %s" % (newstage.path))
+
+        # 4. Run all the steps that are needed to publish the changed archive
+        print "Domination"
+        spawn("dak dominate")
+        #    print "Generating filelist for apt-ftparchive"
+        #    spawn("dak generate-filelist")
+        print "Updating Packages and Sources files... This may take a while, be patient"
+        spawn("/srv/security-master.debian.org/dak/config/debian-security/map.sh")
+        #    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
+        spawn("dak generate-packages-sources2")
+        print "Updating Release files..."
+        spawn("dak generate-releases")
+        print "Triggering security mirrors... (this may take a while)"
+        spawn("/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh")
+        spawn("sudo -u archvsync -H /home/archvsync/signal_security")
+        print "Triggering metadata export for packages.d.o and other consumers"
+        spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
+    finally:
+        os.unlink(lockfile)
+        print "Lock released."
 
 ########################################################################
 ########################################################################
