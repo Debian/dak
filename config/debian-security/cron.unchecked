@@ -60,10 +60,11 @@ dak manage-build-queues -a
 if [ "x${dopolicy}x" = "xtruex" ]; then
     # We had something approved from a policy queue, push out new archive
     dak dominate
-    dak generate-filelist
+    #dak generate-filelist
     cd $configdir
     $configdir/map.sh
-    apt-ftparchive generate apt.conf
+    #apt-ftparchive generate apt.conf
+    dak generate-packages-sources2
     dak generate-releases
     /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh
     sudo -u archvsync -H /home/archvsync/signal_security
