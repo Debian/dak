@@ -15,6 +15,7 @@ reportdis=$queuedir/REPORT.disembargo
 timestamp=$(date "+%Y-%m-%d %H:%M")
 doanything=false
 dopolicy=false
+LOCKFILE="$lockdir/unchecked.lock"
 
 # So first we should go and see if any process-policy action is done
 dak process-policy embargoed | mail -a "X-Debian: DAK" -e -s "Automatically accepted from embargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
@@ -23,6 +24,16 @@ dak process-policy unembargoed | mail -a "X-Debian: DAK" -e -s "Automatically ac
 # Now, if this really did anything, we can then sync it over. Files
 # in newstage mean they are (late) accepts of security stuff, need
 # to sync to ftp-master
+
+cleanup() {
+    rm -f "$LOCKFILE"
+}
+
+if ! lockfile -r8 "$LOCKFILE"; then
+    echo "aborting cron.unchecked because $LOCKFILE has already been locked"
+    exit 0
+fi
+trap cleanup EXIT
 
 cd $newstage
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
@@ -69,5 +80,8 @@ if [ "x${dopolicy}x" = "xtruex" ]; then
     /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh
     sudo -u archvsync -H /home/archvsync/signal_security
 fi
+
+cleanup
+trap - EXIT
 
 $configdir/cron.buildd

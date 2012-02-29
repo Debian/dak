@@ -6,6 +6,8 @@ set -e
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
+LOCKFILE="$lockdir/unchecked.lock"
+
 ################################################################################
 
 # Fix overrides
@@ -66,9 +68,23 @@ done
 
 cd $configdir
 dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
+
+cleanup() {
+    rm -f "$LOCKFILE"
+}
+
+if ! lockfile -r100 "$LOCKFILE"; then
+    echo "Could not lock $LOCKFILE." >&2
+    exit 1
+fi
+trap cleanup EXIT
+
 dak clean-queues
 dak clean-queues -i $disembargo
 dak clean-suites
+
+cleanup
+trap - EXIT
 
 symlinks -d -r $ftpdir
 
