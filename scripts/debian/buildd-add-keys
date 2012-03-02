@@ -166,7 +166,7 @@ for file in ${KEYS}; do
     # - keysize 4096 or larger
     # - RSA key, no encryption capability
     # - UID matching "buildd autosigning key BUILDDNAME <buildd_ARCH-BUILDDNAME@buildd.debian.org>
-    # - expire within a 120 days
+    # - expire within a 360 days
     # - maximum 2 keys per architecture and buildd
 
     TEMPKEYDATA=$(mktemp -p "${TMPDIR}" BDKEYS.XXXXXX)
