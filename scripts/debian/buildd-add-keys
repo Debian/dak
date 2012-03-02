@@ -1,7 +1,7 @@
 #!/bin/bash
 # No way I try to deal with a crippled sh just for POSIX foo.
 
-# Copyright (C) 2011 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2011,2012 Joerg Jaspert <joerg@debian.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -55,6 +55,7 @@ base="${base}/scripts/builddkeyrings"
 INCOMING="${base}/incoming"
 ERRORS="${base}/errors"
 ADMINS="${base}/adminkeys.gpg"
+ARCHADMINS="${base}/archadminkeys"
 STAMPFILE="${base}/updatedkeyring"
 
 # Default options for our gpg calls
@@ -130,8 +131,12 @@ for file in ${KEYS}; do
     exec 4> "${GPGSTATUS}"
     exec 5> "${GPGLOGS}"
 
+    KEYRINGS="--keyring ${ADMINS}"
+    if [ -f "${ARCHADMINS}/${ARCH}.gpg" ]; then
+        KEYRINGS="${KEYRINGS} --keyring ${ARCHADMINS}/${ARCH}.gpg"
+    fi
     # So lets run gpg, status/logger into the two files, to "decrypt" the keyfile
-    if ! gpg ${DEFGPGOPT} --keyring "${ADMINS}" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
+    if ! gpg ${DEFGPGOPT} ${KEYRINGS} --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
         ret=$?
         log "gpg returned with ${ret}, not adding key from file ${file}"
         DATE=$(date -Is)
@@ -140,7 +145,7 @@ for file in ${KEYS}; do
         mv "${GPGLOGS}" "${ERRORS}/gpgerror.${file}.gpglogs.${DATE}"
         rm -f "${GPGOUTF}"
         continue
-    fi
+    fi # gpg broke
 
     # Read in the status output
     GPGSTAT=$(cat "${GPGSTATUS}")
