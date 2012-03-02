@@ -238,11 +238,11 @@ for file in ${KEYS}; do
     continue
     fi
 
-    # We want a maximum lifetime of 120 days, so check that.
-    # Easiest to compare in epoch, so lets see, 120 days midnight from now,
+    # We want a maximum lifetime of 365 days, so check that.
+    # Easiest to compare in epoch, so lets see, 365 days midnight from now,
     # compared with their set expiration date at midnight
-    # maxdate should turn out higher. just in case we make it 121 for this check
-    maxdate=$(date -d '121 day 00:00:00' +%s)
+    # maxdate should turn out higher. just in case we make it 366 for this check
+    maxdate=$(date -d '366 day 00:00:00' +%s)
     theirexpire=$(date -d "${KEYEXPIRE} 00:00:00" +%s)
     if [ ${theirexpire} -gt ${maxdate} ]; then
         log "Key expiry ${KEYEXPIRE} wrong"
