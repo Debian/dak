@@ -103,7 +103,7 @@ def pipe_file(f, t):
     t.close()
 
 class Updates:
-    def __init__(self, readpath = None, max = 14):
+    def __init__(self, readpath = None, max = 56):
         self.can_path = None
         self.history = {}
         self.history_order = []
@@ -196,7 +196,7 @@ def sizesha1(f):
     sha1sum = apt_pkg.sha1sum(f)
     return (sha1sum, size)
 
-def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 14):
+def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
     if Options.has_key("NoAct"):
         return
 
@@ -295,7 +295,7 @@ def main():
     Options = Cnf.SubTree("Generate-Index-Diffs::Options")
     if Options.has_key("Help"): usage()
 
-    maxdiffs = Options.get("MaxDiffs::Default", "14")
+    maxdiffs = Options.get("MaxDiffs::Default", "56")
     maxpackages = Options.get("MaxDiffs::Packages", maxdiffs)
     maxcontents = Options.get("MaxDiffs::Contents", maxdiffs)
     maxsources = Options.get("MaxDiffs::Sources", maxdiffs)
