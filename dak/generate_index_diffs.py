@@ -232,7 +232,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
         return
 
     if oldstat[1:3] == origstat[1:3]:
-        #print "%s: hardlink unbroken, assuming unchanged" % (origfile)
+        print "%s: hardlink unbroken, assuming unchanged" % (origfile)
         return
 
     oldf = smartopen(oldfile)
@@ -256,13 +256,14 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
     if newsizesha1 == oldsizesha1:
         os.unlink(newfile)
         oldf.close()
-        #print "%s: unchanged" % (origfile)
+        print "%s: unchanged" % (origfile)
     else:
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
         w = os.popen("diff --ed - %s | gzip --rsyncable -c -9 > %s.gz" %
                      (newfile, difffile), "w")
+        print "pipe, o: %s, w: %s" % (oldf, w)
         pipe_file(oldf, w)
         oldf.close()
 
@@ -369,9 +370,10 @@ def main():
                         if not re_includeinpdiff.match(entry):
                             #print "EXCLUDING %s" % (entry)
                             continue
-                        processfile= os.path.join(workpath, entry)
+                        (fname, fext) = os.path.splitext(entry)
+                        processfile=os.path.join(workpath, fname)
                         #print "Working: %s" % (processfile)
-                        storename="%s/%s_%s_%s" % (Options["TempDir"], suite, component, entry)
+                        storename="%s/%s_%s_%s" % (Options["TempDir"], suite, component, fname)
                         #print "Storefile: %s" % (storename)
                         genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs)
         os.chdir(cwd)
