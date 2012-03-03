@@ -1,7 +1,7 @@
 #!/bin/bash
 # No way I try to deal with a crippled sh just for POSIX foo.
 
-# Copyright (C) 2009 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2009-2012 Joerg Jaspert <joerg@debian.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -72,7 +72,9 @@ function stage() {
 
     error=${ERR:-"true"}
 
-    STAGEFILE="${stagedir}/${FUNC}"
+    ARGS=${ARGS:-""}
+    STAGEFILE="${stagedir}/${FUNC}_${ARGS}"
+    STAGEFILE=${STAGEFILE// /_}
     if [ -f "${STAGEFILE}" ]; then
         stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
         unixtime=$(date +%s)
