@@ -36,9 +36,13 @@ import os
 import tempfile
 import time
 import apt_pkg
+import glob
 
 from daklib import utils
 from daklib.dbconn import get_suite, get_suite_architectures
+#from daklib.regexes import re_includeinpdiff
+import re
+re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
 
 ################################################################################
 
@@ -55,10 +59,12 @@ Write out ed-style diffs to Packages/Source lists
   -h, --help            show this help and exit
   -c                    give the canonical path of the file
   -p                    name for the patch (defaults to current time)
+  -r                    use a different archive root
+  -d                    name for the hardlink farm for status
+  -m                    how many diffs to generate
   -n                    take no action
     """
     sys.exit(exit_code)
-
 
 def tryunlink(file):
     try:
@@ -198,6 +204,7 @@ def sizesha1(f):
 
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
     if Options.has_key("NoAct"):
+        print "Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs)
         return
 
     patchname = Options["PatchName"]
@@ -307,7 +314,8 @@ def main():
     AptCnf = apt_pkg.newConfiguration()
     apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
 
-    if Options.has_key("RootDir"): Cnf["Dir::Root"] = Options["RootDir"]
+    if Options.has_key("RootDir"):
+        Cnf["Dir::Root"] = Options["RootDir"]
 
     if not suites:
         suites = Cnf.SubTree("Suite").List()
@@ -348,6 +356,25 @@ def main():
             aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
             print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
             continue
+
+        # See if there are Translations which might need a new pdiff
+        cwd = os.getcwd()
+        for component in sections:
+            #print "DEBUG: Working on %s" % (component)
+            workpath=os.path.join(Cnf["Dir::Root"], tree, component, "i18n")
+            if os.path.isdir(workpath):
+                os.chdir(workpath)
+                for dirpath, dirnames, filenames in os.walk(".", followlinks=True, topdown=True):
+                    for entry in filenames:
+                        if not re_includeinpdiff.match(entry):
+                            #print "EXCLUDING %s" % (entry)
+                            continue
+                        processfile= os.path.join(workpath, entry)
+                        #print "Working: %s" % (processfile)
+                        storename="%s/%s_%s_%s" % (Options["TempDir"], suite, component, entry)
+                        #print "Storefile: %s" % (storename)
+                        genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs)
+        os.chdir(cwd)
 
         for archobj in architectures:
             architecture = archobj.arch_string
