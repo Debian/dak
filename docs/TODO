@@ -4,17 +4,11 @@
 Various
 -------
 
-* Implement autosigning, see ftpmaster_autosigning on ftp-master host in text/.
-
 * Improve logging in dak control-suite. --add is silent, not nice. same
    for --remove
 
 * Throw away all DD uploaded .debs. (Depend on "Lintian based automated
    rejects")
-  - Depends on the lintian based automated rejects, we do want correct
-   .debs uploaded. Ubuntu nicely demonstrated the quality loss if people
-   can just upload anything without even having to get one build
-   running.
   - Need a way to define a build-architecture for arch_all debs. Some of
    them can only be build on certain architectures.
    A control file header build-architecture: YXY should do it.
@@ -40,10 +34,6 @@ Various
      with it.
 
 * use pythonX.Y-tarfile to check orig.tar.gz timestamps too.
-
-* the .dak stuff is fundamentally braindamaged for various reasons, it
-  should DIE. If we want to cache information - use a ("temporary")
-  database table and let p-a clean it up, e.g. like contents does.
 
 * security global mail overrides should special case buildd stuff so
   that buildds get ACCEPTED mails. Or maybe send them at
