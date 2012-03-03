@@ -178,6 +178,8 @@ for file in ${KEYS}; do
         fi
     done
 
+    COMMENT=${COMMENT:-"The bad ${KEYSUBMITTER} hasn't supplied a comment"}
+
     # Right, we have the keyid, know the arch, lets see if we can remove it
     ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
 
