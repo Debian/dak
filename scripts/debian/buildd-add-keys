@@ -176,7 +176,17 @@ for file in ${KEYS}; do
 
     TEMPKEYDATA=$(mktemp -p "${TMPDIR}" BDKEYS.XXXXXX)
 
-    gpg ${DEFGPGOPT} --with-colons "${GPGOUTF}" > "${TEMPKEYDATA}"
+    # We also need to ensure this works, otherwise manually mangled files can break us here
+    if ! gpg ${DEFGPGOPT} --with-colons "${GPGOUTF}" > "${TEMPKEYDATA}"; then
+        log "For some reason we could validate the sig but failed on getting key details"
+        DATE=$(date -Is)
+        mv "${INCOMING}/${file}" "${ERRORS}/badsig.${file}.${DATE}"
+        mv "${GPGSTATUS}" "${ERRORS}/badsig.${file}.gpgstatus.${DATE}"
+        mv "${GPGLOGS}" "${ERRORS}/badsig.${file}.gpglogs.${DATE}"
+        rm -f "${GPGOUTF}"
+        rm -f "${TMPKEYDATA}"
+        continue
+    fi
 
     # Read in the TEMPKEYDATAFILE, but avoid using a subshell like a
     # while read line otherwise would do
