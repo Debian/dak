@@ -1933,8 +1933,7 @@ transition is done."""
         # This is for direport's benefit...
         f = re_fdnic.sub("\n .\n", self.pkg.changes.get("changes", ""))
 
-        if byhand or new:
-            summary += "Changes: " + f
+        summary += "\n\nChanges:\n" + f
 
         summary += "\n\nOverride entries for your package:\n" + override_summary + "\n"
 
