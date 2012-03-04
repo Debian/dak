@@ -1933,8 +1933,7 @@ transition is done."""
         # This is for direport's benefit...
         f = re_fdnic.sub("\n .\n", self.pkg.changes.get("changes", ""))
 
-        if byhand or new:
-            summary += "Changes: " + f
+        summary += "\n\nChanges:\n" + f
 
         summary += "\n\nOverride entries for your package:\n" + override_summary + "\n"
 
@@ -2425,10 +2424,14 @@ distribution."""
 
         reason_filename = self.pkg.changes_file[:-8] + ".reason"
         reason_filename = os.path.join(cnf["Dir::Reject"], reason_filename)
+        changesfile = os.path.join(cnf["Dir::Reject"], self.pkg.changes_file)
 
         # Move all the files into the reject directory
         reject_files = self.pkg.files.keys() + [self.pkg.changes_file]
         self.force_reject(reject_files)
+
+        # Change permissions of the .changes file to be world readable
+        os.chmod(changesfile, os.stat(changesfile).st_mode | stat.S_IROTH)
 
         # If we fail here someone is probably trying to exploit the race
         # so let's just raise an exception ...
