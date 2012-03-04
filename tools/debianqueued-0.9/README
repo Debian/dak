@@ -573,6 +573,7 @@ sh or the respective binaries).
 
 Example:
 -----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
 
 Uploader: Roman Hodek <Roman.Hodek@informatik.uni-erlangen.de>
 Commands: 
@@ -580,7 +581,7 @@ Commands:
  mv hello_1.0-1.dsx hello_1.0-1.dsc
 
 -----BEGIN PGP SIGNATURE-----
-Version: 2.6.3ia
+Version: GnuPG v1.4.12 (GNU/Linux)
 
 iQCVAwUBNFiQSXVhJ0HiWnvJAQG58AP+IDJVeSWmDvzMUphScg1EK0mvChgnuD7h
 BRiVQubXkB2DphLJW5UUSRnjw1iuFcYwH/lFpNpl7XP95LkLX3iFza9qItw4k2/q
