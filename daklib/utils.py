@@ -526,8 +526,7 @@ def parse_checksums(where, files, manifest, hashname):
         files[checkfile][hash_key(hashname)] = checksum
     for f in files.keys():
         if not files[f].has_key(hash_key(hashname)):
-            rejmsg.append("%s: no entry in checksums-%s in %s" % (checkfile,
-                hashname, where))
+            rejmsg.append("%s: no entry in checksums-%s in %s" % (f, hashname, where))
     return rejmsg
 
 ################################################################################
