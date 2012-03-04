@@ -402,7 +402,7 @@ function mirrorpush() {
                     # match.
                     continue
                 fi
-               broken=$(( broken + 1 ))
+                broken=$(( broken + 1 ))
                 echo "File ${subdir}/${NAME} is missing"
                 continue
             fi
@@ -444,9 +444,12 @@ function i18n2() {
     STAMP=$(date "+%Y%m%d%H%M")
     mkdir -p ${scriptdir}/i18n/${STAMP}
     cd ${scriptdir}/i18n/${STAMP}
-    dak control-suite -l stable > squeeze
-    dak control-suite -l testing > wheezy
-    dak control-suite -l unstable > sid
+    for suite in stable testing unstable; do
+        codename=$(dak admin s show ${suite}|grep '^Codename')
+        codename=${codename##* }
+        echo "Codename is ${codename}"
+        dak control-suite -l ${suite} >${codename}
+    done
     echo "${STAMP}" > timestamp
     gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o timestamp.gpg timestamp
     rm -f md5sum
