@@ -550,7 +550,7 @@ def process_changes_files(changes_files, type, log, rrd_dir):
                (name, mail) = changedby.split(":", 1)
                log.write("Changed-By: " + name + " <"+mail+">" + "\n")
             if sponsor:
-               log.write("Sponsored-By: " + sponsor + "\n")
+               log.write("Sponsored-By: " + "@".join(sponsor.split("@")[:2]) + "\n")
             log.write("Distribution:")
             for dist in distribution:
                log.write(" " + dist)
