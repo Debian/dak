@@ -35,13 +35,14 @@ one), and also knows about the shell wildcards *, ?, and [].
 Example of a *.commands file:
 
 -----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
 
 Uploader: Some One <some@example.com>
 Commands: 
  rm hello_1.0-1_i386.deb
 
 -----BEGIN PGP SIGNATURE-----
-Version: 2.6.3ia
+Version: GnuPG v1.4.12 (GNU/Linux)
 
 [...]
 -----END PGP SIGNATURE-----
