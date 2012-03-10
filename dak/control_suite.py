@@ -317,7 +317,7 @@ def process_file(file, suite, action, session, britney=False, force=False):
                     session.execute("""INSERT INTO src_associations (suite, source)
                                             VALUES (:suiteid, :pkid)""",
                                        {'suiteid': suite_id, 'pkid': pkid})
-                    Logger.log(["added", package, version, architecture, suite, pkid])
+                    Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
 
             elif action == "remove":
                 if association_id == None:
@@ -325,7 +325,7 @@ def process_file(file, suite, action, session, britney=False, force=False):
                     continue
                 else:
                     session.execute("""DELETE FROM src_associations WHERE id = :pkid""", {'pkid': association_id})
-                    Logger.log(["removed", package, version, architecture, suite, pkid])
+                    Logger.log(["removed", package, version, architecture, suite.suite_name, pkid])
         else:
             # Find the existing associations ID, if any
             q = session.execute("""SELECT id FROM bin_associations
@@ -346,14 +346,14 @@ def process_file(file, suite, action, session, britney=False, force=False):
                     session.execute("""INSERT INTO bin_associations (suite, bin)
                                             VALUES (:suiteid, :pkid)""",
                                        {'suiteid': suite_id, 'pkid': pkid})
-                    Logger.log(["added", package, version, architecture, suite, pkid])
+                    Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
             elif action == "remove":
                 if association_id == None:
                     utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
                     session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': association_id})
-                    Logger.log(["removed", package, version, architecture, suite, pkid])
+                    Logger.log(["removed", package, version, architecture, suite.suite_name, pkid])
 
     session.commit()
 
