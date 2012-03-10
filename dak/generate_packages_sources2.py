@@ -54,11 +54,11 @@ SELECT
   (SELECT
      STRING_AGG(
        CASE
-         WHEN key = 'Source' THEN 'Package\: '
+         WHEN key = 'Source' THEN E'Package\: '
          WHEN key = 'Files' THEN E'Files\:\n ' || f.md5sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
          WHEN key = 'Checksums-Sha1' THEN E'Checksums-Sha1\:\n ' || f.sha1sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
          WHEN key = 'Checksums-Sha256' THEN E'Checksums-Sha256\:\n ' || f.sha256sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
-         ELSE key || '\: '
+         ELSE key || E'\: '
        END || value, E'\n' ORDER BY mk.ordering, mk.key)
    FROM
      source_metadata sm
@@ -151,7 +151,7 @@ WITH
 
 SELECT
   (SELECT
-     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY ordering, key)
+     STRING_AGG(key || E'\: ' || value, E'\n' ORDER BY ordering, key)
    FROM
      (SELECT key, ordering,
         CASE WHEN :include_long_description = 'false' AND key = 'Description'
@@ -167,7 +167,7 @@ SELECT
      ) AS metadata
   )
   || COALESCE(E'\n' || (SELECT
-     STRING_AGG(key || '\: ' || value, E'\n' ORDER BY key)
+     STRING_AGG(key || E'\: ' || value, E'\n' ORDER BY key)
    FROM external_overrides eo
    WHERE
      eo.package = tmp.package
