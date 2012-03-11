@@ -314,7 +314,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     if sponsor:
         try:
             (login, domain) = sponsor.split("@", 1)
-            print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span>@debian.org<br/>" % (utils.html_escape(login), utils.html_escape(login))
+            print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(login), utils.html_escape(login))
         except Exception as e:
             pass
 
