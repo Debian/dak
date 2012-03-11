@@ -179,6 +179,7 @@ def header():
       Debian NEW and BYHAND Packages
     </title>
     <script type="text/javascript">
+    //<![CDATA[
     function togglePkg() {
         var children = document.getElementsByTagName("*");
         for (var i = 0; i < children.length; i++) {
@@ -194,6 +195,7 @@ def header():
             }
         }
     }
+    //]]>
     </script>
   </head>
   <body id="NEW">
@@ -246,8 +248,8 @@ def table_header(type, source_count, total_count):
     print "<h1 class='binNEW'>Summary for: %s</h1>" % (type)
     print "<h1 class='binNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type)
     print """
+    <p class="togglepkg" onclick="togglePkg()">Click to toggle all/binary-NEW packages</p>
     <table class="NEW">
-      <p class="togglepkg" onclick="togglePkg()">Click to toggle all/binary-NEW packages</p>
       <caption class="binNEW">
     """
     print "Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count)
