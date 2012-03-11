@@ -273,8 +273,8 @@ FROM binaries b
   JOIN source s ON b.source = s.id
 
 WHERE ba.suite = :suite AND o.component = :component
-GROUP BY s.source, b.package, bm_description_md5.value, bm_description.value
-ORDER BY s.source, b.package, bm_description_md5.value
+GROUP BY b.package, bm_description_md5.value, bm_description.value
+ORDER BY MIN(s.source), b.package, bm_description_md5.value
 """
 
 def generate_translations(suite_id, component_id):
