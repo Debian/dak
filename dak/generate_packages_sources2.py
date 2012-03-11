@@ -255,7 +255,7 @@ WITH
       FROM suite AS s LEFT JOIN suite AS os ON s.overridesuite = os.suite_name)
 
 SELECT
-     'Package\: ' || b.package
+     E'Package\: ' || b.package
   || E'\nDescription-md5\: ' || bm_description_md5.value
   || E'\nDescription-en\: ' || bm_description.value
   || E'\n'
@@ -273,8 +273,8 @@ FROM binaries b
   JOIN source s ON b.source = s.id
 
 WHERE ba.suite = :suite AND o.component = :component
-GROUP BY s.source, b.package, bm_description_md5.value, bm_description.value
-ORDER BY s.source, b.package, bm_description_md5.value
+GROUP BY b.package, bm_description_md5.value, bm_description.value
+ORDER BY MIN(s.source), b.package, bm_description_md5.value
 """
 
 def generate_translations(suite_id, component_id):
