@@ -255,7 +255,7 @@ WITH
       FROM suite AS s LEFT JOIN suite AS os ON s.overridesuite = os.suite_name)
 
 SELECT
-     'Package\: ' || b.package
+     E'Package\: ' || b.package
   || E'\nDescription-md5\: ' || bm_description_md5.value
   || E'\nDescription-en\: ' || bm_description.value
   || E'\n'
