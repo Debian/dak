@@ -64,6 +64,7 @@ $statusdelay = 30;
 
 # names of the keyring files
 @keyrings = ( "/srv/backports-master.debian.org/keyrings/keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/debian-maintainers.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-alpha-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-amd64-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-armel-keyring.gpg",
