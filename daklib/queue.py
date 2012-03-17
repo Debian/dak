@@ -386,8 +386,9 @@ def edit_note(note, upload, session, trainee=False):
 
 ###############################################################################
 
+# FIXME: Should move into the database
 # suite names DMs can upload to
-dm_suites = ['unstable', 'experimental']
+dm_suites = ['unstable', 'experimental', 'squeeze-backports']
 
 def get_newest_source(source, session):
     'returns the newest DBSource object in dm_suites'
@@ -1807,7 +1808,7 @@ class Upload(object):
         r = get_newest_source(self.pkg.changes["source"], session)
 
         if r is None:
-            rej = "Could not find existing source package %s in unstable or experimental and this is a DM upload" % self.pkg.changes["source"]
+            rej = "Could not find existing source package %s in the DM allowed suites and this is a DM upload" % self.pkg.changes["source"]
             self.rejects.append(rej)
             return
 
