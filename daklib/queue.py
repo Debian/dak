@@ -2432,7 +2432,12 @@ distribution."""
         self.force_reject(reject_files)
 
         # Change permissions of the .changes file to be world readable
-        os.chmod(changesfile, os.stat(changesfile).st_mode | stat.S_IROTH)
+        try:
+            os.chmod(changesfile, os.stat(changesfile).st_mode | stat.S_IROTH)
+        except OSError as (errno, strerror):
+            # Ignore 'Operation not permitted' error.
+            if errno != 1:
+                raise
 
         # If we fail here someone is probably trying to exploit the race
         # so let's just raise an exception ...
