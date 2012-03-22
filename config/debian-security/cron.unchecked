@@ -61,9 +61,9 @@ if [ -n "$changes" ]; then
     dak process-upload -a -d "$disembargo" >> $reportdis
 fi
 
-if ! $doanything; then
-  echo "$timestamp": Nothing to do >> $report
-  exit 0
+if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
+    echo "$timestamp": Nothing to do >> $report
+    exit 0
 fi
 
 dak manage-build-queues -a
