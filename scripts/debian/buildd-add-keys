@@ -274,8 +274,9 @@ for file in ${KEYS}; do
     # We need to check for the amount of keys
     ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
 
-    KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys "buildd_${ARCH}-${BUILDD}@buildd.debian.org" | grep -c '^pub:' || /bin/true )
+    KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys "buildd_${ARCH}-${BUILDD}@buildd.debian.org" 2>/dev/null | grep -c '^pub:' || /bin/true )
     if [ ${KEYNO} -gt 2 ]; then
+        log "Too many keys for ${ARCH} buildd ${BUILDD}"
         DATE=$(date -Is)
         mv "${INCOMING}/${file}" "${ERRORS}/toomany.${file}.${DATE}"
         mv "${GPGSTATUS}" "${ERRORS}/toomany.${file}.gpgstatus.${DATE}"
