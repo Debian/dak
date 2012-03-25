@@ -36,7 +36,7 @@ my $sth = $dbh->prepare( "
 		maintainer
 	WHERE 	source.id = source_suite.src
 	AND	source.changedby = maintainer.id
-	AND	( suite_name = 'lenny-backports' or suite_name = 'squeeze-backports' )
+	AND	( suite_name = 'squeeze-backports' )
 	GROUP BY source.source,maintainer.name;
 ");
 

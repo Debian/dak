@@ -15,19 +15,6 @@ Default
    FileMode 0664;
 }
 
-bindirectory "lenny"
-{
-   Packages "lenny/Packages";
-   Sources "lenny/Sources";
-   Contents " ";
-
-   BinOverride "override.lenny.all3";
-   SrcOverride "override.lenny.all3.src";
-   BinCacheDB "packages-accepted-lenny.db";
-   PathPrefix "";
-   Packages::Extensions ".deb .udeb";
-};
-
 bindirectory "squeeze"
 {
    Packages "squeeze/Packages";

@@ -34,7 +34,7 @@ exportpublic=$public/export/
 
 ftpgroup=debadmin
 
-copyoverrides="lenny-backports.contrib lenny-backports.contrib.src lenny-backports.main lenny-backports.main.debian-installer lenny-backports.main.src lenny-backports.extra.contrib lenny-backports.extra.main"
+copyoverrides="squeeze-backports.contrib squeeze-backports.contrib.src squeeze-backports.main squeeze-backports.main.debian-installer squeeze-backports.main.src squeeze-backports.extra.contrib squeeze-backports.extra.main"
 
 # Change this to your hostname
 uploadhost=localhost
@@ -42,7 +42,7 @@ uploaddir=/pub/UploadQueue/
 
 # What components to support
 components="main contrib non-free"
-suites="lenny-backports"
+suites="squeeze-backports"
 override_types="deb dsc udeb"
 
 # export TMP=/srv/backports-master.debian.org/tmp

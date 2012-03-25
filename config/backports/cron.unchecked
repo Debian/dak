@@ -65,9 +65,9 @@ function do_buildd () {
         dak make-overrides &>/dev/null
         rm -f override.sid.all3 override.sid.all3.src
         for i in main contrib non-free main.debian-installer; do
-            cat override.lenny-backports.$i >> override.sid.all3
+            cat override.squeeze-backports.$i >> override.sid.all3
             if [ "$i" != "main.debian-installer" ]; then
-                cat override.lenny-backports.$i.src >> override.sid.all3.src
+                cat override.squeeze-backports.$i.src >> override.sid.all3.src
             fi
         done
         make_buildd_dir

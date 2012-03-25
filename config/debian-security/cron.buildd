@@ -40,9 +40,6 @@ if [ ! -z "${dists}" ]; then
     trap 'kill -TERM $SSH_PID' 0
     for d in ${dists}; do
         case ${d} in
-            oldstable)
-                send=lenny
-                ;;
             stable)
                 send=squeeze
                 ;;

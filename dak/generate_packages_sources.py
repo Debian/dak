@@ -106,45 +106,6 @@ TreeDefault
     apt_trees={}
     apt_trees["di"]={}
 
-    apt_trees["oldstable"]="""
-tree "dists/oldstable"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.lenny.$(SECTION)";
-   ExtraOverride "override.lenny.extra.$(SECTION)";
-   SrcOverride "override.lenny.$(SECTION).src";
-};
-"""
-
-    apt_trees["di"]["oldstable"]="""
-tree "dists/oldstable/main"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_main_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.lenny.main.$(SECTION)";
-   SrcOverride "override.lenny.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-
-tree "dists/oldstable/non-free"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_non-free_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.lenny.main.$(SECTION)";
-   SrcOverride "override.lenny.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-"""
-
     apt_trees["stable"]="""
 tree "dists/stable"
 {
@@ -366,33 +327,6 @@ tree "dists/proposed-updates/main"
    Contents " ";
 };
 """
-    apt_trees["oldstable-proposed-updates"]="""
-tree "dists/oldstable-proposed-updates"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.lenny.$(SECTION)";
-   ExtraOverride "override.lenny.extra.$(SECTION)";
-   SrcOverride "override.lenny.$(SECTION).src";
-   Contents " ";
-};
-"""
-    apt_trees["di"]["oldstable-proposed-updates"]="""
-tree "dists/oldstable-proposed-updates/main"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/oldstable-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.lenny.main.$(SECTION)";
-   SrcOverride "override.lenny.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   Contents " ";
-};
-"""
-
     cnf = Config()
     try:
         # Write apt.conf

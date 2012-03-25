@@ -232,7 +232,7 @@ function mkmaintainers() {
 function copyoverrides() {
     log 'Copying override files into public view ...'
 
-    for ofile in ${overridedir}/override.{lenny,squeeze,wheezy,sid}.{,extra.}{main,contrib,non-free}*; do
+    for ofile in ${overridedir}/override.{squeeze,wheezy,sid}.{,extra.}{main,contrib,non-free}*; do
         bname=${ofile##*/}
         gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
         chmod g+w ${indices}/${bname}.gz
