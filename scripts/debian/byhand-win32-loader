@@ -45,7 +45,9 @@ if [ ! -d "$TARGET" ]; then
 fi
 
 # Put said file into the tools directory
-cp "$WIN32_LOADER_FILE" "${TARGET}${TARGET_FILENAME}"
+# Use --remove-destination to avoid problems with the fact that the target may
+# be a hardlink and in that case we'd update multiple suites together
+cp --remove-destination "$WIN32_LOADER_FILE" "${TARGET}${TARGET_FILENAME}"
 
 # Chmod it correctly
 chmod 0644 "${TARGET}${TARGET_FILENAME}"
