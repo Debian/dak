@@ -13,7 +13,7 @@ my @archs = ("source", "all", "amd64", "i386", "alpha", "arm", "armel", "armhf",
 
 for my $file (@ARGV) {
   my $FH = new IO::Uncompress::AnyUncompress $file, Transparent => 1
-    or die "Cannot open $file: $AnyUncompressError\n";
+    or warn "Cannot open $file: $AnyUncompressError\n";
   while (<$FH>) {
     if (/^(\d{8})\d{6}\|(?:k(?:atie|elly)|process-(?:accepted|upload))(?:\|dak)?\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
       if (not defined $data{$1}) {
