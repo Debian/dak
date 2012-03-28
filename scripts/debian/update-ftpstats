@@ -1,20 +1,29 @@
 #!/usr/bin/perl
 
+use strict;
+use warnings;
+
+use IO::Uncompress::AnyUncompress ":all";
+
 my %data;
 my %data2;
 my @archs = ("source", "all", "amd64", "i386", "alpha", "arm", "armel", "armhf", "hppa",
              "hurd-i386", "ia64", "kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "s390",
              "s390x", "sparc");
 
-while (<>) {
-  if (/^(\d{8})\d{6}\|(?:k(?:atie|elly)|process-(?:accepted|upload))(?:\|dak)?\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
-    if (not defined $data{$1}) {
-      foreach $a (@archs) {
-        $data{$1}{$a} = 0;
+for my $file (@ARGV) {
+  my $FH = new IO::Uncompress::AnyUncompress $file, Transparent => 1
+    or die "Cannot open $file: $AnyUncompressError\n";
+  while (<$FH>) {
+    if (/^(\d{8})\d{6}\|(?:k(?:atie|elly)|process-(?:accepted|upload))(?:\|dak)?\|installed\|[^|]+\|[^|]+\|(\d+)\|([-\w]+)$/) {
+      if (not defined $data{$1}) {
+        foreach $a (@archs) {
+          $data{$1}{$a} = 0;
+        }
       }
+      $data{$1}{$3} += $2;
+      $data2{$1}{$3}++;
     }
-    $data{$1}{$3} += $2;
-    $data2{$1}{$3}++;
   }
 }
 
