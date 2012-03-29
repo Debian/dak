@@ -27,7 +27,7 @@ for my $file (@ARGV) {
   }
 }
 
-foreach $p (sort keys %data) {
+foreach my $p (sort keys %data) {
   print "$p";
   foreach $a (@archs) {
     print ", $data{$p}{$a}";
