@@ -49,8 +49,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN untouchable BOOLEAN NOT NULL DEFAULT FALSE;")
         query = "UPDATE suite SET untouchable = TRUE WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            untouchable = Cnf.Find("Suite::%s::Untouchable" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            untouchable = Cnf.find("Suite::%s::Untouchable" % (suite))
             if not untouchable:
                 continue
             print "[Untouchable] Processing suite %s" % (suite)
@@ -60,32 +60,32 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN announce text NOT NULL DEFAULT 'debian-devel-changes@lists.debian.org';")
         query = "UPDATE suite SET announce = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            announce_list = Cnf.Find("Suite::%s::Announce" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            announce_list = Cnf.find("Suite::%s::Announce" % (suite))
             print "[Announce] Processing suite %s" % (suite)
             suite = suite.lower()
             c.execute(query, [announce_list, suite])
 
         c.execute("ALTER TABLE suite ADD COLUMN codename text;")
         query = "UPDATE suite SET codename = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            codename = Cnf.Find("Suite::%s::CodeName" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            codename = Cnf.find("Suite::%s::CodeName" % (suite))
             print "[Codename] Processing suite %s" % (suite)
             suite = suite.lower()
             c.execute(query, [codename, suite])
 
         c.execute("ALTER TABLE suite ADD COLUMN overridecodename text;")
         query = "UPDATE suite SET overridecodename = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            codename = Cnf.Find("Suite::%s::OverrideCodeName" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            codename = Cnf.find("Suite::%s::OverrideCodeName" % (suite))
             print "[OverrideCodeName] Processing suite %s" % (suite)
             suite = suite.lower()
             c.execute(query, [codename, suite])
 
         c.execute("ALTER TABLE suite ADD COLUMN validtime integer NOT NULL DEFAULT 604800;")
         query = "UPDATE suite SET validtime = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            validtime = Cnf.Find("Suite::%s::ValidTime" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            validtime = Cnf.find("Suite::%s::ValidTime" % (suite))
             print "[ValidTime] Processing suite %s" % (suite)
             if not validtime:
                 validtime = 0
@@ -94,8 +94,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN priority integer NOT NULL DEFAULT 0;")
         query = "UPDATE suite SET priority = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            priority = Cnf.Find("Suite::%s::Priority" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            priority = Cnf.find("Suite::%s::Priority" % (suite))
             print "[Priority] Processing suite %s" % (suite)
             if not priority:
                 priority = 0
@@ -105,8 +105,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN notautomatic BOOLEAN NOT NULL DEFAULT FALSE;")
         query = "UPDATE suite SET notautomatic = TRUE WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            notautomatic = Cnf.Find("Suite::%s::NotAutomatic" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            notautomatic = Cnf.find("Suite::%s::NotAutomatic" % (suite))
             print "[NotAutomatic] Processing suite %s" % (suite)
             if not notautomatic:
                 continue

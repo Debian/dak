@@ -128,7 +128,7 @@ def britney_changelog(packages, suite, session):
     new = {}
     for p in current.keys():
         if p in old.keys():
-            if apt_pkg.VersionCompare(current[p], old[p]) > 0:
+            if apt_pkg.version_compare(current[p], old[p]) > 0:
                 new[p] = [current[p], old[p]]
         else:
             new[p] = [current[p], 0]
@@ -176,7 +176,7 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
     violations = False
 
     for suite, version in suite_version_list:
-        cmp = apt_pkg.VersionCompare(new_version, version)
+        cmp = apt_pkg.version_compare(new_version, version)
         if suite in must_be_newer_than and cmp < 1:
             utils.warn("%s (%s): version check violated: %s targeted at %s is *not* newer than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
             violations = True
@@ -199,7 +199,7 @@ def cmp_package_version(a, b):
     cmp_package = cmp(a[0], b[0])
     if cmp_package != 0:
         return cmp_package
-    return apt_pkg.VersionCompare(a[1], b[1])
+    return apt_pkg.version_compare(a[1], b[1])
 
 #######################################################################################
 
@@ -397,11 +397,11 @@ def main ():
             cnf["Control-Suite::Options::%s" % (i)] = ""
 
     try:
-        file_list = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv);
+        file_list = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv);
     except SystemError as e:
         print "%s\n" % e
         usage(1)
-    Options = cnf.SubTree("Control-Suite::Options")
+    Options = cnf.subtree("Control-Suite::Options")
 
     if Options["Help"]:
         usage()

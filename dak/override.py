@@ -124,8 +124,8 @@ def main ():
     if not cnf.has_key("Override::Options::Suite"):
         cnf["Override::Options::Suite"] = "unstable"
 
-    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Override::Options")
+    arguments = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Override::Options")
 
     if Options["Help"]:
         usage()
@@ -295,7 +295,7 @@ def main ():
         Subst["__OVERRIDE_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
         Subst["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
         bcc = []
-        if cnf.Find("Dinstall::Bcc") != "":
+        if cnf.find("Dinstall::Bcc") != "":
             bcc.append(cnf["Dinstall::Bcc"])
         if bcc:
             Subst["__BCC__"] = "Bcc: " + ", ".join(bcc)

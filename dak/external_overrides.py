@@ -153,9 +153,9 @@ def main():
     Arguments = [('h',"help","External-Overrides::Options::Help"),
                  ('f','force','External-Overrides::Options::Force')]
 
-    args = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    args = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     try:
-        Options = cnf.SubTree("External-Overrides::Options")
+        Options = cnf.subtree("External-Overrides::Options")
     except KeyError:
         Options = {}
 

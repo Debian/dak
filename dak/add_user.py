@@ -115,9 +115,9 @@ def main():
         if not Cnf.has_key("Add-User::Options::%s" % (i)):
             Cnf["Add-User::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Add-User::Options")
+    Options = Cnf.subtree("Add-User::Options")
     if Options["help"]:
         usage()
 
@@ -187,7 +187,7 @@ def main():
                      name, primary_key)
 
         # Should we send mail to the newly added user?
-        if Cnf.FindB("Add-User::SendEmail"):
+        if Cnf.find_b("Add-User::SendEmail"):
             mail = name + "<" + emails[0] +">"
             Subst = {}
             Subst["__NEW_MAINTAINER__"] = mail

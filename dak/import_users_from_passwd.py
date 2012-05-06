@@ -63,8 +63,8 @@ def main ():
         if not cnf.has_key("Import-Users-From-Passwd::Options::%s" % (i)):
             cnf["Import-Users-From-Passwd::Options::%s" % (i)] = ""
 
-    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Import-Users-From-Passwd::Options")
+    arguments = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Import-Users-From-Passwd::Options")
 
     if Options["Help"]:
         usage()

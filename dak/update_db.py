@@ -190,9 +190,9 @@ Updates dak's database schema to the lastest version. You should disable crontab
             if not cnf.has_key("Update-DB::Options::%s" % (i)):
                 cnf["Update-DB::Options::%s" % (i)] = ""
 
-        arguments = apt_pkg.ParseCommandLine(cnf.Cnf, arguments, sys.argv)
+        arguments = apt_pkg.parse_commandline(cnf.Cnf, arguments, sys.argv)
 
-        options = cnf.SubTree("Update-DB::Options")
+        options = cnf.subtree("Update-DB::Options")
         if options["Help"]:
             self.usage()
         elif arguments:

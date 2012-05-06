@@ -55,7 +55,7 @@ def do_update(self):
 
         for check in ["Enhances", "MustBeNewerThan", "MustBeOlderThan"]:
            for suite_name in suite_id_map.keys():
-	       for reference_name in [ s.lower() for s in cnf.ValueList("Suite::%s::VersionChecks::%s" % (suite_name, check)) ]:
+	       for reference_name in [ s.lower() for s in cnf.value_list("Suite::%s::VersionChecks::%s" % (suite_name, check)) ]:
                    c.execute("""INSERT INTO version_check (suite, "check", reference) VALUES (%s, %s, %s)""", (suite_id_map[suite_name], check, suite_id_map[reference_name]))
 
         c.execute("UPDATE config SET value = '52' WHERE name = 'db_revision'")

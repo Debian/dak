@@ -178,7 +178,7 @@ def is_autobyhand(u):
                 all_auto = 0
                 continue
 
-            ABH = cnf.SubTree("AutomaticByHandPackages")
+            ABH = cnf.subtree("AutomaticByHandPackages")
             if not ABH.has_key(pckg) or \
               ABH["%s::Source" % (pckg)] != u.pkg.changes["source"]:
                 print "not match %s %s" % (pckg, u.pkg.changes["source"])

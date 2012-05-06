@@ -45,7 +45,7 @@ def indiv_sg_compare (a, b):
     """Sort by source name, source, version, 'have source', and
        finally by filename."""
     # Sort by source version
-    q = apt_pkg.VersionCompare(a["version"], b["version"])
+    q = apt_pkg.version_compare(a["version"], b["version"])
     if q:
         return -q
 

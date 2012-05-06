@@ -67,8 +67,8 @@ def main ():
                  ('n',"no-action","Manage-Build-Queues::Options::No-Action"),
                  ('a',"all","Manage-Build-Queues::Options::All")]
 
-    queue_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Manage-Build-Queues::Options")
+    queue_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Manage-Build-Queues::Options")
 
     if Options["Help"]:
         usage()

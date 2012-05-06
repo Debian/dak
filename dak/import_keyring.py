@@ -93,11 +93,11 @@ def main():
         if not cnf.has_key("Import-Keyring::Options::%s" % (i)):
             cnf["Import-Keyring::Options::%s" % (i)] = ""
 
-    keyring_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    keyring_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
     ### Parse options
 
-    Options = cnf.SubTree("Import-Keyring::Options")
+    Options = cnf.subtree("Import-Keyring::Options")
 
     if Options["Help"]:
         usage()

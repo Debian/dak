@@ -132,8 +132,8 @@ def main():
     cnf['Obsolete::Options::Help'] = ''
     cnf['Obsolete::Options::No-Action'] = ''
     cnf['Obsolete::Options::Force'] = ''
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Obsolete::Options")
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Obsolete::Options")
     if Options['Help']:
         usage()
     Logger = daklog.Logger("dominate")

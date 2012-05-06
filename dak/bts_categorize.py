@@ -162,8 +162,8 @@ def main():
         if not Cnf.has_key(opt):
             Cnf[opt] = ""
 
-    packages = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
-    Options = Cnf.SubTree('BtsCategorize::Options')
+    packages = apt_pkg.parse_commandline(Cnf, arguments, sys.argv)
+    Options = Cnf.subtree('BtsCategorize::Options')
 
     if Options["Help"]:
         usage()

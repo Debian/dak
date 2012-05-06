@@ -63,7 +63,7 @@ def process_file(config, config_name):
 def process_tree(config, tree):
     """Create directories for a config tree."""
 
-    for entry in config.SubTree(tree).List():
+    for entry in config.subtree(tree).list():
         entry = entry.lower()
         config_name = "%s::%s" % (tree, entry)
         target = config[config_name]
@@ -121,7 +121,7 @@ def create_directories():
     for subdir in [ "Clean-Queues", "Clean-Suites" ]:
         process_morguesubdir(subdir)
 
-    suite_suffix = "%s" % (Cnf.Find("Dinstall::SuiteSuffix"))
+    suite_suffix = "%s" % (Cnf.find("Dinstall::SuiteSuffix"))
 
     # Process secret keyrings
     if Cnf.has_key('Dinstall::SigningKeyring'):
@@ -179,9 +179,9 @@ def main ():
 
     d = DBConn()
 
-    arguments = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
+    arguments = apt_pkg.parse_commandline(Cnf, arguments, sys.argv)
 
-    options = Cnf.SubTree("Init-Dirs::Options")
+    options = Cnf.subtree("Init-Dirs::Options")
     if options["Help"]:
         usage()
     elif arguments:

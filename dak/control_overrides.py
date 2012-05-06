@@ -320,7 +320,7 @@ def main ():
     if not cnf.has_key("Control-Overrides::Options::Type"):
         cnf["Control-Overrides::Options::Type"] = "deb"
 
-    file_list = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    file_list = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
     if cnf["Control-Overrides::Options::Help"]:
         usage()

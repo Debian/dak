@@ -175,9 +175,9 @@ def main():
         if not Cnf.has_key("Graph::Options::%s" % (i)):
             Cnf["Graph::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Graph::Options")
+    Options = Cnf.subtree("Graph::Options")
     if Options["Help"]:
         usage()
 
@@ -187,7 +187,7 @@ def main():
         for i in Cnf["Graph::Options::Names"].split(","):
             names.append(i)
     elif Cnf.has_key("Graph::Names"):
-        names = Cnf.ValueList("Graph::Names")
+        names = Cnf.value_list("Graph::Names")
     else:
         names = default_names
 
@@ -199,7 +199,7 @@ def main():
             extra_rrdtool_args.extend(f.read().strip().split("\n"))
             f.close()
     elif Cnf.has_key("Graph::Extra-Rrd"):
-        for i in Cnf.ValueList("Graph::Extra-Rrd"):
+        for i in Cnf.value_list("Graph::Extra-Rrd"):
             f = open(i)
             extra_rrdtool_args.extend(f.read().strip().split("\n"))
             f.close()

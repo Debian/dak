@@ -368,10 +368,10 @@ def do_bxa_notification(upload):
     summary = ""
     for f in files.keys():
         if files[f]["type"] == "deb":
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(f)))
+            control = apt_pkg.TagSection(utils.deb_extract_control(utils.open_file(f)))
             summary += "\n"
-            summary += "Package: %s\n" % (control.Find("Package"))
-            summary += "Description: %s\n" % (control.Find("Description"))
+            summary += "Package: %s\n" % (control.find("Package"))
+            summary += "Description: %s\n" % (control.find("Description"))
     upload.Subst["__BINARY_DESCRIPTIONS__"] = summary
     bxa_mail = utils.TemplateSubst(upload.Subst,Config()["Dir::Templates"]+"/process-new.bxa_notification")
     utils.send_mail(bxa_mail)
@@ -400,7 +400,7 @@ def add_overrides (new, upload, session):
 
     session.commit()
 
-    if Config().FindB("Dinstall::BXANotify"):
+    if Config().find_b("Dinstall::BXANotify"):
         do_bxa_notification(upload)
 
 ################################################################################
@@ -774,14 +774,14 @@ def main():
         if not cnf.has_key("Process-New::Options::%s" % (i)):
             cnf["Process-New::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
+    changes_files = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
     if len(changes_files) == 0:
         new_queue = get_policy_queue('new', session );
         changes_paths = [ os.path.join(new_queue.path, j) for j in utils.get_changes_files(new_queue.path) ]
     else:
         changes_paths = [ os.path.abspath(j) for j in changes_files ]
 
-    Options = cnf.SubTree("Process-New::Options")
+    Options = cnf.subtree("Process-New::Options")
 
     if Options["Help"]:
         usage()

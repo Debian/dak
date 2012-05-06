@@ -158,7 +158,7 @@ def main():
                  ('v',"verbose", "%s::%s" % (options_prefix,"Verbose")),
                 ]
 
-    args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments,sys.argv)
+    args = apt_pkg.parse_commandline(cnf.Cnf, arguments,sys.argv)
 
     num_threads = 1
 

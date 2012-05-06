@@ -298,8 +298,8 @@ def main():
                   ('m', "maxdiffs", "Generate-Index-Diffs::Options::MaxDiffs", "hasArg"),
                   ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
                 ]
-    suites = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Generate-Index-Diffs::Options")
+    suites = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
+    Options = Cnf.subtree("Generate-Index-Diffs::Options")
     if Options.has_key("Help"): usage()
 
     maxdiffs = Options.get("MaxDiffs::Default", "56")
@@ -318,11 +318,11 @@ def main():
         Cnf["Dir::Root"] = Options["RootDir"]
 
     if not suites:
-        suites = Cnf.SubTree("Suite").List()
+        suites = Cnf.subtree("Suite").list()
 
     for suitename in suites:
         print "Processing: " + suitename
-        SuiteBlock = Cnf.SubTree("Suite::" + suitename)
+        SuiteBlock = Cnf.subtree("Suite::" + suitename)
 
         suiteobj = get_suite(suitename.lower())
 
@@ -336,11 +336,11 @@ def main():
         architectures = get_suite_architectures(suite, skipall=True)
 
         if SuiteBlock.has_key("Components"):
-            components = SuiteBlock.ValueList("Components")
+            components = SuiteBlock.value_list("Components")
         else:
             components = []
 
-        suite_suffix = Cnf.Find("Dinstall::SuiteSuffix")
+        suite_suffix = Cnf.find("Dinstall::SuiteSuffix")
         if components and suite_suffix:
             longsuite = suite + "/" + suite_suffix
         else:

@@ -86,8 +86,8 @@ def main():
                  ('l', "limit", 'Metadata::Options::Limit', "HasArg"),
                  ('f', "force", 'Metadata::Options::Force'),
                 ]
-    args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments, sys.argv)
-    options = cnf.SubTree('Metadata::Options')
+    args = apt_pkg.parse_commandline(cnf.Cnf, arguments, sys.argv)
+    options = cnf.subtree('Metadata::Options')
 
     if (len(args) != 1) or options['Help']:
         usage()

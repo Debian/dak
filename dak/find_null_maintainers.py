@@ -53,9 +53,9 @@ def main():
         if not cnf.has_key("Find-Null-Maintainers::Options::%s" % (i)):
             cnf["Find-Null-Maintainers::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
-    Options = cnf.SubTree("Find-Null-Maintainers::Options")
+    Options = cnf.subtree("Find-Null-Maintainers::Options")
     if Options["Help"]:
         usage()
 

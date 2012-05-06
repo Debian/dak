@@ -84,9 +84,9 @@ def main():
         if not cnf.has_key("Import-LDAP-Fingerprints::Options::%s" % (i)):
             cnf["Import-LDAP-Fingerprints::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
-    Options = cnf.SubTree("Import-LDAP-Fingerprints::Options")
+    Options = cnf.subtree("Import-LDAP-Fingerprints::Options")
     if Options["Help"]:
         usage()
 
@@ -173,7 +173,7 @@ SELECT f.fingerprint, f.id, u.uid FROM fingerprint f, uid u WHERE f.uid = u.id
                 print "Assigning %s to 0x%s." % (uid, fingerprint)
         else:
             extra_keyrings = ""
-            for keyring in cnf.ValueList("Import-LDAP-Fingerprints::ExtraKeyrings"):
+            for keyring in cnf.value_list("Import-LDAP-Fingerprints::ExtraKeyrings"):
                 extra_keyrings += " --keyring=%s" % (keyring)
             cmd = "gpg %s %s --list-key %s" \
                   % (utils.gpg_keyring_args(), extra_keyrings, fingerprint)

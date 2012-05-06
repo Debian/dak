@@ -619,9 +619,9 @@ def main():
         if not Cnf.has_key("Queue-Report::Options::%s" % (i)):
             Cnf["Queue-Report::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Queue-Report::Options")
+    Options = Cnf.subtree("Queue-Report::Options")
     if Options["Help"]:
         usage()
 
@@ -637,7 +637,7 @@ def main():
         for i in Cnf["Queue-Report::Options::Directories"].split(","):
             queue_names.append(i)
     elif Cnf.has_key("Queue-Report::Directories"):
-        queue_names = Cnf.ValueList("Queue-Report::Directories")
+        queue_names = Cnf.value_list("Queue-Report::Directories")
     else:
         queue_names = [ "byhand", "new" ]
 

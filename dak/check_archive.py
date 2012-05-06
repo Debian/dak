@@ -529,9 +529,9 @@ def main ():
         if not cnf.has_key("Check-Archive::Options::%s" % (i)):
             cnf["Check-Archive::Options::%s" % (i)] = ""
 
-    args = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    args = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
-    Options = cnf.SubTree("Check-Archive::Options")
+    Options = cnf.subtree("Check-Archive::Options")
     if Options["Help"]:
         usage()
 

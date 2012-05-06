@@ -65,24 +65,24 @@ class Config(object):
     def _readconf(self):
         apt_pkg.init()
 
-        self.Cnf = apt_pkg.newConfiguration()
+        self.Cnf = apt_pkg.Configuration()
 
-        apt_pkg.ReadConfigFileISC(self.Cnf, which_conf_file())
+        apt_pkg.read_config_file_isc(self.Cnf, which_conf_file())
 
         # Check whether our dak.conf was the real one or
         # just a pointer to our main one
         res = socket.gethostbyaddr(socket.gethostname())
         conffile = self.Cnf.get("Config::" + res[0] + "::DakConfig")
         if conffile:
-            apt_pkg.ReadConfigFileISC(self.Cnf, conffile)
+            apt_pkg.read_config_file_isc(self.Cnf, conffile)
 
         # Rebind some functions
         # TODO: Clean this up
         self.get = self.Cnf.get
-        self.SubTree = self.Cnf.SubTree
-        self.ValueList = self.Cnf.ValueList
-        self.Find = self.Cnf.Find
-        self.FindB = self.Cnf.FindB
+        self.subtree = self.Cnf.subtree
+        self.value_list = self.Cnf.value_list
+        self.find = self.Cnf.find
+        self.find_b = self.Cnf.find_b
 
     def has_key(self, name):
         return self.Cnf.has_key(name)

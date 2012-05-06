@@ -439,8 +439,8 @@ def main():
         if not cnf.has_key("Dinstall::Options::%s" % (i)):
             cnf["Dinstall::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Dinstall::Options")
+    changes_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Dinstall::Options")
 
     if Options["Help"]:
         usage()

@@ -537,9 +537,9 @@ def main():
         if not Cnf.has_key("Admin::Options::%s" % (i)):
             Cnf["Admin::Options::%s" % (i)] = ""
 
-    arguments = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
+    arguments = apt_pkg.parse_commandline(Cnf, arguments, sys.argv)
 
-    options = Cnf.SubTree("Admin::Options")
+    options = Cnf.subtree("Admin::Options")
     if options["Help"] or len(arguments) < 1:
         usage()
     if options["Dry-Run"]:

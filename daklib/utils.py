@@ -762,7 +762,7 @@ def which_conf_file ():
 
     res = socket.getfqdn()
     # In case we allow local config files per user, try if one exists
-    if Cnf.FindB("Config::" + res + "::AllowLocalConfig"):
+    if Cnf.find_b("Config::" + res + "::AllowLocalConfig"):
         homedir = os.getenv("HOME")
         confpath = os.path.join(homedir, "/etc/dak.conf")
         if os.path.exists(confpath):
@@ -778,7 +778,7 @@ def which_conf_file ():
 def which_apt_conf_file ():
     res = socket.getfqdn()
     # In case we allow local config files per user, try if one exists
-    if Cnf.FindB("Config::" + res + "::AllowLocalConfig"):
+    if Cnf.find_b("Config::" + res + "::AllowLocalConfig"):
         homedir = os.getenv("HOME")
         confpath = os.path.join(homedir, "/etc/dak.conf")
         if os.path.exists(confpath):
@@ -874,7 +874,7 @@ def changes_compare (a, b):
     # Sort by source version
     a_version = a_changes.get("version", "0")
     b_version = b_changes.get("version", "0")
-    q = apt_pkg.VersionCompare(a_version, b_version)
+    q = apt_pkg.version_compare(a_version, b_version)
     if q:
         return q
 
@@ -1547,12 +1547,12 @@ def get_changes_files(from_dir):
 
 apt_pkg.init()
 
-Cnf = apt_pkg.newConfiguration()
+Cnf = apt_pkg.Configuration()
 if not os.getenv("DAK_TEST"):
-    apt_pkg.ReadConfigFileISC(Cnf,default_config)
+    apt_pkg.read_config_file_isc(Cnf,default_config)
 
 if which_conf_file() != default_config:
-    apt_pkg.ReadConfigFileISC(Cnf,which_conf_file())
+    apt_pkg.read_config_file_isc(Cnf,which_conf_file())
 
 ################################################################################
 

@@ -396,8 +396,8 @@ def main ():
                  ('s',"suite","Generate-Packages-Sources::Options::Suite"),
                  ('f',"force","Generate-Packages-Sources::Options::Force")]
 
-    suite_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Generate-Packages-Sources::Options")
+    suite_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Generate-Packages-Sources::Options")
 
     if Options["Help"]:
         usage()

@@ -80,8 +80,8 @@ def main ():
         if not cnf.has_key("Ls::Options::%s" % (i)):
             cnf["Ls::Options::%s" % (i)] = ""
 
-    packages = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Ls::Options")
+    packages = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Ls::Options")
 
     if Options["Help"]:
         usage()
@@ -166,7 +166,7 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
             highver.setdefault(pkg,"")
             if not d[pkg].has_key(version):
                 d[pkg][version] = {}
-                if apt_pkg.VersionCompare(version, highver[pkg]) > 0:
+                if apt_pkg.version_compare(version, highver[pkg]) > 0:
                     highver[pkg] = version
             if not d[pkg][version].has_key(suite):
                 d[pkg][version][suite] = []
@@ -176,7 +176,7 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
         packages.sort()
         for pkg in packages:
             versions = d[pkg].keys()
-            versions.sort(apt_pkg.VersionCompare)
+            versions.sort(apt_pkg.version_compare)
             for version in versions:
                 suites = d[pkg][version].keys()
                 suites.sort()

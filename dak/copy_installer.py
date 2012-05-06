@@ -44,8 +44,8 @@ def main():
     for option in [ "help", "source", "destination", "no-action" ]:
         if not cnf.has_key("Copy-Installer::Options::%s" % (option)):
             cnf["Copy-Installer::Options::%s" % (option)] = ""
-    extra_arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Copy-Installer::Options")
+    extra_arguments = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Copy-Installer::Options")
 
     if Options["Help"]:
         usage()

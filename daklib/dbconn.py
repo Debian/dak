@@ -75,6 +75,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from config import Config
 from textutils import fix_maintainer
 from dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
+import utils
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -561,7 +562,7 @@ class DBBinary(ORMObject):
         import apt_inst
         fullpath = self.poolfile.fullpath
         deb_file = open(fullpath, 'r')
-        stanza = apt_inst.debExtractControl(deb_file)
+        stanza = utils.deb_extract_control(deb_file)
         deb_file.close()
 
         return stanza
