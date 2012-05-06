@@ -3357,8 +3357,8 @@ class DBConn(object):
         mapper(Architecture, self.tbl_architecture,
             properties = dict(arch_id = self.tbl_architecture.c.id,
                suites = relation(Suite, secondary=self.tbl_suite_architectures,
-                   order_by='suite_name',
-                   backref=backref('architectures', order_by='arch_string'))),
+                   order_by=self.tbl_suite.c.suite_name,
+                   backref=backref('architectures', order_by=self.tbl_architecture.c.arch_string))),
             extension = validator)
 
         mapper(Archive, self.tbl_archive,
