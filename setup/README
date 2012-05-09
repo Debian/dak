@@ -2,7 +2,7 @@ Initialising a dak database schema
 ==================================
 
 The following packages are needed for the database:
- * postgresql-9.0 postgresql-client-9.0 postgresql-9.0-debversion
+ * postgresql-9.1 postgresql-client-9.1 postgresql-9.1-debversion
 and the following packages for dak itself:
  * python-psycopg2 python-sqlalchemy python-apt gnupg dpkg-dev lintian
    binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
@@ -19,10 +19,21 @@ The following roles are assumed to exist:
 
 For the purposes of this document, we'll be working in /srv/dak
 
-Set up the dak user on both the system and in postgres:
+Set up the dak user:
 # sudo addgroup --system ftpmaster
 # sudo adduser --system dak --ingroup ftpmaster --shell /bin/bash
-# sudo -u postgres createuser -s dak
+
+Create postgres roles and database:
+# sudo -u postgres psql
+  CREATE USER dak CREATEROLE;
+  CREATE ROLE ftpmaster;
+  CREATE ROLE ftpteam WITH ROLE ftpmaster;
+  CREATE ROLE ftptrainee WITH ROLE ftpmaster, ftpteam;
+
+  CREATE DATABASE projectb WITH OWNER dak TEMPLATE template0 ENCODING 'SQL_ASCII';
+  \c projectb
+  CREATE EXTENSION IF NOT EXISTS plpgsql;
+  CREATE EXTENSION IF NOT EXISTS debversion;
 
 Set up the dak directory:
 # sudo mkdir /etc/dak
@@ -36,17 +47,6 @@ Create a symlink to /srv/dak/dak.conf in /etc/dak
 
 Become the dak user:
 # sudo -u dak -s -H
-
-Create the additional roles:
-# createuser -S -R -D ftpmaster
-# createuser -S -R -D ftpteam
-# createuser -S -R -D ftptrainee
-# psql -d projectb -c "ALTER GROUP ftpteam ADD USER ftpmaster"
-# psql -d projectb -c "ALTER GROUP ftptrainee ADD USER ftpmaster"
-# psql -d projectb -c "ALTER GROUP ftptrainee ADD USER ftpteam"
-
-Create an empty database with SQL_ASCII encoding:
-# createdb -T template0 -E SQL_ASCII -O dak projectb
 
 Import the schema.  We redirect STDOUT to /dev/null as otherwise it's
 impossible to see if something fails.
