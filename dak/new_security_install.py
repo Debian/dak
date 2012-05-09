@@ -188,9 +188,11 @@ def main():
         acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), dbchange.source, version)
         acceptfiles[acceptfilename]=1
 
+    print "Would create %s now and then go on to accept this package, if you allow me to." % (acceptfiles.keys())
     if Options["No-Action"]:
-        print "Would create %s now and then go on to accept this package, but No-Action is set" % (acceptfiles.keys())
         sys.exit(0)
+    else:
+        raw_input("Press Enter to continue")
 
     for acceptfilename in acceptfiles.keys():
         accept_file = file(acceptfilename, "w")
