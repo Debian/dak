@@ -2,7 +2,7 @@ Initialising a dak database schema
 ==================================
 
 The following packages are needed for the database:
- * postgresql-9.0 postgresql-client-9.0 postgresql-plperl-9.0 postgresql-plpython-9.0 postgresql-9.0-debversion 
+ * postgresql-9.0 postgresql-client-9.0 postgresql-9.0-debversion
 and the following packages for dak itself:
  * python-psycopg2 python-sqlalchemy python-apt gnupg dpkg-dev lintian
    binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
