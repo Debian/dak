@@ -720,18 +720,10 @@ class Upload(object):
             # Can't continue, none of the checks on control would work.
             return
 
-        # Check for mandantory "Description:"
-        deb_file.seek(0)
-        try:
-            apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))["Description"] + '\n'
-        except:
-            self.rejects.append("%s: Missing Description in binary package" % (f))
-            return
-
         deb_file.close()
 
         # Check for mandatory fields
-        for field in [ "Package", "Architecture", "Version" ]:
+        for field in [ "Package", "Architecture", "Version", "Description" ]:
             if control.Find(field) == None:
                 # Can't continue
                 self.rejects.append("%s: No %s field in control." % (f, field))
