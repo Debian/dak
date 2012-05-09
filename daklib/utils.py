@@ -33,6 +33,7 @@ import sys
 import tempfile
 import traceback
 import stat
+import apt_inst
 import apt_pkg
 import time
 import re
@@ -1625,3 +1626,9 @@ def get_packages_from_ftp(root, suite, component, architecture):
     Packages = apt_pkg.ParseTagFile(packages)
     os.unlink(temp_file)
     return Packages
+
+################################################################################
+
+def deb_extract_control(fh):
+    """extract DEBIAN/control from a binary package"""
+    return apt_inst.DebFile(fh).control.extractdata("control")
