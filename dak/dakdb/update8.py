@@ -48,8 +48,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN copychanges TEXT;")
         query = "UPDATE suite SET copychanges = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            copychanges = Cnf.Find("Suite::%s::CopyChanges" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            copychanges = Cnf.find("Suite::%s::CopyChanges" % (suite))
             print "[CopyChanges] Processing suite %s" % (suite)
             if not copychanges:
                 continue
@@ -58,8 +58,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN copydotdak TEXT;")
         query = "UPDATE suite SET copydotdak = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            copydotdak = Cnf.Find("Suite::%s::CopyDotDak" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            copydotdak = Cnf.find("Suite::%s::CopyDotDak" % (suite))
             print "[CopyDotDak] Processing suite %s" % (suite)
             if not copydotdak:
                 continue
@@ -68,8 +68,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN commentsdir TEXT;")
         query = "UPDATE suite SET commentsdir = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            commentsdir = Cnf.Find("Suite::%s::CommentsDir" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            commentsdir = Cnf.find("Suite::%s::CommentsDir" % (suite))
             print "[CommentsDir] Processing suite %s" % (suite)
             if not commentsdir:
                 continue
@@ -78,8 +78,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN overridesuite TEXT;")
         query = "UPDATE suite SET overridesuite = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            overridesuite = Cnf.Find("Suite::%s::OverrideSuite" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            overridesuite = Cnf.find("Suite::%s::OverrideSuite" % (suite))
             print "[OverrideSuite] Processing suite %s" % (suite)
             if not overridesuite:
                 continue
@@ -88,8 +88,8 @@ def do_update(self):
 
         c.execute("ALTER TABLE suite ADD COLUMN changelogbase TEXT;")
         query = "UPDATE suite SET changelogbase = %s WHERE suite_name = %s"  #: Update query
-        for suite in Cnf.SubTree("Suite").List():
-            changelogbase = Cnf.Find("Suite::%s::ChangeLogBase" % (suite))
+        for suite in Cnf.subtree("Suite").list():
+            changelogbase = Cnf.find("Suite::%s::ChangeLogBase" % (suite))
             print "[ChangeLogBase] Processing suite %s" % (suite)
             if not changelogbase:
                 continue

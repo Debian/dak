@@ -313,9 +313,9 @@ def main():
                  ('f',"force","Generate-Packages-Sources::Options::Force"),
                  ('o','option','','ArbItem')]
 
-    suite_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    suite_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     try:
-        Options = cnf.SubTree("Generate-Packages-Sources::Options")
+        Options = cnf.subtree("Generate-Packages-Sources::Options")
     except KeyError:
         Options = {}
 

@@ -76,9 +76,9 @@ def init():
         if not Cnf.has_key("Edit-Transitions::Options::%s" % (i)):
             Cnf["Edit-Transitions::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Edit-Transitions::Options")
+    Options = Cnf.subtree("Edit-Transitions::Options")
 
     if Options["help"]:
         usage()
@@ -415,7 +415,7 @@ def check_transitions(transitions):
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
             current = sourceobj.version
-            compare = apt_pkg.VersionCompare(current, expected)
+            compare = apt_pkg.version_compare(current, expected)
             if compare < 0:
                 # This is still valid, the current version in database is older than
                 # the new version we wait for
@@ -540,7 +540,7 @@ def transition_info(transitions):
             # No package in testing
             print "Transition source %s not in testing, transition still ongoing." % (source)
         else:
-            compare = apt_pkg.VersionCompare(sourceobj.version, expected)
+            compare = apt_pkg.version_compare(sourceobj.version, expected)
             print "Apt compare says: %s" % (compare)
             if compare < 0:
                 # This is still valid, the current version in database is older than

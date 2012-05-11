@@ -263,8 +263,8 @@ def main():
         if not Cnf.has_key('Make-Changelog::Options::%s' % (i)):
             Cnf['Make-Changelog::Options::%s' % (i)] = ''
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
-    Options = Cnf.SubTree('Make-Changelog::Options')
+    apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
+    Options = Cnf.subtree('Make-Changelog::Options')
     suite = Cnf['Make-Changelog::Options::Suite']
     base_suite = Cnf['Make-Changelog::Options::Base-Suite']
     binnmu = Cnf['Make-Changelog::Options::binNMU']

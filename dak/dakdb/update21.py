@@ -115,7 +115,7 @@ def do_update(self):
         cnf = Config()
         c.execute("""INSERT INTO queue (queue_name, path) VALUES ('buildd', '%s')""" % cnf["Dir::QueueBuild"].rstrip('/'))
 
-        for s in cnf.ValueList("Dinstall::QueueBuildSuites"):
+        for s in cnf.value_list("Dinstall::QueueBuildSuites"):
             c.execute("""INSERT INTO suite_queue_copy (suite, queue)
                               VALUES ( (SELECT id FROM suite WHERE suite_name = '%s'),
                                        (SELECT id FROM queue WHERE queue_name = 'buildd'))""" % s.lower())

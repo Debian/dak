@@ -269,7 +269,7 @@ def init():
                  ("p","link-path","Show-Deferred::LinkPath","HasArg"),
                  ("d","deferred-queue","Show-Deferred::DeferredQueue","HasArg"),
                  ('r',"rrd","Show-Deferred::Options::Rrd", "HasArg")]
-    args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
+    args = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
     for i in ["help"]:
         if not Cnf.has_key("Show-Deferred::Options::%s" % (i)):
             Cnf["Show-Deferred::Options::%s" % (i)] = ""
@@ -278,7 +278,7 @@ def init():
             print >> sys.stderr, """Show-Deferred::%s is mandatory.
   set via config file or command-line option %s"""%(i,j)
 
-    Options = Cnf.SubTree("Show-Deferred::Options")
+    Options = Cnf.subtree("Show-Deferred::Options")
     if Options["help"]:
         usage()
 

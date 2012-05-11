@@ -53,9 +53,9 @@ def do_update(self):
         for suite in s:
             suites[suite[1]]=suite[0]
 
-        for suite in Cnf.SubTree("Suite").List():
+        for suite in Cnf.subtree("Suite").list():
             print "Processing suite %s" % (suite)
-            architectures = Cnf.SubTree("Suite::" + suite).ValueList("Architectures")
+            architectures = Cnf.subtree("Suite::" + suite).value_list("Architectures")
             suite = suite.lower()
             for arch in architectures:
                 c.execute(query, [suites[suite], archs[arch]])

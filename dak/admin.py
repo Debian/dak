@@ -110,7 +110,7 @@ Perform administrative work on the dak database.
 ################################################################################
 
 def __architecture_list(d, args):
-    q = d.session().query(Architecture).order_by('arch_string')
+    q = d.session().query(Architecture).order_by(Architecture.arch_string)
     for j in q.all():
         # HACK: We should get rid of source from the arch table
         if j.arch_string == 'source': continue
@@ -184,7 +184,7 @@ dispatch['a'] = architecture
 
 def __suite_list(d, args):
     s = d.session()
-    for j in s.query(Suite).order_by('suite_name').all():
+    for j in s.query(Suite).order_by(Suite.suite_name).all():
         print j.suite_name
 
 def __suite_show(d, args):
@@ -236,7 +236,7 @@ def __suite_add(d, args, addallarches=False):
 
     if addallarches:
         arches = []
-        q = s.query(Architecture).order_by('arch_string')
+        q = s.query(Architecture).order_by(Architecture.arch_string)
         for arch in q.all():
             suite.architectures.append(arch)
             arches.append(arch.arch_string)
@@ -273,7 +273,7 @@ dispatch['s'] = suite
 
 def __suite_architecture_list(d, args):
     s = d.session()
-    for j in s.query(Suite).order_by('suite_name'):
+    for j in s.query(Suite).order_by(Suite.suite_name):
         architectures = j.get_architectures(skipsrc = True, skipall = True)
         print j.suite_name + ': ' + \
               ', '.join([a.arch_string for a in architectures])
@@ -375,7 +375,7 @@ dispatch['s-a'] = suite_architecture
 
 def __version_check_list(d):
     session = d.session()
-    for s in session.query(Suite).order_by('suite_name'):
+    for s in session.query(Suite).order_by(Suite.suite_name):
         __version_check_list_suite(d, s.suite_name)
 
 def __version_check_list_suite(d, suite_name):
@@ -537,9 +537,9 @@ def main():
         if not Cnf.has_key("Admin::Options::%s" % (i)):
             Cnf["Admin::Options::%s" % (i)] = ""
 
-    arguments = apt_pkg.ParseCommandLine(Cnf, arguments, sys.argv)
+    arguments = apt_pkg.parse_commandline(Cnf, arguments, sys.argv)
 
-    options = Cnf.SubTree("Admin::Options")
+    options = Cnf.subtree("Admin::Options")
     if options["Help"] or len(arguments) < 1:
         usage()
     if options["Dry-Run"]:

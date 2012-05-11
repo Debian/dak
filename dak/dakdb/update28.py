@@ -40,7 +40,7 @@ def _suites():
     """
     return a list of suites to operate on
     """
-    suites = Config().SubTree("Suite").List()
+    suites = Config().subtree("Suite").list()
     return suites
 
 def arches(cursor, suite):

@@ -124,8 +124,8 @@ def main():
                  ('l', "limit",     'Contents::Options::Limit',     "HasArg"),
                  ('f', "force",     'Contents::Options::Force'),
                 ]
-    args = apt_pkg.ParseCommandLine(cnf.Cnf, arguments, sys.argv)
-    options = cnf.SubTree('Contents::Options')
+    args = apt_pkg.parse_commandline(cnf.Cnf, arguments, sys.argv)
+    options = cnf.subtree('Contents::Options')
 
     if (len(args) != 1) or options['Help']:
         usage()

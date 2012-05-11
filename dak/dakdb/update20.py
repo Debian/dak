@@ -59,7 +59,7 @@ def do_update(self):
             c.execute("UPDATE queue SET path = %s WHERE id = %s", (dir, row[0]))
 
         print "Adding missing queues to the queue table"
-        for q in cnf.SubTree("Dir::Queue").keys():
+        for q in cnf.subtree("Dir::Queue").keys():
             qname = q.lower()
             if qname in seenqueues.keys():
                 continue

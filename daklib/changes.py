@@ -34,10 +34,9 @@ import datetime
 from cPickle import Unpickler, Pickler
 from errno import EPERM
 
-from apt_inst import debExtractControl
-from apt_pkg import ParseSection
+from apt_pkg import TagSection
 
-from utils import open_file, fubar, poolify
+from utils import open_file, fubar, poolify, deb_extract_control
 from config import *
 from dbconn import *
 
@@ -127,7 +126,7 @@ class Changes(object):
 
                 if entry["type"] == "deb":
                     deb_fh = open_file(name)
-                    summary += ParseSection(debExtractControl(deb_fh))["Description"] + '\n'
+                    summary += TagSection(deb_extract_control(deb_fh))["Description"] + '\n'
                     deb_fh.close()
 
             else:

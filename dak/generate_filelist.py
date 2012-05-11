@@ -155,8 +155,8 @@ def main():
         cnf['Filelist::Options::Architecture'] = ','.join(architectures).encode()
     cnf['Filelist::Options::Help'] = ''
     cnf['Filelist::Options::Incremental'] = ''
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Filelist::Options")
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Filelist::Options")
     if Options['Help']:
         usage()
     pool = DakProcessPool()

@@ -47,7 +47,7 @@ def do_update(self):
 
         # Migrate config file values into database
         if cnf.has_key("Check-Overrides::OverrideSuites"):
-            for suitename in cnf.SubTree("Check-Overrides::OverrideSuites").List():
+            for suitename in cnf.subtree("Check-Overrides::OverrideSuites").list():
                 if cnf.get("Check-Overrides::OverrideSuites::%s::Process" % suitename, "0") == "1":
                     print "Marking %s to have overrides processed automatically" % suitename.lower()
                     c.execute("UPDATE suite SET overrideprocess = TRUE WHERE suite_name = %s", [suitename.lower()])

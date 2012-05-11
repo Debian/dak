@@ -208,8 +208,8 @@ def main ():
                  ('n',"no-action","Clean-Queues::Options::No-Action"),
                  ('v',"verbose","Clean-Queues::Options::Verbose")]
 
-    apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
-    Options = cnf.SubTree("Clean-Queues::Options")
+    apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
+    Options = cnf.subtree("Clean-Queues::Options")
 
     if Options["Help"]:
         usage()

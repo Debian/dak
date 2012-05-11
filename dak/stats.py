@@ -198,9 +198,9 @@ def main ():
         if not Cnf.has_key("Stats::Options::%s" % (i)):
             Cnf["Stats::Options::%s" % (i)] = ""
 
-    args = apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    args = apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Stats::Options")
+    Options = Cnf.subtree("Stats::Options")
     if Options["Help"]:
         usage()
 

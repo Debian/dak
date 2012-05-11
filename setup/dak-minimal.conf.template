@@ -49,6 +49,12 @@ Dir
   TempPath "__DAKBASE__/tmp/";
 };
 
+Rm
+{
+  LogFile "__DAKBASE__/log/removals.txt";
+  LogFile822 "__DAKBASE__/log/removals.822";
+};
+
 Urgency
 {
   Default "low";

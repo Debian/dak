@@ -258,12 +258,12 @@ def init(session):
         if not cnf.has_key("Show-New::Options::%s" % (i)):
             cnf["Show-New::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
+    changes_files = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
     if len(changes_files) == 0:
         new_queue = get_policy_queue('new', session );
         changes_files = utils.get_changes_files(new_queue.path)
 
-    Options = cnf.SubTree("Show-New::Options")
+    Options = cnf.subtree("Show-New::Options")
 
     if Options["help"]:
         usage()

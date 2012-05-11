@@ -142,9 +142,9 @@ def main():
         if not cnf.has_key("Security::Options::%s" % (i)):
             cnf["Security::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    changes_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
-    Options = cnf.SubTree("Security::Options")
+    Options = cnf.subtree("Security::Options")
     if Options['Help']:
         usage()
 

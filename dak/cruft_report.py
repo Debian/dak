@@ -106,7 +106,7 @@ def do_anais(architecture, binaries_list, source, session):
             version = i[1]
             if architectures.has_key(arch):
                 versions.append(version)
-        versions.sort(apt_pkg.VersionCompare)
+        versions.sort(apt_pkg.version_compare)
         if versions:
             latest_version = versions.pop()
         else:
@@ -123,7 +123,7 @@ def do_anais(architecture, binaries_list, source, session):
         if versions_d != {}:
             anais_output += "\n (*) %s_%s [%s]: %s\n" % (binary, latest_version, source, architecture)
             versions = versions_d.keys()
-            versions.sort(apt_pkg.VersionCompare)
+            versions.sort(apt_pkg.version_compare)
             for version in versions:
                 arches = versions_d[version]
                 arches.sort()
@@ -401,7 +401,7 @@ def do_dubious_nbs(dubious_nbs):
                                        source_binaries.get(source, "(source does not exist)"))
         print "      won't admit to building:"
         versions = dubious_nbs[source].keys()
-        versions.sort(apt_pkg.VersionCompare)
+        versions.sort(apt_pkg.version_compare)
         for version in versions:
             packages = dubious_nbs[source][version].keys()
             packages.sort()
@@ -598,9 +598,9 @@ def main ():
     if not cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
         cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp-master.debian.org/scripts/nfu"
 
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
-    Options = cnf.SubTree("Cruft-Report::Options")
+    Options = cnf.subtree("Cruft-Report::Options")
     if Options["Help"]:
         usage()
 
@@ -722,7 +722,7 @@ def main ():
                 if source == "":
                     source = package
                 if bin2source.has_key(package) and \
-                       apt_pkg.VersionCompare(version, bin2source[package]["version"]) > 0:
+                       apt_pkg.version_compare(version, bin2source[package]["version"]) > 0:
                     bin2source[package]["version"] = version
                     bin2source[package]["source"] = source
                 else:
@@ -751,10 +751,10 @@ def main ():
     for source in nbs.keys():
         for package in nbs[source].keys():
             versions = nbs[source][package].keys()
-            versions.sort(apt_pkg.VersionCompare)
+            versions.sort(apt_pkg.version_compare)
             latest_version = versions.pop()
             source_version = source_versions.get(source,"0")
-            if apt_pkg.VersionCompare(latest_version, source_version) == 0:
+            if apt_pkg.version_compare(latest_version, source_version) == 0:
                 add_nbs(dubious_nbs, source, latest_version, package, suite_id, session)
 
     if "nviu" in checks:

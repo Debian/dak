@@ -289,8 +289,8 @@ def main ():
     if not cnf.has_key("Rm::Options::Suite"):
         cnf["Rm::Options::Suite"] = "unstable"
 
-    arguments = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Rm::Options")
+    arguments = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Rm::Options")
 
     if Options["Help"]:
         usage()
@@ -441,8 +441,8 @@ def main ():
                 q = session.execute("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
                 for i in q.fetchall():
                     filename = "/".join(i[:2])
-                    control = apt_pkg.ParseSection(apt_inst.debExtractControl(utils.open_file(filename)))
-                    source = control.Find("Source", control.Find("Package"))
+                    control = apt_pkg.TagSection(utils.deb_extract_control(utils.open_file(filename)))
+                    source = control.find("Source", control.find("Package"))
                     source = re_strip_source_version.sub('', source)
                     if source_packages.has_key(source):
                         to_remove.append(i[2:])
@@ -490,7 +490,7 @@ def main ():
     versions = []
     for package in removals:
         versions = d[package].keys()
-        versions.sort(apt_pkg.VersionCompare)
+        versions.sort(apt_pkg.version_compare)
         for version in versions:
             d[package][version].sort(utils.arch_compare_sw)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
@@ -623,9 +623,9 @@ def main ():
     if Options["Done"]:
         Subst_close_rm = Subst_common
         bcc = []
-        if cnf.Find("Dinstall::Bcc") != "":
+        if cnf.find("Dinstall::Bcc") != "":
             bcc.append(cnf["Dinstall::Bcc"])
-        if cnf.Find("Rm::Bcc") != "":
+        if cnf.find("Rm::Bcc") != "":
             bcc.append(cnf["Rm::Bcc"])
         if bcc:
             Subst_close_rm["__BCC__"] = "Bcc: " + ", ".join(bcc)

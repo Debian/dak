@@ -655,7 +655,7 @@ class Upload(object):
         Cnf = Config()
 
         # Handle suite mappings
-        for m in Cnf.ValueList("SuiteMappings"):
+        for m in Cnf.value_list("SuiteMappings"):
             args = m.split()
             mtype = args[0]
             if mtype == "map" or mtype == "silent-map":
@@ -713,47 +713,39 @@ class Upload(object):
         # Extract package control information
         deb_file = utils.open_file(f)
         try:
-            control = apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))
+            control = apt_pkg.TagSection(utils.deb_extract_control(deb_file))
         except:
-            self.rejects.append("%s: debExtractControl() raised %s." % (f, sys.exc_info()[0]))
+            self.rejects.append("%s: deb_extract_control() raised %s." % (f, sys.exc_info()[0]))
             deb_file.close()
             # Can't continue, none of the checks on control would work.
-            return
-
-        # Check for mandantory "Description:"
-        deb_file.seek(0)
-        try:
-            apt_pkg.ParseSection(apt_inst.debExtractControl(deb_file))["Description"] + '\n'
-        except:
-            self.rejects.append("%s: Missing Description in binary package" % (f))
             return
 
         deb_file.close()
 
         # Check for mandatory fields
-        for field in [ "Package", "Architecture", "Version" ]:
-            if control.Find(field) == None:
+        for field in [ "Package", "Architecture", "Version", "Description" ]:
+            if field not in control:
                 # Can't continue
                 self.rejects.append("%s: No %s field in control." % (f, field))
                 return
 
         # Ensure the package name matches the one give in the .changes
-        if not self.pkg.changes["binary"].has_key(control.Find("Package", "")):
-            self.rejects.append("%s: control file lists name as `%s', which isn't in changes file." % (f, control.Find("Package", "")))
+        if not self.pkg.changes["binary"].has_key(control.find("Package", "")):
+            self.rejects.append("%s: control file lists name as `%s', which isn't in changes file." % (f, control.find("Package", "")))
 
         # Validate the package field
-        package = control.Find("Package")
+        package = control["Package"]
         if not re_valid_pkg_name.match(package):
             self.rejects.append("%s: invalid package name '%s'." % (f, package))
 
         # Validate the version field
-        version = control.Find("Version")
+        version = control["Version"]
         if not re_valid_version.match(version):
             self.rejects.append("%s: invalid version number '%s'." % (f, version))
 
         # Ensure the architecture of the .deb is one we know about.
         default_suite = cnf.get("Dinstall::DefaultSuite", "unstable")
-        architecture = control.Find("Architecture")
+        architecture = control["Architecture"]
         upload_suite = self.pkg.changes["distribution"].keys()[0]
 
         if      architecture not in [a.arch_string for a in get_suite_architectures(default_suite, session = session)] \
@@ -766,13 +758,13 @@ class Upload(object):
             self.rejects.append("%s: control file lists arch as `%s', which isn't in changes file." % (f, architecture))
 
         # Sanity-check the Depends field
-        depends = control.Find("Depends")
+        depends = control.find("Depends")
         if depends == '':
             self.rejects.append("%s: Depends field is empty." % (f))
 
         # Sanity-check the Provides field
-        provides = control.Find("Provides")
-        if provides:
+        provides = control.find("Provides")
+        if provides is not None:
             provide = re_spacestrip.sub('', provides)
             if provide == '':
                 self.rejects.append("%s: Provides field is empty." % (f))
@@ -783,8 +775,8 @@ class Upload(object):
 
         # If there is a Built-Using field, we need to check we can find the
         # exact source version
-        built_using = control.Find("Built-Using")
-        if built_using:
+        built_using = control.find("Built-Using")
+        if built_using is not None:
             try:
                 entry["built-using"] = []
                 for dep in apt_pkg.parse_depends(built_using):
@@ -806,19 +798,19 @@ class Upload(object):
 
 
         # Check the section & priority match those given in the .changes (non-fatal)
-        if     control.Find("Section") and entry["section"] != "" \
-           and entry["section"] != control.Find("Section"):
+        if control.find("Section") and entry["section"] != "" \
+           and entry["section"] != control.find("Section"):
             self.warnings.append("%s control file lists section as `%s', but changes file has `%s'." % \
-                                (f, control.Find("Section", ""), entry["section"]))
-        if control.Find("Priority") and entry["priority"] != "" \
-           and entry["priority"] != control.Find("Priority"):
+                                (f, control.find("Section", ""), entry["section"]))
+        if control.find("Priority") and entry["priority"] != "" \
+           and entry["priority"] != control.find("Priority"):
             self.warnings.append("%s control file lists priority as `%s', but changes file has `%s'." % \
-                                (f, control.Find("Priority", ""), entry["priority"]))
+                                (f, control.find("Priority", ""), entry["priority"]))
 
         entry["package"] = package
         entry["architecture"] = architecture
         entry["version"] = version
-        entry["maintainer"] = control.Find("Maintainer", "")
+        entry["maintainer"] = control.find("Maintainer", "")
 
         if f.endswith(".udeb"):
             self.pkg.files[f]["dbtype"] = "udeb"
@@ -827,7 +819,7 @@ class Upload(object):
         else:
             self.rejects.append("%s is neither a .deb or a .udeb." % (f))
 
-        entry["source"] = control.Find("Source", entry["package"])
+        entry["source"] = control.find("Source", entry["package"])
 
         # Get the source version
         source = entry["source"]
@@ -852,7 +844,7 @@ class Upload(object):
         if entry["package"] != file_package:
             self.rejects.append("%s: package part of filename (%s) does not match package name in the %s (%s)." % \
                                 (f, file_package, entry["dbtype"], entry["package"]))
-        epochless_version = re_no_epoch.sub('', control.Find("Version"))
+        epochless_version = re_no_epoch.sub('', control.find("Version"))
 
         #  version
         file_version = m.group(2)
@@ -962,7 +954,7 @@ class Upload(object):
             return
 
         # Handle component mappings
-        for m in cnf.ValueList("ComponentMappings"):
+        for m in cnf.value_list("ComponentMappings"):
             (source, dest) = m.split()
             if entry["component"] == source:
                 entry["original component"] = source
@@ -1116,7 +1108,7 @@ class Upload(object):
             if not has_source:
                 self.rejects.append("no source found and Architecture line in changes mention source.")
 
-            if (not has_binaries) and (not cnf.FindB("Dinstall::AllowSourceOnlyUploads")):
+            if (not has_binaries) and (not cnf.find_b("Dinstall::AllowSourceOnlyUploads")):
                 self.rejects.append("source only uploads are not supported.")
 
     ###########################################################################
@@ -1243,7 +1235,7 @@ class Upload(object):
             if field:
                 # Have apt try to parse them...
                 try:
-                    apt_pkg.ParseSrcDepends(field)
+                    apt_pkg.parse_src_depends(field)
                 except:
                     self.rejects.append("%s: invalid %s field (can not be parsed by apt)." % (dsc_filename, field_name.title()))
 
@@ -1330,7 +1322,7 @@ class Upload(object):
             self.rejects.append("'dpkg-source -x' failed for %s. (%s)" % (dsc_filename, str(e)))
             return
 
-        if not cnf.Find("Dir::BTSVersionTrack"):
+        if not cnf.find("Dir::BTSVersionTrack"):
             return
 
         # Get the upstream version
@@ -1614,7 +1606,7 @@ class Upload(object):
             if not self.pkg.changes.has_key("urgency"):
                 self.pkg.changes["urgency"] = cnf["Urgency::Default"]
             self.pkg.changes["urgency"] = self.pkg.changes["urgency"].lower()
-            if self.pkg.changes["urgency"] not in cnf.ValueList("Urgency::Valid"):
+            if self.pkg.changes["urgency"] not in cnf.value_list("Urgency::Valid"):
                 self.warnings.append("%s is not a valid urgency; it will be treated as %s by testing." % \
                                      (self.pkg.changes["urgency"], cnf["Urgency::Default"]))
                 self.pkg.changes["urgency"] = cnf["Urgency::Default"]
@@ -1888,7 +1880,7 @@ class Upload(object):
             # Will be None if nothing is in testing.
             current = get_source_in_suite(source, "testing", session)
             if current is not None:
-                compare = apt_pkg.VersionCompare(current.version, expected)
+                compare = apt_pkg.version_compare(current.version, expected)
 
             if current is None or compare < 0:
                 # This is still valid, the current version in testing is older than
@@ -2055,7 +2047,7 @@ distribution."""
 
                 del self.Subst["__ANNOUNCE_LIST_ADDRESS__"]
 
-        if cnf.FindB("Dinstall::CloseBugs") and cnf.has_key("Dinstall::BugServer"):
+        if cnf.find_b("Dinstall::CloseBugs") and cnf.has_key("Dinstall::BugServer"):
             summary = self.close_bugs(summary, action)
 
         del self.Subst["__SHORT_SUMMARY__"]
@@ -2219,7 +2211,7 @@ distribution."""
         self.announce(short_summary, 1)
 
         ## Helper stuff for DebBugs Version Tracking
-        if cnf.Find("Dir::BTSVersionTrack"):
+        if cnf.find("Dir::BTSVersionTrack"):
             if self.pkg.changes["architecture"].has_key("source"):
                 (fd, temp_filename) = utils.temp_filename(cnf["Dir::BTSVersionTrack"], prefix=".")
                 version_history = os.fdopen(fd, 'w')
@@ -2272,7 +2264,7 @@ distribution."""
         cnf = Config()
 
         # Abandon the check if override disparity checks have been disabled
-        if not cnf.FindB("Dinstall::OverrideDisparityCheck"):
+        if not cnf.find_b("Dinstall::OverrideDisparityCheck"):
             return
 
         summary = self.pkg.check_override()
@@ -2548,7 +2540,7 @@ distribution."""
         anysuite = [suite] + [ vc.reference.suite_name for vc in get_version_checks(suite, "Enhances") ]
         for (s, v) in sv_list:
             if s in [ x.lower() for x in anysuite ]:
-                if not anyversion or apt_pkg.VersionCompare(anyversion, v) <= 0:
+                if not anyversion or apt_pkg.version_compare(anyversion, v) <= 0:
                     anyversion = v
 
         return anyversion
@@ -2589,7 +2581,7 @@ distribution."""
                 must_be_newer_than.append(target_suite)
 
             for (suite, existent_version) in sv_list:
-                vercmp = apt_pkg.VersionCompare(new_version, existent_version)
+                vercmp = apt_pkg.version_compare(new_version, existent_version)
 
                 if suite in must_be_newer_than and sourceful and vercmp < 1:
                     self.rejects.append("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
@@ -2623,12 +2615,12 @@ distribution."""
                             # we could just stick with the "...old version..." REJECT
                             # for this, I think.
                             self.rejects.append("Won't propogate NEW packages.")
-                        elif apt_pkg.VersionCompare(new_version, add_version) < 0:
+                        elif apt_pkg.version_compare(new_version, add_version) < 0:
                             # propogation would be redundant. no need to reject though.
                             self.warnings.append("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
                             cansave = 1
-                        elif apt_pkg.VersionCompare(new_version, add_version) > 0 and \
-                             apt_pkg.VersionCompare(add_version, target_version) >= 0:
+                        elif apt_pkg.version_compare(new_version, add_version) > 0 and \
+                             apt_pkg.version_compare(add_version, target_version) >= 0:
                             # propogate!!
                             self.warnings.append("Propogating upload to %s" % (addsuite))
                             self.pkg.changes.setdefault("propdistribution", {})

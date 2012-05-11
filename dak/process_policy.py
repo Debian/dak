@@ -126,7 +126,7 @@ def main():
         if not cnf.has_key("Process-Policy::Options::%s" % (i)):
             cnf["Process-Policy::Options::%s" % (i)] = ""
 
-    queue_name = apt_pkg.ParseCommandLine(cnf.Cnf,Arguments,sys.argv)
+    queue_name = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
 
     if len(queue_name) != 1:
         print "E: Specify exactly one policy queue"
@@ -134,7 +134,7 @@ def main():
 
     queue_name = queue_name[0]
 
-    Options = cnf.SubTree("Process-Policy::Options")
+    Options = cnf.subtree("Process-Policy::Options")
 
     if Options["Help"]:
         usage()

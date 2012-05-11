@@ -75,6 +75,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from config import Config
 from textutils import fix_maintainer
 from dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
+import utils
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -110,11 +111,11 @@ class DebVersion(UserDefinedType):
         return None
 
 sa_major_version = sqlalchemy.__version__[0:3]
-if sa_major_version in ["0.5", "0.6"]:
+if sa_major_version in ["0.5", "0.6", "0.7"]:
     from sqlalchemy.databases import postgres
     postgres.ischema_names['debversion'] = DebVersion
 else:
-    raise Exception("dak only ported to SQLA versions 0.5 and 0.6.  See daklib/dbconn.py")
+    raise Exception("dak only ported to SQLA versions 0.5 to 0.7.  See daklib/dbconn.py")
 
 ################################################################################
 
@@ -561,7 +562,7 @@ class DBBinary(ORMObject):
         import apt_inst
         fullpath = self.poolfile.fullpath
         deb_file = open(fullpath, 'r')
-        stanza = apt_inst.debExtractControl(deb_file)
+        stanza = utils.deb_extract_control(deb_file)
         deb_file.close()
 
         return stanza
@@ -3357,8 +3358,8 @@ class DBConn(object):
         mapper(Architecture, self.tbl_architecture,
             properties = dict(arch_id = self.tbl_architecture.c.id,
                suites = relation(Suite, secondary=self.tbl_suite_architectures,
-                   order_by='suite_name',
-                   backref=backref('architectures', order_by='arch_string'))),
+                   order_by=self.tbl_suite.c.suite_name,
+                   backref=backref('architectures', order_by=self.tbl_architecture.c.arch_string))),
             extension = validator)
 
         mapper(Archive, self.tbl_archive,

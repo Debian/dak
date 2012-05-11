@@ -38,64 +38,8 @@ Adds a new user to the dak databases and keyrings
 
     -k, --key                keyid of the User
     -u, --user               userid of the User
-    -c, --create             create a system account for the user
     -h, --help               show this help and exit."""
     sys.exit(exit_code)
-
-################################################################################
-# Stolen from userdir-ldap
-# Compute a random password using /dev/urandom.
-def GenPass():
-    # Generate a 10 character random string
-    SaltVals = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ/."
-    Rand = open("/dev/urandom")
-    Password = ""
-    for i in range(0,15):
-        Password = Password + SaltVals[ord(Rand.read(1)[0]) % len(SaltVals)]
-    return Password
-
-# Compute the MD5 crypted version of the given password
-def HashPass(Password):
-    import crypt
-    # Hash it telling glibc to use the MD5 algorithm - if you dont have
-    # glibc then just change Salt = "$1$" to Salt = ""
-    SaltVals = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/."
-    Salt  = "$1$"
-    Rand = open("/dev/urandom")
-    for x in range(0,10):
-        Salt = Salt + SaltVals[ord(Rand.read(1)[0]) % len(SaltVals)]
-    Pass = crypt.crypt(Password,Salt)
-    if len(Pass) < 14:
-        raise RuntimeError("MD5 password hashing failed, not changing the password!")
-    return Pass
-
-################################################################################
-
-def createMail(login, passwd, keyid, keyring):
-    import GnuPGInterface
-
-    message= """
-
-Additionally there is now an account created for you.
-
-"""
-    message+= "\nYour password for the login %s is: %s\n" % (login, passwd)
-
-    gnupg = GnuPGInterface.GnuPG()
-    gnupg.options.armor = 1
-    gnupg.options.meta_interactive = 0
-    gnupg.options.extra_args.append("--no-default-keyring")
-    gnupg.options.extra_args.append("--always-trust")
-    gnupg.options.extra_args.append("--no-secmem-warning")
-    gnupg.options.extra_args.append("--keyring=%s" % keyring)
-    gnupg.options.recipients = [keyid]
-    proc = gnupg.run(['--encrypt'], create_fhs=['stdin', 'stdout'])
-    proc.handles['stdin'].write(message)
-    proc.handles['stdin'].close()
-    output = proc.handles['stdout'].read()
-    proc.handles['stdout'].close()
-    proc.wait()
-    return output
 
 ################################################################################
 
@@ -106,18 +50,17 @@ def main():
     Cnf = utils.get_conf()
 
     Arguments = [('h',"help","Add-User::Options::Help"),
-                 ('c',"create","Add-User::Options::Create"),
                  ('k',"key","Add-User::Options::Key", "HasArg"),
                  ('u',"user","Add-User::Options::User", "HasArg"),
                  ]
 
-    for i in [ "help", "create" ]:
+    for i in [ "help" ]:
         if not Cnf.has_key("Add-User::Options::%s" % (i)):
             Cnf["Add-User::Options::%s" % (i)] = ""
 
-    apt_pkg.ParseCommandLine(Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
-    Options = Cnf.SubTree("Add-User::Options")
+    Options = Cnf.subtree("Add-User::Options")
     if Options["help"]:
         usage()
 
@@ -187,7 +130,7 @@ def main():
                      name, primary_key)
 
         # Should we send mail to the newly added user?
-        if Cnf.FindB("Add-User::SendEmail"):
+        if Cnf.find_b("Add-User::SendEmail"):
             mail = name + "<" + emails[0] +">"
             Subst = {}
             Subst["__NEW_MAINTAINER__"] = mail

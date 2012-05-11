@@ -125,17 +125,17 @@ def main():
                  ('s', "suite",     "Obsolete::Options::Suite", "HasArg"),
                  ('n', "no-action", "Obsolete::Options::No-Action"),
                  ('f', "force",     "Obsolete::Options::Force")]
-    query_suites = DBConn().session().query(Suite)
-    suites = [suite.suite_name for suite in query_suites.all()]
-    if not cnf.has_key('Obsolete::Options::Suite'):
-        cnf['Obsolete::Options::Suite'] = ','.join(suites)
     cnf['Obsolete::Options::Help'] = ''
     cnf['Obsolete::Options::No-Action'] = ''
     cnf['Obsolete::Options::Force'] = ''
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Obsolete::Options")
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Obsolete::Options")
     if Options['Help']:
         usage()
+    if 'Suite' not in Options:
+        query_suites = DBConn().session().query(Suite)
+        suites = [suite.suite_name for suite in query_suites.all()]
+        cnf['Obsolete::Options::Suite'] = ','.join(suites)
     Logger = daklog.Logger("dominate")
     session = DBConn().session()
     for suite_name in utils.split_args(Options['Suite']):

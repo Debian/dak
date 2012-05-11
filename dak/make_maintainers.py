@@ -71,8 +71,8 @@ def main():
     if not cnf.has_key("Make-Maintainers::Options::Help"):
         cnf["Make-Maintainers::Options::Help"] = ""
 
-    extra_files = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Make-Maintainers::Options")
+    extra_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Make-Maintainers::Options")
 
     if Options["Help"]:
         usage()

@@ -238,8 +238,8 @@ def read_control (filename):
 
     deb_file = utils.open_file(filename)
     try:
-        extracts = apt_inst.debExtractControl(deb_file)
-        control = apt_pkg.ParseSection(extracts)
+        extracts = utils.deb_extract_control(deb_file)
+        control = apt_pkg.TagSection(extracts)
     except:
         print formatted_text("can't parse control info")
         deb_file.close()
@@ -249,17 +249,17 @@ def read_control (filename):
 
     control_keys = control.keys()
 
-    if control.has_key("Depends"):
-        depends_str = control.Find("Depends")
+    if "Depends" in control:
+        depends_str = control["Depends"]
         # create list of dependancy lists
         depends = split_depends(depends_str)
 
-    if control.has_key("Recommends"):
-        recommends_str = control.Find("Recommends")
+    if "Recommends" in control:
+        recommends_str = control["Recommends"]
         recommends = split_depends(recommends_str)
 
-    if control.has_key("Section"):
-        section_str = control.Find("Section")
+    if "Section" in control:
+        section_str = control["Section"]
 
         c_match = re_contrib.search(section_str)
         nf_match = re_nonfree.search(section_str)
@@ -272,12 +272,12 @@ def read_control (filename):
         else :
             # main
             section = colour_output(section_str, 'main')
-    if control.has_key("Architecture"):
-        arch_str = control.Find("Architecture")
+    if "Architecture" in control:
+        arch_str = control["Architecture"]
         arch = colour_output(arch_str, 'arch')
 
-    if control.has_key("Maintainer"):
-        maintainer = control.Find("Maintainer")
+    if "Maintainer" in control:
+        maintainer = control["Maintainer"]
         localhost = re_localhost.search(maintainer)
         if localhost:
             #highlight bad email
@@ -436,13 +436,13 @@ def output_deb_info(suite, filename, packagename, session = None):
             field_value = maintainer
         elif key == 'Description':
             if use_html:
-                field_value = formatted_text(control.Find(key), strip=True)
+                field_value = formatted_text(control.find(key), strip=True)
             else:
-                desc = control.Find(key)
+                desc = control.find(key)
                 desc = re_newlinespace.sub('\n ', desc)
                 field_value = escape_if_needed(desc)
         else:
-            field_value = escape_if_needed(control.Find(key))
+            field_value = escape_if_needed(control.find(key))
         to_print += " "+format_field(key,field_value)+'\n'
     return to_print
 
@@ -598,8 +598,8 @@ def main ():
         if not Cnf.has_key("Examine-Package::Options::%s" % (i)):
             Cnf["Examine-Package::Options::%s" % (i)] = ""
 
-    args = apt_pkg.ParseCommandLine(Cnf,Arguments,sys.argv)
-    Options = Cnf.SubTree("Examine-Package::Options")
+    args = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
+    Options = Cnf.subtree("Examine-Package::Options")
 
     if Options["Help"]:
         usage()

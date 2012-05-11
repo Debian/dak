@@ -417,8 +417,8 @@ def main():
                  ('n',"no-action","Clean-Suites::Options::No-Action"),
                  ('m',"maximum","Clean-Suites::Options::Maximum", "HasArg")]
 
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Clean-Suites::Options")
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Clean-Suites::Options")
 
     if cnf["Clean-Suites::Options::Maximum"] != "":
         try:

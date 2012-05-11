@@ -73,8 +73,8 @@ def main():
     if not cnf.has_key('Override-Disparity::Options::Suite'):
         cnf['Override-Disparity::Options::Suite'] = 'unstable'
 
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree('Override-Disparity::Options')
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree('Override-Disparity::Options')
 
     if Options['help']:
         usage()

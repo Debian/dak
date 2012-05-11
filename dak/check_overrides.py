@@ -321,8 +321,8 @@ def main ():
     for i in [ "help", "no-action" ]:
         if not cnf.has_key("Check-Overrides::Options::%s" % (i)):
             cnf["Check-Overrides::Options::%s" % (i)] = ""
-    apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Check-Overrides::Options")
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Check-Overrides::Options")
 
     if Options["Help"]:
         usage()

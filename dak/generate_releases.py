@@ -145,7 +145,7 @@ class ReleaseWriter(object):
 
         cnf = Config()
 
-        suite_suffix = "%s" % (cnf.Find("Dinstall::SuiteSuffix"))
+        suite_suffix = "%s" % (cnf.find("Dinstall::SuiteSuffix"))
 
         outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s/%s" % (suite.suite_name, suite_suffix), "Release")
         out = open(outfile + ".new", "w")
@@ -301,8 +301,8 @@ def main ():
                  ('f',"force","Generate-Releases::Options::Force"),
                  ('o','option','','ArbItem')]
 
-    suite_names = apt_pkg.ParseCommandLine(cnf.Cnf, Arguments, sys.argv)
-    Options = cnf.SubTree("Generate-Releases::Options")
+    suite_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    Options = cnf.subtree("Generate-Releases::Options")
 
     if Options["Help"]:
         usage()
