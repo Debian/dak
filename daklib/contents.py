@@ -66,20 +66,14 @@ class BinaryContentsWriter(object):
         }
 
         sql = '''
-create temp table newest_binaries (
-    id integer primary key,
-    package text);
+with
 
-create index newest_binaries_by_package on newest_binaries (package);
-
-insert into newest_binaries (id, package)
-    select distinct on (package) id, package from binaries
+newest_binaries as
+    (select distinct on (package) id, package from binaries
         where type = :type and
             (architecture = :arch_all or architecture = :arch) and
             id in (select bin from bin_associations where suite = :suite)
-        order by package, version desc;
-
-with
+        order by package, version desc),
 
 unique_override as
     (select o.package, s.section
@@ -172,19 +166,14 @@ class SourceContentsWriter(object):
         }
 
         sql = '''
-create temp table newest_sources (
-    id integer primary key,
-    source text);
-
-create index sources_binaries_by_source on newest_sources (source);
-
-insert into newest_sources (id, source)
-    select distinct on (source) s.id, s.source from source s
+with
+  newest_sources as
+    (select distinct on (source) s.id, s.source from source s
         join files f on f.id = s.file
         join location l on l.id = f.location
         where s.id in (select source from src_associations where suite = :suite_id)
             and l.component = :component_id
-        order by source, version desc;
+        order by source, version desc)
 
 select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
     from newest_sources s, src_contents sc
