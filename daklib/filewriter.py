@@ -43,9 +43,10 @@ class BaseFileWriter(object):
         include strings for suite, component, architecture and booleans
         uncompressed, gzip, bzip2.
         '''
-        self.uncompressed = keywords.get('uncompressed', True)
-        self.gzip = keywords.get('gzip', False)
-        self.bzip2 = keywords.get('bzip2', False)
+        compression = keywords.get('compression', ['none'])
+        self.uncompressed = 'none' in compression
+        self.gzip = 'gzip' in compression
+        self.bzip2 = 'bzip2' in compression
         root_dir = Config()['Dir::Root']
         relative_dir = template % keywords
         self.path = os.path.join(root_dir, relative_dir)
@@ -93,9 +94,7 @@ class BinaryContentsFileWriter(BaseFileWriter):
         Output files are gzip compressed only.
         '''
         flags = {
-            'uncompressed': False,
-            'gzip':         True,
-            'bzip2':        False
+            'compression': ['gzip'],
         }
         flags.update(keywords)
         if flags['debtype'] == 'deb':
@@ -111,9 +110,7 @@ class SourceContentsFileWriter(BaseFileWriter):
         Output files are gzip compressed only.
         '''
         flags = {
-            'uncompressed': False,
-            'gzip':         True,
-            'bzip2':        False
+            'compression': ['gzip'],
         }
         flags.update(keywords)
         template = "dists/%(suite)s/%(component)s/Contents-source"
@@ -126,9 +123,7 @@ class PackagesFileWriter(BaseFileWriter):
         are strings.  Output files are gzip compressed only.
         '''
         flags = {
-            'uncompressed': False,
-            'gzip':         True,
-            'bzip2':        True
+            'compression': ['gzip', 'bzip2'],
         }
         flags.update(keywords)
         if flags['debtype'] == 'deb':
@@ -144,9 +139,7 @@ class SourcesFileWriter(BaseFileWriter):
         files are gzip compressed only.
         '''
         flags = {
-            'uncompressed': False,
-            'gzip':         True,
-            'bzip2':        True
+            'compression': ['gzip', 'bzip2'],
         }
         flags.update(keywords)
         template = "dists/%(suite)s/%(component)s/source/Sources"
@@ -159,9 +152,7 @@ class TranslationFileWriter(BaseFileWriter):
         Output files are bzip2 compressed only.
         '''
         flags = {
-            'uncompressed': False,
-            'gzip':         False,
-            'bzip2':        True,
+            'compression': ['bzip2'],
             'language':     'en',
         }
         flags.update(keywords)
