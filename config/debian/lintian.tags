@@ -83,4 +83,3 @@ lintian:
     - dir-or-file-in-mnt
     - dir-or-file-in-opt
     - dir-or-file-in-srv
-    - udeb-uses-non-gzip-data-tarball
