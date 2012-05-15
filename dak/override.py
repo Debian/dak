@@ -56,17 +56,17 @@ Make microchanges or microqueries of the binary overrides
 """
     sys.exit(exit_code)
 
-def check_override_compliance(package, priority, suite, cnf, session):
+def check_override_compliance(package, priority, suite_name, cnf, session):
     print "Checking compliance with related overrides..."
 
     depends = set()
     rdepends = set()
     components = get_component_names(session)
-    arches = set([x.arch_string for x in get_suite_architectures(suite)])
+    arches = set([x.arch_string for x in get_suite_architectures(suite_name)])
     arches -= set(["source", "all"])
     for arch in arches:
         for component in components:
-            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
+            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite_name, component, arch)
             while Packages.Step():
                 package_name = Packages.Section.Find("Package")
                 dep_list = Packages.Section.Find("Depends")
@@ -87,7 +87,7 @@ def check_override_compliance(package, priority, suite, cnf, session):
                JOIN priority p ON p.id = o.priority
                WHERE s.suite_name = '%s'
                AND o.package in ('%s')""" \
-               % (suite, "', '".join(depends.union(rdepends)))
+               % (suite_name, "', '".join(depends.union(rdepends)))
     packages = session.execute(query)
 
     excuses = []
@@ -136,7 +136,7 @@ def main ():
         utils.fubar("package name is a required argument.")
 
     package = arguments.pop(0)
-    suite = Options["Suite"]
+    suite_name = Options["Suite"]
     if arguments and len(arguments) > 2:
         utils.fubar("Too many arguments")
 
@@ -170,8 +170,8 @@ def main ():
        AND override.section = section.id
        AND override.package = :package
        AND override.suite = suite.id
-       AND suite.suite_name = :suite
-        """ % (eqdsc), {'package': package, 'suite': suite})
+       AND suite.suite_name = :suite_name
+        """ % (eqdsc), {'package': package, 'suite_name': suite_name})
 
         if q.rowcount == 0:
             continue
@@ -227,7 +227,7 @@ def main ():
         utils.fubar("Trying to change priority of a source-only package")
 
     if Options["Check"] and newpriority != oldpriority:
-        check_override_compliance(package, p, suite, cnf, session)
+        check_override_compliance(package, p, suite_name, cnf, session)
 
     # If we're in no-action mode
     if Options["No-Action"]:
@@ -266,9 +266,9 @@ def main ():
            SET priority = :newprioid
          WHERE package = :package
            AND override.type != :otypedsc
-           AND suite = (SELECT id FROM suite WHERE suite_name = :suite)""",
+           AND suite = (SELECT id FROM suite WHERE suite_name = :suite_name)""",
            {'newprioid': newprioid, 'package': package,
-            'otypedsc':  dsc_otype_id, 'suite': suite})
+            'otypedsc':  dsc_otype_id, 'suite_name': suite_name})
 
         Logger.log(["changed priority", package, oldpriority, newpriority])
 
@@ -277,9 +277,9 @@ def main ():
         UPDATE override
            SET section = :newsecid
          WHERE package = :package
-           AND suite = (SELECT id FROM suite WHERE suite_name = :suite)""",
+           AND suite = (SELECT id FROM suite WHERE suite_name = :suite_name)""",
            {'newsecid': newsecid, 'package': package,
-            'suite': suite})
+            'suite_name': suite_name})
 
         Logger.log(["changed section", package, oldsection, newsection])
 
@@ -311,7 +311,7 @@ def main ():
         Subst["__SOURCE__"] = package
 
         summary = "Concerning package %s...\n" % (package)
-        summary += "Operating on the %s suite\n" % (suite)
+        summary += "Operating on the %s suite\n" % (suite_name)
         if newpriority != oldpriority:
             summary += "Changed priority from %s to %s\n" % (oldpriority,newpriority)
         if newsection != oldsection:
