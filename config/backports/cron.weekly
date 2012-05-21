@@ -30,11 +30,6 @@ if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then
 fi
 
 # Clean up apt-ftparchive's databases
-
-echo "Splitting queue/done"
-dak split-done
-
-# Clean up apt-ftparchive's databases
 cd $configdir
 #echo "Cleanup apt-ftparchive's database"
 #apt-ftparchive -q clean apt.conf

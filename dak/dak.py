@@ -131,8 +131,6 @@ def init():
          "Generates override files"),
         ("new-security-install",
          "New way to install a security upload into the archive"),
-        ("split-done",
-         "Split queue/done into a date-based hierarchy"),
         ("stats",
          "Generate statistics"),
         ("bts-categorize",
