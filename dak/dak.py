@@ -137,8 +137,6 @@ def init():
          "Generate statistics"),
         ("bts-categorize",
          "Categorize uncategorized bugs filed against ftp.debian.org"),
-        ("import-known-changes",
-         "import old changes files into known_changes table"),
         ("add-user",
          "Add a user to the archive"),
         ("make-changelog",
