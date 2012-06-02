@@ -131,3 +131,49 @@ re_includeinrelease = re.compile (r"(Translation-[a-zA-Z_]+\.(?:bz2|xz)|Contents
 
 # in generate_index_diffs
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
+
+
+######################################################################
+# Patterns matching filenames                                        #
+######################################################################
+
+# Match safe filenames
+re_file_safe = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.:~+-]*$')
+
+# Prefix of binary and source filenames
+_re_file_prefix = '^(?P<package>[a-z0-9][a-z0-9.+-]+)_(?P<version>[A-Za-z0-9.:~+-]+)'
+
+# Match binary packages
+# Groups: package, version, architecture, type
+re_file_binary = re.compile(_re_file_prefix + '_(?P<architecture>[a-z0-9]+)\.(?P<type>u?deb)$')
+
+# Match dsc files
+# Groups: package, version
+re_file_dsc = re.compile(_re_file_prefix + r'\.dsc$')
+
+# Match other source files
+# Groups: package, version
+re_file_source = re.compile(_re_file_prefix + r'(?:(?:\.orig(?:-[a-zA-Z0-9-]+)?)?\.tar\.(?:bz2|gz|xz)|\.diff\.gz)$')
+
+# Match upstream tarball
+# Groups: package, version
+re_file_orig = re.compile(_re_file_prefix + r'\.orig(?:-[a-zA-Z0-9-]+)?\.tar\.(?:bz2|gz|xz)')
+
+######################################################################
+# Patterns matching fields                                           #
+######################################################################
+
+# Match package name
+re_field_package = re.compile(r'^[a-z0-9][a-z0-9.+-]+$')
+
+# Match version
+# Groups: without-epoch
+re_field_version = re.compile(r'^(?:[0-9]+:)?(?P<without_epoch>[A-Za-z0-9.:~+-]+)$')
+
+# Extract upstream version
+# Groups: upstream
+re_field_version_upstream = re.compile(r'^(?:[0-9]+:)?(?P<upstream>.*)-[^-]*$')
+
+# Match source field
+# Groups: package, version
+re_field_source = re.compile(r'^(?P<package>[a-z0-9][a-z0-9.+-]+)(:?\s*\((?P<version>[A-Za-z0-9.:~+-])\))?')

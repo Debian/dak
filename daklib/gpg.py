@@ -68,7 +68,7 @@ class SignedFile(object):
     def __init__(self, data, keyrings, require_signature=True, gpg="/usr/bin/gpg"):
         """
         @param data: string containing the message
-        @param keyrings: seqeuence of keyrings
+        @param keyrings: sequence of keyrings
         @param require_signature: if True (the default), will raise an exception if no valid signature was found
         @param gpg: location of the gpg binary
         """

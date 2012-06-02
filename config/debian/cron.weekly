@@ -31,10 +31,6 @@ if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then
    find $ftpdir/pool/ -type d -empty | xargs rmdir;
 fi
 
-# Split queue/done
-echo "Splitting queue/done"
-dak split-done > /dev/null
-
 # Do git cleanup stuff
 echo "Doing git stuff"
 cd /srv/ftp.debian.org/git/dak.git

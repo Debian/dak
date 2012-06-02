@@ -188,6 +188,7 @@ Logger = None
 def usage (exit_code=0):
     print """Usage: dak process-upload [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
+  -d, --directory <DIR>     process uploads in <DIR>
   -h, --help                show this help and exit.
   -n, --no-action           don't do anything
   -p, --no-lock             don't check lockfile !! for cron.daily only !!

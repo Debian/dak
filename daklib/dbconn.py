@@ -500,7 +500,7 @@ def subprocess_setup():
 class DBBinary(ORMObject):
     def __init__(self, package = None, source = None, version = None, \
         maintainer = None, architecture = None, poolfile = None, \
-        binarytype = 'deb'):
+        binarytype = 'deb', fingerprint=None):
         self.package = package
         self.source = source
         self.version = version
@@ -508,6 +508,7 @@ class DBBinary(ORMObject):
         self.architecture = architecture
         self.poolfile = poolfile
         self.binarytype = binarytype
+        self.fingerprint = fingerprint
 
     @property
     def pkid(self):
@@ -2459,13 +2460,14 @@ class Dak822(Deb822):
 
 class DBSource(ORMObject):
     def __init__(self, source = None, version = None, maintainer = None, \
-        changedby = None, poolfile = None, install_date = None):
+        changedby = None, poolfile = None, install_date = None, fingerprint = None):
         self.source = source
         self.version = version
         self.maintainer = maintainer
         self.changedby = changedby
         self.poolfile = poolfile
         self.install_date = install_date
+        self.fingerprint = fingerprint
 
     @property
     def pkid(self):
@@ -2478,7 +2480,7 @@ class DBSource(ORMObject):
 
     def not_null_constraints(self):
         return ['source', 'version', 'install_date', 'maintainer', \
-            'changedby', 'poolfile', 'install_date']
+            'changedby', 'poolfile']
 
     def read_control_fields(self):
         '''

@@ -81,13 +81,13 @@ def main():
 
     depends = {}
     session = DBConn().session()
-    suite = Options['suite']
+    suite_name = Options['suite']
     components = get_component_names(session)
-    arches = set([x.arch_string for x in get_suite_architectures(suite)])
+    arches = set([x.arch_string for x in get_suite_architectures(suite_name)])
     arches -= set(['source', 'all'])
     for arch in arches:
         for component in components:
-            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite, component, arch)
+            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite_name, component, arch)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
                 dep_list = Packages.Section.Find('Depends')
@@ -110,7 +110,7 @@ def main():
                JOIN bin_associations ba ON ba.bin = b.id
                WHERE s.suite_name = '%s'
                AND ba.suite = s.id
-               AND p.level <> 0""" % suite
+               AND p.level <> 0""" % suite_name
     packages = session.execute(query)
 
     out = {}
