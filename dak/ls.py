@@ -135,19 +135,19 @@ def main ():
         q = session.execute("""
 SELECT b.package, b.version, a.arch_string, su.suite_name, c.name, m.name
   FROM binaries b, architecture a, suite su, bin_associations ba,
-       files f, location l, component c, maintainer m
+       files f, files_archive_map af, component c, maintainer m
  WHERE b.package %s :package AND a.id = b.architecture AND su.id = ba.suite
-   AND b.id = ba.bin AND b.file = f.id AND f.location = l.id
-   AND l.component = c.id AND b.maintainer = m.id %s %s %s
+   AND b.id = ba.bin AND b.file = f.id AND af.file_id = f.id AND su.archive_id = af.archive_id
+   AND af.component_id = c.id AND b.maintainer = m.id %s %s %s
 """ % (comparison_operator, con_suites, con_architectures, con_bintype), {'package': package})
         ql = q.fetchall()
         if check_source:
             q = session.execute("""
 SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
-  FROM source s, suite su, src_associations sa, files f, location l,
+  FROM source s, suite su, src_associations sa, files f, files_archive_map af,
        component c, maintainer m
  WHERE s.source %s :package AND su.id = sa.suite AND s.id = sa.source
-   AND s.file = f.id AND f.location = l.id AND l.component = c.id
+   AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id
    AND s.maintainer = m.id %s
 """ % (comparison_operator, con_suites), {'package': package})
             if not Options["Architecture"] or con_architectures:
