@@ -141,7 +141,7 @@ re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
 re_file_safe = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.:~+-]*$')
 
 # Prefix of binary and source filenames
-_re_file_prefix = '^(?P<package>[a-z0-9][a-z0-9.+-]+)_(?P<version>[A-Za-z0-9.:~+-]+)'
+_re_file_prefix = '^(?P<package>[a-z0-9][a-z0-9.+-]+)_(?P<version>[A-Za-z0-9.:~+-]+?)'
 
 # Match binary packages
 # Groups: package, version, architecture, type
@@ -153,7 +153,7 @@ re_file_dsc = re.compile(_re_file_prefix + r'\.dsc$')
 
 # Match other source files
 # Groups: package, version
-re_file_source = re.compile(_re_file_prefix + r'(?:(?:\.orig(?:-[a-zA-Z0-9-]+)?)?\.tar\.(?:bz2|gz|xz)|\.diff\.gz)$')
+re_file_source = re.compile(_re_file_prefix + r'(?:(?:\.orig(?:-[a-zA-Z0-9-]+)?|\.debian)?\.tar\.(?:bz2|gz|xz)|\.diff\.gz)$')
 
 # Match upstream tarball
 # Groups: package, version
