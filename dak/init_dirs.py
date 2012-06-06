@@ -134,13 +134,6 @@ def create_directories():
     for keyring in session.query(Keyring).all():
         process_keyring(keyring.keyring_name)
 
-    # Process pool directories
-    for component in session.query(Component):
-        directory = os.path.join( Cnf['Dir::Pool'], component.component_name )
-
-        do_dir(directory, '%s pool' % component.component_name)
-
-
     # Process dists directories
     # TODO: Store location of each suite in database
     for suite in session.query(Suite):
