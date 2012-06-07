@@ -91,15 +91,16 @@ def _do_Approve():
     spawn("dak process-policy unembargoed")
     newstage=get_policy_queue('newstage')
 
-    # 2. sync the stuff to ftpmaster
-    print "Sync stuff for upload to ftpmaster"
-    spawn("rsync -a -q %s/. /srv/queued/ftpmaster/." % (newstage.path))
-
     print "Locking unchecked"
     lockfile='/srv/security-master.debian.org/lock/unchecked.lock'
-    spawn("lockfile -r8 {0}".format(lockfile))
+    spawn("lockfile -r42 {0}".format(lockfile))
 
     try:
+
+        # 2. sync the stuff to ftpmaster
+        print "Sync stuff for upload to ftpmaster"
+        spawn("rsync -a -q %s/. /srv/queued/ftpmaster/." % (newstage.path))
+
         # 3. Now run process-upload in the newstage dir
         print "Now put it into the security archive"
         spawn("dak process-upload -a -d %s" % (newstage.path))
