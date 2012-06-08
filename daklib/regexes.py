@@ -141,11 +141,15 @@ re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
 re_file_safe = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.:~+-]*$')
 
 # Prefix of binary and source filenames
-_re_file_prefix = '^(?P<package>[a-z0-9][a-z0-9.+-]+)_(?P<version>[A-Za-z0-9.:~+-]+?)'
+_re_file_prefix = r'^(?P<package>[a-z0-9][a-z0-9.+-]+)_(?P<version>[A-Za-z0-9.:~+-]+?)'
 
 # Match binary packages
 # Groups: package, version, architecture, type
-re_file_binary = re.compile(_re_file_prefix + '_(?P<architecture>[a-z0-9]+)\.(?P<type>u?deb)$')
+re_file_binary = re.compile(_re_file_prefix + r'_(?P<architecture>[a-z0-9]+)\.(?P<type>u?deb)$')
+
+# Match changes files
+# Groups: package, version, suffix
+re_file_changes = re.compile(_re_file_prefix + r'_(?P<suffix>[a-zA-Z0-9+-]+)\.changes$')
 
 # Match dsc files
 # Groups: package, version
