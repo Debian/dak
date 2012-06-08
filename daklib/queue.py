@@ -233,47 +233,46 @@ def determine_new(filename, changes, files, warn=1, session = None, dsc = None, 
 
 ################################################################################
 
-def check_valid(new, session = None):
-    """
-    Check if section and priority for NEW packages exist in database.
+def check_valid(overrides, session):
+    """Check if section and priority for new overrides exist in database.
+
     Additionally does sanity checks:
       - debian-installer packages have to be udeb (or source)
-      - non debian-installer packages can not be udeb
-      - source priority can only be assigned to dsc file types
+      - non debian-installer packages cannot be udeb
 
-    @type new: dict
-    @param new: Dict of new packages with their section, priority and type.
+    @type  overrides: list of dict
+    @param overrides: list of overrides to check. The overrides need
+                      to be given in form of a dict with the following keys:
 
+                      - package: package name
+                      - priority
+                      - section
+                      - component
+                      - type: type of requested override ('dsc', 'deb' or 'udeb')
+
+                      All values are strings.
+
+    @rtype:  bool
+    @return: C{True} if all overrides are valid, C{False} if there is any
+             invalid override.
     """
-    for pkg in new.keys():
-        section_name = new[pkg]["section"]
-        priority_name = new[pkg]["priority"]
-        file_type = new[pkg]["type"]
-
-        section = get_section(section_name, session)
-        if section is None:
-            new[pkg]["section id"] = -1
-        else:
-            new[pkg]["section id"] = section.section_id
-
-        priority = get_priority(priority_name, session)
-        if priority is None:
-            new[pkg]["priority id"] = -1
-        else:
-            new[pkg]["priority id"] = priority.priority_id
-
-        # Sanity checks
-        di = section_name.find("debian-installer") != -1
-
-        # If d-i, we must be udeb and vice-versa
-        if     (di and file_type not in ("udeb", "dsc")) or \
-           (not di and file_type == "udeb"):
-            new[pkg]["section id"] = -1
-
-        # If dsc we need to be source and vice-versa
-        if (priority == "source" and file_type != "dsc") or \
-           (priority != "source" and file_type == "dsc"):
-            new[pkg]["priority id"] = -1
+    all_valid = True
+    for o in overrides:
+        o['valid'] = True
+        if session.query(Priority).filter_by(priority=o['priority']).first() is None:
+            o['valid'] = False
+        if session.query(Section).filter_by(section=o['section']).first() is None:
+            o['valid'] = False
+        if get_mapped_component(o['component'], session) is None:
+            o['valid'] = False
+        if o['type'] not in ('dsc', 'deb', 'udeb'):
+            raise Exception('Unknown override type {0}'.format(o['type']))
+        if o['type'] == 'udeb' and o['section'] != 'debian-installer':
+            o['valid'] = False
+        if o['section'] == 'debian-installer' and o['type'] not in ('dsc', 'udeb'):
+            o['valid'] = False
+        all_valid = all_valid and o['valid']
+    return all_valid
 
 ###############################################################################
 
@@ -298,6 +297,7 @@ class TarTime(object):
 
 def prod_maintainer(notes, upload):
     cnf = Config()
+    changes = upload.changes
 
     # Here we prepare an editor and get them ready to prod...
     (fd, temp_filename) = utils.temp_filename()
@@ -332,7 +332,15 @@ def prod_maintainer(notes, upload):
     user_email_address = utils.whoami() + " <%s>" % (
         cnf["Dinstall::MyAdminAddress"])
 
-    Subst = upload.Subst
+    changed_by = changes.changedby or changes.maintainer
+    maintainer = changes.maintainer
+    maintainer_to = utils.mail_addresses_for_upload(maintainer, changed_by, changes.fingerprint)
+
+    Subst = {
+        '__SOURCE__': upload.changes.source,
+        '__CHANGES_FILENAME__': upload.changes.changesname,
+        '__MAINTAINER_TO__': ", ".join(maintainer_to),
+        }
 
     Subst["__FROM_ADDRESS__"] = user_email_address
     Subst["__PROD_MESSAGE__"] = prod_message
@@ -376,8 +384,8 @@ def edit_note(note, upload, session, trainee=False):
         sys.exit(0)
 
     comment = NewComment()
-    comment.package = upload.pkg.changes["source"]
-    comment.version = upload.pkg.changes["version"]
+    comment.package = upload.changes.source
+    comment.version = upload.changes.version
     comment.comment = newnote
     comment.author  = utils.whoami()
     comment.trainee = trainee
