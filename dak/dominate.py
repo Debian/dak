@@ -141,6 +141,12 @@ def main():
     session = DBConn().session()
     for suite_name in utils.split_args(Options['Suite']):
         suite = session.query(Suite).filter_by(suite_name = suite_name).one()
+
+        # Skip policy queues. We don't want to remove obsolete packages from those.
+        policy_queue = session.query(PolicyQueue).filter_by(suite=suite).first()
+        if policy_queue is not None:
+            continue
+
         if not suite.untouchable or Options['Force']:
             doDaDoDa(suite.suite_id, session)
     if Options['No-Action']:
