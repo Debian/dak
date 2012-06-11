@@ -254,13 +254,13 @@ def main ():
 
     if Options["Binary-Only"]:
         # Binary-only
-        q = session.execute("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
+        q = session.execute("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, files_archive_map af, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
         for i in q.fetchall():
             to_remove.append(i)
     else:
         # Source-only
         source_packages = {}
-        q = session.execute("SELECT l.path, f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, files f, location l, component c WHERE sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
+        q = session.execute("SELECT archive.path || '/pool/' || c.name || '/', f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE sa.source = s.id AND sa.suite = su.id AND archive.id = su.archive_id AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
         for i in q.fetchall():
             source_packages[i[2]] = i[:2]
             to_remove.append(i[2:])
@@ -268,7 +268,7 @@ def main ():
             # Source + Binary
             binary_packages = {}
             # First get a list of binary package names we suspect are linked to the source
-            q = session.execute("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, files f, location l, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND s.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s" % (con_packages, con_suites, con_components))
+            q = session.execute("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND su.archive_id = archive.id AND s.file = f.id AND f.id = af.file_id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
             for i in q.fetchall():
                 binary_packages[i[0]] = ""
             # Then parse each .dsc that we found earlier to see what binary packages it thinks it produces
@@ -287,7 +287,7 @@ def main ():
             # source package and if so add it to the list of packages
             # to be removed.
             for package in binary_packages.keys():
-                q = session.execute("SELECT l.path, f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, location l, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND f.location = l.id AND l.component = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
+                q = session.execute("SELECT archive.path || '/pool/' || c.name || '/', f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, archive, files f, files_archive_map af, component c WHERE ba.bin = b.id AND ba.suite = su.id AND archive.id = su.archive_id AND b.architecture = a.id AND b.file = f.id AND f.id = af.file_id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
                 for i in q.fetchall():
                     filename = "/".join(i[:2])
                     control = apt_pkg.TagSection(utils.deb_extract_control(utils.open_file(filename)))
