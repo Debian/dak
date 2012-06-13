@@ -383,6 +383,8 @@ def process_changes_files(changes_files, type, log, rrd_dir):
     # Divide the .changes into per-source groups
     per_source = {}
     for filename in cache.keys():
+	if not cache[filename].has_key("source"):
+            continue
         source = cache[filename]["source"]
         if not per_source.has_key(source):
             per_source[source] = {}
