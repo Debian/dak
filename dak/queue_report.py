@@ -370,6 +370,7 @@ RRA:MAX:0.5:288:795
 def process_changes_files(changes_files, type, log, rrd_dir):
     msg = ""
     cache = {}
+    unprocessed = []
     # Read in all the .changes files
     for filename in changes_files:
         try:
@@ -383,6 +384,9 @@ def process_changes_files(changes_files, type, log, rrd_dir):
     # Divide the .changes into per-source groups
     per_source = {}
     for filename in cache.keys():
+	if not cache[filename].has_key("source"):
+            unprocessed.append(filename)
+            continue
         source = cache[filename]["source"]
         if not per_source.has_key(source):
             per_source[source] = {}
@@ -601,6 +605,12 @@ def process_changes_files(changes_files, type, log, rrd_dir):
             print "%s %s source package%s / %s %s package%s in total." % (source_count, type, plural(source_count), total_count, type, plural(total_count))
             print
 
+        if len(unprocessed):
+            print "UNPROCESSED"
+            print "-----------"
+            for u in unprocessed:
+                print u
+            print
 
 ################################################################################
 
