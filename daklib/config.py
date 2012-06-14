@@ -85,7 +85,10 @@ class Config(object):
         self.find_b = self.Cnf.find_b
 
     def has_key(self, name):
-        return self.Cnf.has_key(name)
+        return name in self.Cnf
+
+    def __contains__(self, name):
+        return name in self.Cnf
 
     def __getitem__(self, name):
         return self.Cnf[name]
