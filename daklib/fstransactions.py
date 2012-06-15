@@ -134,6 +134,9 @@ class FilesystemTransaction(object):
            symlink (bool): Create a symlink instead
            mode (int): Permissions to change `destination` to.
         """
+        if isinstance(mode, str) or isinstance(mode, unicode):
+            mode = int(mode, 8)
+
         self.actions.append(_FilesystemCopyAction(source, destination, link=link, symlink=symlink, mode=mode))
 
     def move(self, source, destination, mode=None):
@@ -169,6 +172,9 @@ class FilesystemTransaction(object):
         Returns:
            file handle of the new file
         """
+        if isinstance(mode, str) or isinstance(mode, unicode):
+            mode = int(mode, 8)
+
         destdir = os.path.dirname(path)
         if not os.path.exists(destdir):
             os.makedirs(destdir, 0o2775)
