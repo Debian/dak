@@ -2999,6 +2999,10 @@ class Suite(ORMObject):
         else:
             return object_session(self).query(Suite).filter_by(suite_name=self.overridesuite).one()
 
+    @property
+    def path(self):
+        return os.path.join(self.archive.path, 'dists', self.suite_name)
+
 __all__.append('Suite')
 
 @session_wrapper
