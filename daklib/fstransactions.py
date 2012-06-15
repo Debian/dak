@@ -38,10 +38,19 @@ class _FilesystemCopyAction(_FilesystemAction):
         self.destination = destination
         self.need_cleanup = False
 
+        dirmode = 0o2755
+        if mode is not None:
+            dirmode = 0o2700 | mode
+            # Allow +x for group and others if they have +r.
+            if dirmode & 0o0040:
+                dirmode = dirmode | 0o0010
+            if dirmode & 0o0004:
+                dirmode = dirmode | 0o0001
+
         self.check_for_temporary()
         destdir = os.path.dirname(self.destination)
         if not os.path.exists(destdir):
-            os.makedirs(destdir, 0o2775)
+            os.makedirs(destdir, dirmode)
         if symlink:
             os.symlink(source, self.destination)
         elif link:
