@@ -34,6 +34,8 @@ def force_to_utf8(s):
     Forces a string to UTF-8.  If the string isn't already UTF-8,
     it's assumed to be ISO-8859-1.
     """
+    if isinstance(s, unicode):
+        return s
     try:
         unicode(s, 'utf-8')
         return s
