@@ -1562,3 +1562,27 @@ def get_packages_from_ftp(root, suite, component, architecture):
 def deb_extract_control(fh):
     """extract DEBIAN/control from a binary package"""
     return apt_inst.DebFile(fh).control.extractdata("control")
+
+################################################################################
+
+def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
+    """Mail addresses to contact for an upload
+
+    Args:
+       maintainer (str): Maintainer field of the changes file
+       changed_by (str): Changed-By field of the changes file
+       fingerprint (str): Fingerprint of the PGP key used to sign the upload
+
+    Returns:
+       List of RFC 2047-encoded mail addresses to contact regarding this upload
+    """
+    addresses = [maintainer]
+    if changed_by != maintainer:
+        addresses.append(changed_by)
+
+    fpr_addresses = gpg_get_key_addresses(fingerprint)
+    if fix_maintainer(changed_by)[3] not in fpr_addresses and fix_maintainer(maintainer)[3] not in fpr_addresses:
+        addresses.append(fpr_addresses[0])
+
+    encoded_addresses = [ fix_maintainer(e)[1] for e in addresses ]
+    return encoded_addresses
