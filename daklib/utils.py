@@ -1387,7 +1387,7 @@ def gpg_get_key_addresses(fingerprint):
     addresses = key_uid_email_cache.get(fingerprint)
     if addresses != None:
         return addresses
-    addresses = set()
+    addresses = list()
     cmd = "gpg --no-default-keyring %s --fingerprint %s" \
                 % (gpg_keyring_args(), fingerprint)
     (result, output) = commands.getstatusoutput(cmd)
@@ -1395,7 +1395,7 @@ def gpg_get_key_addresses(fingerprint):
         for l in output.split('\n'):
             m = re_gpg_uid.match(l)
             if m:
-                addresses.add(m.group(1))
+                addresses.append(m.group(1))
     key_uid_email_cache[fingerprint] = addresses
     return addresses
 
