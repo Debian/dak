@@ -134,8 +134,9 @@ def main():
         usage()
     if 'Suite' not in Options:
         query_suites = DBConn().session().query(Suite)
-        suites = [suite.suite_name for suite in query_suites.all()]
-        cnf['Obsolete::Options::Suite'] = ','.join(suites)
+        suites = [suite.suite_name for suite in query_suites]
+        cnf['Obsolete::Options::Suite'] = str(','.join(suites))
+
     Logger = daklog.Logger("dominate")
     session = DBConn().session()
     for suite_name in utils.split_args(Options['Suite']):

@@ -1064,43 +1064,6 @@ def parse_args(Options):
 
 ################################################################################
 
-# Inspired(tm) by Bryn Keller's print_exc_plus (See
-# http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52215)
-
-def print_exc():
-    tb = sys.exc_info()[2]
-    while tb.tb_next:
-        tb = tb.tb_next
-    stack = []
-    frame = tb.tb_frame
-    while frame:
-        stack.append(frame)
-        frame = frame.f_back
-    stack.reverse()
-    traceback.print_exc()
-    for frame in stack:
-        print "\nFrame %s in %s at line %s" % (frame.f_code.co_name,
-                                             frame.f_code.co_filename,
-                                             frame.f_lineno)
-        for key, value in frame.f_locals.items():
-            print "\t%20s = " % key,
-            try:
-                print value
-            except:
-                print "<unable to print>"
-
-################################################################################
-
-def try_with_debug(function):
-    try:
-        function()
-    except SystemExit:
-        raise
-    except:
-        print_exc()
-
-################################################################################
-
 def arch_compare_sw (a, b):
     """
     Function for use in sorting lists of architectures.
@@ -1424,7 +1387,7 @@ def gpg_get_key_addresses(fingerprint):
     addresses = key_uid_email_cache.get(fingerprint)
     if addresses != None:
         return addresses
-    addresses = set()
+    addresses = list()
     cmd = "gpg --no-default-keyring %s --fingerprint %s" \
                 % (gpg_keyring_args(), fingerprint)
     (result, output) = commands.getstatusoutput(cmd)
@@ -1432,42 +1395,9 @@ def gpg_get_key_addresses(fingerprint):
         for l in output.split('\n'):
             m = re_gpg_uid.match(l)
             if m:
-                addresses.add(m.group(1))
+                addresses.append(m.group(1))
     key_uid_email_cache[fingerprint] = addresses
     return addresses
-
-################################################################################
-
-# Inspired(tm) by http://www.zopelabs.com/cookbook/1022242603
-
-def wrap(paragraph, max_length, prefix=""):
-    line = ""
-    s = ""
-    have_started = 0
-    words = paragraph.split()
-
-    for word in words:
-        word_size = len(word)
-        if word_size > max_length:
-            if have_started:
-                s += line + '\n' + prefix
-            s += word + '\n' + prefix
-        else:
-            if have_started:
-                new_length = len(line) + word_size + 1
-                if new_length > max_length:
-                    s += line + '\n' + prefix
-                    line = word
-                else:
-                    line += ' ' + word
-            else:
-                line = word
-        have_started = 1
-
-    if have_started:
-        s += line
-
-    return s
 
 ################################################################################
 
@@ -1632,3 +1562,27 @@ def get_packages_from_ftp(root, suite, component, architecture):
 def deb_extract_control(fh):
     """extract DEBIAN/control from a binary package"""
     return apt_inst.DebFile(fh).control.extractdata("control")
+
+################################################################################
+
+def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
+    """Mail addresses to contact for an upload
+
+    Args:
+       maintainer (str): Maintainer field of the changes file
+       changed_by (str): Changed-By field of the changes file
+       fingerprint (str): Fingerprint of the PGP key used to sign the upload
+
+    Returns:
+       List of RFC 2047-encoded mail addresses to contact regarding this upload
+    """
+    addresses = [maintainer]
+    if changed_by != maintainer:
+        addresses.append(changed_by)
+
+    fpr_addresses = gpg_get_key_addresses(fingerprint)
+    if fix_maintainer(changed_by)[3] not in fpr_addresses and fix_maintainer(maintainer)[3] not in fpr_addresses:
+        addresses.append(fpr_addresses[0])
+
+    encoded_addresses = [ fix_maintainer(e)[1] for e in addresses ]
+    return encoded_addresses

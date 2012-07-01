@@ -38,10 +38,19 @@ class _FilesystemCopyAction(_FilesystemAction):
         self.destination = destination
         self.need_cleanup = False
 
+        dirmode = 0o2755
+        if mode is not None:
+            dirmode = 0o2700 | mode
+            # Allow +x for group and others if they have +r.
+            if dirmode & 0o0040:
+                dirmode = dirmode | 0o0010
+            if dirmode & 0o0004:
+                dirmode = dirmode | 0o0001
+
         self.check_for_temporary()
         destdir = os.path.dirname(self.destination)
         if not os.path.exists(destdir):
-            os.makedirs(destdir, 0o2775)
+            os.makedirs(destdir, dirmode)
         if symlink:
             os.symlink(source, self.destination)
         elif link:
@@ -125,6 +134,9 @@ class FilesystemTransaction(object):
            symlink (bool): Create a symlink instead
            mode (int): Permissions to change `destination` to.
         """
+        if isinstance(mode, str) or isinstance(mode, unicode):
+            mode = int(mode, 8)
+
         self.actions.append(_FilesystemCopyAction(source, destination, link=link, symlink=symlink, mode=mode))
 
     def move(self, source, destination, mode=None):
@@ -160,6 +172,9 @@ class FilesystemTransaction(object):
         Returns:
            file handle of the new file
         """
+        if isinstance(mode, str) or isinstance(mode, unicode):
+            mode = int(mode, 8)
+
         destdir = os.path.dirname(path)
         if not os.path.exists(destdir):
             os.makedirs(destdir, 0o2775)
