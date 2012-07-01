@@ -17,9 +17,8 @@ database and may (or may not) still be in the pool; this is not a bug.
 The package(s) will be physically removed automatically when no suite
 references them (and in the case of source, when no binary references
 it).  Please also remember that the changes have been done on the
-master archive (__MASTER_ARCHIVE__) and will not propagate to any
-mirrors (__PRIMARY_MIRROR__ included) until the next cron.daily run at the
-earliest.
+master archive and will not propagate to any mirrors (__PRIMARY_MIRROR__
+included) until the next dinstall run at the earliest.
 
 Packages are usually not removed from testing by hand. Testing tracks
 unstable and will automatically remove packages which were removed

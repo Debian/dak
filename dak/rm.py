@@ -639,10 +639,8 @@ def main ():
         Archive = get_archive(whereami, session)
         if Archive is None:
             utils.warn("Cannot find archive %s.  Setting blank values for origin" % whereami)
-            Subst_close_rm["__MASTER_ARCHIVE__"] = ""
             Subst_close_rm["__PRIMARY_MIRROR__"] = ""
         else:
-            Subst_close_rm["__MASTER_ARCHIVE__"] = Archive.origin_server
             Subst_close_rm["__PRIMARY_MIRROR__"] = Archive.primary_mirror
 
         for bug in utils.split_args(Options["Done"]):
