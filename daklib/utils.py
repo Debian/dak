@@ -1581,7 +1581,7 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
         addresses.append(changed_by)
 
     fpr_addresses = gpg_get_key_addresses(fingerprint)
-    if fix_maintainer(changed_by)[3] not in fpr_addresses and fix_maintainer(maintainer)[3] not in fpr_addresses:
+    if len(fpr_addresses) > 0 and fix_maintainer(changed_by)[3] not in fpr_addresses and fix_maintainer(maintainer)[3] not in fpr_addresses:
         addresses.append(fpr_addresses[0])
 
     encoded_addresses = [ fix_maintainer(e)[1] for e in addresses ]
