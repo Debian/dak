@@ -1595,3 +1595,25 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 
     encoded_addresses = [ fix_maintainer(e)[1] for e in addresses ]
     return encoded_addresses
+
+################################################################################
+
+def call_editor(text="", suffix=".txt"):
+    """Run editor and return the result as a string
+
+    Kwargs:
+       text (str): initial text
+       suffix (str): extension for temporary file
+
+    Returns:
+       string with the edited text
+    """
+    editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
+    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    try:
+        print >>tmp, text,
+        tmp.close()
+        subprocess.check_call([editor, tmp.name])
+        return open(tmp.name, 'r').read()
+    finally:
+        os.unlink(tmp.name)
