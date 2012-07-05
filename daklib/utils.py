@@ -23,6 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import commands
+import datetime
 import email.Header
 import os
 import pwd
@@ -607,6 +608,14 @@ def build_package_list(dsc, session = None):
 
 def send_mail (message, filename=""):
     """sendmail wrapper, takes _either_ a message string or a file as arguments"""
+
+    maildir = Cnf.get('Dir::Mail')
+    if maildir:
+        path = os.path.join(maildir, datetime.datetime.now().isoformat())
+        path = find_next_free(path)
+        fh = open(path, 'w')
+        print >>fh, message,
+        fh.close()
 
     # Check whether we're supposed to be sending mail
     if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
