@@ -175,9 +175,6 @@ class BinaryCheck(Check):
         for bn in binary_names:
             if bn not in upload.changes.binary_names:
                 raise Reject('Package {0} is not mentioned in Binary field in changes'.format(bn))
-        for bn in upload.changes.binary_names:
-            if bn not in binary_names:
-                raise Reject('Binary field in changes has {0}, but was not found in upload'.format(bn))
 
         return True
 
