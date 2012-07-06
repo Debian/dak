@@ -9,6 +9,3 @@ Content-Transfer-Encoding: 8bit
 Subject: Accepted __SOURCE__ __VERSION__ (__ARCHITECTURE__)
 
 __FILE_CONTENTS__
-
-Accepted:
-__SHORT_SUMMARY__
