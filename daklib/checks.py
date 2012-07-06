@@ -387,7 +387,7 @@ class ACLCheck(Check):
             raise Reject('Unknown source_acl access level {0} for fingerprint {1}'.format(source_acl.access_level, fingerprint.fingerprint))
 
         bin_architectures = set(upload.changes.architectures)
-        bin_architectures.remove('source')
+        bin_architectures.discard('source')
         binary_acl = fingerprint.binary_acl
         if binary_acl is None:
             if len(bin_architectures) > 0:
