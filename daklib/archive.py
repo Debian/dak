@@ -25,7 +25,7 @@ from daklib.config import Config
 import daklib.upload as upload
 import daklib.utils as utils
 from .fstransactions import FilesystemTransaction
-from .regexes import re_changelog_versions
+from .regexes import re_changelog_versions, re_bin_only_nmu
 
 import apt_pkg
 from datetime import datetime
