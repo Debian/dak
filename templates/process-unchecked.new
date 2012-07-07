@@ -9,11 +9,6 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 Subject: __CHANGES_FILENAME__ is NEW
 
-__SUMMARY__
-
 Your package contains new components which requires manual editing of
 the override file.  It is ok otherwise, so please be patient.  New
 packages are usually added to the override file about once a week.
-
-You may have gotten the distribution wrong.  You'll get warnings above
-if files already exist in other distributions.

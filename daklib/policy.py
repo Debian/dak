@@ -1,0 +1,277 @@
+# Copyright (C) 2012, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+"""module to process policy queue uploads"""
+
+from .config import Config
+from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType
+from .fstransactions import FilesystemTransaction
+from .regexes import re_file_changes, re_file_safe
+
+import errno
+import os
+import shutil
+import tempfile
+
+class UploadCopy(object):
+    """export a policy queue upload
+
+    This class can be used in a with-statements:
+
+       with UploadCopy(...) as copy:
+          ...
+
+    Doing so will provide a temporary copy of the upload in the directory
+    given by the `directory` attribute.  The copy will be removed on leaving
+    the with-block.
+
+    Args:
+       upload (daklib.dbconn.PolicyQueueUpload)
+    """
+    def __init__(self, upload):
+        self.directory = None
+        self.upload = upload
+
+    def export(self, directory, mode=None, symlink=True):
+        """export a copy of the upload
+
+        Args:
+           directory (str)
+
+        Kwargs:
+           mode (int): permissions to use for the copied files
+           symlink (bool): use symlinks instead of copying the files (default: True)
+        """
+        with FilesystemTransaction() as fs:
+            source = self.upload.source
+            queue = self.upload.policy_queue
+
+            if source is not None:
+                for dsc_file in source.srcfiles:
+                    f = dsc_file.poolfile
+                    dst = os.path.join(directory, os.path.basename(f.filename))
+                    fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+            for binary in self.upload.binaries:
+                f = binary.poolfile
+                dst = os.path.join(directory, os.path.basename(f.filename))
+                fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+
+            # copy byhand files
+            for byhand in self.upload.byhand:
+                src = os.path.join(queue.path, byhand.filename)
+                dst = os.path.join(directory, byhand.filename)
+                fs.copy(src, dst, mode=mode, symlink=symlink)
+
+            # copy .changes
+            src = os.path.join(queue.path, self.upload.changes.changesname)
+            dst = os.path.join(directory, self.upload.changes.changesname)
+            fs.copy(src, dst, mode=mode, symlink=symlink)
+
+    def __enter__(self):
+        assert self.directory is None
+
+        cnf = Config()
+        self.directory = tempfile.mkdtemp(dir=cnf.get('Dir::TempPath'))
+        self.export(self.directory, symlink=True)
+        return self
+
+    def __exit__(self, *args):
+        if self.directory is not None:
+            shutil.rmtree(self.directory)
+            self.directory = None
+        return None
+
+class PolicyQueueUploadHandler(object):
+    """process uploads to policy queues
+
+    This class allows to accept or reject uploads and to get a list of missing
+    overrides (for NEW processing).
+    """
+    def __init__(self, upload, session):
+        """initializer
+
+        Args:
+           upload (daklib.dbconn.PolicyQueueUpload): upload to process
+           session: database session
+        """
+        self.upload = upload
+        self.session = session
+
+    @property
+    def _overridesuite(self):
+        overridesuite = self.upload.target_suite
+        if overridesuite.overridesuite is not None:
+            overridesuite = self.session.query(Suite).filter_by(suite_name=overridesuite.overridesuite).one()
+        return overridesuite
+
+    def _source_override(self, component_name):
+        package = self.upload.source.source
+        suite = self._overridesuite
+        query = self.session.query(Override).filter_by(package=package, suite=suite) \
+            .join(OverrideType).filter(OverrideType.overridetype == 'dsc') \
+            .join(Component).filter(Component.component_name == component_name)
+        return query.first()
+
+    def _binary_override(self, binary, component_name):
+        package = binary.package
+        suite = self._overridesuite
+        overridetype = binary.binarytype
+        query = self.session.query(Override).filter_by(package=package, suite=suite) \
+            .join(OverrideType).filter(OverrideType.overridetype == overridetype) \
+            .join(Component).filter(Component.component_name == component_name)
+        return query.first()
+
+    def _binary_metadata(self, binary, key):
+        metadata_key = self.session.query(MetadataKey).filter_by(key=key).first()
+        if metadata_key is None:
+            return None
+        metadata = self.session.query(BinaryMetadata).filter_by(binary=binary, key=metadata_key).first()
+        if metadata is None:
+            return None
+        return metadata.value
+
+    @property
+    def _changes_prefix(self):
+        changesname = self.upload.changes.changesname
+        assert changesname.endswith('.changes')
+        assert re_file_changes.match(changesname)
+        return changesname[0:-8]
+
+    def accept(self):
+        """mark upload as accepted"""
+        assert len(self.missing_overrides()) == 0
+
+        fn1 = 'ACCEPT.{0}'.format(self._changes_prefix)
+        fn = os.path.join(self.upload.policy_queue.path, 'COMMENTS', fn1)
+        try:
+            fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            os.write(fh, 'OK\n')
+            os.close(fh)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                raise
+
+    def reject(self, reason):
+        """mark upload as rejected
+
+        Args:
+           reason (str): reason for the rejection
+        """
+        fn1 = 'REJECT.{0}'.format(self._changes_prefix)
+        assert re_file_safe.match(fn1)
+
+        fn = os.path.join(self.upload.policy_queue.path, 'COMMENTS', fn1)
+        try:
+            fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fh, 'NOTOK\n')
+            os.write(fh, reason)
+            os.close(fh)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                raise
+
+    def get_action(self):
+        """get current action
+
+        Returns:
+           string giving the current action, one of 'ACCEPT', 'ACCEPTED', 'REJECT'
+        """
+        changes_prefix = self._changes_prefix
+
+        for action in ('ACCEPT', 'ACCEPTED', 'REJECT'):
+            fn1 = '{0}.{1}'.format(action, changes_prefix)
+            fn = os.path.join(self.upload.policy_queue.path, 'COMMENTS', fn1)
+            if os.path.exists(fn):
+                return action
+
+        return None
+
+    def missing_overrides(self, hints=None):
+        """get missing override entries for the upload
+
+        Kwargs:
+           hints (list of dict): suggested hints for new overrides in the same
+              format as the return value
+
+        Returns:
+           list of dicts with the following keys:
+              package: package name
+              priority: default priority (from upload)
+              section: default section (from upload)
+              component: default component (from upload)
+              type: type of required override ('dsc', 'deb' or 'udeb')
+           All values are strings.
+        """
+        # TODO: use Package-List field
+        missing = []
+        components = set()
+
+        if hints is None:
+            hints = []
+        hints_map = dict([ ((o['type'], o['package']), o) for o in hints ])
+
+        for binary in self.upload.binaries:
+            priority = self._binary_metadata(binary, 'Priority')
+            section = self._binary_metadata(binary, 'Section')
+            component = 'main'
+            if section.find('/') != -1:
+                component = section.split('/', 1)[0]
+            override = self._binary_override(binary, component)
+            if override is None:
+                hint = hints_map.get((binary.binarytype, binary.package))
+                if hint is not None:
+                    missing.append(hint)
+                    component = hint['component']
+                else:
+                    missing.append(dict(
+                            package = binary.package,
+                            priority = priority,
+                            section = section,
+                            component = component,
+                            type = binary.binarytype,
+                            ))
+            components.add(component)
+
+        source_component = '(unknown)'
+        for component in ('main', 'contrib', 'non-free'):
+            if component in components:
+                source_component = component
+                break
+
+        source = self.upload.source
+        if source is not None:
+            override = self._source_override(source_component)
+            if override is None:
+                hint = hints_map.get(('dsc', source.source))
+                if hint is not None:
+                    missing.append(hint)
+                else:
+                    section = 'misc'
+                    if component != 'main':
+                        section = "{0}/{1}".format(component, section)
+                    missing.append(dict(
+                            package = source.source,
+                            priority = 'extra',
+                            section = section,
+                            component = source_component,
+                            type = 'dsc',
+                            ))
+
+        return missing

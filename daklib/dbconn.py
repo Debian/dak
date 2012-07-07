@@ -3596,7 +3596,8 @@ class DBConn(object):
                                  copy_queues = relation(BuildQueue,
                                      secondary=self.tbl_suite_build_queue_copy),
                                  srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
-                                     backref=backref('suites', lazy='dynamic'))),
+                                     backref=backref('suites', lazy='dynamic')),
+                                 archive = relation(Archive, backref='suites')),
                 extension = validator)
 
         mapper(Uid, self.tbl_uid,

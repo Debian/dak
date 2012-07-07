@@ -23,6 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import commands
+import datetime
 import email.Header
 import os
 import pwd
@@ -607,6 +608,14 @@ def build_package_list(dsc, session = None):
 
 def send_mail (message, filename=""):
     """sendmail wrapper, takes _either_ a message string or a file as arguments"""
+
+    maildir = Cnf.get('Dir::Mail')
+    if maildir:
+        path = os.path.join(maildir, datetime.datetime.now().isoformat())
+        path = find_next_free(path)
+        fh = open(path, 'w')
+        print >>fh, message,
+        fh.close()
 
     # Check whether we're supposed to be sending mail
     if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
@@ -1581,8 +1590,30 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
         addresses.append(changed_by)
 
     fpr_addresses = gpg_get_key_addresses(fingerprint)
-    if fix_maintainer(changed_by)[3] not in fpr_addresses and fix_maintainer(maintainer)[3] not in fpr_addresses:
+    if len(fpr_addresses) > 0 and fix_maintainer(changed_by)[3] not in fpr_addresses and fix_maintainer(maintainer)[3] not in fpr_addresses:
         addresses.append(fpr_addresses[0])
 
     encoded_addresses = [ fix_maintainer(e)[1] for e in addresses ]
     return encoded_addresses
+
+################################################################################
+
+def call_editor(text="", suffix=".txt"):
+    """Run editor and return the result as a string
+
+    Kwargs:
+       text (str): initial text
+       suffix (str): extension for temporary file
+
+    Returns:
+       string with the edited text
+    """
+    editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
+    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    try:
+        print >>tmp, text,
+        tmp.close()
+        subprocess.check_call([editor, tmp.name])
+        return open(tmp.name, 'r').read()
+    finally:
+        os.unlink(tmp.name)

@@ -12,10 +12,7 @@ Source: __SOURCE__
 Source-Version: __VERSION__
 
 We believe that the bug you reported is fixed in the latest version of
-__SOURCE__, which is due to be installed in the __DISTRO__ FTP archive:
-
-__SHORT_SUMMARY__
-__STABLE_WARNING__
+__SOURCE__, which is due to be installed in the __DISTRO__ FTP archive.
 
 A summary of the changes between this version and the previous one is
 attached.
