@@ -131,7 +131,7 @@ def create_directories():
         process_keyring(Cnf['Dinstall::SigningPubKeyring'], secret=True)
 
     # Process public keyrings
-    for keyring in session.query(Keyring).all():
+    for keyring in session.query(Keyring).filter_by(active=True):
         process_keyring(keyring.keyring_name)
 
     # Process dists directories
