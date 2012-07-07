@@ -368,7 +368,7 @@ def check_size(where, files):
 
 ################################################################################
 
-def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
+def check_dsc_files(dsc_filename, dsc, dsc_files):
     """
     Verify that the files listed in the Files field of the .dsc are
     those expected given the announced Format.
@@ -387,13 +387,6 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
     """
     rejmsg = []
 
-    # Parse the file if needed
-    if dsc is None:
-        dsc = parse_changes(dsc_filename, signing_rules=1, dsc_file=1);
-
-    if dsc_files is None:
-        dsc_files = build_file_list(dsc, is_a_dsc=1)
-
     # Ensure .dsc lists proper set of source files according to the format
     # announced
     has = defaultdict(lambda: 0)
@@ -408,7 +401,7 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
         (r'orig-.+\.tar\.(gz|bz2|xz)', ('more_orig_tar',)),
     )
 
-    for f in dsc_files.keys():
+    for f in dsc_files:
         m = re_issource.match(f)
         if not m:
             rejmsg.append("%s: %s in Files field not recognised as source."

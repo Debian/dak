@@ -338,7 +338,11 @@ class SourceCheck(Check):
                 except Exception as e:
                     raise Reject('{0}: APT could not parse {1} field: {2}'.format(dsc_fn, field, e))
 
-        # TODO: check all expected files for given source format are included
+        rejects = utils.check_dsc_files(dsc_fn, control, source.files.keys())
+        if len(rejects) > 0:
+            raise Reject("\n".join(rejects))
+
+        return True
 
 class SingleDistributionCheck(Check):
     """Check that the .changes targets only a single distribution."""
