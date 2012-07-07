@@ -115,20 +115,23 @@ def process(osuite, affected_suites, originosuite, component, otype, session):
         packages = {}
         # TODO: Fix to use placeholders (check how to with arrays)
         q = session.execute("""
-SELECT b.package FROM binaries b, bin_associations ba, files f,
-                              location l, component c
- WHERE b.type = :otype AND b.id = ba.bin AND f.id = b.file AND l.id = f.location
-   AND c.id = l.component AND ba.suite IN (%s) AND c.id = :component_id
+SELECT b.package
+  FROM binaries b
+  JOIN bin_associations ba ON b.id = ba.bin
+  JOIN suite ON ba.suite = suite.id
+  JOIN files_archive_map af ON b.file = af.file_id AND suite.archive_id = af.archive_id
+ WHERE b.type = :otype AND ba.suite IN (%s) AND af.component_id = :component_id
 """ % (",".join([ str(i) for i in affected_suites ])), {'otype': otype, 'component_id': component_id})
         for i in q.fetchall():
             packages[i[0]] = 0
 
     src_packages = {}
     q = session.execute("""
-SELECT s.source FROM source s, src_associations sa, files f, location l,
-                     component c
- WHERE s.id = sa.source AND f.id = s.file AND l.id = f.location
-   AND c.id = l.component AND sa.suite IN (%s) AND c.id = :component_id
+SELECT s.source FROM source s
+  JOIN src_associations sa ON s.id = sa.source
+  JOIN suite ON sa.suite = suite.id
+  JOIN files_archive_map af ON s.file = af.file_id AND suite.archive_id = af.archive_id
+ WHERE sa.suite IN (%s) AND af.component_id = :component_id
 """ % (",".join([ str(i) for i in affected_suites])), {'component_id': component_id})
     for i in q.fetchall():
         src_packages[i[0]] = 0
