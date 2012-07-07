@@ -673,7 +673,7 @@ def main ():
         if len(sources) == 1:
             source_pkg = source.split("_", 1)[0]
         else:
-            utils.fubar("Closing bugs for multiple source pakcages is not supported.  Do it yourself.")
+            utils.fubar("Closing bugs for multiple source packages is not supported.  Do it yourself.")
         Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
         Subst_close_other["__SOURCE__"] = source_pkg
         other_bugs = bts.get_bugs('src', source_pkg, 'status', 'open')
