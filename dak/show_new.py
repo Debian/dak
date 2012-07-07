@@ -30,8 +30,8 @@ import os, sys, time
 import apt_pkg
 import examine_package
 
+from daklib import policy
 from daklib.dbconn import *
-from daklib.queue import determine_new, check_valid, Upload, get_policy_queue
 from daklib import utils
 from daklib.regexes import re_source_ext
 from daklib.config import Config
@@ -53,7 +53,7 @@ timeout_str = "Timed out while processing"
 ################################################################################
 ################################################################################
 
-def html_header(name, filestoexamine):
+def html_header(name, missing):
     if name.endswith('.changes'):
         name = ' '.join(name.split('_')[:2])
     result = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -122,8 +122,7 @@ def html_header(name, filestoexamine):
       <p><a href="#source-lintian" onclick="show('source-lintian-body')">source lintian</a></p>
 
 """
-    for fn in filter(lambda x: x.endswith('.deb') or x.endswith('.udeb'),filestoexamine):
-        packagename = fn.split('_')[0]
+    for binarytype, packagename in filter(lambda m: m[0] in ('deb', 'udeb'), missing):
         result += """
         <p class="subtitle">%(pkg)s</p>
         <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
@@ -154,86 +153,55 @@ def html_footer():
 ################################################################################
 
 
-def do_pkg(changes_file):
-    changes_file = utils.validate_changes_file_arg(changes_file, 0)
-    if not changes_file:
-        return
-    print "\n" + changes_file
+def do_pkg(upload_id):
+    session = DBConn().session()
+    upload = session.query(PolicyQueueUpload).filter_by(id=upload_id).one()
 
-    u = Upload()
-    u.pkg.changes_file = changes_file
-    # We can afoord not to check the signature before loading the changes file
-    # as we've validated it already (otherwise it couldn't be in new)
-    # and we can more quickly skip over already processed files this way
-    u.load_changes(changes_file)
+    queue = upload.policy_queue
+    changes = upload.changes
 
-    origchanges = os.path.abspath(u.pkg.changes_file)
+    origchanges = os.path.join(queue.path, changes.changesname)
+    print origchanges
 
-    # Still be cautious in case paring the changes file went badly
-    if u.pkg.changes.has_key('source') and u.pkg.changes.has_key('version'):
-        htmlname = u.pkg.changes["source"] + "_" + u.pkg.changes["version"] + ".html"
-        htmlfile = os.path.join(cnf["Show-New::HTMLPath"], htmlname)
-    else:
-        # Changes file was bad
-        print "Changes file %s missing source or version field" % changes_file
-        return
+    htmlname = "{0}_{1}.html".format(changes.source, changes.version)
+    htmlfile = os.path.join(cnf['Show-New::HTMLPath'], htmlname)
 
     # Have we already processed this?
-    if os.path.exists(htmlfile) and \
-        os.stat(htmlfile).st_mtime > os.stat(origchanges).st_mtime:
+    if False and os.path.exists(htmlfile) and \
+        os.stat(htmlfile).st_mtime > time.mktime(changes.created.timetuple()):
             with open(htmlfile, "r") as fd:
                 if fd.read() != timeout_str:
                     sources.append(htmlname)
                     return (PROC_STATUS_SUCCESS,
                             '%s already up-to-date' % htmlfile)
 
-    # Now we'll load the fingerprint
-    session = DBConn().session()
+    # Go, process it... Now!
     htmlfiles_to_process.append(htmlfile)
-    (u.pkg.changes["fingerprint"], rejects) = utils.check_signature(changes_file, session=session)
-    new_queue = get_policy_queue('new', session );
-    u.pkg.directory = new_queue.path
-    u.update_subst()
-    files = u.pkg.files
-    changes = u.pkg.changes
     sources.append(htmlname)
 
-    for deb_filename, f in files.items():
-        if deb_filename.endswith(".udeb") or deb_filename.endswith(".deb"):
-            u.binary_file_checks(deb_filename, session)
-            u.check_binary_against_db(deb_filename, session)
-        else:
-            u.source_file_checks(deb_filename, session)
-            u.check_source_against_db(deb_filename, session)
-    u.pkg.changes["suite"] = u.pkg.changes["distribution"]
+    with open(htmlfile, 'w') as outfile:
+      with policy.UploadCopy(upload) as upload_copy:
+        handler = policy.PolicyQueueUploadHandler(upload, session)
+        missing = [ (o['type'], o['package']) for o in handler.missing_overrides() ]
+        distribution = changes.distribution
 
-    new, byhand = determine_new(u.pkg.changes_file, u.pkg.changes, files, 0, dsc=u.pkg.dsc, session=session)
+        print >>outfile, html_header(changes.source, missing)
+        print >>outfile, examine_package.display_changes(distribution, origchanges)
 
-    outfile = open(os.path.join(cnf["Show-New::HTMLPath"],htmlname),"w")
+        if upload.source is not None and ('dsc', upload.source.source) in missing:
+            fn = os.path.join(upload_copy.directory, upload.source.poolfile.basename)
+            print >>outfile, examine_package.check_dsc(distribution, fn, session)
+        for binary in upload.binaries:
+            if (binary.binarytype, binary.package) not in missing:
+                continue
+            fn = os.path.join(upload_copy.directory, binary.poolfile.basename)
+            print >>outfile, examine_package.check_deb(distribution, fn, session)
 
-    filestoexamine = []
-    for pkg in new.keys():
-        for fn in new[pkg]["files"]:
-            filestoexamine.append(fn)
+        print >>outfile, html_footer()
 
-    print >> outfile, html_header(changes["source"], filestoexamine)
-
-    check_valid(new, session)
-    distribution = changes["distribution"].keys()[0]
-    print >> outfile, examine_package.display_changes(distribution, changes_file)
-
-    for fn in filter(lambda fn: fn.endswith(".dsc"), filestoexamine):
-        print >> outfile, examine_package.check_dsc(distribution, fn, session)
-    for fn in filter(lambda fn: fn.endswith(".deb") or fn.endswith(".udeb"), filestoexamine):
-        print >> outfile, examine_package.check_deb(distribution, fn, session)
-
-    print >> outfile, html_footer()
-
-    outfile.close()
     session.close()
-
     htmlfiles_to_process.remove(htmlfile)
-    return (PROC_STATUS_SUCCESS, '%s already updated' % htmlfile)
+    return (PROC_STATUS_SUCCESS, '{0} already updated'.format(htmlfile))
 
 ################################################################################
 
@@ -258,17 +226,20 @@ def init(session):
         if not cnf.has_key("Show-New::Options::%s" % (i)):
             cnf["Show-New::Options::%s" % (i)] = ""
 
-    changes_files = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
-    if len(changes_files) == 0:
-        new_queue = get_policy_queue('new', session );
-        changes_files = utils.get_changes_files(new_queue.path)
-
+    changesnames = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
     Options = cnf.subtree("Show-New::Options")
 
     if Options["help"]:
         usage()
 
-    return changes_files
+    uploads = session.query(PolicyQueueUpload) \
+        .join(PolicyQueueUpload.policy_queue).filter(PolicyQueue.queue_name == 'new') \
+        .join(PolicyQueueUpload.changes).order_by(DBChange.source)
+
+    if len(changesnames) > 0:
+        uploads = uploads.filter(DBChange.changesname.in_(changesnames))
+
+    return uploads
 
 
 ################################################################################
@@ -276,13 +247,15 @@ def init(session):
 
 def main():
     session = DBConn().session()
-    changes_files = init(session)
+    upload_ids = [ u.id for u in init(session) ]
+    session.close()
 
     examine_package.use_html=1
 
     pool = DakProcessPool(processes=5)
-    p = pool.map_async(do_pkg, changes_files)
+    p = pool.map_async(do_pkg, upload_ids)
     pool.close()
+
     p.wait(timeout=600)
     for htmlfile in htmlfiles_to_process:
         with open(htmlfile, "w") as fd:
