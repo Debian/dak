@@ -253,6 +253,7 @@ def binary_helper(suite_id, arch_id, overridetype_id, component_id):
         overridetype.overridetype, component.component_name]
     contents_writer = BinaryContentsWriter(suite, architecture, overridetype, component)
     contents_writer.write_file()
+    session.close()
     return log_message
 
 def source_helper(suite_id, component_id):
@@ -266,6 +267,7 @@ def source_helper(suite_id, component_id):
     log_message = [suite.suite_name, 'source', component.component_name]
     contents_writer = SourceContentsWriter(suite, component)
     contents_writer.write_file()
+    session.close()
     return log_message
 
 class ContentsWriter(object):
