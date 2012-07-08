@@ -515,7 +515,7 @@ class VersionCheck(Check):
             source_version = upload.changes.source.dsc['Version']
             v = self._highest_source_version(session, source_name, suite)
             if v is not None and version_compare(source_version, v) != expected_result:
-                raise Reject('Version check failed (source={0}, version={1}, suite={2})'.format(source_name, source_version, suite.suite_name))
+                raise Reject('Version check failed (source={0}, version={1}, other-version={2}, suite={3})'.format(source_name, source_version, v, suite.suite_name))
 
         for binary in upload.changes.binaries:
             binary_name = binary.control['Package']
@@ -523,7 +523,7 @@ class VersionCheck(Check):
             architecture = binary.control['Architecture']
             v = self._highest_binary_version(session, binary_name, suite, architecture)
             if v is not None and version_compare(binary_version, v) != expected_result:
-                raise Reject('Version check failed (binary={0}, version={1}, suite={2})'.format(binary_name, binary_version, suite.suite_name))
+                raise Reject('Version check failed (binary={0}, version={1}, other-version={2}, suite={3})'.format(binary_name, binary_version, v, suite.suite_name))
 
     def per_suite_check(self, upload, suite):
         session = upload.session
