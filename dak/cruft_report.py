@@ -60,7 +60,7 @@ Check for obsolete or duplicated packages.
   -h, --help                show this help and exit.
   -m, --mode=MODE           chose the MODE to run in (full, daily, bdo).
   -s, --suite=SUITE         check suite SUITE.
-  -R, --rdep-check           check reverse dependencies
+  -R, --rdep-check          check reverse dependencies
   -w, --wanna-build-dump    where to find the copies of http://buildd.debian.org/stats/*.txt"""
     sys.exit(exit_code)
 
