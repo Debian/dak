@@ -802,7 +802,7 @@ class ArchiveUpload(object):
         changed_by = get_or_set_maintainer(control.get('Changed-By', control['Maintainer']), self.session)
 
         if source_suites is None:
-            source_suites = self.session.query(Suite).join(VersionCheck, VersionCheck.reference_id == Suite.suite_id).filter(VersionCheck.suite == suite).subquery()
+            source_suites = self.session.query(Suite).join((VersionCheck, VersionCheck.reference_id == Suite.suite_id)).filter(VersionCheck.suite == suite).subquery()
 
         source = self.changes.source
         if source is not None:
