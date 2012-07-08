@@ -136,7 +136,8 @@ class ArchiveTransaction(object):
         source = source_query.filter(DBSource.suites.contains(suite)).first()
         if source is None:
             if source_suites != True:
-                source_query = source_query.filter(DBSource.suites.any(source_suites))
+                source_query = source_query.join(DBSource.suites) \
+                    .filter(Suite.suite_id == source_suites.c.id)
             source = source_query.first()
             if source is None:
                 raise ArchiveException('{0}: trying to install to {1}, but could not find source'.format(binary.hashed_file.filename, suite.suite_name))
