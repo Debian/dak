@@ -97,8 +97,8 @@ function reports() {
     dak queue-report | mail -e -s "NEW and BYHAND on $(date +%D)" team@backports.debian.org
     # and one on crufty packages
     log "Sending information about crufty packages"
-    dak cruft-report > $webdir/cruft-report-daily.txt
-#    dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
+    dak cruft-report -R > $webdir/cruft-report-daily.txt
+#    dak cruft-report -R -s experimental >> $webdir/cruft-report-daily.txt
     cat $webdir/cruft-report-daily.txt | mail -e -s "Debian archive cruft report for $(date +%D)" team@backports.debian.org
 }
 
