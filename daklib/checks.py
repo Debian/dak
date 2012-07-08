@@ -507,14 +507,14 @@ class VersionCheck(Check):
         else:
             return db_binary.version
 
-    def _version_checks(self, upload, suite, expected_result):
+    def _version_checks(self, upload, suite, op):
         session = upload.session
 
         if upload.changes.source is not None:
             source_name = upload.changes.source.dsc['Source']
             source_version = upload.changes.source.dsc['Version']
             v = self._highest_source_version(session, source_name, suite)
-            if v is not None and version_compare(source_version, v) != expected_result:
+            if v is not None and not op(version_compare(source_version, v)):
                 raise Reject('Version check failed (source={0}, version={1}, other-version={2}, suite={3})'.format(source_name, source_version, v, suite.suite_name))
 
         for binary in upload.changes.binaries:
@@ -522,7 +522,7 @@ class VersionCheck(Check):
             binary_version = binary.control['Version']
             architecture = binary.control['Architecture']
             v = self._highest_binary_version(session, binary_name, suite, architecture)
-            if v is not None and version_compare(binary_version, v) != expected_result:
+            if v is not None and not op(version_compare(binary_version, v)):
                 raise Reject('Version check failed (binary={0}, version={1}, other-version={2}, suite={3})'.format(binary_name, binary_version, v, suite.suite_name))
 
     def per_suite_check(self, upload, suite):
@@ -535,13 +535,13 @@ class VersionCheck(Check):
         must_be_newer_than.append(suite)
 
         for s in must_be_newer_than:
-            self._version_checks(upload, s, 1)
+            self._version_checks(upload, s, lambda result: result > 0)
 
         vc_older = session.query(dbconn.VersionCheck).filter_by(suite=suite, check='MustBeOlderThan')
         must_be_older_than = [ vc.reference for vc in vc_older ]
 
         for s in must_be_older_than:
-            self._version_checks(upload, s, -1)
+            self._version_checks(upload, s, lambda result: result < 0)
 
         return True
 
