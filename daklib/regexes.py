@@ -180,4 +180,4 @@ re_field_version_upstream = re.compile(r'^(?:[0-9]+:)?(?P<upstream>.*)-[^-]*$')
 
 # Match source field
 # Groups: package, version
-re_field_source = re.compile(r'^(?P<package>[a-z0-9][a-z0-9.+-]+)(:?\s*\((?P<version>[A-Za-z0-9.:~+-])\))?')
+re_field_source = re.compile(r'^(?P<package>[a-z0-9][a-z0-9.+-]+)(?:\s*\((?P<version>[A-Za-z0-9.:~+-]+)\))?$')
