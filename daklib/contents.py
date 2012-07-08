@@ -183,10 +183,9 @@ create index sources_binaries_by_source on newest_sources (source);
 
 insert into newest_sources (id, source)
     select distinct on (source) s.id, s.source from source s
-        join files f on f.id = s.file
-        join location l on l.id = f.location
+        join files_archive_map af on s.file = af.file_id
         where s.id in (select source from src_associations where suite = :suite_id)
-            and l.component = :component_id
+            and af.component_id = :component_id
         order by source, version desc;'''
         self.session.execute(sql_create_temp, params=params)
 
