@@ -315,15 +315,12 @@ class ACLCheck(Check):
 
         if 'source' not in upload.changes.architectures:
             raise Reject('DM uploads must include source')
-        distributions = upload.changes.distributions
-        for dist in distributions:
-            if dist not in ('unstable', 'experimental', 'squeeze-backports'):
-                raise Reject("Uploading to {0} is not allowed for DMs.".format(dist))
         for f in upload.changes.files.itervalues():
             if f.section == 'byhand' or f.section[:4] == "raw-":
                 raise Reject("Uploading byhand packages is not allowed for DMs.")
 
         # Reject NEW packages
+        distributions = upload.changes.distributions
         assert len(distributions) == 1
         suite = session.query(Suite).filter_by(suite_name=distributions[0]).one()
         overridesuite = suite
