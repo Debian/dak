@@ -43,7 +43,8 @@ import subprocess
 
 from dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
-                   get_active_keyring_paths, get_primary_keyring_path
+                   get_active_keyring_paths, get_primary_keyring_path, \
+                   get_suite_architectures, get_or_set_metadatakey, DBSource
 from sqlalchemy import desc
 from dak_exceptions import *
 from gpg import SignedFile
@@ -51,7 +52,7 @@ from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
                     re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
-                    re_is_orig_source
+                    re_is_orig_source, re_build_dep_arch
 
 from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
@@ -1617,3 +1618,177 @@ def call_editor(text="", suffix=".txt"):
         return open(tmp.name, 'r').read()
     finally:
         os.unlink(tmp.name)
+
+################################################################################
+
+def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False):
+    dbsuite = get_suite(suite, session)
+    dep_problem = 0
+    p2c = {}
+    all_broken = {}
+    if arches:
+        all_arches = set(arches)
+    else:
+        all_arches = set([x.arch_string for x in get_suite_architectures(suite)])
+    all_arches -= set(["source", "all"])
+    metakey_d = get_or_set_metadatakey("Depends", session)
+    metakey_p = get_or_set_metadatakey("Provides", session)
+    params = {
+        'suite_id':     dbsuite.suite_id,
+        'metakey_d_id': metakey_d.key_id,
+        'metakey_p_id': metakey_p.key_id,
+    }
+    for architecture in all_arches | set(['all']):
+        deps = {}
+        sources = {}
+        virtual_packages = {}
+        params['arch_id'] = get_architecture(architecture, session).arch_id
+
+        statement = '''
+            SELECT b.id, b.package, s.source, c.name as component,
+                (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
+                (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
+                FROM binaries b
+                JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
+                JOIN source s ON b.source = s.id
+                JOIN files f ON b.file = f.id
+                JOIN location l ON f.location = l.id
+                JOIN component c ON l.component = c.id
+                WHERE b.architecture = :arch_id'''
+        query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
+            from_statement(statement).params(params)
+        for binary_id, package, source, component, depends, provides in query:
+            sources[package] = source
+            p2c[package] = component
+            if depends is not None:
+                deps[package] = depends
+            # Maintain a counter for each virtual package.  If a
+            # Provides: exists, set the counter to 0 and count all
+            # provides by a package not in the list for removal.
+            # If the counter stays 0 at the end, we know that only
+            # the to-be-removed packages provided this virtual
+            # package.
+            if provides is not None:
+                for virtual_pkg in provides.split(","):
+                    virtual_pkg = virtual_pkg.strip()
+                    if virtual_pkg == package: continue
+                    if not virtual_packages.has_key(virtual_pkg):
+                        virtual_packages[virtual_pkg] = 0
+                    if package not in removals:
+                        virtual_packages[virtual_pkg] += 1
+
+        # If a virtual package is only provided by the to-be-removed
+        # packages, treat the virtual package as to-be-removed too.
+        for virtual_pkg in virtual_packages.keys():
+            if virtual_packages[virtual_pkg] == 0:
+                removals.append(virtual_pkg)
+
+        # Check binary dependencies (Depends)
+        for package in deps.keys():
+            if package in removals: continue
+            parsed_dep = []
+            try:
+                parsed_dep += apt_pkg.ParseDepends(deps[package])
+            except ValueError as e:
+                print "Error for package %s: %s" % (package, e)
+            for dep in parsed_dep:
+                # Check for partial breakage.  If a package has a ORed
+                # dependency, there is only a dependency problem if all
+                # packages in the ORed depends will be removed.
+                unsat = 0
+                for dep_package, _, _ in dep:
+                    if dep_package in removals:
+                        unsat += 1
+                if unsat == len(dep):
+                    component = p2c[package]
+                    source = sources[package]
+                    if component != "main":
+                        source = "%s/%s" % (source, component)
+                    all_broken.setdefault(source, {}).setdefault(package, set()).add(architecture)
+                    dep_problem = 1
+
+    if all_broken:
+        if cruft:
+            print "  - broken Depends:"
+        else:
+            print "# Broken Depends:"
+        for source, bindict in sorted(all_broken.items()):
+            lines = []
+            for binary, arches in sorted(bindict.items()):
+                if arches == all_arches or 'all' in arches:
+                    lines.append(binary)
+                else:
+                    lines.append('%s [%s]' % (binary, ' '.join(sorted(arches))))
+            if cruft:
+                print '    %s: %s' % (source, lines[0])
+            else:
+                print '%s: %s' % (source, lines[0])
+            for line in lines[1:]:
+                if cruft:
+                    print '    ' + ' ' * (len(source) + 2) + line
+                else:
+                    print ' ' * (len(source) + 2) + line
+        if not cruft:
+            print
+
+    # Check source dependencies (Build-Depends and Build-Depends-Indep)
+    all_broken.clear()
+    metakey_bd = get_or_set_metadatakey("Build-Depends", session)
+    metakey_bdi = get_or_set_metadatakey("Build-Depends-Indep", session)
+    params = {
+        'suite_id':    dbsuite.suite_id,
+        'metakey_ids': (metakey_bd.key_id, metakey_bdi.key_id),
+    }
+    statement = '''
+        SELECT s.id, s.source, string_agg(sm.value, ', ') as build_dep
+           FROM source s
+           JOIN source_metadata sm ON s.id = sm.src_id
+           WHERE s.id in
+               (SELECT source FROM src_associations
+                   WHERE suite = :suite_id)
+               AND sm.key_id in :metakey_ids
+           GROUP BY s.id, s.source'''
+    query = session.query('id', 'source', 'build_dep').from_statement(statement). \
+        params(params)
+    for source_id, source, build_dep in query:
+        if source in removals: continue
+        parsed_dep = []
+        if build_dep is not None:
+            # Remove [arch] information since we want to see breakage on all arches
+            build_dep = re_build_dep_arch.sub("", build_dep)
+            try:
+                parsed_dep += apt_pkg.ParseDepends(build_dep)
+            except ValueError as e:
+                print "Error for source %s: %s" % (source, e)
+        for dep in parsed_dep:
+            unsat = 0
+            for dep_package, _, _ in dep:
+                if dep_package in removals:
+                    unsat += 1
+            if unsat == len(dep):
+                component = DBSource.get(source_id, session).get_component_name()
+                if component != "main":
+                    source = "%s/%s" % (source, component)
+                all_broken.setdefault(source, set()).add(pp_deps(dep))
+                dep_problem = 1
+
+    if all_broken:
+        if cruft:
+            print "  - broken Build-Depends:"
+        else:
+            print "# Broken Build-Depends:"
+        for source, bdeps in sorted(all_broken.items()):
+            bdeps = sorted(bdeps)
+            if cruft:
+                print '    %s: %s' % (source, bdeps[0])
+            else:
+                print '%s: %s' % (source, bdeps[0])
+            for bdep in bdeps[1:]:
+                if cruft:
+                    print '    ' + ' ' * (len(source) + 2) + bdep
+                else:
+                    print ' ' * (len(source) + 2) + bdep
+        if not cruft:
+            print
+
+    return dep_problem

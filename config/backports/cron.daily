@@ -16,7 +16,7 @@ dak clean-queues
 dak queue-report -d new,proposedupdates | mail -e -s "NEW and BYHAND on $(date +%D)" team@backports.debian.org
 # and one on crufty packages
 
-dak cruft-report -m bdo -s squeeze-backports > $webdir/cruft-report-daily.txt
+dak cruft-report -R -m bdo -s squeeze-backports > $webdir/cruft-report-daily.txt
 cat $webdir/cruft-report-daily.txt | mail -e -s "Debian backports archive cruft report for $(date +%D)" team@backports.debian.org
 
 echo Daily cron scripts successful.

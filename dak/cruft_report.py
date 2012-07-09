@@ -60,6 +60,7 @@ Check for obsolete or duplicated packages.
   -h, --help                show this help and exit.
   -m, --mode=MODE           chose the MODE to run in (full, daily, bdo).
   -s, --suite=SUITE         check suite SUITE.
+  -R, --rdep-check          check reverse dependencies
   -w, --wanna-build-dump    where to find the copies of http://buildd.debian.org/stats/*.txt"""
     sys.exit(exit_code)
 
@@ -229,7 +230,7 @@ def queryWithoutSource(suite_id, session):
         order by ub.package"""
     return session.execute(query, { 'suite_id': suite_id })
 
-def reportWithoutSource(suite_name, suite_id, session):
+def reportWithoutSource(suite_name, suite_id, session, rdeps=False):
     rows = queryWithoutSource(suite_id, session)
     title = 'packages without source in suite %s' % suite_name
     if rows.rowcount > 0:
@@ -240,8 +241,15 @@ def reportWithoutSource(suite_name, suite_id, session):
         print "* package %s in version %s is no longer built from source" % \
             (package, version)
         print "  - suggested command:"
-        print "    dak rm -m %s -s %s -a all -p -R -b %s\n" % \
+        print "    dak rm -m %s -s %s -a all -p -R -b %s" % \
             (message, suite_name, package)
+        if rdeps:
+            if utils.check_reverse_depends([package], suite_name, ["all"], session, True):
+                print
+            else:
+                print "  - No dependency problem found\n"
+        else:
+            print
 
 def queryNewerAll(suite_name, session):
     """searches for arch != all packages that have an arch == all
@@ -361,7 +369,7 @@ with uptodate_arch as
     select * from outdated_packages order by source"""
     return session.execute(query, { 'suite_id': suite_id })
 
-def reportNBS(suite_name, suite_id):
+def reportNBS(suite_name, suite_id, rdeps=False):
     session = DBConn().session()
     nbsRows = queryNBS(suite_id, session)
     title = 'NBS packages in suite %s' % suite_name
@@ -377,14 +385,21 @@ def reportNBS(suite_name, suite_id):
 	print "  on %s" % arch_string
 	print "  - suggested command:"
 	message = '"[auto-cruft] NBS (no longer built by %s)"' % source
-	print "    dak rm -m %s -s %s -a %s -p -R -b %s\n" % \
+	print "    dak rm -m %s -s %s -a %s -p -R -b %s" % \
 	    (message, suite_name, arch_string, pkg_string)
+        if rdeps:
+            if utils.check_reverse_depends(pkg_list, suite_name, arch_list, session, True):
+                print
+            else:
+                print "  - No dependency problem found\n"
+        else:
+            print
     session.close()
 
-def reportAllNBS(suite_name, suite_id, session):
-    reportWithoutSource(suite_name, suite_id, session)
+def reportAllNBS(suite_name, suite_id, session, rdeps=False):
+    reportWithoutSource(suite_name, suite_id, session, rdeps)
     reportNewerAll(suite_name, session)
-    reportNBS(suite_name, suite_id)
+    reportNBS(suite_name, suite_id, rdeps)
 
 ################################################################################
 
@@ -506,7 +521,7 @@ def get_suite_binaries(suite, session):
 
 ################################################################################
 
-def report_outdated_nonfree(suite, session):
+def report_outdated_nonfree(suite, session, rdeps=False):
 
     packages = {}
     query = """WITH outdated_sources AS (
@@ -572,8 +587,15 @@ def report_outdated_nonfree(suite, session):
             for binary in sorted(packages[source]):
                 binaries.add(binary)
                 archs = archs.union(packages[source][binary])
-            print '    dak rm -m %s -s %s -a %s -p -R -b %s\n' % \
+            print '    dak rm -m %s -s %s -a %s -p -R -b %s' % \
                    (message, suite, ','.join(archs), ' '.join(binaries))
+            if rdeps:
+                if utils.check_reverse_depends(list(binaries), suite, archs, session, True):
+                    print
+                else:
+                    print "  - No dependency problem found\n"
+            else:
+                print
 
 ################################################################################
 
@@ -584,9 +606,10 @@ def main ():
 
     Arguments = [('h',"help","Cruft-Report::Options::Help"),
                  ('m',"mode","Cruft-Report::Options::Mode", "HasArg"),
+                 ('R',"rdep-check", "Cruft-Report::Options::Rdep-Check"),
                  ('s',"suite","Cruft-Report::Options::Suite","HasArg"),
                  ('w',"wanna-build-dump","Cruft-Report::Options::Wanna-Build-Dump","HasArg")]
-    for i in [ "help" ]:
+    for i in [ "help", "Rdep-Check" ]:
         if not cnf.has_key("Cruft-Report::Options::%s" % (i)):
             cnf["Cruft-Report::Options::%s" % (i)] = ""
 
@@ -603,6 +626,11 @@ def main ():
     Options = cnf.subtree("Cruft-Report::Options")
     if Options["Help"]:
         usage()
+
+    if Options["Rdep-Check"]:
+        rdeps = True
+    else:
+        rdeps = False
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
@@ -639,10 +667,10 @@ def main ():
         report_obsolete_source(suite_name, session)
 
     if "nbs" in checks:
-        reportAllNBS(suite_name, suite_id, session)
+        reportAllNBS(suite_name, suite_id, session, rdeps)
 
     if "outdated non-free" in checks:
-        report_outdated_nonfree(suite_name, session)
+        report_outdated_nonfree(suite_name, session, rdeps)
 
     bin_not_built = {}
 

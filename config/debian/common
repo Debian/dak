@@ -126,8 +126,8 @@ function reports() {
     dak queue-report | mail -a "X-Debian: DAK" -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     # and one on crufty packages
     log "Sending information about crufty packages"
-    dak cruft-report > $webdir/cruft-report-daily.txt
-    dak cruft-report -s experimental >> $webdir/cruft-report-daily.txt
+    dak cruft-report -R > $webdir/cruft-report-daily.txt
+    dak cruft-report -R -s experimental >> $webdir/cruft-report-daily.txt
     cat $webdir/cruft-report-daily.txt | mail -a "X-Debian: DAK" -e -s "Debian archive cruft report for $(date +%D)" ftpmaster@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 }
 
