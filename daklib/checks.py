@@ -500,6 +500,7 @@ class VersionCheck(Check):
     def _highest_binary_version(self, session, binary_name, suite, architecture):
         db_binary = session.query(DBBinary).filter_by(package=binary_name) \
             .filter(DBBinary.suites.contains(suite)) \
+            .join(DBBinary.architecture) \
             .filter(Architecture.arch_string.in_(['all', architecture])) \
             .order_by(DBBinary.version.desc()).first()
         if db_binary is None:
