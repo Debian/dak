@@ -693,7 +693,7 @@ class ArchiveUpload(object):
            daklib.dbconn.Override or None
         """
         if suite.overridesuite is not None:
-            suite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
+            suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
         query = self.session.query(Override).filter_by(suite=suite, package=binary.control['Package']) \
                 .join(Component).filter(Component.component_name == binary.component) \
@@ -715,7 +715,7 @@ class ArchiveUpload(object):
            daklib.dbconn.Override or None
         """
         if suite.overridesuite is not None:
-            suite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
+            suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
         # XXX: component for source?
         query = self.session.query(Override).filter_by(suite=suite, package=source.dsc['Source']) \
