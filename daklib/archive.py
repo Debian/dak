@@ -899,7 +899,13 @@ class ArchiveUpload(object):
 
         remaining = []
         for f in byhand:
-            package, version, archext = f.filename.split('_', 2)
+            parts = f.filename.split('_', 2)
+            if len(parts) != 3:
+                print "W: unexpected byhand filename {0}. No automatic processing.".format(f.filename)
+                remaining.append(f)
+                continue
+
+            package, version, archext = parts
             arch, ext = archext.split('.', 1)
 
             rule = automatic_byhand_packages.get(package)
