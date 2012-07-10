@@ -44,7 +44,8 @@ import subprocess
 from dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
                    get_active_keyring_paths, get_primary_keyring_path, \
-                   get_suite_architectures, get_or_set_metadatakey, DBSource
+                   get_suite_architectures, get_or_set_metadatakey, DBSource, \
+                   Component, Override, OverrideType
 from sqlalchemy import desc
 from dak_exceptions import *
 from gpg import SignedFile
@@ -1620,6 +1621,9 @@ def call_editor(text="", suffix=".txt"):
 
 def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False):
     dbsuite = get_suite(suite, session)
+    overridesuite = dbsuite
+    if dbsuite.overridesuite is not None:
+        overridesuite = get_suite(dbsuite.overridesuite, session)
     dep_problem = 0
     p2c = {}
     all_broken = {}
@@ -1648,9 +1652,8 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 FROM binaries b
                 JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
                 JOIN source s ON b.source = s.id
-                JOIN files f ON b.file = f.id
-                JOIN location l ON f.location = l.id
-                JOIN component c ON l.component = c.id
+                JOIN files_archive_map af ON b.file = af.file_id
+                JOIN component c ON af.component_id = c.id
                 WHERE b.architecture = :arch_id'''
         query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
             from_statement(statement).params(params)
@@ -1763,7 +1766,12 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 if dep_package in removals:
                     unsat += 1
             if unsat == len(dep):
-                component = DBSource.get(source_id, session).get_component_name()
+                component, = session.query(Component.component_name) \
+                    .join(Component.overrides) \
+                    .filter(Override.suite == overridesuite) \
+                    .filter(Override.package == source) \
+                    .join(Override.overridetype).filter(OverrideType.overridetype == 'dsc') \
+                    .first()
                 if component != "main":
                     source = "%s/%s" % (source, component)
                 all_broken.setdefault(source, set()).add(pp_deps(dep))
