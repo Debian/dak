@@ -3,6 +3,7 @@
 # Executed hourly via cron, out of dak's crontab.
 
 set -e
+set -o pipefail
 set -u
 
 export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
