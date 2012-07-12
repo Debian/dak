@@ -263,7 +263,8 @@ function mkfilesindices() {
     ARCHLIST=$(tempfile)
 
     log "Querying postgres"
-    echo 'SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)' | psql -At | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
+    local query='SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)'
+    psql -At -c "$query" | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
 
     includedirs () {
         perl -ne 'print; while (m,/[^/]+$,) { $_=$`; print $_ . "\n" unless $d{$_}++; }'
@@ -296,12 +297,15 @@ function mkfilesindices() {
     log "Generating suite lists"
 
     suite_list () {
-        printf 'SELECT DISTINCT l.path, f.filename FROM (SELECT sa.source AS source FROM src_associations sa WHERE sa.suite = %d UNION SELECT b.source AS source FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) WHERE ba.suite = %d) s JOIN dsc_files df ON (s.source = df.source) JOIN files f ON (df.file = f.id) JOIN location l ON (f.location = l.id)\n' $1 $1 | psql -F' ' -A -t
+        local query
+	query="$(printf 'SELECT DISTINCT l.path, f.filename FROM (SELECT sa.source AS source FROM src_associations sa WHERE sa.suite = %d UNION SELECT b.source AS source FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) WHERE ba.suite = %d) s JOIN dsc_files df ON (s.source = df.source) JOIN files f ON (df.file = f.id) JOIN location l ON (f.location = l.id)' $1 $1)"
+	psql -F' ' -A -t -c "$query"
 
-        printf 'SELECT l.path, f.filename FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) JOIN files f ON (b.file = f.id) JOIN location l ON (f.location = l.id) WHERE ba.suite = %d\n' $1 | psql -F' ' -A -t
+        query="$(printf 'SELECT l.path, f.filename FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) JOIN files f ON (b.file = f.id) JOIN location l ON (f.location = l.id) WHERE ba.suite = %d' $1)"
+	psql -F' ' -A -t -c "$query"
     }
 
-    printf 'SELECT id, suite_name FROM suite\n' | psql -F' ' -At |
+    psql -F' ' -At -c 'SELECT id, suite_name FROM suite' |
     while read id suite; do
         [ -e $base/ftp/dists/$suite ] || continue
         (
