@@ -34,17 +34,6 @@ function wbtrigger() {
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
     dak manage-build-queues -a
-
-    for dist in $(ls -1 ${incoming}/dists/); do
-        # Skip project trace directory
-        if [ "${dist}x" = "projectx" ]; then continue; fi
-        cd ${incoming}/dists/${dist}
-        mkdir -p tree/${STAMP}
-        cp -al ${incoming}/dists/${dist}/buildd/. tree/${STAMP}/
-        ln -sfT tree/${STAMP} ${incoming}/dists/${dist}/current
-        find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
-    done
-
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue
