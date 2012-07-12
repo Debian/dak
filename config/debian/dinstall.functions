@@ -301,6 +301,11 @@ function mkfilesindices() {
                FROM src_associations sa
               WHERE sa.suite = $suite_id
              UNION
+             SELECT esr.src_id
+               FROM extra_src_references esr
+               JOIN bin_associations ba ON esr.bin_id = ba.bin
+               WHERE ba.suite = $suite_id
+             UNION
              SELECT b.source AS source
                FROM bin_associations ba
                JOIN binaries b ON ba.bin = b.id WHERE ba.suite = $suite_id) s
