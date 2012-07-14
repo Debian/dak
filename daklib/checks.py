@@ -31,9 +31,11 @@ from .textutils import fix_maintainer, ParseMaintError
 import daklib.lintian as lintian
 import daklib.utils as utils
 
+import apt_inst
 import apt_pkg
 from apt_pkg import version_compare
 import os
+import time
 import yaml
 
 # TODO: replace by subprocess
@@ -240,6 +242,44 @@ class BinaryCheck(Check):
                     apt_pkg.parse_src_depends(value)
                 except:
                     raise Reject('{0}: APT could not parse {1} field'.format(fn, field))
+
+class BinaryTimestampCheck(Check):
+    """check timestamps of files in binary packages
+
+    Files in the near future cause ugly warnings and extreme time travel
+    can cause errors on extraction.
+    """
+    def check(self, upload):
+        cnf = Config()
+        future_cutoff = time.time() + cnf.find_i('Dinstall::FutureTimeTravelGrace', 24*3600)
+        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1984'), '%Y'))
+
+        class TarTime(object):
+            def __init__(self):
+                self.future_files = dict()
+                self.past_files = dict()
+            def callback(self, member, data):
+                if member.mtime > future_cutoff:
+                    future_files[member.name] = member.mtime
+                elif member.mtime < past_cutoff:
+                    past_files[member.name] = member.mtime
+
+        def format_reason(filename, direction, files):
+            reason = "{0}: has {1} file(s) with a timestamp too far in the {2}:\n".format(filename, len(files), direction)
+            for fn, ts in files.iteritems():
+                reason += "  {0} ({1})".format(fn, time.ctime(ts))
+            return reason
+
+        for binary in upload.changes.binaries:
+            filename = binary.hashed_file.filename
+            path = os.path.join(upload.directory, filename)
+            deb = apt_inst.DebFile(path)
+            tar = TarTime()
+            deb.control.go(tar.callback)
+            if tar.future_files:
+                raise Reject(format_reason(filename, 'future', tar.future_files))
+            if tar.past_files:
+                raise Reject(format_reason(filename, 'past', tar.past_files))
 
 class SourceCheck(Check):
     """Check source package for syntax errors."""

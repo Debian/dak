@@ -745,6 +745,7 @@ class ArchiveUpload(object):
                     checks.HashesCheck,
                     checks.SourceCheck,
                     checks.BinaryCheck,
+                    checks.BinaryTimestampCheck,
                     checks.ACLCheck,
                     checks.SingleDistributionCheck,
                     checks.NoSourceOnlyCheck,
