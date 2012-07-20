@@ -1101,7 +1101,8 @@ class ArchiveUpload(object):
             component = binary_component_func(binary)
             binary_component_names.add(component.component_name)
         source_component_name = None
-        for guess in ('main', 'contrib', 'non-free'):
+        for c in self.session.query(Component).order_by(Component.component_id):
+            guess = c.component_name
             if guess in binary_component_names:
                 source_component_name = guess
                 break
