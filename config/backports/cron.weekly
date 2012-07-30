@@ -2,6 +2,7 @@
 #
 
 set -e
+set -o pipefail
 set -u
 # ERR traps should be inherited from functions too. (And command
 # substitutions and subshells and whatnot, but for us the functions is

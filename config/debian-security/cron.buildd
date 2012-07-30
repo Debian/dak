@@ -3,6 +3,7 @@
 # Executed after cron.unchecked
 
 set -e
+set -o pipefail
 set -u
 
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars

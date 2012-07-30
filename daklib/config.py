@@ -83,6 +83,7 @@ class Config(object):
         self.value_list = self.Cnf.value_list
         self.find = self.Cnf.find
         self.find_b = self.Cnf.find_b
+        self.find_i = self.Cnf.find_i
 
     def has_key(self, name):
         return name in self.Cnf

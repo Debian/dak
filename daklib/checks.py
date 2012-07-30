@@ -31,9 +31,11 @@ from .textutils import fix_maintainer, ParseMaintError
 import daklib.lintian as lintian
 import daklib.utils as utils
 
+import apt_inst
 import apt_pkg
 from apt_pkg import version_compare
 import os
+import time
 import yaml
 
 # TODO: replace by subprocess
@@ -241,6 +243,44 @@ class BinaryCheck(Check):
                 except:
                     raise Reject('{0}: APT could not parse {1} field'.format(fn, field))
 
+class BinaryTimestampCheck(Check):
+    """check timestamps of files in binary packages
+
+    Files in the near future cause ugly warnings and extreme time travel
+    can cause errors on extraction.
+    """
+    def check(self, upload):
+        cnf = Config()
+        future_cutoff = time.time() + cnf.find_i('Dinstall::FutureTimeTravelGrace', 24*3600)
+        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1984'), '%Y'))
+
+        class TarTime(object):
+            def __init__(self):
+                self.future_files = dict()
+                self.past_files = dict()
+            def callback(self, member, data):
+                if member.mtime > future_cutoff:
+                    future_files[member.name] = member.mtime
+                elif member.mtime < past_cutoff:
+                    past_files[member.name] = member.mtime
+
+        def format_reason(filename, direction, files):
+            reason = "{0}: has {1} file(s) with a timestamp too far in the {2}:\n".format(filename, len(files), direction)
+            for fn, ts in files.iteritems():
+                reason += "  {0} ({1})".format(fn, time.ctime(ts))
+            return reason
+
+        for binary in upload.changes.binaries:
+            filename = binary.hashed_file.filename
+            path = os.path.join(upload.directory, filename)
+            deb = apt_inst.DebFile(path)
+            tar = TarTime()
+            deb.control.go(tar.callback)
+            if tar.future_files:
+                raise Reject(format_reason(filename, 'future', tar.future_files))
+            if tar.past_files:
+                raise Reject(format_reason(filename, 'past', tar.past_files))
+
 class SourceCheck(Check):
     """Check source package for syntax errors."""
     def check_filename(self, control, filename, regex):
@@ -315,15 +355,12 @@ class ACLCheck(Check):
 
         if 'source' not in upload.changes.architectures:
             raise Reject('DM uploads must include source')
-        distributions = upload.changes.distributions
-        for dist in distributions:
-            if dist not in ('unstable', 'experimental', 'squeeze-backports'):
-                raise Reject("Uploading to {0} is not allowed for DMs.".format(dist))
         for f in upload.changes.files.itervalues():
             if f.section == 'byhand' or f.section[:4] == "raw-":
                 raise Reject("Uploading byhand packages is not allowed for DMs.")
 
         # Reject NEW packages
+        distributions = upload.changes.distributions
         assert len(distributions) == 1
         suite = session.query(Suite).filter_by(suite_name=distributions[0]).one()
         overridesuite = suite
@@ -503,6 +540,7 @@ class VersionCheck(Check):
     def _highest_binary_version(self, session, binary_name, suite, architecture):
         db_binary = session.query(DBBinary).filter_by(package=binary_name) \
             .filter(DBBinary.suites.contains(suite)) \
+            .join(DBBinary.architecture) \
             .filter(Architecture.arch_string.in_(['all', architecture])) \
             .order_by(DBBinary.version.desc()).first()
         if db_binary is None:
@@ -510,23 +548,23 @@ class VersionCheck(Check):
         else:
             return db_binary.version
 
-    def _version_checks(self, upload, suite, expected_result):
+    def _version_checks(self, upload, suite, op):
         session = upload.session
 
         if upload.changes.source is not None:
             source_name = upload.changes.source.dsc['Source']
             source_version = upload.changes.source.dsc['Version']
             v = self._highest_source_version(session, source_name, suite)
-            if v is not None and version_compare(source_version, v) != expected_result:
-                raise Reject('Version check failed (source={0}, version={1}, suite={2})'.format(source_name, source_version, suite.suite_name))
+            if v is not None and not op(version_compare(source_version, v)):
+                raise Reject('Version check failed (source={0}, version={1}, other-version={2}, suite={3})'.format(source_name, source_version, v, suite.suite_name))
 
         for binary in upload.changes.binaries:
             binary_name = binary.control['Package']
             binary_version = binary.control['Version']
             architecture = binary.control['Architecture']
             v = self._highest_binary_version(session, binary_name, suite, architecture)
-            if v is not None and version_compare(binary_version, v) != expected_result:
-                raise Reject('Version check failed (binary={0}, version={1}, suite={2})'.format(binary_name, binary_version, suite.suite_name))
+            if v is not None and not op(version_compare(binary_version, v)):
+                raise Reject('Version check failed (binary={0}, version={1}, other-version={2}, suite={3})'.format(binary_name, binary_version, v, suite.suite_name))
 
     def per_suite_check(self, upload, suite):
         session = upload.session
@@ -538,13 +576,13 @@ class VersionCheck(Check):
         must_be_newer_than.append(suite)
 
         for s in must_be_newer_than:
-            self._version_checks(upload, s, 1)
+            self._version_checks(upload, s, lambda result: result > 0)
 
         vc_older = session.query(dbconn.VersionCheck).filter_by(suite=suite, check='MustBeOlderThan')
         must_be_older_than = [ vc.reference for vc in vc_older ]
 
         for s in must_be_older_than:
-            self._version_checks(upload, s, -1)
+            self._version_checks(upload, s, lambda result: result < 0)
 
         return True
 

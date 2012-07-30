@@ -136,7 +136,8 @@ class ArchiveTransaction(object):
         source = source_query.filter(DBSource.suites.contains(suite)).first()
         if source is None:
             if source_suites != True:
-                source_query = source_query.filter(DBSource.suites.any(source_suites))
+                source_query = source_query.join(DBSource.suites) \
+                    .filter(Suite.suite_id == source_suites.c.id)
             source = source_query.first()
             if source is None:
                 raise ArchiveException('{0}: trying to install to {1}, but could not find source'.format(binary.hashed_file.filename, suite.suite_name))
@@ -628,6 +629,29 @@ class ArchiveUpload(object):
         suites = session.query(Suite).filter(Suite.suite_name.in_(suite_names))
         return suites
 
+    def _mapped_component(self, component_name):
+        """get component after mappings
+
+        Evaluate component mappings from ComponentMappings in dak.conf for the
+        given component name.
+
+        NOTE: ansgar wants to get rid of this. It's currently only used for
+        the security archive
+
+        Args:
+           component_name (str): component name
+
+        Returns:
+           `daklib.dbconn.Component` object
+        """
+        cnf = Config()
+        for m in cnf.value_list("ComponentMappings"):
+            (src, dst) = m.split()
+            if component_name == src:
+                component_name = dst
+        component = self.session.query(Component).filter_by(component_name=component_name).one()
+        return component
+
     def _check_new(self, suite):
         """Check if upload is NEW
 
@@ -692,7 +716,7 @@ class ArchiveUpload(object):
            daklib.dbconn.Override or None
         """
         if suite.overridesuite is not None:
-            suite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
+            suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
         query = self.session.query(Override).filter_by(suite=suite, package=binary.control['Package']) \
                 .join(Component).filter(Component.component_name == binary.component) \
@@ -714,7 +738,7 @@ class ArchiveUpload(object):
            daklib.dbconn.Override or None
         """
         if suite.overridesuite is not None:
-            suite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
+            suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
         # XXX: component for source?
         query = self.session.query(Override).filter_by(suite=suite, package=source.dsc['Source']) \
@@ -724,6 +748,30 @@ class ArchiveUpload(object):
             return query.one()
         except NoResultFound:
             return None
+
+    def _binary_component(self, suite, binary, only_overrides=True):
+        """get component for a binary
+
+        By default this will only look at overrides to get the right component;
+        if `only_overrides` is False this method will also look at the Section field.
+
+        Args:
+           suite (daklib.dbconn.Suite)
+           binary (daklib.upload.Binary)
+
+        Kwargs:
+           only_overrides (bool): only use overrides to get the right component.
+               defaults to True.
+
+        Returns:
+           `daklib.dbconn.Component` object or None
+        """
+        override = self._binary_override(suite, binary)
+        if override is not None:
+            return override.component
+        if only_overrides:
+            return None
+        return self._mapped_component(binary.component)
 
     def check(self, force=False):
         """run checks against the upload
@@ -744,6 +792,7 @@ class ArchiveUpload(object):
                     checks.HashesCheck,
                     checks.SourceCheck,
                     checks.BinaryCheck,
+                    checks.BinaryTimestampCheck,
                     checks.ACLCheck,
                     checks.SingleDistributionCheck,
                     checks.NoSourceOnlyCheck,
@@ -802,7 +851,7 @@ class ArchiveUpload(object):
         changed_by = get_or_set_maintainer(control.get('Changed-By', control['Maintainer']), self.session)
 
         if source_suites is None:
-            source_suites = self.session.query(Suite).join(VersionCheck, VersionCheck.reference_id == Suite.suite_id).filter(VersionCheck.suite == suite).subquery()
+            source_suites = self.session.query(Suite).join((VersionCheck, VersionCheck.reference_id == Suite.suite_id)).filter(VersionCheck.suite == suite).subquery()
 
         source = self.changes.source
         if source is not None:
@@ -898,7 +947,13 @@ class ArchiveUpload(object):
 
         remaining = []
         for f in byhand:
-            package, version, archext = f.filename.split('_', 2)
+            parts = f.filename.split('_', 2)
+            if len(parts) != 3:
+                print "W: unexpected byhand filename {0}. No automatic processing.".format(f.filename)
+                remaining.append(f)
+                continue
+
+            package, version, archext = parts
             arch, ext = archext.split('.', 1)
 
             rule = automatic_byhand_packages.get(package)
@@ -995,7 +1050,7 @@ class ArchiveUpload(object):
                 redirected_suite = suite.policy_queue.suite
 
             source_component_func = lambda source: self._source_override(overridesuite, source).component
-            binary_component_func = lambda binary: self._binary_override(overridesuite, binary).component
+            binary_component_func = lambda binary: self._binary_component(overridesuite, binary)
 
             (db_source, db_binaries) = self._install_to_suite(redirected_suite, source_component_func, binary_component_func, extra_source_archives=[suite.archive])
 
@@ -1037,12 +1092,7 @@ class ArchiveUpload(object):
         suite = suites[0]
 
         def binary_component_func(binary):
-            override = self._binary_override(suite, binary)
-            if override is not None:
-                return override.component
-            component_name = binary.component
-            component = self.session.query(Component).filter_by(component_name=component_name).one()
-            return component
+            return self._binary_component(suite, binary, only_overrides=False)
 
         # guess source component
         # XXX: should be moved into an extra method
@@ -1051,7 +1101,8 @@ class ArchiveUpload(object):
             component = binary_component_func(binary)
             binary_component_names.add(component.component_name)
         source_component_name = None
-        for guess in ('main', 'contrib', 'non-free'):
+        for c in self.session.query(Component).order_by(Component.component_id):
+            guess = c.component_name
             if guess in binary_component_names:
                 source_component_name = guess
                 break

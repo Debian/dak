@@ -18,6 +18,7 @@
 
 # exit on errors
 set -e
+set -o pipefail
 # make sure to only use defined variables
 set -u
 # ERR traps should be inherited from functions too. (And command

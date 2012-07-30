@@ -1423,6 +1423,10 @@ class PoolFile(ORMObject):
     def fullpath(self):
         return os.path.join(self.location.path, self.filename)
 
+    @property
+    def basename(self):
+        return os.path.basename(self.filename)
+
     def is_valid(self, filesize = -1, md5sum = None):
         return self.filesize == long(filesize) and self.md5sum == md5sum
 
@@ -2998,6 +3002,10 @@ class Suite(ORMObject):
             return self
         else:
             return object_session(self).query(Suite).filter_by(suite_name=self.overridesuite).one()
+
+    @property
+    def path(self):
+        return os.path.join(self.archive.path, 'dists', self.suite_name)
 
 __all__.append('Suite')
 

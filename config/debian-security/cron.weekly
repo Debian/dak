@@ -3,6 +3,7 @@
 # Executed weekly via cron, out of dak's crontab.
 
 set -e
+set -o pipefail
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
 
