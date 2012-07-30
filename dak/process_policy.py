@@ -33,6 +33,7 @@
 
 import os
 import datetime
+import re
 import sys
 import traceback
 import apt_pkg
@@ -232,6 +233,14 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True):
         subst = subst_for_upload(upload)
         subst['__MANUAL_REJECT_MESSAGE__'] = ''
         subst['__REJECT_MESSAGE__'] = comments
+
+        # Try to use From: from comment file if there is one.
+        # This is not very elegant...
+        match = re.match(r"\AFrom: ([^\n]+)\n\n", comments)
+        if match:
+            subst['__REJECTOR_ADDRESS__'] = match.group(1)
+            subst['__REJECT_MESSAGE__'] = '\n'.join(comments.splitlines()[2:])
+
         message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'queue.rejected'))
         utils.send_mail(message)
 

@@ -20,6 +20,7 @@ from .config import Config
 from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, get_mapped_component
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
+import daklib.utils as utils
 
 import errno
 import os
@@ -180,6 +181,8 @@ class PolicyQueueUploadHandler(object):
         @type  reason: str
         @param reason: reason for the rejection
         """
+        cnf = Config()
+
         fn1 = 'REJECT.{0}'.format(self._changes_prefix)
         assert re_file_safe.match(fn1)
 
@@ -187,6 +190,7 @@ class PolicyQueueUploadHandler(object):
         try:
             fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             os.write(fh, 'NOTOK\n')
+            os.write(fh, 'From: {0} <{1}>\n\n'.format(utils.whoami(), cnf['Dinstall::MyAdminAddress']))
             os.write(fh, reason)
             os.close(fh)
         except OSError as e:
