@@ -225,6 +225,11 @@ def __suite_add(d, args, addallarches=False):
             signingkey = get_field('signingkey')
             if signingkey is not None:
                 suite.signingkeys = [signingkey.upper()]
+            archive_name = get_field('archive')
+            if archive_name is not None:
+                suite.archive = get_archive(archive_name, s)
+            else:
+                suite.archive = s.query(Archive).filter(~Archive.archive_name.in_(['build-queues', 'new', 'policy'])).one()
             suite.srcformats = s.query(SrcFormat).all()
             s.add(suite)
             s.flush()
