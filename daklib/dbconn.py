@@ -540,9 +540,6 @@ class DBBinary(ORMObject):
 
     metadata = association_proxy('key', 'value')
 
-    def get_component_name(self):
-        return self.poolfile.location.component.component_name
-
     def scan_contents(self):
         '''
         Yields the contents of the package. Only regular files are yielded and
@@ -669,45 +666,6 @@ __all__.append('BinaryACLMap')
 
 ################################################################################
 
-MINIMAL_APT_CONF="""
-Dir
-{
-   ArchiveDir "%(archivepath)s";
-   OverrideDir "%(overridedir)s";
-   CacheDir "%(cachedir)s";
-};
-
-Default
-{
-   Packages::Compress ". bzip2 gzip";
-   Sources::Compress ". bzip2 gzip";
-   DeLinkLimit 0;
-   FileMode 0664;
-}
-
-bindirectory "incoming"
-{
-   Packages "Packages";
-   Contents " ";
-
-   BinOverride "override.sid.all3";
-   BinCacheDB "packages-accepted.db";
-
-   FileList "%(filelist)s";
-
-   PathPrefix "";
-   Packages::Extensions ".deb .udeb";
-};
-
-bindirectory "incoming/"
-{
-   Sources "Sources";
-   BinOverride "override.sid.all3";
-   SrcOverride "override.sid.all3.src";
-   FileList "%(filelist)s";
-};
-"""
-
 class BuildQueue(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -715,389 +673,7 @@ class BuildQueue(object):
     def __repr__(self):
         return '<BuildQueue %s>' % self.queue_name
 
-    def write_metadata(self, starttime, force=False):
-        # Do we write out metafiles?
-        if not (force or self.generate_metadata):
-            return
-
-        session = DBConn().session().object_session(self)
-
-        fl_fd = fl_name = ac_fd = ac_name = None
-        tempdir = None
-        arches = " ".join([ a.arch_string for a in session.query(Architecture).all() if a.arch_string != 'source' ])
-        startdir = os.getcwd()
-
-        try:
-            # Grab files we want to include
-            newer = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) > starttime).all()
-            newer += session.query(BuildQueuePolicyFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueuePolicyFile.lastused + timedelta(seconds=self.stay_of_execution) > starttime).all()
-            # Write file list with newer files
-            (fl_fd, fl_name) = mkstemp()
-            for n in newer:
-                os.write(fl_fd, '%s\n' % n.fullpath)
-            os.close(fl_fd)
-
-            cnf = Config()
-
-            # Write minimal apt.conf
-            # TODO: Remove hardcoding from template
-            (ac_fd, ac_name) = mkstemp()
-            os.write(ac_fd, MINIMAL_APT_CONF % {'archivepath': self.path,
-                                                'filelist': fl_name,
-                                                'cachedir': cnf["Dir::Cache"],
-                                                'overridedir': cnf["Dir::Override"],
-                                                })
-            os.close(ac_fd)
-
-            # Run apt-ftparchive generate
-            os.chdir(os.path.dirname(ac_name))
-            os.system('apt-ftparchive -qq -o APT::FTPArchive::Contents=off generate %s' % os.path.basename(ac_name))
-
-            # Run apt-ftparchive release
-            # TODO: Eww - fix this
-            bname = os.path.basename(self.path)
-            os.chdir(self.path)
-            os.chdir('..')
-
-            # We have to remove the Release file otherwise it'll be included in the
-            # new one
-            try:
-                os.unlink(os.path.join(bname, 'Release'))
-            except OSError:
-                pass
-
-            os.system("""apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="%s" -o APT::FTPArchive::Release::Label="%s" -o APT::FTPArchive::Release::Description="%s" -o APT::FTPArchive::Release::Architectures="%s" release %s > Release""" % (self.origin, self.label, self.releasedescription, arches, bname))
-
-            # Crude hack with open and append, but this whole section is and should be redone.
-            if self.notautomatic:
-                release=open("Release", "a")
-                release.write("NotAutomatic: yes\n")
-                release.close()
-
-            # Sign if necessary
-            if self.signingkey:
-                keyring = "--secret-keyring \"%s\"" % cnf["Dinstall::SigningKeyring"]
-                if cnf.has_key("Dinstall::SigningPubKeyring"):
-                    keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]
-
-                os.system("gpg %s --no-options --batch --no-tty --armour --default-key %s --detach-sign -o Release.gpg Release""" % (keyring, self.signingkey))
-
-            # Move the files if we got this far
-            os.rename('Release', os.path.join(bname, 'Release'))
-            if self.signingkey:
-                os.rename('Release.gpg', os.path.join(bname, 'Release.gpg'))
-
-        # Clean up any left behind files
-        finally:
-            os.chdir(startdir)
-            if fl_fd:
-                try:
-                    os.close(fl_fd)
-                except OSError:
-                    pass
-
-            if fl_name:
-                try:
-                    os.unlink(fl_name)
-                except OSError:
-                    pass
-
-            if ac_fd:
-                try:
-                    os.close(ac_fd)
-                except OSError:
-                    pass
-
-            if ac_name:
-                try:
-                    os.unlink(ac_name)
-                except OSError:
-                    pass
-
-    def clean_and_update(self, starttime, Logger, dryrun=False):
-        """WARNING: This routine commits for you"""
-        session = DBConn().session().object_session(self)
-
-        if self.generate_metadata and not dryrun:
-            self.write_metadata(starttime)
-
-        # Grab files older than our execution time
-        older = session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueueFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
-        older += session.query(BuildQueuePolicyFile).filter_by(build_queue_id = self.queue_id).filter(BuildQueuePolicyFile.lastused + timedelta(seconds=self.stay_of_execution) <= starttime).all()
-
-        for o in older:
-            killdb = False
-            try:
-                if dryrun:
-                    Logger.log(["I: Would have removed %s from the queue" % o.fullpath])
-                else:
-                    Logger.log(["I: Removing %s from the queue" % o.fullpath])
-                    os.unlink(o.fullpath)
-                    killdb = True
-            except OSError as e:
-                # If it wasn't there, don't worry
-                if e.errno == ENOENT:
-                    killdb = True
-                else:
-                    # TODO: Replace with proper logging call
-                    Logger.log(["E: Could not remove %s" % o.fullpath])
-
-            if killdb:
-                session.delete(o)
-
-        session.commit()
-
-        for f in os.listdir(self.path):
-            if f.startswith('Packages') or f.startswith('Source') or f.startswith('Release') or f.startswith('advisory'):
-                continue
-
-            if not self.contains_filename(f):
-                fp = os.path.join(self.path, f)
-                if dryrun:
-                    Logger.log(["I: Would remove unused link %s" % fp])
-                else:
-                    Logger.log(["I: Removing unused link %s" % fp])
-                    try:
-                        os.unlink(fp)
-                    except OSError:
-                        Logger.log(["E: Failed to unlink unreferenced file %s" % r.fullpath])
-
-    def contains_filename(self, filename):
-        """
-        @rtype Boolean
-        @returns True if filename is supposed to be in the queue; False otherwise
-        """
-        session = DBConn().session().object_session(self)
-        if session.query(BuildQueueFile).filter_by(build_queue_id = self.queue_id, filename = filename).count() > 0:
-            return True
-        elif session.query(BuildQueuePolicyFile).filter_by(build_queue = self, filename = filename).count() > 0:
-            return True
-        return False
-
-    def add_file_from_pool(self, poolfile):
-        """Copies a file into the pool.  Assumes that the PoolFile object is
-        attached to the same SQLAlchemy session as the Queue object is.
-
-        The caller is responsible for committing after calling this function."""
-        poolfile_basename = poolfile.filename[poolfile.filename.rindex(os.sep)+1:]
-
-        # Check if we have a file of this name or this ID already
-        for f in self.queuefiles:
-            if (f.fileid is not None and f.fileid == poolfile.file_id) or \
-               (f.poolfile is not None and f.poolfile.filename == poolfile_basename):
-                   # In this case, update the BuildQueueFile entry so we
-                   # don't remove it too early
-                   f.lastused = datetime.now()
-                   DBConn().session().object_session(poolfile).add(f)
-                   return f
-
-        # Prepare BuildQueueFile object
-        qf = BuildQueueFile()
-        qf.build_queue_id = self.queue_id
-        qf.filename = poolfile_basename
-
-        targetpath = poolfile.fullpath
-        queuepath = os.path.join(self.path, poolfile_basename)
-
-        try:
-            if self.copy_files:
-                # We need to copy instead of symlink
-                import utils
-                utils.copy(targetpath, queuepath)
-                # NULL in the fileid field implies a copy
-                qf.fileid = None
-            else:
-                os.symlink(targetpath, queuepath)
-                qf.fileid = poolfile.file_id
-        except FileExistsError:
-            if not poolfile.identical_to(queuepath):
-                raise
-        except OSError:
-            return None
-
-        # Get the same session as the PoolFile is using and add the qf to it
-        DBConn().session().object_session(poolfile).add(qf)
-
-        return qf
-
-    def add_changes_from_policy_queue(self, policyqueue, changes):
-        """
-        Copies a changes from a policy queue together with its poolfiles.
-
-        @type policyqueue: PolicyQueue
-        @param policyqueue: policy queue to copy the changes from
-
-        @type changes: DBChange
-        @param changes: changes to copy to this build queue
-        """
-        for policyqueuefile in changes.files:
-            self.add_file_from_policy_queue(policyqueue, policyqueuefile)
-        for poolfile in changes.poolfiles:
-            self.add_file_from_pool(poolfile)
-
-    def add_file_from_policy_queue(self, policyqueue, policyqueuefile):
-        """
-        Copies a file from a policy queue.
-        Assumes that the policyqueuefile is attached to the same SQLAlchemy
-        session as the Queue object is.  The caller is responsible for
-        committing after calling this function.
-
-        @type policyqueue: PolicyQueue
-        @param policyqueue: policy queue to copy the file from
-
-        @type policyqueuefile: ChangePendingFile
-        @param policyqueuefile: file to be added to the build queue
-        """
-        session = DBConn().session().object_session(policyqueuefile)
-
-        # Is the file already there?
-        try:
-            f = session.query(BuildQueuePolicyFile).filter_by(build_queue=self, file=policyqueuefile).one()
-            f.lastused = datetime.now()
-            return f
-        except NoResultFound:
-            pass # continue below
-
-        # We have to add the file.
-        f = BuildQueuePolicyFile()
-        f.build_queue = self
-        f.file = policyqueuefile
-        f.filename = policyqueuefile.filename
-
-        source = os.path.join(policyqueue.path, policyqueuefile.filename)
-        target = f.fullpath
-        try:
-            # Always copy files from policy queues as they might move around.
-            import utils
-            utils.copy(source, target)
-        except FileExistsError:
-            if not policyqueuefile.identical_to(target):
-                raise
-        except OSError:
-            return None
-
-        session.add(f)
-        return f
-
 __all__.append('BuildQueue')
-
-@session_wrapper
-def get_build_queue(queuename, session=None):
-    """
-    Returns BuildQueue object for given C{queue name}, creating it if it does not
-    exist.
-
-    @type queuename: string
-    @param queuename: The name of the queue
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: BuildQueue
-    @return: BuildQueue object for the given queue
-    """
-
-    q = session.query(BuildQueue).filter_by(queue_name=queuename)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
-
-__all__.append('get_build_queue')
-
-################################################################################
-
-class BuildQueueFile(object):
-    """
-    BuildQueueFile represents a file in a build queue coming from a pool.
-    """
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<BuildQueueFile %s (%s)>' % (self.filename, self.build_queue_id)
-
-    @property
-    def fullpath(self):
-        return os.path.join(self.buildqueue.path, self.filename)
-
-
-__all__.append('BuildQueueFile')
-
-################################################################################
-
-class BuildQueuePolicyFile(object):
-    """
-    BuildQueuePolicyFile represents a file in a build queue that comes from a
-    policy queue (and not a pool).
-    """
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    #@property
-    #def filename(self):
-    #    return self.file.filename
-
-    @property
-    def fullpath(self):
-        return os.path.join(self.build_queue.path, self.filename)
-
-__all__.append('BuildQueuePolicyFile')
-
-################################################################################
-
-class ChangePendingBinary(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<ChangePendingBinary %s>' % self.change_pending_binary_id
-
-__all__.append('ChangePendingBinary')
-
-################################################################################
-
-class ChangePendingFile(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<ChangePendingFile %s>' % self.change_pending_file_id
-
-    def identical_to(self, filename):
-        """
-        compare size and hash with the given file
-
-        @rtype: bool
-        @return: true if the given file has the same size and hash as this object; false otherwise
-        """
-        st = os.stat(filename)
-        if self.size != st.st_size:
-            return False
-
-        f = open(filename, "r")
-        sha256sum = apt_pkg.sha256sum(f)
-        if sha256sum != self.sha256sum:
-            return False
-
-        return True
-
-__all__.append('ChangePendingFile')
-
-################################################################################
-
-class ChangePendingSource(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<ChangePendingSource %s>' % self.change_pending_source_id
-
-__all__.append('ChangePendingSource')
 
 ################################################################################
 
@@ -1119,7 +695,7 @@ class Component(ORMObject):
 
     def properties(self):
         return ['component_name', 'component_id', 'description', \
-            'location_count', 'meets_dfsg', 'overrides_count']
+            'meets_dfsg', 'overrides_count']
 
     def not_null_constraints(self):
         return ['component_name']
@@ -1455,10 +1031,9 @@ __all__.append('ExternalOverride')
 ################################################################################
 
 class PoolFile(ORMObject):
-    def __init__(self, filename = None, location = None, filesize = -1, \
+    def __init__(self, filename = None, filesize = -1, \
         md5sum = None):
         self.filename = filename
-        self.location = location
         self.filesize = filesize
         self.md5sum = md5sum
 
@@ -1510,60 +1085,6 @@ class PoolFile(ORMObject):
 __all__.append('PoolFile')
 
 @session_wrapper
-def check_poolfile(filename, filesize, md5sum, location_id, session=None):
-    """
-    Returns a tuple:
-    (ValidFileFound [boolean], PoolFile object or None)
-
-    @type filename: string
-    @param filename: the filename of the file to check against the DB
-
-    @type filesize: int
-    @param filesize: the size of the file to check against the DB
-
-    @type md5sum: string
-    @param md5sum: the md5sum of the file to check against the DB
-
-    @type location_id: int
-    @param location_id: the id of the location to look in
-
-    @rtype: tuple
-    @return: Tuple of length 2.
-                 - If valid pool file found: (C{True}, C{PoolFile object})
-                 - If valid pool file not found:
-                     - (C{False}, C{None}) if no file found
-                     - (C{False}, C{PoolFile object}) if file found with size/md5sum mismatch
-    """
-
-    poolfile = session.query(Location).get(location_id). \
-        files.filter_by(filename=filename).first()
-    valid = False
-    if poolfile and poolfile.is_valid(filesize = filesize, md5sum = md5sum):
-        valid = True
-
-    return (valid, poolfile)
-
-__all__.append('check_poolfile')
-
-# TODO: the implementation can trivially be inlined at the place where the
-# function is called
-@session_wrapper
-def get_poolfile_by_id(file_id, session=None):
-    """
-    Returns a PoolFile objects or None for the given id
-
-    @type file_id: int
-    @param file_id: the id of the file to look for
-
-    @rtype: PoolFile or None
-    @return: either the PoolFile object or None
-    """
-
-    return session.query(PoolFile).get(file_id)
-
-__all__.append('get_poolfile_by_id')
-
-@session_wrapper
 def get_poolfile_like_name(filename, session=None):
     """
     Returns an array of PoolFile objects which are like the given name
@@ -1581,39 +1102,6 @@ def get_poolfile_like_name(filename, session=None):
     return q.all()
 
 __all__.append('get_poolfile_like_name')
-
-@session_wrapper
-def add_poolfile(filename, datadict, location_id, session=None):
-    """
-    Add a new file to the pool
-
-    @type filename: string
-    @param filename: filename
-
-    @type datadict: dict
-    @param datadict: dict with needed data
-
-    @type location_id: int
-    @param location_id: database id of the location
-
-    @rtype: PoolFile
-    @return: the PoolFile object created
-    """
-    poolfile = PoolFile()
-    poolfile.filename = filename
-    poolfile.filesize = datadict["size"]
-    poolfile.md5sum = datadict["md5sum"]
-    poolfile.sha1sum = datadict["sha1sum"]
-    poolfile.sha256sum = datadict["sha256sum"]
-    poolfile.location_id = location_id
-
-    session.add(poolfile)
-    # Flush to get a file id (NB: This is not a commit)
-    session.flush()
-
-    return poolfile
-
-__all__.append('add_poolfile')
 
 ################################################################################
 
@@ -1897,19 +1385,6 @@ class DBChange(object):
     def __repr__(self):
         return '<DBChange %s>' % self.changesname
 
-    def clean_from_queue(self):
-        session = DBConn().session().object_session(self)
-
-        # Remove changes_pool_files entries
-        self.poolfiles = []
-
-        # Remove changes_pending_files references
-        self.files = []
-
-        # Clear out of queue
-        self.in_queue = None
-        self.approved_for_id = None
-
 __all__.append('DBChange')
 
 @session_wrapper
@@ -1936,58 +1411,6 @@ def get_dbchange(filename, session=None):
         return None
 
 __all__.append('get_dbchange')
-
-################################################################################
-
-class Location(ORMObject):
-    def __init__(self, path = None, component = None):
-        self.path = path
-        self.component = component
-        # the column 'type' should go away, see comment at mapper
-        self.archive_type = 'pool'
-
-    def properties(self):
-        return ['path', 'location_id', 'archive_type', 'component', \
-            'files_count']
-
-    def not_null_constraints(self):
-        return ['path', 'archive_type']
-
-__all__.append('Location')
-
-@session_wrapper
-def get_location(location, component=None, archive=None, session=None):
-    """
-    Returns Location object for the given combination of location, component
-    and archive
-
-    @type location: string
-    @param location: the path of the location, e.g. I{/srv/ftp-master.debian.org/ftp/pool/}
-
-    @type component: string
-    @param component: the component name (if None, no restriction applied)
-
-    @type archive: string
-    @param archive: the archive name (if None, no restriction applied)
-
-    @rtype: Location / None
-    @return: Either a Location object or None if one can't be found
-    """
-
-    q = session.query(Location).filter_by(path=location)
-
-    if archive is not None:
-        q = q.join(Archive).filter_by(archive_name=archive)
-
-    if component is not None:
-        q = q.join(Component).filter_by(component_name=component)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
-
-__all__.append('get_location')
 
 ################################################################################
 
@@ -2274,31 +1697,6 @@ def get_policy_queue(queuename, session=None):
 
 __all__.append('get_policy_queue')
 
-@session_wrapper
-def get_policy_queue_from_path(pathname, session=None):
-    """
-    Returns PolicyQueue object for given C{path name}
-
-    @type queuename: string
-    @param queuename: The path
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: PolicyQueue
-    @return: PolicyQueue object for the given queue
-    """
-
-    q = session.query(PolicyQueue).filter_by(path=pathname)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
-
-__all__.append('get_policy_queue_from_path')
-
 ################################################################################
 
 class PolicyQueueUpload(object):
@@ -2524,9 +1922,6 @@ class DBSource(ORMObject):
 
     metadata = association_proxy('key', 'value')
 
-    def get_component_name(self):
-        return self.poolfile.location.component.component_name
-
     def scan_contents(self):
         '''
         Returns a set of names for non directories. The path names are
@@ -2709,202 +2104,6 @@ def import_metadata_into_db(obj, session=None):
     session.commit_or_flush()
 
 __all__.append('import_metadata_into_db')
-
-
-################################################################################
-
-def split_uploaders(uploaders_list):
-    '''
-    Split the Uploaders field into the individual uploaders and yield each of
-    them. Beware: email addresses might contain commas.
-    '''
-    import re
-    for uploader in re.sub(">[ ]*,", ">\t", uploaders_list).split("\t"):
-        yield uploader.strip()
-
-@session_wrapper
-def add_dsc_to_db(u, filename, session=None):
-    entry = u.pkg.files[filename]
-    source = DBSource()
-    pfs = []
-
-    source.source = u.pkg.dsc["source"]
-    source.version = u.pkg.dsc["version"] # NB: not files[file]["version"], that has no epoch
-    source.maintainer_id = get_or_set_maintainer(u.pkg.dsc["maintainer"], session).maintainer_id
-    # If Changed-By isn't available, fall back to maintainer
-    if u.pkg.changes.has_key("changed-by"):
-        source.changedby_id = get_or_set_maintainer(u.pkg.changes["changed-by"], session).maintainer_id
-    else:
-        source.changedby_id = get_or_set_maintainer(u.pkg.dsc["maintainer"], session).maintainer_id
-    source.fingerprint_id = get_or_set_fingerprint(u.pkg.changes["fingerprint"], session).fingerprint_id
-    source.install_date = datetime.now().date()
-
-    dsc_component = entry["component"]
-    dsc_location_id = entry["location id"]
-
-    source.dm_upload_allowed = (u.pkg.dsc.get("dm-upload-allowed", '') == "yes")
-
-    # Set up a new poolfile if necessary
-    if not entry.has_key("files id") or not entry["files id"]:
-        filename = entry["pool name"] + filename
-        poolfile = add_poolfile(filename, entry, dsc_location_id, session)
-        session.flush()
-        pfs.append(poolfile)
-        entry["files id"] = poolfile.file_id
-
-    source.poolfile_id = entry["files id"]
-    session.add(source)
-
-    suite_names = u.pkg.changes["distribution"].keys()
-    source.suites = session.query(Suite). \
-        filter(Suite.suite_name.in_(suite_names)).all()
-
-    # Add the source files to the DB (files and dsc_files)
-    dscfile = DSCFile()
-    dscfile.source_id = source.source_id
-    dscfile.poolfile_id = entry["files id"]
-    session.add(dscfile)
-
-    for dsc_file, dentry in u.pkg.dsc_files.items():
-        df = DSCFile()
-        df.source_id = source.source_id
-
-        # If the .orig tarball is already in the pool, it's
-        # files id is stored in dsc_files by check_dsc().
-        files_id = dentry.get("files id", None)
-
-        # Find the entry in the files hash
-        # TODO: Bail out here properly
-        dfentry = None
-        for f, e in u.pkg.files.items():
-            if f == dsc_file:
-                dfentry = e
-                break
-
-        if files_id is None:
-            filename = dfentry["pool name"] + dsc_file
-
-            (found, obj) = check_poolfile(filename, dentry["size"], dentry["md5sum"], dsc_location_id)
-            # FIXME: needs to check for -1/-2 and or handle exception
-            if found and obj is not None:
-                files_id = obj.file_id
-                pfs.append(obj)
-
-            # If still not found, add it
-            if files_id is None:
-                # HACK: Force sha1sum etc into dentry
-                dentry["sha1sum"] = dfentry["sha1sum"]
-                dentry["sha256sum"] = dfentry["sha256sum"]
-                poolfile = add_poolfile(filename, dentry, dsc_location_id, session)
-                pfs.append(poolfile)
-                files_id = poolfile.file_id
-        else:
-            poolfile = get_poolfile_by_id(files_id, session)
-            if poolfile is None:
-                utils.fubar("INTERNAL ERROR. Found no poolfile with id %d" % files_id)
-            pfs.append(poolfile)
-
-        df.poolfile_id = files_id
-        session.add(df)
-
-    # Add the src_uploaders to the DB
-    session.flush()
-    session.refresh(source)
-    source.uploaders = [source.maintainer]
-    if u.pkg.dsc.has_key("uploaders"):
-        for up in split_uploaders(u.pkg.dsc["uploaders"]):
-            source.uploaders.append(get_or_set_maintainer(up, session))
-
-    session.flush()
-
-    return source, dsc_component, dsc_location_id, pfs
-
-__all__.append('add_dsc_to_db')
-
-@session_wrapper
-def add_deb_to_db(u, filename, session=None):
-    """
-    Contrary to what you might expect, this routine deals with both
-    debs and udebs.  That info is in 'dbtype', whilst 'type' is
-    'deb' for both of them
-    """
-    cnf = Config()
-    entry = u.pkg.files[filename]
-
-    bin = DBBinary()
-    bin.package = entry["package"]
-    bin.version = entry["version"]
-    bin.maintainer_id = get_or_set_maintainer(entry["maintainer"], session).maintainer_id
-    bin.fingerprint_id = get_or_set_fingerprint(u.pkg.changes["fingerprint"], session).fingerprint_id
-    bin.arch_id = get_architecture(entry["architecture"], session).arch_id
-    bin.binarytype = entry["dbtype"]
-
-    # Find poolfile id
-    filename = entry["pool name"] + filename
-    fullpath = os.path.join(cnf["Dir::Pool"], filename)
-    if not entry.get("location id", None):
-        entry["location id"] = get_location(cnf["Dir::Pool"], entry["component"], session=session).location_id
-
-    if entry.get("files id", None):
-        poolfile = get_poolfile_by_id(bin.poolfile_id)
-        bin.poolfile_id = entry["files id"]
-    else:
-        poolfile = add_poolfile(filename, entry, entry["location id"], session)
-        bin.poolfile_id = entry["files id"] = poolfile.file_id
-
-    # Find source id
-    bin_sources = get_sources_from_name(entry["source package"], entry["source version"], session=session)
-
-    # If we couldn't find anything and the upload contains Arch: source,
-    # fall back to trying the source package, source version uploaded
-    # This maintains backwards compatibility with previous dak behaviour
-    # and deals with slightly broken binary debs which don't properly
-    # declare their source package name
-    if len(bin_sources) == 0:
-        if u.pkg.changes["architecture"].has_key("source") \
-           and u.pkg.dsc.has_key("source") and u.pkg.dsc.has_key("version"):
-            bin_sources = get_sources_from_name(u.pkg.dsc["source"], u.pkg.dsc["version"], session=session)
-
-    # If we couldn't find a source here, we reject
-    # TODO: Fix this so that it doesn't kill process-upload and instead just
-    #       performs a reject.  To be honest, we should probably spot this
-    #       *much* earlier than here
-    if len(bin_sources) != 1:
-        raise NoSourceFieldError("Unable to find a unique source id for %s (%s), %s, file %s, type %s, signed by %s" % \
-                                  (bin.package, bin.version, entry["architecture"],
-                                   filename, bin.binarytype, u.pkg.changes["fingerprint"]))
-
-    bin.source_id = bin_sources[0].source_id
-
-    if entry.has_key("built-using"):
-        for srcname, version in entry["built-using"]:
-            exsources = get_sources_from_name(srcname, version, session=session)
-            if len(exsources) != 1:
-                raise NoSourceFieldError("Unable to find source package (%s = %s) in Built-Using for %s (%s), %s, file %s, type %s, signed by %s" % \
-                                          (srcname, version, bin.package, bin.version, entry["architecture"],
-                                           filename, bin.binarytype, u.pkg.changes["fingerprint"]))
-
-            bin.extra_sources.append(exsources[0])
-
-    # Add and flush object so it has an ID
-    session.add(bin)
-
-    suite_names = u.pkg.changes["distribution"].keys()
-    bin.suites = session.query(Suite). \
-        filter(Suite.suite_name.in_(suite_names)).all()
-
-    session.flush()
-
-    # Deal with contents - disabled for now
-    #contents = copy_temporary_contents(bin.package, bin.version, bin.architecture.arch_string, os.path.basename(filename), None, session)
-    #if not contents:
-    #    print "REJECT\nCould not determine contents of package %s" % bin.package
-    #    session.rollback()
-    #    raise MissingContents, "No contents stored for package %s, and couldn't determine contents of %s" % (bin.package, filename)
-
-    return bin, poolfile
-
-__all__.append('add_deb_to_db')
 
 ################################################################################
 
@@ -3311,18 +2510,10 @@ class DBConn(object):
             'binary_acl',
             'binary_acl_map',
             'build_queue',
-            'build_queue_files',
-            'build_queue_policy_files',
             'changelogs_text',
             'changes',
             'component',
             'config',
-            'changes_pending_binaries',
-            'changes_pending_files',
-            'changes_pending_source',
-            'changes_pending_files_map',
-            'changes_pending_source_files',
-            'changes_pool_files',
             'dsc_files',
             'external_overrides',
             'extra_src_references',
@@ -3331,7 +2522,6 @@ class DBConn(object):
             'fingerprint',
             'keyrings',
             'keyring_acl_map',
-            'location',
             'maintainer',
             'metadata_keys',
             'new_comments',
@@ -3412,15 +2602,6 @@ class DBConn(object):
                properties = dict(queue_id = self.tbl_build_queue.c.id,
                                  suite = relation(Suite, primaryjoin=(self.tbl_build_queue.c.suite_id==self.tbl_suite.c.id))))
 
-        mapper(BuildQueueFile, self.tbl_build_queue_files,
-               properties = dict(buildqueue = relation(BuildQueue, backref='queuefiles'),
-                                 poolfile = relation(PoolFile, backref='buildqueueinstances')))
-
-        mapper(BuildQueuePolicyFile, self.tbl_build_queue_policy_files,
-               properties = dict(
-                build_queue = relation(BuildQueue, backref='policy_queue_files'),
-                file = relation(ChangePendingFile, lazy='joined')))
-
         mapper(DBBinary, self.tbl_binaries,
                properties = dict(binary_id = self.tbl_binaries.c.id,
                                  package = self.tbl_binaries.c.package,
@@ -3496,9 +2677,6 @@ class DBConn(object):
 
         mapper(DBChange, self.tbl_changes,
                properties = dict(change_id = self.tbl_changes.c.id,
-                                 poolfiles = relation(PoolFile,
-                                                      secondary=self.tbl_changes_pool_files,
-                                                      backref="changeslinks"),
                                  seen = self.tbl_changes.c.seen,
                                  source = self.tbl_changes.c.source,
                                  binaries = self.tbl_changes.c.binaries,
@@ -3508,54 +2686,12 @@ class DBConn(object):
                                  maintainer = self.tbl_changes.c.maintainer,
                                  changedby = self.tbl_changes.c.changedby,
                                  date = self.tbl_changes.c.date,
-                                 version = self.tbl_changes.c.version,
-                                 files = relation(ChangePendingFile,
-                                                  secondary=self.tbl_changes_pending_files_map,
-                                                  backref="changesfile"),
-                                 in_queue_id = self.tbl_changes.c.in_queue,
-                                 in_queue = relation(PolicyQueue,
-                                                     primaryjoin=(self.tbl_changes.c.in_queue==self.tbl_policy_queue.c.id)),
-                                 approved_for_id = self.tbl_changes.c.approved_for))
-
-        mapper(ChangePendingBinary, self.tbl_changes_pending_binaries,
-               properties = dict(change_pending_binary_id = self.tbl_changes_pending_binaries.c.id))
-
-        mapper(ChangePendingFile, self.tbl_changes_pending_files,
-               properties = dict(change_pending_file_id = self.tbl_changes_pending_files.c.id,
-                                 filename = self.tbl_changes_pending_files.c.filename,
-                                 size = self.tbl_changes_pending_files.c.size,
-                                 md5sum = self.tbl_changes_pending_files.c.md5sum,
-                                 sha1sum = self.tbl_changes_pending_files.c.sha1sum,
-                                 sha256sum = self.tbl_changes_pending_files.c.sha256sum))
-
-        mapper(ChangePendingSource, self.tbl_changes_pending_source,
-               properties = dict(change_pending_source_id = self.tbl_changes_pending_source.c.id,
-                                 change = relation(DBChange),
-                                 maintainer = relation(Maintainer,
-                                                       primaryjoin=(self.tbl_changes_pending_source.c.maintainer_id==self.tbl_maintainer.c.id)),
-                                 changedby = relation(Maintainer,
-                                                      primaryjoin=(self.tbl_changes_pending_source.c.changedby_id==self.tbl_maintainer.c.id)),
-                                 fingerprint = relation(Fingerprint),
-                                 source_files = relation(ChangePendingFile,
-                                                         secondary=self.tbl_changes_pending_source_files,
-                                                         backref="pending_sources")))
-
+                                 version = self.tbl_changes.c.version))
 
         mapper(KeyringACLMap, self.tbl_keyring_acl_map,
                properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
                                  keyring = relation(Keyring, backref="keyring_acl_map"),
                                  architecture = relation(Architecture)))
-
-        mapper(Location, self.tbl_location,
-               properties = dict(location_id = self.tbl_location.c.id,
-                                 component_id = self.tbl_location.c.component,
-                                 component = relation(Component, backref='location'),
-                                 archive_id = self.tbl_location.c.archive,
-                                 archive = relation(Archive),
-                                 # FIXME: the 'type' column is old cruft and
-                                 # should be removed in the future.
-                                 archive_type = self.tbl_location.c.type),
-               extension = validator)
 
         mapper(Maintainer, self.tbl_maintainer,
                properties = dict(maintainer_id = self.tbl_maintainer.c.id,
@@ -3591,7 +2727,8 @@ class DBConn(object):
                                  overridetype_id = self.tbl_override_type.c.id))
 
         mapper(PolicyQueue, self.tbl_policy_queue,
-               properties = dict(policy_queue_id = self.tbl_policy_queue.c.id))
+               properties = dict(policy_queue_id = self.tbl_policy_queue.c.id,
+                                 suite = relation(Suite, primaryjoin=(self.tbl_policy_queue.c.suite_id == self.tbl_suite.c.id))))
 
         mapper(PolicyQueueUpload, self.tbl_policy_queue_upload,
                properties = dict(
@@ -3643,7 +2780,7 @@ class DBConn(object):
 
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
-                                 policy_queue = relation(PolicyQueue),
+                                 policy_queue = relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.policy_queue_id == self.tbl_policy_queue.c.id)),
                                  copy_queues = relation(BuildQueue,
                                      secondary=self.tbl_suite_build_queue_copy),
                                  srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
