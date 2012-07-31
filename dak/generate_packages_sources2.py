@@ -66,7 +66,7 @@ SELECT
    WHERE s.id=sm.src_id
   )
   ||
-  E'\nDirectory\: pool/' || SUBSTRING(f.filename FROM E'\\A(.*)/[^/]*\\Z')
+  E'\nDirectory\: pool/' || :component_name || '/' || SUBSTRING(f.filename FROM E'\\A(.*)/[^/]*\\Z')
   ||
   E'\nPriority\: ' || pri.priority
   ||
@@ -107,7 +107,7 @@ def generate_sources(suite_id, component_id):
     output = writer.open()
 
     # run query and write Sources
-    r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "dsc_type": dsc_type, "overridesuite": overridesuite_id})
+    r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "component_name": component.component_name, "dsc_type": dsc_type, "overridesuite": overridesuite_id})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
@@ -141,12 +141,12 @@ WITH
       binaries b
       JOIN bin_associations ba ON b.id = ba.bin
       JOIN files f ON f.id = b.file
-      JOIN location l ON l.id = f.location
+      JOIN files_archive_map fam ON f.id = fam.file_id AND fam.archive_id = :archive_id
       JOIN source s ON b.source = s.id
     WHERE
       (b.architecture = :arch_all OR b.architecture = :arch) AND b.type = :type_name
       AND ba.suite = :suite
-      AND l.component = :component
+      AND fam.component_id = :component
   )
 
 SELECT
@@ -175,7 +175,7 @@ SELECT
   ), '')
   || E'\nSection\: ' || sec.section
   || E'\nPriority\: ' || pri.priority
-  || E'\nFilename\: pool/' || tmp.filename
+  || E'\nFilename\: pool/' || :component_name || '/' || tmp.filename
   || E'\nSize\: ' || tmp.size
   || E'\nMD5sum\: ' || tmp.md5sum
   || E'\nSHA1\: ' || tmp.sha1sum
@@ -231,7 +231,8 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
             architecture=architecture.arch_string, debtype=type_name)
     output = writer.open()
 
-    r = session.execute(_packages_query, {"suite": suite_id, "component": component_id,
+    r = session.execute(_packages_query, {"archive_id": suite.archive.archive_id,
+        "suite": suite_id, "component": component_id, 'component_name': component.component_name,
         "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id,
         "overridesuite": overridesuite_id, "metadata_skip": metadata_skip,
         "include_long_description": 'true' if include_long_description else 'false'})
