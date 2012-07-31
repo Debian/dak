@@ -482,6 +482,19 @@ __all__.append('get_archive')
 
 ################################################################################
 
+class ArchiveFile(object):
+    def __init__(self, archive=None, component=None, file=None):
+        self.archive = archive
+        self.component = component
+        self.file = file
+    @property
+    def path(self):
+        return os.path.join(self.archive.path, 'pool', self.component.component_name, self.file.filename)
+
+__all__.append('ArchiveFile')
+
+################################################################################
+
 class BinContents(ORMObject):
     def __init__(self, file = None, binary = None):
         self.file = file
@@ -1423,7 +1436,9 @@ class PoolFile(ORMObject):
 
     @property
     def fullpath(self):
-        return os.path.join(self.location.path, self.filename)
+        session = DBConn().session().object_session(self)
+        af = session.query(ArchiveFile).join(Archive).filter(ArchiveFile.file == self).first()
+        return af.path
 
     @property
     def basename(self):
@@ -1434,10 +1449,10 @@ class PoolFile(ORMObject):
 
     def properties(self):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
-            'sha256sum', 'location', 'source', 'binary', 'last_used']
+            'sha256sum', 'source', 'binary', 'last_used']
 
     def not_null_constraints(self):
-        return ['filename', 'md5sum', 'location']
+        return ['filename', 'md5sum']
 
     def identical_to(self, filename):
         """
@@ -2248,6 +2263,31 @@ def get_policy_queue_from_path(pathname, session=None):
         return None
 
 __all__.append('get_policy_queue_from_path')
+
+################################################################################
+
+class PolicyQueueUpload(object):
+    def __cmp__(self, other):
+        ret = cmp(self.changes.source, other.changes.source)
+        if ret == 0:
+            ret = apt_pkg.version_compare(self.changes.version, other.changes.version)
+        if ret == 0:
+            if self.source is not None and other.source is None:
+                ret = -1
+            elif self.source is None and other.source is not None:
+                ret = 1
+        if ret == 0:
+            ret = cmp(self.changes.changesname, other.changes.changesname)
+        return ret
+
+__all__.append('PolicyQueueUpload')
+
+################################################################################
+
+class PolicyQueueByhandFile(object):
+    pass
+
+__all__.append('PolicyQueueByhandFile')
 
 ################################################################################
 
@@ -3252,6 +3292,7 @@ class DBConn(object):
             'external_overrides',
             'extra_src_references',
             'files',
+            'files_archive_map',
             'fingerprint',
             'keyrings',
             'keyring_acl_map',
@@ -3263,6 +3304,9 @@ class DBConn(object):
             'override',
             'override_type',
             'policy_queue',
+            'policy_queue_upload',
+            'policy_queue_upload_binaries_map',
+            'policy_queue_byhand_file',
             'priority',
             'section',
             'source',
@@ -3287,7 +3331,6 @@ class DBConn(object):
             'any_associations_source',
             'bin_associations_binaries',
             'binaries_suite_arch',
-            'binfiles_suite_component_arch',
             'changelogs',
             'file_arch_suite',
             'newest_all_associations',
@@ -3325,8 +3368,14 @@ class DBConn(object):
                properties = dict(archive_id = self.tbl_archive.c.id,
                                  archive_name = self.tbl_archive.c.name))
 
+        mapper(ArchiveFile, self.tbl_files_archive_map,
+               properties = dict(archive = relation(Archive, backref='files'),
+                                 component = relation(Component),
+                                 file = relation(PoolFile, backref='archives')))
+
         mapper(BuildQueue, self.tbl_build_queue,
-               properties = dict(queue_id = self.tbl_build_queue.c.id))
+               properties = dict(queue_id = self.tbl_build_queue.c.id,
+                                 suite = relation(Suite, primaryjoin=(self.tbl_build_queue.c.suite_id==self.tbl_suite.c.id))))
 
         mapper(BuildQueueFile, self.tbl_build_queue_files,
                properties = dict(buildqueue = relation(BuildQueue, backref='queuefiles'),
@@ -3393,13 +3442,7 @@ class DBConn(object):
 
         mapper(PoolFile, self.tbl_files,
                properties = dict(file_id = self.tbl_files.c.id,
-                                 filesize = self.tbl_files.c.size,
-                                 location_id = self.tbl_files.c.location,
-                                 location = relation(Location,
-                                     # using lazy='dynamic' in the back
-                                     # reference because we have A LOT of
-                                     # files in one location
-                                     backref=backref('files', lazy='dynamic'))),
+                                 filesize = self.tbl_files.c.size),
                 extension = validator)
 
         mapper(Fingerprint, self.tbl_fingerprint,
@@ -3514,6 +3557,21 @@ class DBConn(object):
 
         mapper(PolicyQueue, self.tbl_policy_queue,
                properties = dict(policy_queue_id = self.tbl_policy_queue.c.id))
+
+        mapper(PolicyQueueUpload, self.tbl_policy_queue_upload,
+               properties = dict(
+                   changes = relation(DBChange),
+                   policy_queue = relation(PolicyQueue, backref='uploads'),
+                   target_suite = relation(Suite),
+                   source = relation(DBSource),
+                   binaries = relation(DBBinary, secondary=self.tbl_policy_queue_upload_binaries_map),
+                ))
+
+        mapper(PolicyQueueByhandFile, self.tbl_policy_queue_byhand_file,
+               properties = dict(
+                   upload = relation(PolicyQueueUpload, backref='byhand'),
+                   )
+               )
 
         mapper(Priority, self.tbl_priority,
                properties = dict(priority_id = self.tbl_priority.c.id))
