@@ -1032,6 +1032,11 @@ class ArchiveUpload(object):
             print >>debinfo, line
         debinfo.close()
 
+    def _policy_queue(self, suite):
+        if suite.policy_queue is not None:
+            return suite.policy_queue
+        return None
+
     def install(self):
         """install upload
 
@@ -1052,20 +1057,22 @@ class ArchiveUpload(object):
             if suite.overridesuite is not None:
                 overridesuite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
+            policy_queue = self._policy_queue(suite)
+
             redirected_suite = suite
-            if suite.policy_queue is not None:
-                redirected_suite = suite.policy_queue.suite
+            if policy_queue is not None:
+                redirected_suite = policy_queue.suite
 
             source_component_func = lambda source: self._source_override(overridesuite, source).component
             binary_component_func = lambda binary: self._binary_component(overridesuite, binary)
 
             (db_source, db_binaries) = self._install_to_suite(redirected_suite, source_component_func, binary_component_func, extra_source_archives=[suite.archive])
 
-            if suite.policy_queue is not None:
-                self._install_policy(suite.policy_queue, suite, db_changes, db_source, db_binaries)
+            if policy_queue is not None:
+                self._install_policy(policy_queue, suite, db_changes, db_source, db_binaries)
 
             # copy to build queues
-            if suite.policy_queue is None or suite.policy_queue.send_to_build_queues:
+            if policy_queue is None or policy_queue.send_to_build_queues:
                 for build_queue in suite.copy_queues:
                     self._install_to_suite(build_queue.suite, source_component_func, binary_component_func, extra_source_archives=[suite.archive])
 
