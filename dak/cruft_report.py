@@ -680,7 +680,7 @@ def main ():
     # Checks based on the Sources files
     components = get_component_names(session)
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (cnf["Dir::Root"], suite_name, component)
+        filename = "%s/dists/%s/%s/source/Sources.gz" % (suite.archive.path, suite_name, component)
         # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
         (fd, temp_filename) = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
@@ -729,7 +729,7 @@ def main ():
         for architecture in architectures:
             if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
                 continue
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (cnf["Dir::Root"], suite_name, component, architecture)
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (suite.archive.path, suite_name, component, architecture)
             # apt_pkg.ParseTagFile needs a real file handle
             (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))

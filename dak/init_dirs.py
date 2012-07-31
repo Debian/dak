@@ -137,7 +137,7 @@ def create_directories():
     # Process dists directories
     # TODO: Store location of each suite in database
     for suite in session.query(Suite):
-        suite_dir = os.path.join( Cnf['Dir::Root'], 'dists', "%s/%s" % (suite.suite_name, suite_suffix) )
+        suite_dir = os.path.join(suite.archive.path, 'dists', suite.suite_name, suite_suffix)
 
         # TODO: Store valid suite/component mappings in database
         for component in session.query(Component):

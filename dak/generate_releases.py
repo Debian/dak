@@ -145,9 +145,9 @@ class ReleaseWriter(object):
 
         cnf = Config()
 
-        suite_suffix = "%s" % (cnf.find("Dinstall::SuiteSuffix"))
+        suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
 
-        outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s/%s" % (suite.suite_name, suite_suffix), "Release")
+        outfile = os.path.join(suite.archive.path, 'dists', suite.suite_name, suite_suffix, "Release")
         out = open(outfile + ".new", "w")
 
         for key, dbfield in attribs:
@@ -182,7 +182,7 @@ class ReleaseWriter(object):
             out.write("Description: %s\n" % suite.description)
 
         for comp in components:
-            for dirpath, dirnames, filenames in os.walk("%sdists/%s/%s%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix, comp), topdown=True):
+            for dirpath, dirnames, filenames in os.walk(os.path.join(suite.archive.path, "dists", suite.suite_name, suite_suffix, comp), topdown=True):
                 if not re_gensubrelease.match(dirpath):
                     continue
 
@@ -214,7 +214,7 @@ class ReleaseWriter(object):
         # their checksums to the main Release file
         oldcwd = os.getcwd()
 
-        os.chdir("%sdists/%s/%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix))
+        os.chdir(os.path.join(suite.archive.path, "dists", suite.suite_name, suite_suffix))
 
         hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
                       'SHA1' : apt_pkg.sha1sum,

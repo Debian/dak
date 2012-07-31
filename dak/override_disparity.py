@@ -82,12 +82,15 @@ def main():
     depends = {}
     session = DBConn().session()
     suite_name = Options['suite']
+    suite = get_suite(suite_name, session)
+    if suite is None:
+        utils.fubar("Unknown suite '{0}'".format(suite_name))
     components = get_component_names(session)
     arches = set([x.arch_string for x in get_suite_architectures(suite_name)])
     arches -= set(['source', 'all'])
     for arch in arches:
         for component in components:
-            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite_name, component, arch)
+            Packages = utils.get_packages_from_ftp(suite.archive.path, suite_name, component, arch)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
                 dep_list = Packages.Section.Find('Depends')

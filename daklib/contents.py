@@ -123,6 +123,7 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         Returns a writer object.
         '''
         values = {
+            'archive':      self.suite.archive.path,
             'suite':        self.suite.suite_name,
             'component':    self.component.component_name,
             'debtype':      self.overridetype.overridetype,
@@ -223,6 +224,7 @@ select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
         Returns a writer object.
         '''
         values = {
+            'archive':   self.suite.archive.path,
             'suite':     self.suite.suite_name,
             'component': self.component.component_name
         }

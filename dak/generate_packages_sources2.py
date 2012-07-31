@@ -103,7 +103,7 @@ def generate_sources(suite_id, component_id):
 
     overridesuite_id = suite.get_overridesuite().suite_id
 
-    writer = SourcesFileWriter(suite=suite.suite_name, component=component.component_name)
+    writer = SourcesFileWriter(archive=suite.archive.path, suite=suite.suite_name, component=component.component_name)
     output = writer.open()
 
     # run query and write Sources
@@ -226,7 +226,8 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     if include_long_description:
         metadata_skip.append("Description-md5")
 
-    writer = PackagesFileWriter(suite=suite.suite_name, component=component.component_name,
+    writer = PackagesFileWriter(archive=suite.archive.path, suite=suite.suite_name,
+            component=component.component_name,
             architecture=architecture.arch_string, debtype=type_name)
     output = writer.open()
 
@@ -287,7 +288,7 @@ def generate_translations(suite_id, component_id):
     suite = session.query(Suite).get(suite_id)
     component = session.query(Component).get(component_id)
 
-    writer = TranslationFileWriter(suite=suite.suite_name, component=component.component_name, language="en")
+    writer = TranslationFileWriter(archive=suite.archive.path, suite=suite.suite_name, component=component.component_name, language="en")
     output = writer.open()
 
     r = session.execute(_translations_query, {"suite": suite_id, "component": component_id})
