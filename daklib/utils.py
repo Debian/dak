@@ -701,13 +701,11 @@ def send_mail (message, filename=""):
 
 ################################################################################
 
-def poolify (source, component):
-    if component:
-        component += '/'
+def poolify (source, component=None):
     if source[:3] == "lib":
-        return component + source[:4] + '/' + source + '/'
+        return source[:4] + '/' + source + '/'
     else:
-        return component + source[:1] + '/' + source + '/'
+        return source[:1] + '/' + source + '/'
 
 ################################################################################
 
