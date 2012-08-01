@@ -1550,7 +1550,6 @@ def get_packages_from_ftp(root, suite, component, architecture):
 
     @rtype: TagFile
     @return: apt_pkg class containing package data
-
     """
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (root, suite, component, architecture)
     (fd, temp_file) = temp_filename()
@@ -1576,15 +1575,20 @@ def deb_extract_control(fh):
 ################################################################################
 
 def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
-    """Mail addresses to contact for an upload
+    """mail addresses to contact for an upload
 
-    Args:
-       maintainer (str): Maintainer field of the changes file
-       changed_by (str): Changed-By field of the changes file
-       fingerprint (str): Fingerprint of the PGP key used to sign the upload
+    @type  maintainer: str
+    @param maintainer: Maintainer field of the .changes file
 
-    Returns:
-       List of RFC 2047-encoded mail addresses to contact regarding this upload
+    @type  changed_by: str
+    @param changed_by: Changed-By field of the .changes file
+
+    @type  fingerprint: str
+    @param fingerprint: fingerprint of the key used to sign the upload
+
+    @rtype:  list of str
+    @return: list of RFC 2047-encoded mail addresses to contact regarding
+             this upload
     """
     addresses = [maintainer]
     if changed_by != maintainer:
@@ -1600,14 +1604,16 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 ################################################################################
 
 def call_editor(text="", suffix=".txt"):
-    """Run editor and return the result as a string
+    """run editor and return the result as a string
 
-    Kwargs:
-       text (str): initial text
-       suffix (str): extension for temporary file
+    @type  text: str
+    @param text: initial text
 
-    Returns:
-       string with the edited text
+    @type  suffix: str
+    @param suffix: extension for temporary file
+
+    @rtype:  str
+    @return: string with the edited text
     """
     editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
     tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)

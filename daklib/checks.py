@@ -20,14 +20,14 @@
 
 """module provided pre-acceptance tests
 
-Please read the documentation for the `Check` class for the interface.
+Please read the documentation for the L{Check} class for the interface.
 """
 
 from daklib.config import Config
-from .dbconn import *
+from daklib.dbconn import *
 import daklib.dbconn as dbconn
-from .regexes import *
-from .textutils import fix_maintainer, ParseMaintError
+from daklib.regexes import *
+from daklib.textutils import fix_maintainer, ParseMaintError
 import daklib.lintian as lintian
 import daklib.utils as utils
 
@@ -48,37 +48,37 @@ class Reject(Exception):
 class Check(object):
     """base class for checks
 
-    checks are called by daklib.archive.ArchiveUpload.  Failing tests should
-    raise a `daklib.checks.Reject` exception including a human-readable
+    checks are called by L{daklib.archive.ArchiveUpload}. Failing tests should
+    raise a L{daklib.checks.Reject} exception including a human-readable
     description why the upload should be rejected.
     """
     def check(self, upload):
         """do checks
 
-        Args:
-           upload (daklib.archive.ArchiveUpload): upload to check
+        @type  upload: L{daklib.archive.ArchiveUpload}
+        @param upload: upload to check
 
-        Raises:
-           daklib.checks.Reject
+        @raise daklib.checks.Reject: upload should be rejected
         """
         raise NotImplemented
     def per_suite_check(self, upload, suite):
         """do per-suite checks
 
-        Args:
-           upload (daklib.archive.ArchiveUpload): upload to check
-           suite (daklib.dbconn.Suite): suite to check
+        @type  upload: L{daklib.archive.ArchiveUpload}
+        @param upload: upload to check
 
-        Raises:
-           daklib.checks.Reject
+        @type  suite: L{daklib.dbconn.Suite}
+        @param suite: suite to check
+
+        @raise daklib.checks.Reject: upload should be rejected
         """
         raise NotImplemented
     @property
     def forcable(self):
         """allow to force ignore failing test
 
-        True if it is acceptable to force ignoring a failing test,
-        False otherwise
+        C{True} if it is acceptable to force ignoring a failing test,
+        C{False} otherwise
         """
         return False
 

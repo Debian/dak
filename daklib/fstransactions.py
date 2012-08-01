@@ -123,16 +123,22 @@ class FilesystemTransaction(object):
         self.actions = []
 
     def copy(self, source, destination, link=True, symlink=False, mode=None):
-        """copy `source` to `destination`
+        """copy C{source} to C{destination}
 
-        Args:
-           source (str): source file
-           destination (str): destination file
+        @type  source: str
+        @param source: source file
 
-        Kwargs:
-           link (bool): Try hardlinking, falling back to copying.
-           symlink (bool): Create a symlink instead
-           mode (int): Permissions to change `destination` to.
+        @type  destination: str
+        @param destination: destination file
+
+        @type  link: bool
+        @param link: try hardlinking, falling back to copying
+
+        @type  symlink: bool
+        @param symlink: create a symlink instead of copying
+
+        @type  mode: int
+        @param mode: permissions to change C{destination} to
         """
         if isinstance(mode, str) or isinstance(mode, unicode):
             mode = int(mode, 8)
@@ -140,37 +146,38 @@ class FilesystemTransaction(object):
         self.actions.append(_FilesystemCopyAction(source, destination, link=link, symlink=symlink, mode=mode))
 
     def move(self, source, destination, mode=None):
-        """move `source` to `destination`
+        """move C{source} to C{destination}
 
-        Args:
-           source (str): source file
-           destination (str): destination file
+        @type  source: str
+        @param source: source file
 
-        Kwargs:
-           mode (int): Permissions to change `destination` to.
+        @type  destination: str
+        @param destination: destination file
+
+        @type  mode: int
+        @param mode: permissions to change C{destination} to
         """
         self.copy(source, destination, link=True, mode=mode)
         self.unlink(source)
 
     def unlink(self, path):
-        """unlink `path`
+        """unlink C{path}
 
-        Args:
-           path (str): file to unlink
+        @type  path: str
+        @param path: file to unlink
         """
         self.actions.append(_FilesystemUnlinkAction(path))
 
     def create(self, path, mode=None):
-        """create `filename` and return file handle
+        """create C{filename} and return file handle
 
-        Args:
-           filename (str): file to create
+        @type  filename: str
+        @param filename: file to create
 
-        Kwargs:
-           mode (int): Permissions for the new file
+        @type  mode: int
+        @param mode: permissions for the new file
 
-        Returns:
-           file handle of the new file
+        @return: file handle of the new file
         """
         if isinstance(mode, str) or isinstance(mode, unicode):
             mode = int(mode, 8)
