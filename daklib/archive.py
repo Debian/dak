@@ -795,6 +795,7 @@ class ArchiveUpload(object):
             for chk in (
                     checks.SignatureCheck,
                     checks.ChangesCheck,
+                    checks.UploadBlockCheck,
                     checks.HashesCheck,
                     checks.SourceCheck,
                     checks.BinaryCheck,

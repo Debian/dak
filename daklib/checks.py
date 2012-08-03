@@ -438,6 +438,25 @@ class ACLCheck(Check):
 
         return True
 
+class UploadBlockCheck(Check):
+    """check for upload blocks"""
+    def check(self, upload):
+        session = upload.session
+        control = upload.changes.changes
+
+        source = re_field_source.match(control['Source']).group('package')
+        version = control['Version']
+        blocks = session.query(UploadBlock).filter_by(source=source) \
+                        .filter((UploadBlock.version == version) | (UploadBlock.version == None))
+
+        for block in blocks:
+            if block.fingerprint == upload.fingerprint:
+                raise Reject('Manual upload block in place for package {0} and fingerprint {1}:\n{2}'.format(source, upload.fingerprint.fingerprint, block.reason))
+            if block.uid == upload.fingerprint.uid:
+                raise Reject('Manual upload block in place for package {0} and uid {1}:\n{2}'.format(source, block.uid.uid, block.reason))
+
+        return True
+
 class NoSourceOnlyCheck(Check):
     """Check for source-only upload
 
