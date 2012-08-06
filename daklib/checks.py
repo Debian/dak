@@ -457,6 +457,72 @@ class UploadBlockCheck(Check):
 
         return True
 
+class TransitionCheck(Check):
+    """check for a transition"""
+    def check(self, upload):
+        if 'source' not in upload.changes.architectures:
+            return True
+
+        transitions = self.get_transitions()
+        if transitions is None:
+            return True
+
+        source = re_field_source.match(control['Source']).group('package')
+
+        for trans in transitions:
+            t = transitions[trans]
+            source = t["source"]
+            expected = t["new"]
+
+            # Will be None if nothing is in testing.
+            current = get_source_in_suite(source, "testing", session)
+            if current is not None:
+                compare = apt_pkg.version_compare(current.version, expected)
+
+            if current is None or compare < 0:
+                # This is still valid, the current version in testing is older than
+                # the new version we wait for, or there is none in testing yet
+
+                # Check if the source we look at is affected by this.
+                if source in t['packages']:
+                    # The source is affected, lets reject it.
+
+                    rejectmsg = "{0}: part of the {1} transition.\n\n".format(source, trans)
+
+                    if current is not None:
+                        currentlymsg = "at version {0}".format(current.version)
+                    else:
+                        currentlymsg = "not present in testing"
+
+                    rejectmsg += "Transition description: {0}\n\n".format(t["reason"])
+
+                    rejectmsg += "\n".join(textwrap.wrap("""Your package
+is part of a testing transition designed to get {0} migrated (it is
+currently {1}, we need version {2}).  This transition is managed by the
+Release Team, and {3} is the Release-Team member responsible for it.
+Please mail debian-release@lists.debian.org or contact {3} directly if you
+need further assistance.  You might want to upload to experimental until this
+transition is done.""".format(source, currentlymsg, expected,t["rm"])))
+
+                    raise Reject(rejectmsg)
+
+        return True
+
+    def get_transitions(self):
+        cnf = Config()
+        path = cnf.get('Dinstall::ReleaseTransitions', '')
+        if path == '' or not os.path.exists(path):
+            return None
+
+        contents = file(path, 'r').read()
+        try:
+            transitions = yaml.load(contents)
+            return transitions
+        except yaml.YAMLError as msg:
+            utils.warn('Not checking transitions, the transitions file is broken: {0}'.format(msg))
+
+        return None
+
 class NoSourceOnlyCheck(Check):
     """Check for source-only upload
 
