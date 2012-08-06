@@ -1441,6 +1441,13 @@ class PoolFile(ORMObject):
         return af.path
 
     @property
+    def component(self):
+        session = DBConn().session().object_session(self)
+        component_id = session.query(ArchiveFile.component_id).filter(ArchiveFile.file == self) \
+                              .group_by(ArchiveFile.component_id).one()
+        return session.query(Component).get(component_id)
+
+    @property
     def basename(self):
         return os.path.basename(self.filename)
 
