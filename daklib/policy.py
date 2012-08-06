@@ -17,7 +17,7 @@
 """module to process policy queue uploads"""
 
 from .config import Config
-from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType
+from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, get_mapped_component
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
 
@@ -126,18 +126,20 @@ class PolicyQueueUploadHandler(object):
     def _source_override(self, component_name):
         package = self.upload.source.source
         suite = self._overridesuite
+        component = get_mapped_component(component_name, self.session)
         query = self.session.query(Override).filter_by(package=package, suite=suite) \
             .join(OverrideType).filter(OverrideType.overridetype == 'dsc') \
-            .join(Component).filter(Component.component_name == component_name)
+            .filter(Override.component == component)
         return query.first()
 
     def _binary_override(self, binary, component_name):
         package = binary.package
         suite = self._overridesuite
         overridetype = binary.binarytype
+        component = get_mapped_component(component_name, self.session)
         query = self.session.query(Override).filter_by(package=package, suite=suite) \
             .join(OverrideType).filter(OverrideType.overridetype == overridetype) \
-            .join(Component).filter(Component.component_name == component_name)
+            .filter(Override.component == component)
         return query.first()
 
     def _binary_metadata(self, binary, key):
