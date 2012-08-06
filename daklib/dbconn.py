@@ -42,6 +42,8 @@ import traceback
 import commands
 import signal
 
+from daklib.gpg import SignedFile
+
 try:
     # python >= 2.6
     import json
@@ -2408,60 +2410,6 @@ __all__.append('SrcContents')
 
 ################################################################################
 
-from debian.debfile import Deb822
-
-# Temporary Deb822 subclass to fix bugs with : handling; see #597249
-class Dak822(Deb822):
-    def _internal_parser(self, sequence, fields=None):
-        # The key is non-whitespace, non-colon characters before any colon.
-        key_part = r"^(?P<key>[^: \t\n\r\f\v]+)\s*:\s*"
-        single = re.compile(key_part + r"(?P<data>\S.*?)\s*$")
-        multi = re.compile(key_part + r"$")
-        multidata = re.compile(r"^\s(?P<data>.+?)\s*$")
-
-        wanted_field = lambda f: fields is None or f in fields
-
-        if isinstance(sequence, basestring):
-            sequence = sequence.splitlines()
-
-        curkey = None
-        content = ""
-        for line in self.gpg_stripped_paragraph(sequence):
-            m = single.match(line)
-            if m:
-                if curkey:
-                    self[curkey] = content
-
-                if not wanted_field(m.group('key')):
-                    curkey = None
-                    continue
-
-                curkey = m.group('key')
-                content = m.group('data')
-                continue
-
-            m = multi.match(line)
-            if m:
-                if curkey:
-                    self[curkey] = content
-
-                if not wanted_field(m.group('key')):
-                    curkey = None
-                    continue
-
-                curkey = m.group('key')
-                content = ""
-                continue
-
-            m = multidata.match(line)
-            if m:
-                content += '\n' + line # XXX not m.group('data')?
-                continue
-
-        if curkey:
-            self[curkey] = content
-
-
 class DBSource(ORMObject):
     def __init__(self, source = None, version = None, maintainer = None, \
         changedby = None, poolfile = None, install_date = None, fingerprint = None):
@@ -2494,7 +2442,9 @@ class DBSource(ORMObject):
         @return: fields is the dsc information in a dictionary form
         '''
         fullpath = self.poolfile.fullpath
-        fields = Dak822(open(self.poolfile.fullpath, 'r'))
+        contents = open(fullpath, 'r').read()
+        signed_file = SignedFile(contents, keyrings=[], require_signature=False)
+        fields = apt_pkg.TagSection(signed_file.contents)
         return fields
 
     metadata = association_proxy('key', 'value')
