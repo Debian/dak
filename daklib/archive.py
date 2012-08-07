@@ -382,8 +382,14 @@ class ArchiveTransaction(object):
         if archive.tainted:
             allow_tainted = True
 
-        # make sure built-using packages are present in target archive
         filename = db_binary.poolfile.filename
+
+        # make sure source is present in target archive
+        db_source = db_binary.source
+        if session.query(ArchiveFile).filter_by(archive=archive, file=db_source.poolfile).first() is None:
+            raise ArchiveException('{0}: cannot copy to {1}: source is not present in target archive'.format(filename, suite.suite_name))
+
+        # make sure built-using packages are present in target archive
         for db_source in db_binary.extra_sources:
             self._ensure_extra_source_exists(filename, db_source, archive, extra_archives=extra_archives)
 
