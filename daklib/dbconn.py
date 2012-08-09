@@ -1151,6 +1151,34 @@ def get_component(component, session=None):
 __all__.append('get_component')
 
 @session_wrapper
+def get_mapped_component(component_name, session=None):
+    """get component after mappings
+
+    Evaluate component mappings from ComponentMappings in dak.conf for the
+    given component name.
+
+    @todo: ansgar wants to get rid of this. It's currently only used for
+           the security archive
+
+    @type  component_name: str
+    @param component_name: component name
+
+    @param session: database session
+
+    @rtype:  L{daklib.dbconn.Component} or C{None}
+    @return: component after applying maps or C{None}
+    """
+    cnf = Config()
+    for m in cnf.value_list("ComponentMappings"):
+        (src, dst) = m.split()
+        if component_name == src:
+            component_name = dst
+    component = session.query(Component).filter_by(component_name=component_name).first()
+    return component
+
+__all__.append('get_mapped_component')
+
+@session_wrapper
 def get_component_names(session=None):
     """
     Returns list of strings of component names.
