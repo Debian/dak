@@ -34,6 +34,7 @@ def usage():
     print """Usage: dak generate-packages-sources2 [OPTIONS]
 Generate the Packages/Sources files
 
+  -a, --archive=ARCHIVE        process suites in ARCHIVE
   -s, --suite=SUITE            process this suite
                                Default: All suites not marked 'untouchable'
   -f, --force                  Allow processing of untouchable suites
@@ -311,6 +312,7 @@ def main():
     cnf = Config()
 
     Arguments = [('h',"help","Generate-Packages-Sources::Options::Help"),
+                 ('a','archive','Generate-Packages-Sources::Options::Archive','HasArg'),
                  ('s',"suite","Generate-Packages-Sources::Options::Suite"),
                  ('f',"force","Generate-Packages-Sources::Options::Force"),
                  ('o','option','','ArbItem')]
@@ -344,7 +346,10 @@ def main():
                 print "I: Cannot find suite %s" % s
                 logger.log(['Cannot find suite %s' % s])
     else:
-        suites = session.query(Suite).filter(Suite.untouchable == False).all()
+        query = session.query(Suite).filter(Suite.untouchable == False).all()
+        if 'Archive' in Options:
+            query = query.join(Suite.archive).filter(Archive.archive_name==Options['Archive'])
+        suites = query.all()
 
     force = Options.has_key("Force") and Options["Force"]
 
