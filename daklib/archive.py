@@ -634,7 +634,7 @@ class ArchiveUpload(object):
                 for f in source.files.itervalues():
                     src = os.path.join(self.original_directory, f.filename)
                     dst = os.path.join(self.directory, f.filename)
-                    if f.filename not in self.changes.files:
+                    if not os.path.exists(dst):
                         try:
                             db_file = self.transaction.get_file(f, source.dsc['Source'])
                             db_archive_file = session.query(ArchiveFile).filter_by(file=db_file).first()
