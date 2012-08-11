@@ -64,7 +64,7 @@ Clean old packages from suites.
 
 ################################################################################
 
-def check_binaries(now_date, delete_date, max_delete, session):
+def check_binaries(now_date, session):
     print "Checking for orphaned binary packages..."
 
     # Get the list of binary packages not in a suite and mark them for
@@ -106,7 +106,7 @@ def check_binaries(now_date, delete_date, max_delete, session):
 
 ########################################
 
-def check_sources(now_date, delete_date, max_delete, session):
+def check_sources(now_date, session):
     print "Checking for orphaned source packages..."
 
     # Get the list of source packages not in a suite and not used by
@@ -137,7 +137,8 @@ def check_sources(now_date, delete_date, max_delete, session):
           OR EXISTS (SELECT 1 FROM files_archive_map af_bin
                               JOIN binaries b ON af_bin.file_id = b.file
                              WHERE b.source = df.source
-                               AND af_bin.archive_id = af.archive_id)
+                               AND af_bin.archive_id = af.archive_id
+                               AND af_bin.last_used > ad.delete_date)
           OR EXISTS (SELECT 1 FROM extra_src_references esr
                          JOIN bin_associations ba ON esr.bin_id = ba.bin
                          JOIN binaries b ON ba.bin = b.id
@@ -147,6 +148,7 @@ def check_sources(now_date, delete_date, max_delete, session):
           AS in_use
       FROM files_archive_map af
       JOIN dsc_files df ON af.file_id = df.file
+      JOIN archive_delete_date ad ON af.archive_id = ad.archive_id
       GROUP BY af.archive_id, af.file_id, af.component_id
     )
 
@@ -170,7 +172,7 @@ def check_sources(now_date, delete_date, max_delete, session):
 
 ########################################
 
-def check_files(now_date, delete_date, max_delete, session):
+def check_files(now_date, session):
     # FIXME: this is evil; nothing should ever be in this state.  if
     # they are, it's a bug.
 
@@ -197,7 +199,7 @@ def check_files(now_date, delete_date, max_delete, session):
     if not Options["No-Action"]:
         session.commit()
 
-def clean_binaries(now_date, delete_date, max_delete, session):
+def clean_binaries(now_date, session):
     # We do this here so that the binaries we remove will have their
     # source also removed (if possible).
 
@@ -210,16 +212,17 @@ def clean_binaries(now_date, delete_date, max_delete, session):
        USING files f
        WHERE f.id = b.file
          AND NOT EXISTS (SELECT 1 FROM files_archive_map af
+                                  JOIN archive_delete_date ad ON af.archive_id = ad.archive_id
                                  WHERE af.file_id = b.file
-                                   AND (af.last_used IS NULL OR af.last_used >= :delete_date))
+                                   AND (af.last_used IS NULL OR af.last_used >= ad.delete_date))
       RETURNING f.filename
-    """, {'delete_date': delete_date})
+    """)
     for b in q:
         Logger.log(["delete binary", b[0]])
 
 ########################################
 
-def clean(now_date, delete_date, max_delete, session):
+def clean(now_date, max_delete, session):
     cnf = Config()
 
     count = 0
@@ -249,8 +252,9 @@ def clean(now_date, delete_date, max_delete, session):
          USING files f
          WHERE source.file = f.id
            AND NOT EXISTS (SELECT 1 FROM files_archive_map af
+                                    JOIN archive_delete_date ad ON af.archive_id = ad.archive_id
                                    WHERE af.file_id = source.file
-                                     AND (af.last_used IS NULL OR af.last_used >= :delete_date))
+                                     AND (af.last_used IS NULL OR af.last_used >= ad.delete_date))
         RETURNING source.id AS id, f.filename AS filename
       ),
       deleted_dsc_files AS (
@@ -259,12 +263,11 @@ def clean(now_date, delete_date, max_delete, session):
       ),
       now_unused_source_files AS (
         UPDATE files_archive_map af
-           SET last_used = :delete_date -- Kill it now. We waited long enough before removing the .dsc.
+           SET last_used = '1977-03-13 13:37:42' -- Kill it now. We waited long enough before removing the .dsc.
          WHERE af.file_id IN (SELECT file_id FROM deleted_dsc_files)
            AND NOT EXISTS (SELECT 1 FROM dsc_files df WHERE df.file = af.file_id)
       )
-      SELECT filename FROM deleted_sources""",
-                        {'delete_date': delete_date})
+      SELECT filename FROM deleted_sources""")
     for s in q:
         Logger.log(["delete source", s[0]])
 
@@ -272,7 +275,7 @@ def clean(now_date, delete_date, max_delete, session):
         session.commit()
 
     # Delete files from the pool
-    old_files = session.query(ArchiveFile).filter(ArchiveFile.last_used <= delete_date).join(Archive)
+    old_files = session.query(ArchiveFile).filter('files_archive_map.last_used <= (SELECT delete_date FROM archive_delete_date ad WHERE ad.archive_id = files_archive_map.archive_id)').join(Archive)
     if max_delete is not None:
         old_files = old_files.limit(max_delete)
         print "Limiting removals to %d" % max_delete
@@ -330,7 +333,7 @@ def clean(now_date, delete_date, max_delete, session):
 
 ################################################################################
 
-def clean_maintainers(now_date, delete_date, max_delete, session):
+def clean_maintainers(now_date, session):
     print "Cleaning out unused Maintainer entries..."
 
     # TODO Replace this whole thing with one SQL statement
@@ -358,7 +361,7 @@ SELECT m.id, m.name FROM maintainer m
 
 ################################################################################
 
-def clean_fingerprints(now_date, delete_date, max_delete, session):
+def clean_fingerprints(now_date, session):
     print "Cleaning out unused fingerprint entries..."
 
     # TODO Replace this whole thing with one SQL statement
@@ -414,6 +417,24 @@ def clean_empty_directories(session):
 
 ################################################################################
 
+def set_archive_delete_dates(now_date, session):
+    session.execute("""
+        CREATE TEMPORARY TABLE archive_delete_date (
+          archive_id INT NOT NULL,
+          delete_date TIMESTAMP NOT NULL
+        )""")
+
+    session.execute("""
+        INSERT INTO archive_delete_date
+          (archive_id, delete_date)
+        SELECT
+          archive.id, :now_date - archive.stayofexecution
+        FROM archive""", {'now_date': now_date})
+
+    session.flush()
+
+################################################################################
+
 def main():
     global Options, Logger
 
@@ -450,18 +471,15 @@ def main():
 
     now_date = datetime.now()
 
-    # Stay of execution; default to 1.5 days
-    soe = int(cnf.get('Clean-Suites::StayOfExecution', '129600'))
+    set_archive_delete_dates(now_date, session)
 
-    delete_date = now_date - timedelta(seconds=soe)
-
-    check_binaries(now_date, delete_date, max_delete, session)
-    clean_binaries(now_date, delete_date, max_delete, session)
-    check_sources(now_date, delete_date, max_delete, session)
-    check_files(now_date, delete_date, max_delete, session)
-    clean(now_date, delete_date, max_delete, session)
-    clean_maintainers(now_date, delete_date, max_delete, session)
-    clean_fingerprints(now_date, delete_date, max_delete, session)
+    check_binaries(now_date, session)
+    clean_binaries(now_date, session)
+    check_sources(now_date, session)
+    check_files(now_date, session)
+    clean(now_date, max_delete, session)
+    clean_maintainers(now_date, session)
+    clean_fingerprints(now_date, session)
     clean_empty_directories(session)
 
     session.rollback()
