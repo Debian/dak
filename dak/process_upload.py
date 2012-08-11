@@ -377,6 +377,8 @@ def real_reject(directory, upload, reason=None, notify=True):
     for fn in files:
         src = os.path.join(upload.directory, fn)
         dst = utils.find_next_free(os.path.join(rejectdir, fn))
+        if not os.path.exists(src):
+            continue
         fs.copy(src, dst)
 
     if upload.reject_reasons is not None:
