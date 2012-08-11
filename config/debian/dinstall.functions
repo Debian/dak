@@ -193,31 +193,14 @@ function mklslar() {
     FILENAME=ls-lR
 
     log "Removing any core files ..."
-    find -type f -name core -print0 | xargs -0r rm -v
-
-    log "Checking permissions on files in the FTP tree ..."
-    find -type f \( \! -perm -444 -o -perm +002 \) -ls
-    find -type d \( \! -perm -555 -o -perm +002 \) -ls
+    find -type f -name core -print -delete
 
     log "Checking symlinks ..."
     symlinks -rd .
 
     log "Creating recursive directory listing ... "
-    rm -f .${FILENAME}.new
-    TZ=UTC ls -lR > .${FILENAME}.new
-
-    if [ -r ${FILENAME}.gz ] ; then
-        mv -f ${FILENAME}.gz ${FILENAME}.old.gz
-        mv -f .${FILENAME}.new ${FILENAME}
-        rm -f ${FILENAME}.patch.gz
-        zcat ${FILENAME}.old.gz | diff -u - ${FILENAME} | gzip -9cfn - >${FILENAME}.patch.gz
-        rm -f ${FILENAME}.old.gz
-    else
-        mv -f .${FILENAME}.new ${FILENAME}
-    fi
-
-    gzip -9cfN ${FILENAME} >${FILENAME}.gz
-    rm -f ${FILENAME}
+    rm -f ${FILENAME}.gz
+    TZ=UTC ls -lR | gzip -9c --rsyncable > ${FILENAME}.gz
 }
 
 function mkmaintainers() {
