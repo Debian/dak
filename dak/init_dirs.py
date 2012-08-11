@@ -131,15 +131,8 @@ def create_directories():
         process_keyring(Cnf['Dinstall::SigningPubKeyring'], secret=True)
 
     # Process public keyrings
-    for keyring in session.query(Keyring).all():
+    for keyring in session.query(Keyring).filter_by(active=True):
         process_keyring(keyring.keyring_name)
-
-    # Process pool directories
-    for component in session.query(Component):
-        directory = os.path.join( Cnf['Dir::Pool'], component.component_name )
-
-        do_dir(directory, '%s pool' % component.component_name)
-
 
     # Process dists directories
     # TODO: Store location of each suite in database

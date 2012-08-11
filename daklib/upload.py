@@ -17,7 +17,7 @@
 """module to handle uploads not yet installed to the archive
 
 This module provides classes to handle uploads not yet installed to the
-archive.  Central is the `Changes` class which represents a changes file.
+archive.  Central is the L{Changes} class which represents a changes file.
 It provides methods to access the included binary and source packages.
 """
 
@@ -25,8 +25,9 @@ import apt_inst
 import apt_pkg
 import os
 import re
-from .gpg import SignedFile
-from .regexes import *
+
+from daklib.gpg import SignedFile
+from daklib.regexes import *
 
 class InvalidChangesException(Exception):
     pass
@@ -54,35 +55,52 @@ class InvalidFilenameException(Exception):
 
 class HashedFile(object):
     """file with checksums
-
-    Attributes:
-       filename (str): name of the file
-       size (long): size in bytes
-       md5sum (str): MD5 hash in hexdigits
-       sha1sum (str): SHA1 hash in hexdigits
-       sha256sum (str): SHA256 hash in hexdigits
-       section (str): section or None
-       priority (str): priority or None
     """
     def __init__(self, filename, size, md5sum, sha1sum, sha256sum, section=None, priority=None):
         self.filename = filename
+        """name of the file
+        @type: str
+        """
+
         self.size = size
+        """size in bytes
+        @type: long
+        """
+
         self.md5sum = md5sum
+        """MD5 hash in hexdigits
+        @type: str
+        """
+
         self.sha1sum = sha1sum
+        """SHA1 hash in hexdigits
+        @type: str
+        """
+
         self.sha256sum = sha256sum
+        """SHA256 hash in hexdigits
+        @type: str
+        """
+
         self.section = section
+        """section or C{None}
+        @type: str or C{None}
+        """
+
         self.priority = priority
+        """priority or C{None}
+        @type: str of C{None}
+        """
 
     def check(self, directory):
         """Validate hashes
 
         Check if size and hashes match the expected value.
 
-        Args:
-           directory (str): directory the file is located in
+        @type  directory: str
+        @param directory: directory the file is located in
 
-        Raises:
-           InvalidHashException: hash mismatch
+        @raise InvalidHashException: hash mismatch
         """
         path = os.path.join(directory, self.filename)
         fh = open(path, 'r')
@@ -108,15 +126,17 @@ class HashedFile(object):
 def parse_file_list(control, has_priority_and_section):
     """Parse Files and Checksums-* fields
 
-    Args:
-       control (dict-like): control file to take fields from
-       has_priority_and_section (bool): Files include section and priority (as in .changes)
+    @type  control: dict-like
+    @param control: control file to take fields from
 
-    Raises:
-       InvalidChangesException: missing fields or other grave errors
+    @type  has_priority_and_section: bool
+    @param has_priority_and_section: Files field include section and priority
+                                     (as in .changes)
 
-    Returns:
-       dictonary mapping filenames to `daklib.upload.HashedFile` objects
+    @raise InvalidChangesException: missing fields or other grave errors
+
+    @rtype:  dict
+    @return: dict mapping filenames to L{daklib.upload.HashedFile} objects
     """
     entries = {}
 
@@ -172,32 +192,28 @@ def parse_file_list(control, has_priority_and_section):
 
 class Changes(object):
     """Representation of a .changes file
-
-    Attributes:
-       architectures (list of str): list of architectures included in the upload
-       binaries (list of daklib.upload.Binary): included binary packages
-       binary_names (list of str): names of included binary packages
-       byhand_files (list of daklib.upload.HashedFile): included byhand files
-       bytes (int): total size of files included in this upload in bytes
-       changes (dict-like): dict to access fields of the .changes file
-       closed_bugs (list of str): list of bugs closed by this upload
-       directory (str): directory the .changes is located in
-       distributions (list of str): list of target distributions for the upload
-       filename (str): name of the .changes file
-       files (dict): dict mapping filenames to daklib.upload.HashedFile objects
-       path (str): path to the .changes files
-       primary_fingerprint (str): fingerprint of the PGP key used for the signature
-       source (daklib.upload.Source or None): included source
-       valid_signature (bool): True if the changes has a valid signature
     """
     def __init__(self, directory, filename, keyrings, require_signature=True):
         if not re_file_safe.match(filename):
             raise InvalidChangesException('{0}: unsafe filename'.format(filename))
+
         self.directory = directory
+        """directory the .changes is located in
+        @type: str
+        """
+
         self.filename = filename
+        """name of the .changes file
+        @type: str
+        """
+
         data = open(self.path).read()
         self._signed_file = SignedFile(data, keyrings, require_signature)
         self.changes = apt_pkg.TagSection(self._signed_file.contents)
+        """dict to access fields of the .changes file
+        @type: dict-like
+        """
+
         self._binaries = None
         self._source = None
         self._files = None
@@ -206,26 +222,44 @@ class Changes(object):
 
     @property
     def path(self):
+        """path to the .changes file
+        @type: str
+        """
         return os.path.join(self.directory, self.filename)
 
     @property
     def primary_fingerprint(self):
+        """fingerprint of the key used for signing the .changes file
+        @type: str
+        """
         return self._signed_file.primary_fingerprint
 
     @property
     def valid_signature(self):
+        """C{True} if the .changes has a valid signature
+        @type: bool
+        """
         return self._signed_file.valid
 
     @property
     def architectures(self):
+        """list of architectures included in the upload
+        @type: list of str
+        """
         return self.changes['Architecture'].split()
 
     @property
     def distributions(self):
+        """list of target distributions for the upload
+        @type: list of str
+        """
         return self.changes['Distribution'].split()
 
     @property
     def source(self):
+        """included source or C{None}
+        @type: L{daklib.upload.Source} or C{None}
+        """
         if self._source is None:
             source_files = []
             for f in self.files.itervalues():
@@ -237,6 +271,9 @@ class Changes(object):
 
     @property
     def binaries(self):
+        """included binary packages
+        @type: list of L{daklib.upload.Binary}
+        """
         if self._binaries is None:
             binaries = []
             for f in self.files.itervalues():
@@ -247,6 +284,9 @@ class Changes(object):
 
     @property
     def byhand_files(self):
+        """included byhand files
+        @type: list of L{daklib.upload.HashedFile}
+        """
         byhand = []
 
         for f in self.files.itervalues():
@@ -260,35 +300,47 @@ class Changes(object):
 
     @property
     def binary_names(self):
+        """names of included binary packages
+        @type: list of str
+        """
         return self.changes['Binary'].split()
 
     @property
     def closed_bugs(self):
+        """bugs closed by this upload
+        @type: list of str
+        """
         return self.changes.get('Closes', '').split()
 
     @property
     def files(self):
+        """dict mapping filenames to L{daklib.upload.HashedFile} objects
+        @type: dict
+        """
         if self._files is None:
             self._files = parse_file_list(self.changes, True)
         return self._files
 
     @property
     def bytes(self):
+        """total size of files included in this upload in bytes
+        @type: number
+        """
         count = 0
         for f in self.files.itervalues():
             count += f.size
         return count
 
     def __cmp__(self, other):
-        """Compare two changes packages
+        """compare two changes files
 
         We sort by source name and version first.  If these are identical,
         we sort changes that include source before those without source (so
         that sourceful uploads get processed first), and finally fall back
         to the filename (this should really never happen).
 
-        Returns:
-           -1 if self < other, 0 if self == other, 1 if self > other
+        @rtype:  number
+        @return: n where n < 0 if self < other, n = 0 if self == other, n > 0 if self > other
         """
         ret = cmp(self.changes.get('Source'), other.changes.get('Source'))
 
@@ -313,25 +365,25 @@ class Changes(object):
 
 class Binary(object):
     """Representation of a binary package
-
-    Attributes:
-       component (str): component name
-       control (dict-like): dict to access fields in DEBIAN/control
-       hashed_file (HashedFile): HashedFile object for the .deb
     """
     def __init__(self, directory, hashed_file):
         self.hashed_file = hashed_file
+        """file object for the .deb
+        @type: HashedFile
+        """
 
         path = os.path.join(directory, hashed_file.filename)
         data = apt_inst.DebFile(path).control.extractdata("control")
+
         self.control = apt_pkg.TagSection(data)
+        """dict to access fields in DEBIAN/control
+        @type: dict-like
+        """
 
     @property
     def source(self):
-        """Get source package name and version
-
-        Returns:
-           tuple containing source package name and version
+        """get tuple with source package name and version
+        @type: tuple of str
         """
         source = self.control.get("Source", None)
         if source is None:
@@ -346,10 +398,8 @@ class Binary(object):
 
     @property
     def type(self):
-        """Get package type
-
-        Returns:
-           String with the package type ('deb' or 'udeb')
+        """package type ('deb' or 'udeb')
+        @type: str
         """
         match = re_file_binary.match(self.hashed_file.filename)
         if not match:
@@ -358,6 +408,9 @@ class Binary(object):
 
     @property
     def component(self):
+        """component name
+        @type: str
+        """
         fields = self.control['Section'].split('/')
         if len(fields) > 1:
             return fields[0]
@@ -365,18 +418,13 @@ class Binary(object):
 
 class Source(object):
     """Representation of a source package
-
-    Attributes:
-       component (str): guessed component name. Might be wrong!
-       dsc (dict-like): dict to access fields in the .dsc file
-       hashed_files (list of daklib.upload.HashedFile): list of source files (including .dsc)
-       files (dict): dictonary mapping filenames to HashedFile objects for
-           additional source files (not including .dsc)
-       primary_fingerprint (str): fingerprint of the PGP key used for the signature
-       valid_signature (bool):  True if the dsc has a valid signature
     """
     def __init__(self, directory, hashed_files, keyrings, require_signature=True):
         self.hashed_files = hashed_files
+        """list of source files (including the .dsc itself)
+        @type: list of L{HashedFile}
+        """
+
         self._dsc_file = None
         for f in hashed_files:
             if re_file_dsc.match(f.filename):
@@ -388,24 +436,46 @@ class Source(object):
         data = open(dsc_file_path, 'r').read()
         self._signed_file = SignedFile(data, keyrings, require_signature)
         self.dsc = apt_pkg.TagSection(self._signed_file.contents)
+        """dict to access fields in the .dsc file
+        @type: dict-like
+        """
+
         self._files = None
 
     @property
     def files(self):
+        """dict mapping filenames to L{HashedFile} objects for additional source files
+
+        This list does not include the .dsc itself.
+
+        @type: dict
+        """
         if self._files is None:
             self._files = parse_file_list(self.dsc, False)
         return self._files
 
     @property
     def primary_fingerprint(self):
+        """fingerprint of the key used to sign the .dsc
+        @type: str
+        """
         return self._signed_file.primary_fingerprint
 
     @property
     def valid_signature(self):
+        """C{True} if the .dsc has a valid signature
+        @type: bool
+        """
         return self._signed_file.valid
 
     @property
     def component(self):
+        """guessed component name
+
+        Might be wrong. Don't rely on this.
+
+        @type: str
+        """
         if 'Section' not in self.dsc:
             return 'main'
         fields = self.dsc['Section'].split('/')

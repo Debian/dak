@@ -29,31 +29,36 @@ import tempfile
 class UploadCopy(object):
     """export a policy queue upload
 
-    This class can be used in a with-statements:
+    This class can be used in a with-statement::
 
        with UploadCopy(...) as copy:
           ...
 
     Doing so will provide a temporary copy of the upload in the directory
-    given by the `directory` attribute.  The copy will be removed on leaving
+    given by the C{directory} attribute.  The copy will be removed on leaving
     the with-block.
-
-    Args:
-       upload (daklib.dbconn.PolicyQueueUpload)
     """
     def __init__(self, upload):
+        """initializer
+
+        @type  upload: L{daklib.dbconn.PolicyQueueUpload}
+        @param upload: upload to handle
+        """
+
         self.directory = None
         self.upload = upload
 
     def export(self, directory, mode=None, symlink=True):
         """export a copy of the upload
 
-        Args:
-           directory (str)
+        @type  directory: str
+        @param directory: directory to export to
 
-        Kwargs:
-           mode (int): permissions to use for the copied files
-           symlink (bool): use symlinks instead of copying the files (default: True)
+        @type  mode: int
+        @param mode: permissions to use for the copied files
+
+        @type  symlink: bool
+        @param symlink: use symlinks instead of copying the files
         """
         with FilesystemTransaction() as fs:
             source = self.upload.source
@@ -103,9 +108,10 @@ class PolicyQueueUploadHandler(object):
     def __init__(self, upload, session):
         """initializer
 
-        Args:
-           upload (daklib.dbconn.PolicyQueueUpload): upload to process
-           session: database session
+        @type  upload: L{daklib.dbconn.PolicyQueueUpload}
+        @param upload: upload to process
+
+        @param session: database session
         """
         self.upload = upload
         self.session = session
@@ -169,8 +175,8 @@ class PolicyQueueUploadHandler(object):
     def reject(self, reason):
         """mark upload as rejected
 
-        Args:
-           reason (str): reason for the rejection
+        @type  reason: str
+        @param reason: reason for the rejection
         """
         fn1 = 'REJECT.{0}'.format(self._changes_prefix)
         assert re_file_safe.match(fn1)
@@ -190,8 +196,8 @@ class PolicyQueueUploadHandler(object):
     def get_action(self):
         """get current action
 
-        Returns:
-           string giving the current action, one of 'ACCEPT', 'ACCEPTED', 'REJECT'
+        @rtype:  str
+        @return: string giving the current action, one of 'ACCEPT', 'ACCEPTED', 'REJECT'
         """
         changes_prefix = self._changes_prefix
 
@@ -206,18 +212,19 @@ class PolicyQueueUploadHandler(object):
     def missing_overrides(self, hints=None):
         """get missing override entries for the upload
 
-        Kwargs:
-           hints (list of dict): suggested hints for new overrides in the same
-              format as the return value
+        @type  hints: list of dict
+        @param hints: suggested hints for new overrides in the same format as
+                      the return value
 
-        Returns:
-           list of dicts with the following keys:
-              package: package name
-              priority: default priority (from upload)
-              section: default section (from upload)
-              component: default component (from upload)
-              type: type of required override ('dsc', 'deb' or 'udeb')
-           All values are strings.
+        @return: list of dicts with the following keys:
+
+                 - package: package name
+                 - priority: default priority (from upload)
+                 - section: default section (from upload)
+                 - component: default component (from upload)
+                 - type: type of required override ('dsc', 'deb' or 'udeb')
+
+                 All values are strings.
         """
         # TODO: use Package-List field
         missing = []
