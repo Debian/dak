@@ -160,6 +160,7 @@ Checks Debian packages from Incoming
 ## Queue builds
 
 import datetime
+import errno
 from errno import EACCES, EAGAIN
 import fcntl
 import os
