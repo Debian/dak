@@ -633,9 +633,14 @@ class ArchiveUpload(object):
                     src = os.path.join(self.original_directory, f.filename)
                     dst = os.path.join(self.directory, f.filename)
                     if f.filename not in self.changes.files:
-                        db_file = self.transaction.get_file(f, source.dsc['Source'])
-                        db_archive_file = session.query(ArchiveFile).filter_by(file=db_file).first()
-                        fs.copy(db_archive_file.path, dst, symlink=True)
+                        try:
+                            db_file = self.transaction.get_file(f, source.dsc['Source'])
+                            db_archive_file = session.query(ArchiveFile).filter_by(file=db_file).first()
+                            fs.copy(db_archive_file.path, dst, symlink=True)
+                        except KeyError:
+                            # Ignore if get_file could not find it. Upload will
+                            # probably be rejected later.
+                            pass
 
     def unpacked_source(self):
         """Path to unpacked source
