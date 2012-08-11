@@ -60,6 +60,7 @@ def usage (exit_code=0):
     print """Usage: dak generate-releases [OPTIONS]
 Generate the Release files
 
+  -a, --archive=ARCHIVE      process suites in ARCHIVE
   -s, --suite=SUITE(s)       process this suite
                              Default: All suites not marked 'untouchable'
   -f, --force                Allow processing of untouchable suites
@@ -297,6 +298,7 @@ def main ():
             cnf["Generate-Releases::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Generate-Releases::Options::Help"),
+                 ('a','archive','Generate-Releases::Options::Archive','HasArg'),
                  ('s',"suite","Generate-Releases::Options::Suite"),
                  ('f',"force","Generate-Releases::Options::Force"),
                  ('o','option','','ArbItem')]
@@ -321,7 +323,10 @@ def main ():
                 print "cannot find suite %s" % s
                 Logger.log(['cannot find suite %s' % s])
     else:
-        suites = session.query(Suite).filter(Suite.untouchable == False).all()
+        query = session.query(Suite).filter(Suite.untouchable == False)
+        if 'Archive' in Options:
+            query = query.join(Suite.archive).filter(Archive.archive_name==Options['Archive'])
+        suites = query.all()
 
     broken=[]
 
