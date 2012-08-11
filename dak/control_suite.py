@@ -75,10 +75,12 @@ Display or alter the contents of a suite using FILE(s), or stdin.
 
 def get_pkg(package, version, architecture, session):
     if architecture == 'source':
-        q = session.query(DBSource).filter_by(source=package, version=version)
+        q = session.query(DBSource).filter_by(source=package, version=version) \
+            .join(DBSource.poolfile)
     else:
         q = session.query(DBBinary).filter_by(package=package, version=version) \
-            .join(DBBinary.architecture).filter(Architecture.arch_string.in_([architecture, 'all']))
+            .join(DBBinary.architecture).filter(Architecture.arch_string.in_([architecture, 'all'])) \
+            .join(DBBinary.poolfile)
 
     pkg = q.first()
     if pkg is None:
