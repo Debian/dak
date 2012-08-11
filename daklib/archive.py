@@ -625,6 +625,8 @@ class ArchiveUpload(object):
             for f in self.changes.files.itervalues():
                 src = os.path.join(self.original_directory, f.filename)
                 dst = os.path.join(self.directory, f.filename)
+                if not os.path.exists(src):
+                    continue
                 fs.copy(src, dst)
 
             source = self.changes.source
