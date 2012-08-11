@@ -223,6 +223,7 @@ function copyoverrides() {
 }
 
 function mkfilesindices() {
+    set +o pipefail
     umask 002
     cd $base/ftp/indices/files/components
 
@@ -312,6 +313,7 @@ function mkfilesindices() {
 
     rm -f $ARCHLIST
     log "Done!"
+    set -o pipefail
 }
 
 function mkchecksums() {
