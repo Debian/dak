@@ -131,6 +131,7 @@ def _convert_policy_queues(cnf, c):
           FROM policy_queue pq
           JOIN suite ON pq.id = suite.policy_queue_id
           JOIN suite_architectures sa ON suite.id = sa.suite
+         WHERE pq.queue_name NOT IN ('byhand', 'new')
          GROUP BY pq.suite_id, sa.architecture""")
 
     # We only add architectures from suite_architectures to only add
@@ -139,8 +140,7 @@ def _convert_policy_queues(cnf, c):
     # to generate Packages indices.
     c.execute("""INSERT INTO suite_architectures (suite, architecture)
         SELECT DISTINCT pq.suite_id, sa.architecture
-          FROM build_queue bq
-          JOIN suite_architectures sa
+          FROM policy_queue pq, suite_architectures sa
          WHERE pq.queue_name IN ('byhand', 'new')""")
 
     c.execute("""CREATE TABLE policy_queue_upload (
