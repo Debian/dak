@@ -42,14 +42,20 @@ def getSources(suite, component, session, timestamp = None):
     if timestamp:
         extra_cond = "AND extract(epoch from sa.created) > %d" % timestamp
     query = """
-        SELECT s.id, l.path, f.filename
+        SELECT s.id, archive.path || '/pool/', c.name || '/' || f.filename
             FROM source s
             JOIN src_associations sa
                 ON s.id = sa.source AND sa.suite = :suite %s
+            JOIN suite
+                ON sa.suite = suite.id
+            JOIN archive
+                ON suite.archive_id = archive.id
             JOIN files f
                 ON s.file = f.id
-            JOIN location l
-                ON f.location = l.id AND l.component = :component
+            JOIN files_archive_map fam
+                ON fam.file_id = f.id AND fam.component_id = :component
+            JOIN component c
+                ON fam.component_id = c.id
             ORDER BY filename
     """ % extra_cond
     args = { 'suite': suite.suite_id,
@@ -106,12 +112,16 @@ CREATE TEMP TABLE gf_candidates (
     source text);
 
 INSERT INTO gf_candidates (id, filename, path, architecture, src, source)
-    SELECT bc.id, f.filename, l.path, bc.architecture, bc.source as src, s.source
+    SELECT bc.id, c.name || '/' || f.filename, archive.path || '/pool/' , bc.architecture, bc.source as src, s.source
         FROM b_candidates bc
         JOIN source s ON bc.source = s.id
         JOIN files f ON bc.file = f.id
-        JOIN location l ON f.location = l.id
-        WHERE l.component = :component;
+        JOIN files_archive_map fam ON f.id = fam.file_id
+        JOIN component c ON fam.component_id = c.id
+        JOIN archive ON fam.archive_id = archive.id
+        JOIN suite ON suite.archive_id = archive.id
+
+        WHERE c.id = :component AND suite.id = :suite;
 
 WITH arch_any AS
 
