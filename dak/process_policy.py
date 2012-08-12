@@ -278,7 +278,10 @@ def subst_for_upload(upload):
     cnf = Config()
 
     maintainer_field = upload.changes.changedby or upload.changes.maintainer
-    addresses = utils.mail_addresses_for_upload(upload.changes.maintainer, maintainer_field, upload.changes.fingerprint)
+    if upload.source is not None:
+        addresses = utils.mail_addresses_for_upload(upload.changes.maintainer, maintainer_field, upload.changes.fingerprint)
+    else:
+        addresses = utils.mail_addresses_for_upload(upload.changes.maintainer, upload.changes.maintainer, upload.changes.fingerprint)
 
     changes_path = os.path.join(upload.policy_queue.path, upload.changes.changesname)
     changes_contents = open(changes_path, 'r').read()
