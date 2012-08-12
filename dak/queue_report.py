@@ -186,7 +186,7 @@ def header():
                 continue;
             c = children[i].getAttribute("class").split(" ");
             for(var j = 0; j < c.length; j++) {
-                if(c[j] == "binNEW") {
+                if(c[j] == "sourceNEW") {
                     if (children[i].style.display == '')
                         children[i].style.display = 'none';
                     else children[i].style.display = '';
@@ -244,12 +244,12 @@ def footer():
     """
 
 def table_header(type, source_count, total_count):
-    print "<h1 class='binNEW'>Summary for: %s</h1>" % (type)
-    print "<h1 class='binNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type)
+    print "<h1 class='sourceNEW'>Summary for: %s</h1>" % (type)
+    print "<h1 class='sourceNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type)
     print """
     <p class="togglepkg" onclick="togglePkg()">Click to toggle all/binary-NEW packages</p>
     <table class="NEW">
-      <caption class="binNEW">
+      <caption class="sourceNEW">
     """
     print "Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count)
     print """
@@ -282,8 +282,12 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
         if dist == "experimental":
             trclass = "exp"
 
-    if not len(session.query(DBSource).filter_by(source = source).all()):
-        trclass += " binNEW"
+    query = '''SELECT source
+               FROM source_suite
+               WHERE source = :source
+               AND suite_name IN ('unstable', 'experimental')'''
+    if not session.execute(query, {'source': source}).rowcount:
+        trclass += " sourceNEW"
     session.commit()
 
     if row_number % 2 != 0:
@@ -291,7 +295,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     else:
         print "<tr class=\"%s odd\">" % (trclass)
 
-    if "binNEW" in trclass:
+    if "sourceNEW" in trclass:
         print "<td class=\"package\">%s</td>" % (source)
     else:
         print "<td class=\"package\"><a href=\"http://packages.qa.debian.org/%(source)s\">%(source)s</a></td>" % {'source': source}
