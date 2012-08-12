@@ -471,6 +471,7 @@ class TransitionCheck(Check):
         if transitions is None:
             return True
 
+        control = upload.changes.changes
         source = re_field_source.match(control['Source']).group('package')
 
         for trans in transitions:
