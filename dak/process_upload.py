@@ -290,8 +290,10 @@ def accept(directory, upload):
     for suite in upload.final_suites:
         accepted_to_real_suite = accepted_to_real_suite or suite.policy_queue is None
 
+    sourceful_upload = 'source' in upload.changes.architectures
+
     control = upload.changes.changes
-    if 'source' in upload.changes.architectures and not Options['No-Action']:
+    if sourceful_upload and not Options['No-Action']:
         urgency = control.get('Urgency')
         if urgency not in cnf.value_list('Urgency::Valid'):
             urgency = cnf['Urgency::Default']
@@ -303,7 +305,7 @@ def accept(directory, upload):
     utils.send_mail(message)
 
     # send mail to announce lists and tracking server
-    if  accepted_to_real_suite:
+    if accepted_to_real_suite and sourceful_upload:
         subst = subst_for_upload(upload)
         announce = set()
         for suite in upload.final_suites:
@@ -324,7 +326,7 @@ def accept(directory, upload):
     # Only close bugs for uploads that were not redirected to a policy queue.
     # process-policy will close bugs for those once they are accepted.
     subst = subst_for_upload(upload)
-    if accepted_to_real_suite and cnf.find_b('Dinstall::CloseBugs') and upload.changes.source is not None:
+    if accepted_to_real_suite and cnf.find_b('Dinstall::CloseBugs') and sourceful_upload:
         for bugnum in upload.changes.closed_bugs:
             subst['__BUG_NUMBER__'] = str(bugnum)
 
