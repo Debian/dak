@@ -586,7 +586,7 @@ ENVIRONMENT VARIABLES
 
       Example: run mc in a tmux session to inspect the upload
 
-      export DAK_INSPECT_UPLOAD='tmux new-session -d -s process-new 2>/dev/null; tmux new-window -t process-new:0 -k "cd {directory}; mc"'
+      export DAK_INSPECT_UPLOAD='tmux new-session -d -s process-new 2>/dev/null; tmux new-window -n "{changes}" -t process-new:0 -k "cd {directory}; mc"'
 
       and run
 
