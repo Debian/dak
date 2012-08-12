@@ -77,7 +77,8 @@ def main(argv=None):
     with FilesystemTransaction() as fs:
         for f in files:
             dst = os.path.join(directory, f.basename)
-            fs.copy(f.fullpath, dst, symlink=symlink)
+            if not os.path.exists(dst):
+                fs.copy(f.fullpath, dst, symlink=symlink)
         fs.commit()
 
 if __name__ == '__main__':
