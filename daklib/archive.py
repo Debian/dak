@@ -1128,8 +1128,9 @@ class ArchiveUpload(object):
 
             # copy to build queues
             if policy_queue is None or policy_queue.send_to_build_queues:
+                source_suites = session.query(Suite).filter_by(suite_id=suite.suite_id).subquery()
                 for build_queue in suite.copy_queues:
-                    self._install_to_suite(build_queue.suite, source_component_func, binary_component_func, extra_source_archives=[suite.archive])
+                    self._install_to_suite(build_queue.suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
 
         self._do_bts_versiontracking()
 
