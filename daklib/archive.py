@@ -125,11 +125,10 @@ class ArchiveTransaction(object):
         @type  fingerprint: L{daklib.dbconn.Fingerprint}
         @param fingerprint: optional fingerprint
 
-        @type  source_suites: list of L{daklib.dbconn.Suite} or C{True}
+        @type  source_suites: SQLAlchemy subquery for C{daklib.dbconn.Suite} or C{True}
         @param source_suites: suites to copy the source from if they are not
                               in C{suite} or C{True} to allow copying from any
                               suite.
-                              This can also be a SQLAlchemy (sub)query object.
 
         @type  extra_source_archives: list of L{daklib.dbconn.Archive}
         @param extra_source_archives: extra archives to copy Built-Using sources from
