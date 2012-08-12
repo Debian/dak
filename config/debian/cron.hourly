@@ -9,6 +9,12 @@ set -u
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+########################################################################
+# Functions                                                            #
+########################################################################
+# common functions are "outsourced"
+. "${configdir}/common"
+
 dak import-users-from-passwd
 dak queue-report -n > $webdir/new.html
 dak queue-report -8 -d new,byhand,proposedupdates,oldproposedupdates -r $webdir/stat
