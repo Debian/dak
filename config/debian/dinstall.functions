@@ -208,7 +208,7 @@ function mkmaintainers() {
     log 'Creating Maintainers index ... '
 
     cd $indices
-    dak make-maintainers ${scriptdir}/masterfiles/pseudo-packages.maintainers
+    dak make-maintainers -a ftp-master ${scriptdir}/masterfiles/pseudo-packages.maintainers
     gzip -9v --rsyncable <Maintainers >Maintainers.gz
     gzip -9v --rsyncable <Uploaders >Uploaders.gz
 }
