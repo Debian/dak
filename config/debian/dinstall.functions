@@ -232,7 +232,7 @@ function mkfilesindices() {
 
     log "Querying postgres"
     local query="
-      SELECT CONCAT('./pool/', c.name, '/', f.filename) AS path, a.arch_string AS arch_string
+      SELECT './pool/' || c.name || '/' || f.filename AS path, a.arch_string AS arch_string
       FROM files f
       JOIN files_archive_map af ON f.id = af.file_id
       JOIN component c ON af.component_id = c.id
@@ -280,7 +280,7 @@ function mkfilesindices() {
 	local suite_id="$(printf %d $1)"
 	local query
 	query="
-          SELECT DISTINCT CONCAT('./pool/', c.name, '/', f.filename)
+          SELECT DISTINCT './pool/' || c.name || '/' || f.filename
           FROM
             (SELECT sa.source AS source
                FROM src_associations sa
@@ -304,7 +304,7 @@ function mkfilesindices() {
 	psql -F' ' -A -t -c "$query"
 
 	query="
-          SELECT CONCAT('./pool/', c.name, '/', f.filename)
+          SELECT './pool/' || c.name || '/' || f.filename)
           FROM bin_associations ba
           JOIN binaries b ON ba.bin = b.id
           JOIN files f ON b.file = f.id
