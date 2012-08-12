@@ -302,24 +302,23 @@ def accept(directory, upload):
     utils.send_mail(message)
 
     # send mail to announce lists and tracking server
-    subst = subst_for_upload(upload)
-    announce = set()
-    for suite in upload.final_suites:
-        if suite.policy_queue is not None:
-            continue
-        announce.update(suite.announce or [])
-    announce_address = ", ".join(announce)
+    if  accepted_to_real_suite:
+        subst = subst_for_upload(upload)
+        announce = set()
+        for suite in upload.final_suites:
+            if suite.policy_queue is not None:
+                continue
+            announce.update(suite.announce or [])
+        announce_address = ", ".join(announce)
 
-    tracking = cnf.get('Dinstall::TrackingServer')
-    if tracking and 'source' in upload.changes.architectures:
-        announce_address = '{0}\nBcc: {1}@{2}'.format(announce_address, control['Source'], tracking)
+        tracking = cnf.get('Dinstall::TrackingServer')
+        if tracking and 'source' in upload.changes.architectures:
+            announce_address = '{0}\nBcc: {1}@{2}'.format(announce_address, control['Source'], tracking)
 
-    subst['__ANNOUNCE_LIST_ADDRESS__'] = announce_address
+        subst['__ANNOUNCE_LIST_ADDRESS__'] = announce_address
 
-    message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
-    utils.send_mail(message)
-
-    del subst['__ANNOUNCE_LIST_ADDRESS__']
+        message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
+        utils.send_mail(message)
 
     # Only close bugs for uploads that were not redirected to a policy queue.
     # process-policy will close bugs for those once they are accepted.
