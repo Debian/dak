@@ -553,13 +553,13 @@ def process_queue(queue, log, rrd_dir):
             log.write("\n")
 
     if Cnf.has_key("Queue-Report::Options::New"):
+        total_count = len(queue.uploads)
+        source_count = len(per_source_items)
         direction.append([5,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
     # Output for a html file. First table header. then table_footer.
     # Any line between them is then a <tr> printed from subroutine table_row.
         if len(entries) > 0:
-            total_count = len(changes_files)
-            source_count = len(per_source_items)
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
                 (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
@@ -575,8 +575,6 @@ def process_queue(queue, log, rrd_dir):
             msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
-            total_count = len(queue.uploads)
-            source_count = len(per_source_items)
             print type.upper()
             print "-"*len(type)
             print
