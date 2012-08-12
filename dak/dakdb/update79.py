@@ -63,9 +63,9 @@ def do_update(self):
             """)
 
 
-        c.execute("UPDATE config SET value = '78' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '79' WHERE name = 'db_revision'")
         self.db.commit()
 
     except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError('Unable to apply sick update 78, rollback issued. Error message: {0}'.format(msg))
+        raise DBUpdateError('Unable to apply sick update 79, rollback issued. Error message: {0}'.format(msg))
