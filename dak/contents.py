@@ -67,6 +67,9 @@ OPTIONS
         show this help and exit
 
 OPTIONS for generate
+     -a, --archive=ARCHIVE
+        only operate on suites in the specified archive
+
      -s, --suite={stable,testing,unstable,...}
         only operate on specified suite names
 
@@ -84,9 +87,9 @@ OPTIONS for scan-source and scan-binary
 
 ################################################################################
 
-def write_all(cnf, suite_names = [], component_names = [], force = None):
+def write_all(cnf, archive_names = [], suite_names = [], component_names = [], force = None):
     Logger = daklog.Logger('contents generate')
-    ContentsWriter.write_all(Logger, suite_names, component_names, force)
+    ContentsWriter.write_all(Logger, archive_names, suite_names, component_names, force)
     Logger.close()
 
 ################################################################################
@@ -119,6 +122,7 @@ def main():
     cnf['Contents::Options::Limit'] = ''
     cnf['Contents::Options::Force'] = ''
     arguments = [('h', "help",      'Contents::Options::Help'),
+                 ('a', 'archive',   'Contents::Options::Archive',   'HasArg'),
                  ('s', "suite",     'Contents::Options::Suite',     "HasArg"),
                  ('c', "component", 'Contents::Options::Component', "HasArg"),
                  ('l', "limit",     'Contents::Options::Limit',     "HasArg"),
@@ -142,13 +146,14 @@ def main():
         binary_scan_all(cnf, limit)
         return
 
+    archive_names   = utils.split_args(options['Archive'])
     suite_names     = utils.split_args(options['Suite'])
     component_names = utils.split_args(options['Component'])
 
     force = bool(options['Force'])
 
     if args[0] == 'generate':
-        write_all(cnf, suite_names, component_names, force)
+        write_all(cnf, archive_names, suite_names, component_names, force)
         return
 
     usage()
