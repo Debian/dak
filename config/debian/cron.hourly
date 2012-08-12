@@ -9,6 +9,7 @@ set -u
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+PROGRAM="Hourly"
 ########################################################################
 # Functions                                                            #
 ########################################################################
