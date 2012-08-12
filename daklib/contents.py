@@ -301,7 +301,7 @@ class ContentsWriter(object):
         if len(component_names) > 0:
             component_query = component_query.filter(Component.component_name.in_(component_names))
         if not force:
-            suite_query = suite_query.filter_by(untouchable = False)
+            suite_query = suite_query.filter(Suite.untouchable == False)
         deb_id = get_override_type('deb', session).overridetype_id
         udeb_id = get_override_type('udeb', session).overridetype_id
         pool = Pool()
