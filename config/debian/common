@@ -89,9 +89,11 @@ function punew_do() {
 
     dak generate-packages-sources2 -s "${queue}"
 
-    local exportdir="${queuedir}/${qdir}/export"
-    rm -rf "${exportdir}"
+    local exportdir="${queuedir}${qdir}/tree/${STAMP}"
+    local targetdir="${queuedir}${qdir}/export"
     dak export -q "${queue}" -d "${exportdir}" --all
+    ln -sfT ${targetdir} ${exportdir}
+    find ${queuedir}${qdir}/tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
 # These versions used in dinstall
