@@ -147,7 +147,7 @@ function overrides() {
 
 function mpfm() {
     log "Generating package / file mapping"
-    dak make-pkg-file-mapping | bzip2 -9 > $base/ftp/indices/package-file.map.bz2
+    dak make-pkg-file-mapping ftp-master | bzip2 -9 > $base/ftp/indices/package-file.map.bz2
 }
 
 function packages() {
@@ -555,13 +555,6 @@ function process_unchecked() {
     UNCHECKED_WITHOUT_LOCK="-p"
     do_unchecked
     sync_debbugs
-}
-
-# do a run of newstage only before dinstall is on.
-function newstage() {
-    log "Processing the newstage queue"
-    UNCHECKED_WITHOUT_LOCK="-p"
-    do_newstage
 }
 
 # Function to update a "statefile" telling people what we are doing
