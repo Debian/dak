@@ -156,14 +156,15 @@ def comment_accept(upload, srcqueue, comments, transaction):
         Logger.log(["Policy Queue ACCEPT", srcqueue.queue_name, changesname])
 
     # Send announcement
-    subst = subst_for_upload(upload)
-    announce = ", ".join(upload.target_suite.announce or [])
-    tracking = cnf.get('Dinstall::TrackingServer')
-    if tracking and upload.source is not None:
-        announce = '{0}\nBcc: {1}@{2}'.format(announce, upload.changes.source, tracking)
-    subst['__ANNOUNCE_LIST_ADDRESS__'] = announce
-    message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
-    utils.send_mail(message)
+    if upload.source is not None:
+        subst = subst_for_upload(upload)
+        announce = ", ".join(upload.target_suite.announce or [])
+        tracking = cnf.get('Dinstall::TrackingServer')
+        if tracking and upload.source is not None:
+            announce = '{0}\nBcc: {1}@{2}'.format(announce, upload.changes.source, tracking)
+        subst['__ANNOUNCE_LIST_ADDRESS__'] = announce
+        message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
+        utils.send_mail(message)
 
     # TODO: code duplication. Similar code is in process-upload.
     if cnf.find_b('Dinstall::CloseBugs') and upload.changes.closes is not None and upload.source is not None:
