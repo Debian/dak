@@ -17,7 +17,7 @@
 """module to process policy queue uploads"""
 
 from .config import Config
-from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, get_mapped_component
+from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, Suite, get_mapped_component
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
 import daklib.utils as utils
