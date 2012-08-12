@@ -152,8 +152,8 @@ function mpfm() {
 
 function packages() {
     log "Generating Packages and Sources files"
-    dak generate-packages-sources2
-    dak contents generate
+    dak generate-packages-sources2 -a ftp-master
+    dak contents generate -a ftp-master
 }
 
 function pdiff() {
@@ -171,13 +171,14 @@ function release() {
         done
     )
     log "Generating Release files"
-    dak generate-releases
+    dak generate-releases -a ftp-master
 }
 
 function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites -m 10000
-    dak clean-queues
+    # XXX: reactivate once clean-queues is fixed
+    #dak clean-queues
 }
 
 function buildd_dir() {

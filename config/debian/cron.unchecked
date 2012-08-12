@@ -103,9 +103,6 @@ pg_timestamp preunchecked >/dev/null
 punew proposedupdates
 opunew oldproposedupdates
 
-# Now process the NEW staging area
-do_newstage
-
 # Finally deal with unchecked
 do_unchecked
 

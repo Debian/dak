@@ -18,6 +18,7 @@ dak graph -n new,byhand,p-u-new,o-p-u-new,deferred -r $webdir/stat -i $webdir/st
 # do not run show-new and other stuff in parallel
 LOCKFILE="$lockdir/unchecked.lock"
 if lockfile -r16 $LOCKFILE 2> /dev/null; then
+    do_new
     dak show-new > /dev/null || true
     rm -f $LOCKFILE
 fi
