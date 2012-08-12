@@ -213,7 +213,7 @@ trap remove_all_locks EXIT TERM HUP INT QUIT
 GO=(
     FUNC="punew"
     TIME="p-u-new"
-    ARGS="proposedupdates"
+    ARGS="stable-new"
     ERR="false"
 )
 stage $GO
@@ -221,7 +221,7 @@ stage $GO
 GO=(
     FUNC="opunew"
     TIME="o-p-u-new"
-    ARGS="oldproposedupdates"
+    ARGS="oldstable-new"
     ERR="false"
 )
 stage $GO

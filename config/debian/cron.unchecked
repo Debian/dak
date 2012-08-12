@@ -100,8 +100,8 @@ trap cleanup 0
 pg_timestamp preunchecked >/dev/null
 
 # Process policy queues
-punew proposedupdates
-opunew oldproposedupdates
+punew stable-new
+opunew oldstable-new
 
 # Finally deal with unchecked
 do_unchecked
