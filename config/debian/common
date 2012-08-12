@@ -51,9 +51,9 @@ function make_buildd_dir () {
         if [ "${suite}x" = "projectx" ]; then continue; fi
         cd ${incoming}/dists/${suite}/buildd
 
-        dpkg-scanpackages . $overridedir/override.sid.all3 >Packages
+        apt-ftparchive packages . $overridedir/override.sid.all3 >Packages
         gzip -9c --rsyncable <Packages >Packages.gz
-        dpkg-scansources . $overridedir/override.sid.all3.src >Sources
+        apt-ftparchive sources . $overridedir/override.sid.all3.src >Sources
         gzip -9c --rsyncable <Sources >Sources.gz
 
         rm -f buildd/Release
