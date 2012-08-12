@@ -49,7 +49,7 @@ function make_buildd_dir () {
     for suite in $(ls -1 $incoming/dists/); do
         # Skip project trace directory
         if [ "${suite}x" = "projectx" ]; then continue; fi
-        cd ${incoming}/dists/${dist}/buildd
+        cd ${incoming}/dists/${suite}/buildd
 
         dpkg-scanpackages . $overridedir/override.sid.all3 >Packages
         gzip -9c --rsyncable <Packages >Packages.gz
