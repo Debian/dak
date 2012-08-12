@@ -38,9 +38,11 @@ function make_buildd_dir () {
     dak generate-releases -a build-queues
 
     for suite in unstable experimental; do
-	rm -rf "$incoming/dists/$suite/buildd"
-	dak export-suite -s "buildd-$suite" -d "$incoming/dists/$suite/buildd"
+        rm -rf "$incoming/dists/$suite/buildd"
+        dak export-suite -s "buildd-$suite" -d "$incoming/dists/$suite/buildd"
     done
+    rm -f ${incoming}/public/*
+    dak export-suite -s "accepted" -d "$incoming/public"
 
     # export to old build queue directories
     # XXX: Remove once the buildds use the version generated above.
@@ -49,21 +51,21 @@ function make_buildd_dir () {
         if [ "${suite}x" = "projectx" ]; then continue; fi
         cd ${incoming}/dists/${dist}/buildd
 
-	dpkg-scanpackages . $overridedir/override.sid.all3 >Packages
-	gzip -9c --rsyncable <Packages >Packages.gz
-	dpkg-scansources . $override/override.sid.all3.src >Sources
-	gzip -9c --rsyncable <Sources >Sources.gz
+        dpkg-scanpackages . $overridedir/override.sid.all3 >Packages
+        gzip -9c --rsyncable <Packages >Packages.gz
+        dpkg-scansources . $override/override.sid.all3.src >Sources
+        gzip -9c --rsyncable <Sources >Sources.gz
 
-	rm -f buildd/Release
-	cd ..
-	apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite incoming" -o APT::FTPArchive::Release::Architectures="$archs" release buildd >Release
-	if [ "$suite" = "experimental" ]; then
-	    echo "NotAutomatic: yes" >>Release
-	fi
+        rm -f buildd/Release
+        cd ..
+        apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite incoming" -o APT::FTPArchive::Release::Architectures="$archs" release buildd >Release
+        if [ "$suite" = "experimental" ]; then
+            echo "NotAutomatic: yes" >>Release
+        fi
 
-	gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o Release.gpg Release
+        gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o Release.gpg Release
 
-	mv Release Release.gpg buildd/
+        mv Release Release.gpg buildd/
     done
 
     for dist in $(ls -1 ${incoming}/dists/); do
