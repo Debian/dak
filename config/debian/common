@@ -53,7 +53,7 @@ function make_buildd_dir () {
 
         dpkg-scanpackages . $overridedir/override.sid.all3 >Packages
         gzip -9c --rsyncable <Packages >Packages.gz
-        dpkg-scansources . $override/override.sid.all3.src >Sources
+        dpkg-scansources . $overridedir/override.sid.all3.src >Sources
         gzip -9c --rsyncable <Sources >Sources.gz
 
         rm -f buildd/Release
