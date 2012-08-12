@@ -638,7 +638,7 @@ def get_component_by_package_suite(package, suite_list, arch_list=[], session=No
     if binary is None:
         return None
     else:
-        return binary.get_component_name()
+        return binary.poolfile.component.component_name
 
 __all__.append('get_component_by_package_suite')
 
