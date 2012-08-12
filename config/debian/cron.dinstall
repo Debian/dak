@@ -227,14 +227,6 @@ GO=(
 stage $GO
 
 GO=(
-    FUNC="newstage"
-    TIME="newstage"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
     FUNC="cruft"
     TIME="cruft"
     ARGS=""
