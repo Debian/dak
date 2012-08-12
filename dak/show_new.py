@@ -36,7 +36,6 @@ from daklib import utils
 from daklib.regexes import re_source_ext
 from daklib.config import Config
 from daklib import daklog
-from daklib.changesutils import *
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
 from multiprocessing import Manager, TimeoutError
 
