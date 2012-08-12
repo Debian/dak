@@ -9,8 +9,7 @@ Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
 Subject: __CHANGES_FILENAME__ ACCEPTED into __SUITE__
 
-__REJECT_MESSAGE__
 Accepted:
-__SUMMARY__
+__FILE_CONTENTS__
 
 Thank you for your contribution to __DISTRO__.
