@@ -265,10 +265,7 @@ def subst_for_upload(upload):
 
         '__BUG_SERVER__': cnf.get('Dinstall::BugServer'),
 
-        # TODO: don't use private member
-        '__FILE_CONTENTS__': upload.changes._signed_file.contents,
-
-        # __REJECT_MESSAGE__
+        '__FILE_CONTENTS__': open(upload.changes.path, 'r').read(),
         }
 
     override_maintainer = cnf.get('Dinstall::OverrideMaintainer')
