@@ -552,9 +552,10 @@ def process_queue(queue, log, rrd_dir):
             log.write("Changes-File: " + os.path.basename(changes_file) + "\n")
             log.write("\n")
 
+    total_count = len(queue.uploads)
+    source_count = len(per_source_items)
+
     if Cnf.has_key("Queue-Report::Options::New"):
-        total_count = len(queue.uploads)
-        source_count = len(per_source_items)
         direction.append([5,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
     # Output for a html file. First table header. then table_footer.
