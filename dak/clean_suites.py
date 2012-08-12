@@ -222,7 +222,7 @@ def clean_binaries(now_date, session):
 
 ########################################
 
-def clean(now_date, max_delete, session):
+def clean(now_date, archives, max_delete, session):
     cnf = Config()
 
     count = 0
@@ -279,6 +279,10 @@ def clean(now_date, max_delete, session):
     if max_delete is not None:
         old_files = old_files.limit(max_delete)
         print "Limiting removals to %d" % max_delete
+
+    if archives is not None:
+        archive_ids = [ a.archive_id for a in archives ]
+        old_files = old_files.filter(ArchiveFile.archive_id.in_(archive_ids))
 
     for af in old_files:
         filename = af.path
@@ -445,6 +449,7 @@ def main():
             cnf["Clean-Suites::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Clean-Suites::Options::Help"),
+                 ('a','archive','Clean-Suites::Options::Archive','HasArg'),
                  ('n',"no-action","Clean-Suites::Options::No-Action"),
                  ('m',"maximum","Clean-Suites::Options::Maximum", "HasArg")]
 
@@ -469,6 +474,13 @@ def main():
 
     session = DBConn().session()
 
+    archives = None
+    if 'Archive' in Options:
+        archive_names = Options['Archive'].split(',')
+        archives = session.query(Archive).filter(Archive.archive_name.in_(archive_names)).all()
+        if len(archives) == 0:
+            utils.fubar('Unknown archive.')
+
     now_date = datetime.now()
 
     set_archive_delete_dates(now_date, session)
@@ -477,7 +489,7 @@ def main():
     clean_binaries(now_date, session)
     check_sources(now_date, session)
     check_files(now_date, session)
-    clean(now_date, max_delete, session)
+    clean(now_date, archives, max_delete, session)
     clean_maintainers(now_date, session)
     clean_fingerprints(now_date, session)
     clean_empty_directories(session)
