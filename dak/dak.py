@@ -78,6 +78,8 @@ def init():
          "Remove obsolete source and binary associations from suites"),
         ("export",
          "Export uploads from policy queues"),
+        ("export-suite",
+         "export a suite to a flat directory structure"),
         ("make-pkg-file-mapping",
          "Generate package <-> file mapping"),
         ("generate-filelist",
