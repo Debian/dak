@@ -43,9 +43,10 @@ import sys
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: dak make-maintainers [OPTION] EXTRA_FILE[...]
+    print """Usage: dak make-maintainers [OPTION] -a ARCHIVE EXTRA_FILE[...]
 Generate an index of packages <=> Maintainers / Uploaders.
 
+  -a, --archive=ARCHIVE      archive to take packages from
   -h, --help                 show this help and exit
 """
     sys.exit(exit_code)
@@ -67,18 +68,21 @@ def uploader_list(source):
 def main():
     cnf = Config()
 
-    Arguments = [('h',"help","Make-Maintainers::Options::Help")]
+    Arguments = [('h',"help","Make-Maintainers::Options::Help"),
+                 ('a','archive','Make-Maintainers::Options::Archive','HasArg')]
     if not cnf.has_key("Make-Maintainers::Options::Help"):
         cnf["Make-Maintainers::Options::Help"] = ""
 
     extra_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Make-Maintainers::Options")
 
-    if Options["Help"]:
+    if Options["Help"] or not Options.get('Archive'):
         usage()
 
     Logger = daklog.Logger('make-maintainers')
     session = DBConn().session()
+
+    archive = session.query(Archive).filter_by(archive_name=Options['Archive']).one()
 
     # dictionary packages to maintainer names
     maintainers = dict()
@@ -86,12 +90,20 @@ def main():
     uploaders = dict()
 
     source_query = session.query(DBSource).from_statement('''
-        select distinct on (source) * from source
-            order by source, version desc''')
+        select distinct on (source.source) source.* from source
+            join src_associations sa on source.id = sa.source
+            join suite on sa.suite = suite.id
+            where suite.archive_id = :archive_id
+            order by source.source, source.version desc''') \
+        .params(archive_id=archive.archive_id)
 
     binary_query = session.query(DBBinary).from_statement('''
-        select distinct on (package) * from binaries
-            order by package, version desc''')
+        select distinct on (binaries.package) binaries.* from binaries
+            join bin_associations ba on binaries.id = ba.bin
+            join suite on ba.suite = suite.id
+            where suite.archive_id = :archive_id
+            order by binaries.package, binaries.version desc''') \
+        .params(archive_id=archive.archive_id)
 
     Logger.log(['sources'])
     for source in source_query:
