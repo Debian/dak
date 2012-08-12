@@ -69,7 +69,7 @@ def main(argv=None):
 
     for u in uploads:
         print "Processing {0}...".format(u.changes.changesname)
-        UploadCopy(u).export(directory, symlink=symlink)
+        UploadCopy(u).export(directory, symlink=symlink, ignore_existing=True)
 
 if __name__ == '__main__':
     main()

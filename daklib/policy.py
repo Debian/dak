@@ -49,7 +49,7 @@ class UploadCopy(object):
         self.directory = None
         self.upload = upload
 
-    def export(self, directory, mode=None, symlink=True):
+    def export(self, directory, mode=None, symlink=True, ignore_existing=False):
         """export a copy of the upload
 
         @type  directory: str
@@ -60,6 +60,9 @@ class UploadCopy(object):
 
         @type  symlink: bool
         @param symlink: use symlinks instead of copying the files
+
+        @type  ignore_existing: bool
+        @param ignore_existing: ignore already existing files
         """
         with FilesystemTransaction() as fs:
             source = self.upload.source
@@ -69,22 +72,27 @@ class UploadCopy(object):
                 for dsc_file in source.srcfiles:
                     f = dsc_file.poolfile
                     dst = os.path.join(directory, os.path.basename(f.filename))
-                    fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+                    if not os.path.exists(dst) or not ignore_existing:
+                        fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+
             for binary in self.upload.binaries:
                 f = binary.poolfile
                 dst = os.path.join(directory, os.path.basename(f.filename))
-                fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+                if not os.path.exists(dst) or not ignore_existing:
+                    fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
 
             # copy byhand files
             for byhand in self.upload.byhand:
                 src = os.path.join(queue.path, byhand.filename)
                 dst = os.path.join(directory, byhand.filename)
-                fs.copy(src, dst, mode=mode, symlink=symlink)
+                if not os.path.exists(dst) or not ignore_existing:
+                    fs.copy(src, dst, mode=mode, symlink=symlink)
 
             # copy .changes
             src = os.path.join(queue.path, self.upload.changes.changesname)
             dst = os.path.join(directory, self.upload.changes.changesname)
-            fs.copy(src, dst, mode=mode, symlink=symlink)
+            if not os.path.exists(dst) or not ignore_existing:
+                fs.copy(src, dst, mode=mode, symlink=symlink)
 
     def __enter__(self):
         assert self.directory is None
