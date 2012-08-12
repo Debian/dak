@@ -485,6 +485,7 @@ def do_new(upload, upload_copy, handler, session):
         if not has_unprocessed_byhand and not broken and not note:
             if len(missing) == 0:
                 prompt = "Accept, "
+                answer = 'A'
             else:
                 prompt = "Add overrides, "
         if broken:
