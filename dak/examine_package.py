@@ -462,7 +462,7 @@ def do_lintian (filename):
 def get_copyright (deb_filename):
     global printed
 
-    package = re_package.sub(r'\1', deb_filename)
+    package = re_package.sub(r'\1', os.path.basename(deb_filename))
     o = os.popen("dpkg-deb -c %s | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{print $6}' | head -n 1" % (deb_filename))
     cright = o.read()[:-1]
 
