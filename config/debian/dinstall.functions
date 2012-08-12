@@ -304,7 +304,7 @@ function mkfilesindices() {
 	psql -F' ' -A -t -c "$query"
 
 	query="
-          SELECT './pool/' || c.name || '/' || f.filename)
+          SELECT './pool/' || c.name || '/' || f.filename
           FROM bin_associations ba
           JOIN binaries b ON ba.bin = b.id
           JOIN files f ON b.file = f.id
