@@ -552,9 +552,6 @@ def check_deb (suite, deb_filename, session = None):
         result += foldable_output("copyright of %s" % (filename),
 	    "binary-%s-copyright"%packagename, get_copyright(deb_filename)) + "\n"
 
-    result += foldable_output("file listing of %s" % (filename),
-	"binary-%s-file-listing"%packagename, do_command("ls -Ll", deb_filename))
-
     return result
 
 # Read a file, strip the signature and return the modified contents as
