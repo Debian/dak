@@ -169,12 +169,14 @@ def export_files(session, pool, clpool):
     unpack = {}
     files = ('changelog', 'copyright', 'NEWS.Debian', 'README.Debian')
     stats = {'unpack': 0, 'created': 0, 'removed': 0, 'errors': 0, 'files': 0}
-    query = """SELECT DISTINCT s.source, su.suite_name AS suite, s.version, f.filename
+    query = """SELECT DISTINCT s.source, su.suite_name AS suite, s.version, c.name || '/' || f.filename
                FROM source s
                JOIN newest_source n ON n.source = s.source AND n.version = s.version
                JOIN src_associations sa ON sa.source = s.id
                JOIN suite su ON su.id = sa.suite
                JOIN files f ON f.id = s.file
+               JOIN files_archive_map fam ON f.id = fam.file_id AND fam.archive_id = su.id
+               JOIN component c ON fam.component_id = c.id
                ORDER BY s.source, suite"""
 
     for p in session.execute(query):
