@@ -125,11 +125,10 @@ class ArchiveTransaction(object):
         @type  fingerprint: L{daklib.dbconn.Fingerprint}
         @param fingerprint: optional fingerprint
 
-        @type  source_suites: list of L{daklib.dbconn.Suite} or C{True}
+        @type  source_suites: SQLAlchemy subquery for C{daklib.dbconn.Suite} or C{True}
         @param source_suites: suites to copy the source from if they are not
                               in C{suite} or C{True} to allow copying from any
                               suite.
-                              This can also be a SQLAlchemy (sub)query object.
 
         @type  extra_source_archives: list of L{daklib.dbconn.Archive}
         @param extra_source_archives: extra archives to copy Built-Using sources from
@@ -913,7 +912,7 @@ class ArchiveUpload(object):
         changed_by = get_or_set_maintainer(control.get('Changed-By', control['Maintainer']), self.session)
 
         if source_suites is None:
-            source_suites = self.session.query(Suite).join((VersionCheck, VersionCheck.reference_id == Suite.suite_id)).filter(VersionCheck.suite == suite).subquery()
+            source_suites = self.session.query(Suite).join((VersionCheck, VersionCheck.reference_id == Suite.suite_id)).filter(VersionCheck.check == 'Enhances').filter(VersionCheck.suite == suite).subquery()
 
         source = self.changes.source
         if source is not None:
@@ -1129,8 +1128,9 @@ class ArchiveUpload(object):
 
             # copy to build queues
             if policy_queue is None or policy_queue.send_to_build_queues:
+                source_suites = session.query(Suite).filter_by(suite_id=suite.suite_id).subquery()
                 for build_queue in suite.copy_queues:
-                    self._install_to_suite(build_queue.suite, source_component_func, binary_component_func, extra_source_archives=[suite.archive])
+                    self._install_to_suite(build_queue.suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
 
         self._do_bts_versiontracking()
 

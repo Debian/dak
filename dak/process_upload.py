@@ -237,9 +237,13 @@ def subst_for_upload(upload):
                 suite_names.append(suite.suite_name)
         suite_name = ','.join(suite_names)
 
-    maintainer_field = control.get('Changed-By', control.get('Maintainer', cnf['Dinstall::MyEmailAddress']))
-    maintainer = fix_maintainer(maintainer_field)
-    addresses = utils.mail_addresses_for_upload(control.get('Maintainer', cnf['Dinstall::MyEmailAddress']), maintainer_field, changes.primary_fingerprint)
+    maintainer_field = control.get('Maintainer', cnf['Dinstall::MyEmailAddress'])
+    changed_by_field = control.get('Changed-By', maintainer_field)
+    maintainer = fix_maintainer(changed_by_field)
+    if upload.changes.source is not None:
+        addresses = utils.mail_addresses_for_upload(maintainer_field, changed_by_field, changes.primary_fingerprint)
+    else:
+        addresses = utils.mail_addresses_for_upload(maintainer_field, maintainer_field, changes.primary_fingerprint)
 
     bcc = 'X-DAK: dak process-upload'
     if 'Dinstall::Bcc' in cnf:
@@ -260,15 +264,12 @@ def subst_for_upload(upload):
         '__DAK_ADDRESS__': cnf['Dinstall::MyEmailAddress'],
         '__MAINTAINER_FROM__': maintainer[1],
         '__MAINTAINER_TO__': ", ".join(addresses),
-        '__MAINTAINER__': maintainer_field,
+        '__MAINTAINER__': changed_by_field,
         '__BCC__': bcc,
 
         '__BUG_SERVER__': cnf.get('Dinstall::BugServer'),
 
-        # TODO: don't use private member
-        '__FILE_CONTENTS__': upload.changes._signed_file.contents,
-
-        # __REJECT_MESSAGE__
+        '__FILE_CONTENTS__': open(upload.changes.path, 'r').read(),
         }
 
     override_maintainer = cnf.get('Dinstall::OverrideMaintainer')
