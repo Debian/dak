@@ -47,9 +47,7 @@ class BaseFileWriter(object):
         self.uncompressed = 'none' in compression
         self.gzip = 'gzip' in compression
         self.bzip2 = 'bzip2' in compression
-        root_dir = Config()['Dir::Root']
-        relative_dir = template % keywords
-        self.path = os.path.join(root_dir, relative_dir)
+        self.path = template % keywords
 
     def open(self):
         '''
@@ -98,9 +96,9 @@ class BinaryContentsFileWriter(BaseFileWriter):
         }
         flags.update(keywords)
         if flags['debtype'] == 'deb':
-            template = "dists/%(suite)s/%(component)s/Contents-%(architecture)s"
+            template = "%(archive)s/dists/%(suite)s/%(component)s/Contents-%(architecture)s"
         else: # udeb
-            template = "dists/%(suite)s/%(component)s/Contents-udeb-%(architecture)s"
+            template = "%(archive)s/dists/%(suite)s/%(component)s/Contents-udeb-%(architecture)s"
         BaseFileWriter.__init__(self, template, **flags)
 
 class SourceContentsFileWriter(BaseFileWriter):
@@ -113,7 +111,7 @@ class SourceContentsFileWriter(BaseFileWriter):
             'compression': ['gzip'],
         }
         flags.update(keywords)
-        template = "dists/%(suite)s/%(component)s/Contents-source"
+        template = "%(archive)s/dists/%(suite)s/%(component)s/Contents-source"
         BaseFileWriter.__init__(self, template, **flags)
 
 class PackagesFileWriter(BaseFileWriter):
@@ -127,9 +125,9 @@ class PackagesFileWriter(BaseFileWriter):
         }
         flags.update(keywords)
         if flags['debtype'] == 'deb':
-            template = "dists/%(suite)s/%(component)s/binary-%(architecture)s/Packages"
+            template = "%(archive)s/dists/%(suite)s/%(component)s/binary-%(architecture)s/Packages"
         else: # udeb
-            template = "dists/%(suite)s/%(component)s/debian-installer/binary-%(architecture)s/Packages"
+            template = "%(archive)s/dists/%(suite)s/%(component)s/debian-installer/binary-%(architecture)s/Packages"
         BaseFileWriter.__init__(self, template, **flags)
 
 class SourcesFileWriter(BaseFileWriter):
@@ -142,7 +140,7 @@ class SourcesFileWriter(BaseFileWriter):
             'compression': ['gzip', 'bzip2'],
         }
         flags.update(keywords)
-        template = "dists/%(suite)s/%(component)s/source/Sources"
+        template = "%(archive)s/dists/%(suite)s/%(component)s/source/Sources"
         BaseFileWriter.__init__(self, template, **flags)
 
 class TranslationFileWriter(BaseFileWriter):
@@ -156,5 +154,5 @@ class TranslationFileWriter(BaseFileWriter):
             'language':     'en',
         }
         flags.update(keywords)
-        template = "dists/%(suite)s/%(component)s/i18n/Translation-%(language)s"
+        template = "%(archive)s/dists/%(suite)s/%(component)s/i18n/Translation-%(language)s"
         super(TranslationFileWriter, self).__init__(template, **flags)

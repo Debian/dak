@@ -60,6 +60,7 @@ def usage (exit_code=0):
     print """Usage: dak generate-releases [OPTIONS]
 Generate the Release files
 
+  -a, --archive=ARCHIVE      process suites in ARCHIVE
   -s, --suite=SUITE(s)       process this suite
                              Default: All suites not marked 'untouchable'
   -f, --force                Allow processing of untouchable suites
@@ -145,9 +146,9 @@ class ReleaseWriter(object):
 
         cnf = Config()
 
-        suite_suffix = "%s" % (cnf.find("Dinstall::SuiteSuffix"))
+        suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
 
-        outfile = os.path.join(cnf["Dir::Root"], 'dists', "%s/%s" % (suite.suite_name, suite_suffix), "Release")
+        outfile = os.path.join(suite.archive.path, 'dists', suite.suite_name, suite_suffix, "Release")
         out = open(outfile + ".new", "w")
 
         for key, dbfield in attribs:
@@ -182,7 +183,7 @@ class ReleaseWriter(object):
             out.write("Description: %s\n" % suite.description)
 
         for comp in components:
-            for dirpath, dirnames, filenames in os.walk("%sdists/%s/%s%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix, comp), topdown=True):
+            for dirpath, dirnames, filenames in os.walk(os.path.join(suite.archive.path, "dists", suite.suite_name, suite_suffix, comp), topdown=True):
                 if not re_gensubrelease.match(dirpath):
                     continue
 
@@ -214,7 +215,7 @@ class ReleaseWriter(object):
         # their checksums to the main Release file
         oldcwd = os.getcwd()
 
-        os.chdir("%sdists/%s/%s" % (cnf["Dir::Root"], suite.suite_name, suite_suffix))
+        os.chdir(os.path.join(suite.archive.path, "dists", suite.suite_name, suite_suffix))
 
         hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
                       'SHA1' : apt_pkg.sha1sum,
@@ -297,6 +298,7 @@ def main ():
             cnf["Generate-Releases::Options::%s" % (i)] = ""
 
     Arguments = [('h',"help","Generate-Releases::Options::Help"),
+                 ('a','archive','Generate-Releases::Options::Archive','HasArg'),
                  ('s',"suite","Generate-Releases::Options::Suite"),
                  ('f',"force","Generate-Releases::Options::Force"),
                  ('o','option','','ArbItem')]
@@ -321,7 +323,10 @@ def main ():
                 print "cannot find suite %s" % s
                 Logger.log(['cannot find suite %s' % s])
     else:
-        suites = session.query(Suite).filter(Suite.untouchable == False).all()
+        query = session.query(Suite).filter(Suite.untouchable == False)
+        if 'Archive' in Options:
+            query = query.join(Suite.archive).filter(Archive.archive_name==Options['Archive'])
+        suites = query.all()
 
     broken=[]
 

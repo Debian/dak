@@ -56,7 +56,7 @@ Make microchanges or microqueries of the binary overrides
 """
     sys.exit(exit_code)
 
-def check_override_compliance(package, priority, suite_name, cnf, session):
+def check_override_compliance(package, priority, archive_path, suite_name, cnf, session):
     print "Checking compliance with related overrides..."
 
     depends = set()
@@ -66,7 +66,7 @@ def check_override_compliance(package, priority, suite_name, cnf, session):
     arches -= set(["source", "all"])
     for arch in arches:
         for component in components:
-            Packages = utils.get_packages_from_ftp(cnf['Dir::Root'], suite_name, component, arch)
+            Packages = utils.get_packages_from_ftp(archive_path, suite_name, component, arch)
             while Packages.Step():
                 package_name = Packages.Section.Find("Package")
                 dep_list = Packages.Section.Find("Depends")
@@ -139,6 +139,10 @@ def main ():
     suite_name = Options["Suite"]
     if arguments and len(arguments) > 2:
         utils.fubar("Too many arguments")
+
+    suite = get_suite(suite_name, session)
+    if suite is None:
+        utils.fubar("Unknown suite '{0}'".format(suite_name))
 
     if arguments and len(arguments) == 1:
         # Determine if the argument is a priority or a section...
@@ -227,7 +231,7 @@ def main ():
         utils.fubar("Trying to change priority of a source-only package")
 
     if Options["Check"] and newpriority != oldpriority:
-        check_override_compliance(package, p, suite_name, cnf, session)
+        check_override_compliance(package, p, suite.archive.path, suite_name, cnf, session)
 
     # If we're in no-action mode
     if Options["No-Action"]:

@@ -34,6 +34,37 @@ function wbtrigger() {
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
     dak manage-build-queues -a
+    dak generate-packages-sources2 -a build-queues
+    dak generate-releases -a build-queues
+
+    for suite in unstable experimental; do
+	rm -rf "$incoming/dists/$suite/buildd"
+	dak export-suite -s "buildd-$suite" -d "$incoming/dists/$suite/buildd"
+    done
+
+    # export to old build queue directories
+    # XXX: Remove once the buildds use the version generated above.
+    for suite in $(ls -1 $incoming/dists/); do
+        # Skip project trace directory
+        if [ "${suite}x" = "projectx" ]; then continue; fi
+        cd ${incoming}/dists/${dist}/buildd
+
+	dpkg-scanpackages . $overridedir/override.sid.all3 >Packages
+	gzip -9c --rsyncable <Packages >Packages.gz
+	dpkg-scansources . $override/override.sid.all3.src >Sources
+	gzip -9c --rsyncable <Sources >Sources.gz
+
+	rm -f buildd/Release
+	cd ..
+	apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite incoming" -o APT::FTPArchive::Release::Architectures="$archs" release buildd >Release
+	if [ "$suite" = "experimental" ]; then
+	    echo "NotAutomatic: yes" >>Release
+	fi
+
+	gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o Release.gpg Release
+
+	mv Release Release.gpg buildd/
+    done
 
     for dist in $(ls -1 ${incoming}/dists/); do
         # Skip project trace directory
@@ -44,14 +75,20 @@ function make_buildd_dir () {
         ln -sfT tree/${STAMP} ${incoming}/dists/${dist}/current
         find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
     done
-
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue
 function punew_do() {
+    local queue="$1"
     date -u -R >> REPORT
-    dak process-policy $1 | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in $1" debian-release@lists.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+    dak process-policy "${queue}" | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in ${queue}" debian-release@lists.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     echo >> REPORT
+
+    dak generate-packages-sources2 -s "${queue}"
+
+    local exportdir="${queuedir}/${queue}/export"
+    rm -rf "${exportdir}"
+    dak export -q "${queue}" -d "${exportdir}" --all
 }
 
 # These versions used in dinstall
@@ -84,17 +121,13 @@ function do_unchecked () {
     dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
 }
 
-# Do the newstage processing, in case we have files.
-function do_newstage () {
-    cd $newstage
-
-    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
-    report=$queuedir/REPORT
-    timestamp=$(date "+%Y-%m-%d %H:%M")
-    UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
-
-    echo "$timestamp": ${changes:-"Nothing to do in newstage"}  >> $report
-    dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$newstage" >> $report
+# process NEW policy queue
+function do_new () {
+    if [ "${PROGRAM}" = "dinstall" ]; then
+	log "Doing NEW processing"
+    fi
+    dak process-policy new | mail -a "X-Debian: DAK" -e -s "NEW processing" ftpmaster@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+    dak clean-suites -a new
 }
 
 function sync_debbugs () {

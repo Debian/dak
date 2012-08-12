@@ -625,6 +625,8 @@ class ArchiveUpload(object):
             for f in self.changes.files.itervalues():
                 src = os.path.join(self.original_directory, f.filename)
                 dst = os.path.join(self.directory, f.filename)
+                if not os.path.exists(src):
+                    continue
                 fs.copy(src, dst)
 
             source = self.changes.source
@@ -632,10 +634,15 @@ class ArchiveUpload(object):
                 for f in source.files.itervalues():
                     src = os.path.join(self.original_directory, f.filename)
                     dst = os.path.join(self.directory, f.filename)
-                    if f.filename not in self.changes.files:
-                        db_file = self.transaction.get_file(f, source.dsc['Source'])
-                        db_archive_file = session.query(ArchiveFile).filter_by(file=db_file).first()
-                        fs.copy(db_archive_file.path, dst, symlink=True)
+                    if not os.path.exists(dst):
+                        try:
+                            db_file = self.transaction.get_file(f, source.dsc['Source'])
+                            db_archive_file = session.query(ArchiveFile).filter_by(file=db_file).first()
+                            fs.copy(db_archive_file.path, dst, symlink=True)
+                        except KeyError:
+                            # Ignore if get_file could not find it. Upload will
+                            # probably be rejected later.
+                            pass
 
     def unpacked_source(self):
         """Path to unpacked source
@@ -700,29 +707,6 @@ class ArchiveUpload(object):
 
         suites = session.query(Suite).filter(Suite.suite_name.in_(suite_names))
         return suites
-
-    def _mapped_component(self, component_name):
-        """get component after mappings
-
-        Evaluate component mappings from ComponentMappings in dak.conf for the
-        given component name.
-
-        @todo: ansgar wants to get rid of this. It's currently only used for
-               the security archive
-
-        @type  component_name: str
-        @param component_name: component name
-
-        @rtype:  L{daklib.dbconn.Component}
-        @return: component after applying maps
-        """
-        cnf = Config()
-        for m in cnf.value_list("ComponentMappings"):
-            (src, dst) = m.split()
-            if component_name == src:
-                component_name = dst
-        component = self.session.query(Component).filter_by(component_name=component_name).one()
-        return component
 
     def _check_new(self, suite):
         """Check if upload is NEW
@@ -846,7 +830,7 @@ class ArchiveUpload(object):
             return override.component
         if only_overrides:
             return None
-        return self._mapped_component(binary.component)
+        return get_mapped_component(binary.component, self.session)
 
     def check(self, force=False):
         """run checks against the upload

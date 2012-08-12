@@ -123,6 +123,7 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         Returns a writer object.
         '''
         values = {
+            'archive':      self.suite.archive.path,
             'suite':        self.suite.suite_name,
             'component':    self.component.component_name,
             'debtype':      self.overridetype.overridetype,
@@ -182,10 +183,9 @@ create index sources_binaries_by_source on newest_sources (source);
 
 insert into newest_sources (id, source)
     select distinct on (source) s.id, s.source from source s
-        join files f on f.id = s.file
-        join location l on l.id = f.location
+        join files_archive_map af on s.file = af.file_id
         where s.id in (select source from src_associations where suite = :suite_id)
-            and l.component = :component_id
+            and af.component_id = :component_id
         order by source, version desc;'''
         self.session.execute(sql_create_temp, params=params)
 
@@ -223,6 +223,7 @@ select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
         Returns a writer object.
         '''
         values = {
+            'archive':   self.suite.archive.path,
             'suite':     self.suite.suite_name,
             'component': self.component.component_name
         }
@@ -283,7 +284,7 @@ class ContentsWriter(object):
         class_.logger.log(result)
 
     @classmethod
-    def write_all(class_, logger, suite_names = [], component_names = [], force = False):
+    def write_all(class_, logger, archive_names = [], suite_names = [], component_names = [], force = False):
         '''
         Writes all Contents files for suites in list suite_names which defaults
         to all 'touchable' suites if not specified explicitely. Untouchable
@@ -292,6 +293,8 @@ class ContentsWriter(object):
         class_.logger = logger
         session = DBConn().session()
         suite_query = session.query(Suite)
+        if len(archive_names) > 0:
+            suite_query = suite_query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))
         if len(suite_names) > 0:
             suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
         component_query = session.query(Component)

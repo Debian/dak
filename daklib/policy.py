@@ -17,9 +17,10 @@
 """module to process policy queue uploads"""
 
 from .config import Config
-from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType
+from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, get_mapped_component
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
+import daklib.utils as utils
 
 import errno
 import os
@@ -48,7 +49,7 @@ class UploadCopy(object):
         self.directory = None
         self.upload = upload
 
-    def export(self, directory, mode=None, symlink=True):
+    def export(self, directory, mode=None, symlink=True, ignore_existing=False):
         """export a copy of the upload
 
         @type  directory: str
@@ -59,6 +60,9 @@ class UploadCopy(object):
 
         @type  symlink: bool
         @param symlink: use symlinks instead of copying the files
+
+        @type  ignore_existing: bool
+        @param ignore_existing: ignore already existing files
         """
         with FilesystemTransaction() as fs:
             source = self.upload.source
@@ -68,22 +72,27 @@ class UploadCopy(object):
                 for dsc_file in source.srcfiles:
                     f = dsc_file.poolfile
                     dst = os.path.join(directory, os.path.basename(f.filename))
-                    fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+                    if not os.path.exists(dst) or not ignore_existing:
+                        fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+
             for binary in self.upload.binaries:
                 f = binary.poolfile
                 dst = os.path.join(directory, os.path.basename(f.filename))
-                fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
+                if not os.path.exists(dst) or not ignore_existing:
+                    fs.copy(f.fullpath, dst, mode=mode, symlink=symlink)
 
             # copy byhand files
             for byhand in self.upload.byhand:
                 src = os.path.join(queue.path, byhand.filename)
                 dst = os.path.join(directory, byhand.filename)
-                fs.copy(src, dst, mode=mode, symlink=symlink)
+                if not os.path.exists(dst) or not ignore_existing:
+                    fs.copy(src, dst, mode=mode, symlink=symlink)
 
             # copy .changes
             src = os.path.join(queue.path, self.upload.changes.changesname)
             dst = os.path.join(directory, self.upload.changes.changesname)
-            fs.copy(src, dst, mode=mode, symlink=symlink)
+            if not os.path.exists(dst) or not ignore_existing:
+                fs.copy(src, dst, mode=mode, symlink=symlink)
 
     def __enter__(self):
         assert self.directory is None
@@ -126,18 +135,20 @@ class PolicyQueueUploadHandler(object):
     def _source_override(self, component_name):
         package = self.upload.source.source
         suite = self._overridesuite
+        component = get_mapped_component(component_name, self.session)
         query = self.session.query(Override).filter_by(package=package, suite=suite) \
             .join(OverrideType).filter(OverrideType.overridetype == 'dsc') \
-            .join(Component).filter(Component.component_name == component_name)
+            .filter(Override.component == component)
         return query.first()
 
     def _binary_override(self, binary, component_name):
         package = binary.package
         suite = self._overridesuite
         overridetype = binary.binarytype
+        component = get_mapped_component(component_name, self.session)
         query = self.session.query(Override).filter_by(package=package, suite=suite) \
             .join(OverrideType).filter(OverrideType.overridetype == overridetype) \
-            .join(Component).filter(Component.component_name == component_name)
+            .filter(Override.component == component)
         return query.first()
 
     def _binary_metadata(self, binary, key):
@@ -178,6 +189,8 @@ class PolicyQueueUploadHandler(object):
         @type  reason: str
         @param reason: reason for the rejection
         """
+        cnf = Config()
+
         fn1 = 'REJECT.{0}'.format(self._changes_prefix)
         assert re_file_safe.match(fn1)
 
@@ -185,6 +198,7 @@ class PolicyQueueUploadHandler(object):
         try:
             fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             os.write(fh, 'NOTOK\n')
+            os.write(fh, 'From: {0} <{1}>\n\n'.format(utils.whoami(), cnf['Dinstall::MyAdminAddress']))
             os.write(fh, reason)
             os.close(fh)
         except OSError as e:

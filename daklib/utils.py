@@ -44,7 +44,8 @@ import subprocess
 from dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
                    get_active_keyring_paths, get_primary_keyring_path, \
-                   get_suite_architectures, get_or_set_metadatakey, DBSource
+                   get_suite_architectures, get_or_set_metadatakey, DBSource, \
+                   Component, Override, OverrideType
 from sqlalchemy import desc
 from dak_exceptions import *
 from gpg import SignedFile
@@ -368,7 +369,7 @@ def check_size(where, files):
 
 ################################################################################
 
-def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
+def check_dsc_files(dsc_filename, dsc, dsc_files):
     """
     Verify that the files listed in the Files field of the .dsc are
     those expected given the announced Format.
@@ -387,13 +388,6 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
     """
     rejmsg = []
 
-    # Parse the file if needed
-    if dsc is None:
-        dsc = parse_changes(dsc_filename, signing_rules=1, dsc_file=1);
-
-    if dsc_files is None:
-        dsc_files = build_file_list(dsc, is_a_dsc=1)
-
     # Ensure .dsc lists proper set of source files according to the format
     # announced
     has = defaultdict(lambda: 0)
@@ -408,7 +402,7 @@ def check_dsc_files(dsc_filename, dsc=None, dsc_files=None):
         (r'orig-.+\.tar\.(gz|bz2|xz)', ('more_orig_tar',)),
     )
 
-    for f in dsc_files.keys():
+    for f in dsc_files:
         m = re_issource.match(f)
         if not m:
             rejmsg.append("%s: %s in Files field not recognised as source."
@@ -701,13 +695,11 @@ def send_mail (message, filename=""):
 
 ################################################################################
 
-def poolify (source, component):
-    if component:
-        component += '/'
+def poolify (source, component=None):
     if source[:3] == "lib":
-        return component + source[:4] + '/' + source + '/'
+        return source[:4] + '/' + source + '/'
     else:
-        return component + source[:1] + '/' + source + '/'
+        return source[:1] + '/' + source + '/'
 
 ################################################################################
 
@@ -1629,6 +1621,9 @@ def call_editor(text="", suffix=".txt"):
 
 def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False):
     dbsuite = get_suite(suite, session)
+    overridesuite = dbsuite
+    if dbsuite.overridesuite is not None:
+        overridesuite = get_suite(dbsuite.overridesuite, session)
     dep_problem = 0
     p2c = {}
     all_broken = {}
@@ -1657,9 +1652,8 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 FROM binaries b
                 JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
                 JOIN source s ON b.source = s.id
-                JOIN files f ON b.file = f.id
-                JOIN location l ON f.location = l.id
-                JOIN component c ON l.component = c.id
+                JOIN files_archive_map af ON b.file = af.file_id
+                JOIN component c ON af.component_id = c.id
                 WHERE b.architecture = :arch_id'''
         query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
             from_statement(statement).params(params)
@@ -1772,7 +1766,12 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 if dep_package in removals:
                     unsat += 1
             if unsat == len(dep):
-                component = DBSource.get(source_id, session).get_component_name()
+                component, = session.query(Component.component_name) \
+                    .join(Component.overrides) \
+                    .filter(Override.suite == overridesuite) \
+                    .filter(Override.package == source) \
+                    .join(Override.overridetype).filter(OverrideType.overridetype == 'dsc') \
+                    .first()
                 if component != "main":
                     source = "%s/%s" % (source, component)
                 all_broken.setdefault(source, set()).add(pp_deps(dep))

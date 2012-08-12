@@ -109,39 +109,61 @@ def check_files():
     Prepare the dictionary of existing filenames, then walk through the archive
     pool/ directory to compare it.
     """
-    global db_files
-
     cnf = Config()
+    session = DBConn().session()
 
-    print "Building list of database files..."
-    q = DBConn().session().query(PoolFile).join(Location).order_by('path', 'location')
+    query = """
+        SELECT archive.name, suite.suite_name, f.filename
+          FROM binaries b
+          JOIN bin_associations ba ON b.id = ba.bin
+          JOIN suite ON ba.suite = suite.id
+          JOIN archive ON suite.archive_id = archive.id
+          JOIN files f ON b.file = f.id
+         WHERE NOT EXISTS (SELECT 1 FROM files_archive_map af
+                            WHERE af.archive_id = suite.archive_id
+                              AND af.file_id = b.file)
+         ORDER BY archive.name, suite.suite_name, f.filename
+        """
+    for row in session.execute(query):
+        print "MISSING-ARCHIVE-FILE {0} {1} {2}".vformat(row)
 
-    print "Missing files:"
-    db_files.clear()
+    query = """
+        SELECT archive.name, suite.suite_name, f.filename
+          FROM source s
+          JOIN src_associations sa ON s.id = sa.source
+          JOIN suite ON sa.suite = suite.id
+          JOIN archive ON suite.archive_id = archive.id
+          JOIN dsc_files df ON s.id = df.source
+          JOIN files f ON df.file = f.id
+         WHERE NOT EXISTS (SELECT 1 FROM files_archive_map af
+                            WHERE af.archive_id = suite.archive_id
+                              AND af.file_id = df.file)
+         ORDER BY archive.name, suite.suite_name, f.filename
+        """
+    for row in session.execute(query):
+        print "MISSING-ARCHIVE-FILE {0} {1} {2}".vformat(row)
 
-    for f in q.all():
-        filename = os.path.abspath(os.path.join(f.location.path, f.filename))
-        db_files[filename] = ""
-        if os.access(filename, os.R_OK) == 0:
-            if f.last_used:
-                print "(last used: %s) %s" % (f.last_used, filename)
-            else:
-                print "%s" % (filename)
+    archive_files = session.query(ArchiveFile) \
+        .join(ArchiveFile.archive).join(ArchiveFile.file) \
+        .order_by(Archive.archive_name, PoolFile.filename)
 
+    expected_files = set()
+    for af in archive_files:
+        path = af.path
+        expected_files.add(af.path)
+        if not os.path.exists(path):
+            print "MISSING-FILE {0} {1} {2}".format(af.archive.archive_name, af.file.filename, path)
 
-    filename = os.path.join(cnf["Dir::Override"], 'override.unreferenced')
-    if os.path.exists(filename):
-        f = utils.open_file(filename)
-        for filename in f.readlines():
-            filename = filename[:-1]
-            excluded[filename] = ""
+    archives = session.query(Archive).order_by(Archive.archive_name)
 
-    print "Existent files not in db:"
-
-    os.path.walk(os.path.join(cnf["Dir::Root"], 'pool/'), process_dir, None)
-
-    print
-    print "%s wasted..." % (utils.size_type(waste))
+    for a in archives:
+        top = os.path.join(a.path, 'pool')
+        for dirpath, dirnames, filenames in os.walk(top):
+            for fn in filenames:
+                path = os.path.join(dirpath, fn)
+                if path in expected_files:
+                    continue
+                print "UNEXPECTED-FILE {0} {1}".format(a.archive_name, path)
 
 ################################################################################
 

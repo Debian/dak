@@ -5,6 +5,7 @@
 @contact: Debian FTPMaster <ftpmaster@debian.org>
 @copyright: 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>
 @copyright: 2009  Mark Hymers <mhy@debian.org>
+@copyright: 2012, Ansgar Burchardt <ansgar@debian.org>
 
 """
 
@@ -24,14 +25,12 @@
 
 ################################################################################
 
-import os
-import os.path
-import stat
-import sys
-from datetime import datetime
 import apt_pkg
+from datetime import datetime, timedelta
+import sys
 
 from daklib import daklog
+from daklib.archive import ArchiveTransaction
 from daklib.dbconn import *
 from daklib.config import Config
 
@@ -53,6 +52,44 @@ Manage the contents of one or more build queues
     sys.exit(exit_code)
 
 ################################################################################
+
+def clean(build_queue, transaction, now=None):
+    session = transaction.session
+    if now is None:
+        now = datetime.now()
+
+    delete_before = now - timedelta(seconds=build_queue.stay_of_execution)
+    suite = build_queue.suite
+
+    # Remove binaries
+    query = """
+        SELECT b.*
+          FROM binaries b
+          JOIN bin_associations ba ON b.id = ba.bin
+         WHERE ba.suite = :suite_id
+           AND ba.created < :delete_before"""
+    binaries = session.query(DBBinary).from_statement(query) \
+        .params({'suite_id': suite.suite_id, 'delete_before': delete_before})
+    for binary in binaries:
+        Logger.log(["removed binary from build queue", build_queue.queue_name, binary.package, binary.version])
+        transaction.remove_binary(binary, suite)
+
+    # Remove sources
+    query = """
+        SELECT s.*
+          FROM source s
+          JOIN src_associations sa ON s.id = sa.source
+         WHERE sa.suite = :suite_id
+           AND sa.created < :delete_before
+           AND NOT EXISTS (SELECT 1 FROM bin_associations ba
+                                    JOIN binaries b ON ba.bin = b.id
+                                   WHERE ba.suite = :suite_id
+                                     AND b.source = s.id)"""
+    sources = session.query(DBSource).from_statement(query) \
+        .params({'suite_id': suite.suite_id, 'delete_before': delete_before})
+    for source in sources:
+        Logger.log(["removed source from build queue", build_queue.queue_name, source.source, source.version])
+        transaction.remove_source(source, suite)
 
 def main ():
     global Options, Logger
@@ -79,25 +116,23 @@ def main ():
 
     session = DBConn().session()
 
-    if Options["All"]:
-        if len(queue_names) != 0:
-            print "E: Cannot use both -a and a queue_name"
-            sys.exit(1)
-        queues = session.query(BuildQueue).all()
+    with ArchiveTransaction() as transaction:
+        session = transaction.session
+        if Options['All']:
+            if len(queue_names) != 0:
+                print "E: Cannot use both -a and a queue name"
+                sys.exit(1)
+            queues = session.query(BuildQueue)
+        else:
+            queues = session.query(BuildQueue).filter(BuildQueue.queue_name.in_(queue_names))
 
-    else:
-        queues = []
-        for q in queue_names:
-            queue = get_build_queue(q.lower(), session)
-            if queue:
-                queues.append(queue)
-            else:
-                Logger.log(['cannot find queue %s' % q])
-
-    # For each given queue, look up object and call manage_queue
-    for q in queues:
-        Logger.log(['cleaning queue %s using datetime %s' % (q.queue_name, starttime)])
-        q.clean_and_update(starttime, Logger, dryrun=Options["No-Action"])
+        for q in queues:
+            Logger.log(['cleaning queue %s using datetime %s' % (q.queue_name, starttime)])
+            clean(q, transaction, now=starttime)
+        if not Options['No-Action']:
+            transaction.commit()
+        else:
+            transaction.rollback()
 
     Logger.close()
 

@@ -96,6 +96,14 @@ Perform administrative work on the dak database.
      s-a rm SUITE ARCH      remove ARCH from suite (will only work if
                             no packages remain for the arch in the suite)
 
+  archive:
+     archive list           list all archives
+     archive add NAME ROOT DESCRIPTION [primary-mirror=MIRROR] [tainted=1]
+                            add archive NAME with path ROOT,
+                            primary mirror MIRROR.
+     archive rm NAME        remove archive NAME (will only work if there are
+                            no files and no suites in the archive)
+
   version-check / v-c:
      v-c list                        show version checks for all suites
      v-c list-suite SUITE            show version checks for suite SUITE
@@ -225,6 +233,11 @@ def __suite_add(d, args, addallarches=False):
             signingkey = get_field('signingkey')
             if signingkey is not None:
                 suite.signingkeys = [signingkey.upper()]
+            archive_name = get_field('archive')
+            if archive_name is not None:
+                suite.archive = get_archive(archive_name, s)
+            else:
+                suite.archive = s.query(Archive).filter(~Archive.archive_name.in_(['build-queues', 'new', 'policy'])).one()
             suite.srcformats = s.query(SrcFormat).all()
             s.add(suite)
             s.flush()
@@ -370,6 +383,64 @@ def suite_architecture(command):
 
 dispatch['suite-architecture'] = suite_architecture
 dispatch['s-a'] = suite_architecture
+
+################################################################################
+
+def archive_list():
+    session = DBConn().session()
+    for archive in session.query(Archive).order_by(Archive.archive_name):
+        print "{0} path={1} description={2} tainted={3}".format(archive.archive_name, archive.path, archive.description, archive.tainted)
+
+def archive_add(args):
+    (name, path, description) = args[0:3]
+
+    attributes = dict(
+        archive_name=name,
+        path=path,
+        description=description,
+        )
+
+    for option in args[3:]:
+        (key, value) = option.split('=')
+        attributes[key] = value
+
+    session = DBConn().session()
+
+    archive = Archive()
+    for key, value in attributes.iteritems():
+        setattr(archive, key, value)
+
+    session.add(archive)
+    session.flush()
+
+    if dryrun:
+        session.rollback()
+    else:
+        session.commit()
+
+def archive_rm(name):
+    session = DBConn().session()
+    archive = session.query(Archive).filter_by(archive_name=name).one()
+    session.delete(archive)
+    session.flush()
+
+    if dryrun:
+        session.rollback()
+    else:
+        session.commit()
+
+def archive(command):
+    mode = command[1]
+    if mode == 'list':
+        archive_list()
+    elif mode == 'add':
+        archive_add(command[2:])
+    elif mode == 'rm':
+        archive_rm(command[2])
+    else:
+        die("E: archive command unknown")
+
+dispatch['archive'] = archive
 
 ################################################################################
 

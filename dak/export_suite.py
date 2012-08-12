@@ -17,24 +17,22 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import apt_pkg
+import os
 import sys
 
 from daklib.config import Config
 from daklib.dbconn import *
-from daklib.policy import UploadCopy
+from daklib.fstransactions import FilesystemTransaction
 
 def usage():
-    print """Usage: dak export -q <queue> [options] -a|--all|<source...>
+    print """Usage: dak export-suite -s <suite> [options]
 
-Export uploads from policy queues, that is the changes files for the given
-source package and all other files associated with that.
+Export binaries and sources from a suite to a flat directory structure.
 
- -a --all          export all uploads
  -c --copy         copy files instead of symlinking them
  -d <directory>    target directory to export packages to
                    default: current directory
- -q <queue>        queue to grab uploads from
- <source>          source package name to export
+ -s <suite>        suite to grab uploads from
 """
 
 def main(argv=None):
@@ -42,34 +40,45 @@ def main(argv=None):
         argv = sys.argv
 
     arguments = [('h', 'help', 'Export::Options::Help'),
-                 ('a', 'all', 'Export::Options::All'),
                  ('c', 'copy', 'Export::Options::Copy'),
                  ('d', 'directory', 'Export::Options::Directory', 'HasArg'),
-                 ('q', 'queue', 'Export::Options::Queue', 'HasArg')]
+                 ('s', 'suite', 'Export::Options::Suite', 'HasArg')]
 
     cnf = Config()
-    source_names = apt_pkg.parse_commandline(cnf.Cnf, arguments, argv)
+    apt_pkg.parse_commandline(cnf.Cnf, arguments, argv)
     options = cnf.subtree('Export::Options')
 
-    if 'Help' in options or 'Queue' not in options:
+    if 'Help' in options or 'Suite' not in options:
         usage()
         sys.exit(0)
 
     session = DBConn().session()
 
-    queue = session.query(PolicyQueue).filter_by(queue_name=options['Queue']).first()
-    if queue is None:
-        print "Unknown queue '{0}'".format(options['Queue'])
+    suite = session.query(Suite).filter_by(suite_name=options['Suite']).first()
+    if suite is None:
+        print "Unknown suite '{0}'".format(options['Suite'])
         sys.exit(1)
-    uploads = session.query(PolicyQueueUpload).filter_by(policy_queue=queue)
-    if 'All' not in options:
-        uploads = uploads.filter(DBChange.source.in_(source_names))
-    directory = options.get('Directory', '.')
+
+    directory = options.get('Directory')
+    if not directory:
+        print "No target directory."
+        sys.exit(1)
+
     symlink = 'Copy' not in options
 
-    for u in uploads:
-        print "Processing {0}...".format(u.changes.changesname)
-        UploadCopy(u).export(directory, symlink=symlink, ignore_existing=True)
+    binaries = suite.binaries
+    sources = suite.sources
+
+    files = []
+    files.extend([ b.poolfile for b in binaries ])
+    for s in sources:
+        files.extend([ ds.poolfile for ds in s.srcfiles ])
+
+    with FilesystemTransaction() as fs:
+        for f in files:
+            dst = os.path.join(directory, f.basename)
+            fs.copy(f.fullpath, dst, symlink=symlink)
+        fs.commit()
 
 if __name__ == '__main__':
     main()

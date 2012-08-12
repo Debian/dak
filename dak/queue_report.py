@@ -43,9 +43,8 @@ except ImportError:
     pass
 
 from daklib import utils
-from daklib.queue import Upload
-from daklib.dbconn import DBConn, has_new_comment, DBChange, DBSource, \
-                          get_uid_from_fingerprint, get_policy_queue
+from daklib.dbconn import DBConn, DBSource, has_new_comment, PolicyQueue, \
+                          get_uid_from_fingerprint
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
@@ -367,46 +366,33 @@ RRA:MAX:0.5:288:795
 
 ############################################################
 
-def process_changes_files(changes_files, type, log, rrd_dir):
+def process_queue(queue, log, rrd_dir):
     msg = ""
-    cache = {}
-    unprocessed = []
-    # Read in all the .changes files
-    for filename in changes_files:
-        try:
-            u = Upload()
-            u.load_changes(filename)
-            cache[filename] = copy(u.pkg.changes)
-            cache[filename]["filename"] = filename
-        except Exception as e:
-            print "WARNING: Exception %s" % e
-            continue
+    type = queue.queue_name
+
     # Divide the .changes into per-source groups
     per_source = {}
-    for filename in cache.keys():
-	if not cache[filename].has_key("source"):
-            unprocessed.append(filename)
-            continue
-        source = cache[filename]["source"]
-        if not per_source.has_key(source):
+    for upload in queue.uploads:
+        source = upload.changes.source
+        if source not in per_source:
             per_source[source] = {}
             per_source[source]["list"] = []
-        per_source[source]["list"].append(cache[filename])
+        per_source[source]["list"].append(upload)
     # Determine oldest time and have note status for each source group
     for source in per_source.keys():
         source_list = per_source[source]["list"]
         first = source_list[0]
-        oldest = os.stat(first["filename"])[stat.ST_MTIME]
+        oldest = time.mktime(first.changes.created.timetuple())
         have_note = 0
         for d in per_source[source]["list"]:
-            mtime = os.stat(d["filename"])[stat.ST_MTIME]
+            mtime = time.mktime(d.changes.created.timetuple())
             if Cnf.has_key("Queue-Report::Options::New"):
                 if mtime > oldest:
                     oldest = mtime
             else:
                 if mtime < oldest:
                     oldest = mtime
-            have_note += has_new_comment(d["source"], d["version"])
+            have_note += has_new_comment(d.changes.source, d.changes.version)
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -417,7 +403,7 @@ def process_changes_files(changes_files, type, log, rrd_dir):
     per_source_items = per_source.items()
     per_source_items.sort(sg_compare)
 
-    update_graph_database(rrd_dir, type, len(per_source_items), len(changes_files))
+    update_graph_database(rrd_dir, type, len(per_source_items), len(queue.uploads))
 
     entries = []
     max_source_len = 0
@@ -432,30 +418,24 @@ def process_changes_files(changes_files, type, log, rrd_dir):
         changeby = {}
         changedby=""
         sponsor=""
-        filename=i[1]["list"][0]["filename"]
+        filename=i[1]["list"][0].changes.changesname
         last_modified = time.time()-i[1]["oldest"]
-        source = i[1]["list"][0]["source"]
+        source = i[1]["list"][0].changes.source
         if len(source) > max_source_len:
             max_source_len = len(source)
-        binary_list = i[1]["list"][0]["binary"].keys()
-        binary = ', '.join(binary_list)
-        arches = {}
-        versions = {}
+        binary_list = i[1]["list"][0].binaries
+        binary = ', '.join([ b.package for b in binary_list ])
+        arches = set()
+        versions = set()
         for j in i[1]["list"]:
-            changesbase = os.path.basename(j["filename"])
-            try:
-                session = DBConn().session()
-                dbc = session.query(DBChange).filter_by(changesname=changesbase).one()
-                session.close()
-            except Exception as e:
-                print "Can't find changes file in NEW for %s (%s)" % (changesbase, e)
-                dbc = None
+            dbc = j.changes
+            changesbase = dbc.changesname
 
             if Cnf.has_key("Queue-Report::Options::New") or Cnf.has_key("Queue-Report::Options::822"):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    fix_maintainer (j["maintainer"])
+                    fix_maintainer (dbc.maintainer)
                 except ParseMaintError as msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
@@ -465,31 +445,30 @@ def process_changes_files(changes_files, type, log, rrd_dir):
                 try:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
-                     fix_maintainer (j["changed-by"])
+                     fix_maintainer (dbc.changedby)
                 except ParseMaintError as msg:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
                      ("", "", "", "")
                 changedby="%s:%s" % (changeby["changedbyname"], changeby["changedbyemail"])
 
-                distribution=j["distribution"].keys()
-                closes=j["closes"].keys()
-                if dbc:
-                    fingerprint = dbc.fingerprint
-                    sponsor_name = get_uid_from_fingerprint(fingerprint).name
-                    sponsor_email = get_uid_from_fingerprint(fingerprint).uid + "@debian.org"
-                    if sponsor_name != maintainer["maintainername"] and sponsor_name != changeby["changedbyname"] and \
-                    sponsor_email != maintainer["maintaineremail"] and sponsor_name != changeby["changedbyemail"]:
-                        sponsor = sponsor_email
+                distribution=dbc.distribution.split()
+                closes=dbc.closes
 
-            for arch in j["architecture"].keys():
-                arches[arch] = ""
-            version = j["version"]
-            versions[version] = ""
-        arches_list = arches.keys()
+                fingerprint = dbc.fingerprint
+                sponsor_name = get_uid_from_fingerprint(fingerprint).name
+                sponsor_email = get_uid_from_fingerprint(fingerprint).uid + "@debian.org"
+                if sponsor_name != maintainer["maintainername"] and sponsor_name != changeby["changedbyname"] and \
+                        sponsor_email != maintainer["maintaineremail"] and sponsor_name != changeby["changedbyemail"]:
+                    sponsor = sponsor_email
+
+            for arch in dbc.architecture.split():
+                arches.add(arch)
+            versions.add(dbc.version)
+        arches_list = list(arches)
         arches_list.sort(utils.arch_compare_sw)
         arch_list = " ".join(arches_list)
-        version_list = " ".join(versions.keys())
+        version_list = " ".join(versions)
         if len(version_list) > max_version_len:
             max_version_len = len(version_list)
         if len(arch_list) > max_arch_len:
@@ -596,20 +575,13 @@ def process_changes_files(changes_files, type, log, rrd_dir):
             msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
-            total_count = len(changes_files)
+            total_count = len(queue.uploads)
             source_count = len(per_source_items)
             print type.upper()
             print "-"*len(type)
             print
             print msg
             print "%s %s source package%s / %s %s package%s in total." % (source_count, type, plural(source_count), total_count, type, plural(total_count))
-            print
-
-        if len(unprocessed):
-            print "UNPROCESSED"
-            print "-----------"
-            for u in unprocessed:
-                print u
             print
 
 ################################################################################
@@ -638,10 +610,7 @@ def main():
     if Cnf.has_key("Queue-Report::Options::New"):
         header()
 
-    # Initialize db so we can get the NEW comments
-    dbconn = DBConn()
-
-    queue_names = [ ]
+    queue_names = []
 
     if Cnf.has_key("Queue-Report::Options::Directories"):
         for i in Cnf["Queue-Report::Options::Directories"].split(","):
@@ -663,14 +632,12 @@ def main():
         # Open the report file
         f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
 
-    session = dbconn.session()
+    session = DBConn().session()
 
     for queue_name in queue_names:
-        queue = get_policy_queue(queue_name, session)
-        if queue:
-            directory = os.path.abspath(queue.path)
-            changes_files = glob.glob("%s/*.changes" % (directory))
-            process_changes_files(changes_files, os.path.basename(directory), f, rrd_dir)
+        queue = session.query(PolicyQueue).filter_by(queue_name=queue_name).first()
+        if queue is not None:
+            process_queue(queue, f, rrd_dir)
         else:
             utils.warn("Cannot find queue %s" % queue_name)
 

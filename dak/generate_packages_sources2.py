@@ -34,6 +34,7 @@ def usage():
     print """Usage: dak generate-packages-sources2 [OPTIONS]
 Generate the Packages/Sources files
 
+  -a, --archive=ARCHIVE        process suites in ARCHIVE
   -s, --suite=SUITE            process this suite
                                Default: All suites not marked 'untouchable'
   -f, --force                  Allow processing of untouchable suites
@@ -66,7 +67,7 @@ SELECT
    WHERE s.id=sm.src_id
   )
   ||
-  E'\nDirectory\: pool/' || SUBSTRING(f.filename FROM E'\\A(.*)/[^/]*\\Z')
+  E'\nDirectory\: pool/' || :component_name || '/' || SUBSTRING(f.filename FROM E'\\A(.*)/[^/]*\\Z')
   ||
   E'\nPriority\: ' || pri.priority
   ||
@@ -103,11 +104,11 @@ def generate_sources(suite_id, component_id):
 
     overridesuite_id = suite.get_overridesuite().suite_id
 
-    writer = SourcesFileWriter(suite=suite.suite_name, component=component.component_name)
+    writer = SourcesFileWriter(archive=suite.archive.path, suite=suite.suite_name, component=component.component_name)
     output = writer.open()
 
     # run query and write Sources
-    r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "dsc_type": dsc_type, "overridesuite": overridesuite_id})
+    r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "component_name": component.component_name, "dsc_type": dsc_type, "overridesuite": overridesuite_id})
     for (stanza,) in r:
         print >>output, stanza
         print >>output, ""
@@ -141,12 +142,12 @@ WITH
       binaries b
       JOIN bin_associations ba ON b.id = ba.bin
       JOIN files f ON f.id = b.file
-      JOIN location l ON l.id = f.location
+      JOIN files_archive_map fam ON f.id = fam.file_id AND fam.archive_id = :archive_id
       JOIN source s ON b.source = s.id
     WHERE
       (b.architecture = :arch_all OR b.architecture = :arch) AND b.type = :type_name
       AND ba.suite = :suite
-      AND l.component = :component
+      AND fam.component_id = :component
   )
 
 SELECT
@@ -175,7 +176,7 @@ SELECT
   ), '')
   || E'\nSection\: ' || sec.section
   || E'\nPriority\: ' || pri.priority
-  || E'\nFilename\: pool/' || tmp.filename
+  || E'\nFilename\: pool/' || :component_name || '/' || tmp.filename
   || E'\nSize\: ' || tmp.size
   || E'\nMD5sum\: ' || tmp.md5sum
   || E'\nSHA1\: ' || tmp.sha1sum
@@ -226,11 +227,13 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     if include_long_description:
         metadata_skip.append("Description-md5")
 
-    writer = PackagesFileWriter(suite=suite.suite_name, component=component.component_name,
+    writer = PackagesFileWriter(archive=suite.archive.path, suite=suite.suite_name,
+            component=component.component_name,
             architecture=architecture.arch_string, debtype=type_name)
     output = writer.open()
 
-    r = session.execute(_packages_query, {"suite": suite_id, "component": component_id,
+    r = session.execute(_packages_query, {"archive_id": suite.archive.archive_id,
+        "suite": suite_id, "component": component_id, 'component_name': component.component_name,
         "arch": architecture_id, "type_id": type_id, "type_name": type_name, "arch_all": arch_all_id,
         "overridesuite": overridesuite_id, "metadata_skip": metadata_skip,
         "include_long_description": 'true' if include_long_description else 'false'})
@@ -287,7 +290,7 @@ def generate_translations(suite_id, component_id):
     suite = session.query(Suite).get(suite_id)
     component = session.query(Component).get(component_id)
 
-    writer = TranslationFileWriter(suite=suite.suite_name, component=component.component_name, language="en")
+    writer = TranslationFileWriter(archive=suite.archive.path, suite=suite.suite_name, component=component.component_name, language="en")
     output = writer.open()
 
     r = session.execute(_translations_query, {"suite": suite_id, "component": component_id})
@@ -309,6 +312,7 @@ def main():
     cnf = Config()
 
     Arguments = [('h',"help","Generate-Packages-Sources::Options::Help"),
+                 ('a','archive','Generate-Packages-Sources::Options::Archive','HasArg'),
                  ('s',"suite","Generate-Packages-Sources::Options::Suite"),
                  ('f',"force","Generate-Packages-Sources::Options::Force"),
                  ('o','option','','ArbItem')]
@@ -342,7 +346,10 @@ def main():
                 print "I: Cannot find suite %s" % s
                 logger.log(['Cannot find suite %s' % s])
     else:
-        suites = session.query(Suite).filter(Suite.untouchable == False).all()
+        query = session.query(Suite).filter(Suite.untouchable == False).all()
+        if 'Archive' in Options:
+            query = query.join(Suite.archive).filter(Archive.archive_name==Options['Archive'])
+        suites = query.all()
 
     force = Options.has_key("Force") and Options["Force"]
 

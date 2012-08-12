@@ -45,6 +45,7 @@ import sys
 import apt_pkg
 import os
 
+from daklib.archive import ArchiveTransaction
 from daklib.config import Config
 from daklib.dbconn import *
 from daklib import daklog
@@ -72,27 +73,19 @@ Display or alter the contents of a suite using FILE(s), or stdin.
 
 #######################################################################################
 
-def get_id(package, version, architecture, session):
-    if architecture == "source":
-        q = session.execute("SELECT id FROM source WHERE source = :package AND version = :version",
-                            {'package': package, 'version': version})
+def get_pkg(package, version, architecture, session):
+    if architecture == 'source':
+        q = session.query(DBSource).filter_by(source=package, version=version) \
+            .join(DBSource.poolfile)
     else:
-        q = session.execute("""SELECT b.id FROM binaries b, architecture a
-                                WHERE b.package = :package AND b.version = :version
-                                  AND (a.arch_string = :arch OR a.arch_string = 'all')
-                                  AND b.architecture = a.id""",
-                               {'package': package, 'version': version, 'arch': architecture})
+        q = session.query(DBBinary).filter_by(package=package, version=version) \
+            .join(DBBinary.architecture).filter(Architecture.arch_string.in_([architecture, 'all'])) \
+            .join(DBBinary.poolfile)
 
-    ql = q.fetchall()
-    if len(ql) < 1:
-        utils.warn("Couldn't find '%s_%s_%s'." % (package, version, architecture))
-        return None
-
-    if len(ql) > 1:
-        utils.warn("Found more than one match for '%s_%s_%s'." % (package, version, architecture))
-        return None
-
-    return ql[0][0]
+    pkg = q.first()
+    if pkg is None:
+        utils.warn("Could not find {0}_{1}_{2}.".format(package, version, architecture))
+    return pkg
 
 #######################################################################################
 
@@ -194,16 +187,23 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
 
 def cmp_package_version(a, b):
     """
-    comparison function for tuples of the form (package-name, version ...)
+    comparison function for tuples of the form (package-name, version, arch, ...)
     """
-    cmp_package = cmp(a[0], b[0])
-    if cmp_package != 0:
-        return cmp_package
-    return apt_pkg.version_compare(a[1], b[1])
+    res = 0
+    if a[2] == 'source' and b[2] != 'source':
+        res = -1
+    elif a[2] != 'source' and b[2] == 'source':
+        res = 1
+    if res == 0:
+        res = cmp(a[0], b[0])
+    if res == 0:
+        res = apt_pkg.version_compare(a[1], b[1])
+    return res
 
 #######################################################################################
 
-def set_suite(file, suite, session, britney=False, force=False):
+def set_suite(file, suite, transaction, britney=False, force=False):
+    session = transaction.session
     suite_id = suite.suite_id
     lines = file.readlines()
 
@@ -241,16 +241,17 @@ def set_suite(file, suite, session, britney=False, force=False):
         if key not in current:
             (package, version, architecture) = key
             version_checks(package, architecture, suite.suite_name, version, session, force)
-            pkid = get_id (package, version, architecture, session)
-            if not pkid:
+            pkg = get_pkg(package, version, architecture, session)
+            if pkg is None:
                 continue
+
+            component = pkg.poolfile.component
             if architecture == "source":
-                session.execute("""INSERT INTO src_associations (suite, source)
-                                        VALUES (:suiteid, :pkid)""", {'suiteid': suite_id, 'pkid': pkid})
+                transaction.copy_source(pkg, suite, component)
             else:
-                session.execute("""INSERT INTO bin_associations (suite, bin)
-                                        VALUES (:suiteid, :pkid)""", {'suiteid': suite_id, 'pkid': pkid})
-            Logger.log(["added", " ".join(key), pkid])
+                transaction.copy_binary(pkg, suite, component)
+
+            Logger.log(["added", " ".join(key)])
 
     # Check to see which packages need removed and remove them
     for key, pkid in current.iteritems():
@@ -269,9 +270,11 @@ def set_suite(file, suite, session, britney=False, force=False):
 
 #######################################################################################
 
-def process_file(file, suite, action, session, britney=False, force=False):
+def process_file(file, suite, action, transaction, britney=False, force=False):
+    session = transaction.session
+
     if action == "set":
-        set_suite(file, suite, session, britney, force)
+        set_suite(file, suite, transaction, britney, force)
         return
 
     suite_id = suite.suite_id
@@ -289,9 +292,15 @@ def process_file(file, suite, action, session, britney=False, force=False):
     request.sort(cmp=cmp_package_version)
 
     for package, version, architecture in request:
-        pkid = get_id(package, version, architecture, session)
-        if not pkid:
+        pkg = get_pkg(package, version, architecture, session)
+        if pkg is None:
             continue
+        if architecture == 'source':
+            pkid = pkg.source_id
+        else:
+            pkid = pkg.binary_id
+
+        component = pkg.poolfile.component
 
         # Do version checks when adding packages
         if action == "add":
@@ -314,9 +323,7 @@ def process_file(file, suite, action, session, britney=False, force=False):
                     utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
-                    session.execute("""INSERT INTO src_associations (suite, source)
-                                            VALUES (:suiteid, :pkid)""",
-                                       {'suiteid': suite_id, 'pkid': pkid})
+                    transaction.copy_source(pkg, suite, component)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
 
             elif action == "remove":
@@ -343,9 +350,7 @@ def process_file(file, suite, action, session, britney=False, force=False):
                     utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
-                    session.execute("""INSERT INTO bin_associations (suite, bin)
-                                            VALUES (:suiteid, :pkid)""",
-                                       {'suiteid': suite_id, 'pkid': pkid})
+                    transaction.copy_binary(pkg, suite, component)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
             elif action == "remove":
                 if association_id == None:
@@ -406,8 +411,6 @@ def main ():
     if Options["Help"]:
         usage()
 
-    session = DBConn().session()
-
     force = Options.has_key("Force") and Options["Force"]
 
     action = None
@@ -415,23 +418,14 @@ def main ():
     for i in ("add", "list", "remove", "set"):
         if cnf["Control-Suite::Options::%s" % (i)] != "":
             suite_name = cnf["Control-Suite::Options::%s" % (i)]
-            suite = get_suite(suite_name, session=session)
-            if suite is None:
-                utils.fubar("Unknown suite '%s'." % (suite_name))
-            else:
-                if action:
-                    utils.fubar("Can only perform one action at a time.")
-                action = i
 
-                # Safety/Sanity check
-                if action == "set" and (not suite.allowcsset):
-                    if force:
-                        utils.warn("Would not normally allow setting suite %s (allowsetcs is FALSE), but --force used" % (suite_name))
-                    else:
-                        utils.fubar("Will not reset suite %s due to its database configuration (allowsetcs is FALSE)" % (suite_name))
+            if action:
+                utils.fubar("Can only perform one action at a time.")
+
+            action = i
 
     # Need an action...
-    if action == None:
+    if action is None:
         utils.fubar("No action specified.")
 
     britney = False
@@ -439,14 +433,28 @@ def main ():
         britney = True
 
     if action == "list":
+        session = DBConn().session()
+        suite = session.query(Suite).filter_by(suite_name=suite_name).one()
         get_list(suite, session)
     else:
         Logger = daklog.Logger("control-suite")
-        if file_list:
-            for f in file_list:
-                process_file(utils.open_file(f), suite, action, session, britney, force)
-        else:
-            process_file(sys.stdin, suite, action, session, britney, force)
+
+        with ArchiveTransaction() as transaction:
+            session = transaction.session
+            suite = session.query(Suite).filter_by(suite_name=suite_name).one()
+
+            if action == "set" and not suite.allowcsset:
+                if force:
+                    utils.warn("Would not normally allow setting suite {0} (allowsetcs is FALSE), but --force used".format(suite_name))
+                else:
+                    utils.fubar("Will not reset suite {0} due to its database configuration (allowsetcs is FALSE)".format(suite_name))
+
+            if file_list:
+                for f in file_list:
+                    process_file(utils.open_file(f), suite, action, transaction, britney, force)
+            else:
+                process_file(sys.stdin, suite, action, transaction, britney, force)
+
         Logger.close()
 
 #######################################################################################

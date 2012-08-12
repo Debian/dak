@@ -152,8 +152,8 @@ function mpfm() {
 
 function packages() {
     log "Generating Packages and Sources files"
-    dak generate-packages-sources2
-    dak contents generate
+    dak generate-packages-sources2 -a ftp-master
+    dak contents generate -a ftp-master
 }
 
 function pdiff() {
@@ -171,13 +171,14 @@ function release() {
         done
     )
     log "Generating Release files"
-    dak generate-releases
+    dak generate-releases -a ftp-master
 }
 
 function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites -m 10000
-    dak clean-queues
+    # XXX: reactivate once clean-queues is fixed
+    #dak clean-queues
 }
 
 function buildd_dir() {
@@ -230,8 +231,20 @@ function mkfilesindices() {
     ARCHLIST=$(tempfile)
 
     log "Querying postgres"
-    local query='SELECT l.path, f.filename, a.arch_string FROM location l JOIN files f ON (f.location = l.id) LEFT OUTER JOIN (binaries b JOIN architecture a ON (b.architecture = a.id)) ON (f.id = b.file)'
-    psql -At -c "$query" | sed 's/|//;s,^/srv/ftp-master.debian.org/ftp,.,' | sort >$ARCHLIST
+    local query="
+      SELECT CONCAT('./pool/', c.name, '/', f.filename) AS path, a.arch_string AS arch_string
+      FROM files f
+      JOIN files_archive_map af ON f.id = af.file_id
+      JOIN component c ON af.component_id = c.id
+      JOIN archive ON af.archive_id = archive.id
+      LEFT OUTER JOIN
+        (binaries b
+         JOIN architecture a ON b.architecture = a.id)
+        ON f.id = b.file
+      WHERE archive.name = 'ftp-master'
+      ORDER BY path, arch_string
+    "
+    psql -At -c "$query" >$ARCHLIST
 
     includedirs () {
         perl -ne 'print; while (m,/[^/]+$,) { $_=$`; print $_ . "\n" unless $d{$_}++; }'
@@ -264,11 +277,42 @@ function mkfilesindices() {
     log "Generating suite lists"
 
     suite_list () {
+	local suite_id="$(printf %d $1)"
 	local query
-	query="$(printf 'SELECT DISTINCT l.path, f.filename FROM (SELECT sa.source AS source FROM src_associations sa WHERE sa.suite = %d UNION SELECT b.source AS source FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) WHERE ba.suite = %d) s JOIN dsc_files df ON (s.source = df.source) JOIN files f ON (df.file = f.id) JOIN location l ON (f.location = l.id)' $1 $1)"
+	query="
+          SELECT DISTINCT CONCAT('./pool/', c.name, '/', f.filename)
+          FROM
+            (SELECT sa.source AS source
+               FROM src_associations sa
+              WHERE sa.suite = $suite_id
+             UNION
+             SELECT esr.src_id
+               FROM extra_src_references esr
+               JOIN bin_associations ba ON esr.bin_id = ba.bin
+               WHERE ba.suite = $suite_id
+             UNION
+             SELECT b.source AS source
+               FROM bin_associations ba
+               JOIN binaries b ON ba.bin = b.id WHERE ba.suite = $suite_id) s
+            JOIN dsc_files df ON s.source = df.source
+            JOIN files f ON df.file = f.id
+            JOIN files_archive_map af ON f.id = af.file_id
+            JOIN component c ON af.component_id = c.id
+            JOIN archive ON af.archive_id = archive.id
+            WHERE archive.name = 'ftp-master'
+        "
 	psql -F' ' -A -t -c "$query"
 
-	query="$(printf 'SELECT l.path, f.filename FROM bin_associations ba JOIN binaries b ON (ba.bin = b.id) JOIN files f ON (b.file = f.id) JOIN location l ON (f.location = l.id) WHERE ba.suite = %d' $1)"
+	query="
+          SELECT CONCAT('./pool/', c.name, '/', f.filename)
+          FROM bin_associations ba
+          JOIN binaries b ON ba.bin = b.id
+          JOIN files f ON b.file = f.id
+          JOIN files_archive_map af ON f.id = af.file_id
+          JOIN component c ON af.component_id = c.id
+          JOIN archive ON af.archive_id = archive.id
+          WHERE ba.suite = $suite_id AND archive.name = 'ftp-master'
+        "
 	psql -F' ' -A -t -c "$query"
     }
 
@@ -283,7 +327,7 @@ function mkfilesindices() {
                     [ "$(readlink $distdir)" != "$distname" ] || echo $distdir
                 done
             )
-            suite_list $id | tr -d ' ' | sed 's,^/srv/ftp-master.debian.org/ftp,.,'
+            suite_list $id
         ) | sort -u | gzip -9 > suite-${suite}.list.gz
     done
 
