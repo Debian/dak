@@ -331,7 +331,7 @@ def main():
 
     logger = daklog.Logger('generate-packages-sources2')
 
-    from daklib.dbconn import Component, DBConn, get_suite, Suite
+    from daklib.dbconn import Component, DBConn, get_suite, Suite, Archive
     session = DBConn().session()
     session.execute("SELECT add_missing_description_md5()")
     session.commit()
