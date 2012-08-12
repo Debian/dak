@@ -47,7 +47,7 @@ def do_update(self):
             CREATE OR REPLACE VIEW world."files-1" AS
               SELECT
                 files.id AS id,
-                CONCAT(component.name, '/', files.filename) AS filename,
+                component.name || '/' || files.filename AS filename,
                 files.size AS size,
                 files.md5sum AS md5sum,
                 files.sha1sum AS sha1sum,
