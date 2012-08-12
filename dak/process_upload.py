@@ -309,11 +309,15 @@ def accept(directory, upload):
             continue
         announce.update(suite.announce or [])
     announce_address = ", ".join(announce)
+    subst['__ANNOUNCE_LIST_ADDRESS__'] = announce_address
+
     tracking = cnf.get('Dinstall::TrackingServer')
     if tracking and 'source' in upload.changes.architectures:
         announce_address = '{0}\nBcc: {1}@{2}'.format(announce_address, control['Source'], tracking)
     message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
     utils.send_mail(message)
+
+    del subst['__ANNOUNCE_LIST_ADDRESS__']
 
     # Only close bugs for uploads that were not redirected to a policy queue.
     # process-policy will close bugs for those once they are accepted.
