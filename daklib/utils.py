@@ -1396,7 +1396,14 @@ def gpg_get_key_addresses(fingerprint):
     if result == 0:
         for l in output.split('\n'):
             m = re_gpg_uid.match(l)
-            if m:
+            if not m:
+                continue
+            address = m.group(1)
+            if address.endswith('@debian.org'):
+                # prefer @debian.org addresses
+                # TODO: maybe not hardcode the domain
+                addresses.insert(0, address)
+            else:
                 addresses.append(m.group(1))
     key_uid_email_cache[fingerprint] = addresses
     return addresses
