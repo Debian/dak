@@ -245,6 +245,7 @@ def subst_for_upload(upload):
     else:
         addresses = utils.mail_addresses_for_upload(maintainer_field, maintainer_field, changes.primary_fingerprint)
 
+    # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
     bcc = 'X-DAK: dak process-upload'
     if 'Dinstall::Bcc' in cnf:
         bcc = '{0}\nBcc: {1}'.format(bcc, cnf['Dinstall::Bcc'])
@@ -357,7 +358,7 @@ def accept_to_new(directory, upload):
     Logger.log(['ACCEPT-TO-NEW', upload.changes.filename])
 
     upload.install_to_new()
-    # TODO: tag bugs pending, send announcement
+    # TODO: tag bugs pending
 
     subst = subst_for_upload(upload)
     message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.new'))
@@ -402,7 +403,6 @@ def real_reject(directory, upload, reason=None, notify=True):
     fh.write(reason)
     fh.close()
 
-    # TODO: fix
     if notify:
         subst = subst_for_upload(upload)
         subst['__REJECTOR_ADDRESS__'] = cnf['Dinstall::MyEmailAddress']
@@ -498,7 +498,6 @@ def action(directory, upload):
     elif answer == 'S':
         processed = False
 
-    #raise Exception("FAIL")
     if not Options['No-Action']:
         upload.commit()
 
@@ -518,19 +517,6 @@ def process_it(directory, changes, keyrings, session):
 
     print "\n{0}\n".format(changes.filename)
     Logger.log(["Processing changes file", changes.filename])
-
-    cnf = Config()
-
-    # Some defaults in case we can't fully process the .changes file
-    #u.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
-    #u.pkg.changes["changedby2047"] = cnf["Dinstall::MyEmailAddress"]
-
-    # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
-    bcc = "X-DAK: dak process-upload"
-    #if cnf.has_key("Dinstall::Bcc"):
-    #    u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
-    #else:
-    #    u.Subst["__BCC__"] = bcc
 
     with daklib.archive.ArchiveUpload(directory, changes, keyrings) as upload:
         processed = action(directory, upload)
