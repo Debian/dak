@@ -525,18 +525,22 @@ def do_new(upload, upload_copy, handler, session):
             missing = edit_overrides (missing, upload, session)
         elif answer == 'M' and not Options["Trainee"]:
             reason = Options.get('Manual-Reject', '') + "\n"
-            reason = reason + "\n".join(get_new_comments(upload.changes.source, session=session))
+            reason = reason + "\n".join([n.comment for n in get_new_comments(upload.changes.source, session=session)])
             reason = get_reject_reason(reason)
             if reason is not None:
                 Logger.log(["NEW REJECT", upload.changes.changesname])
                 handler.reject(reason)
                 done = True
         elif answer == 'N':
-            edit_note(get_new_comments(upload.changes.source, session=session),
-                      upload, session, bool(Options["Trainee"]))
+            if edit_note(get_new_comments(upload.changes.source, session=session),
+                         upload, session, bool(Options["Trainee"])) == 0:
+                end()
+                sys.exit(0)
         elif answer == 'P' and not Options["Trainee"]:
-            prod_maintainer(get_new_comments(upload.changes.source, session=session),
-                            upload)
+            if prod_maintainer(get_new_comments(upload.changes.source, session=session),
+                               upload) == 0:
+                end()
+                sys.exit(0)
             Logger.log(["NEW PROD", upload.changes.changesname])
         elif answer == 'R' and not Options["Trainee"]:
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
@@ -673,7 +677,7 @@ def show_new_comments(uploads, session):
                WHERE package IN :sources
                ORDER BY package, version"""
 
-    r = session.execute(query, params=dict(sources=sources))
+    r = session.execute(query, params=dict(sources=tuple(sources)))
 
     for i in r:
         print "%s_%s\n%s\n(%s)\n\n\n" % (i[0], i[1], i[2], i[3])

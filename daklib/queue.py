@@ -132,8 +132,7 @@ def prod_maintainer(notes, upload):
     if answer == 'A':
         return
     elif answer == 'Q':
-        end()
-        sys.exit(0)
+        return 0
     # Otherwise, do the proding...
     user_email_address = utils.whoami() + " <%s>" % (
         cnf["Dinstall::MyAdminAddress"])
@@ -186,8 +185,7 @@ def edit_note(note, upload, session, trainee=False):
     if answer == 'A':
         return
     elif answer == 'Q':
-        end()
-        sys.exit(0)
+        return 0
 
     comment = NewComment()
     comment.package = upload.changes.source
