@@ -180,6 +180,7 @@ from daklib.textutils import fix_maintainer
 from daklib.regexes import *
 
 import daklib.archive
+import daklib.checks
 import daklib.upload
 
 ###############################################################################
@@ -206,17 +207,24 @@ def try_or_reject(function):
     """Try to call function or reject the upload if that fails
     """
     def wrapper(directory, upload, *args, **kwargs):
+        reason = 'No exception caught. This should not happen.'
+
         try:
             return function(directory, upload, *args, **kwargs)
+        except (daklib.archive.ArchiveException, daklib.checks.Reject) as e:
+            reason = e
         except Exception as e:
-            try:
-                reason = "There was an uncaught exception when processing your upload:\n{0}\nAny original reject reason follows below.".format(traceback.format_exc())
-                upload.rollback()
-                return real_reject(directory, upload, reason=reason)
-            except Exception as e:
-                reason = "In addition there was an exception when rejecting the package:\n{0}\nPrevious reasons:\n{1}".format(traceback.format_exc(), reason)
-                upload.rollback()
-                return real_reject(directory, upload, reason=reason, notify=False)
+            reason = "There was an uncaught exception when processing your upload:\n{0}\nAny original reject reason follows below.".format(traceback.format_exc())
+
+        try:
+            upload.rollback()
+            return real_reject(directory, upload, reason=reason)
+        except Exception as e:
+            reason = "In addition there was an exception when rejecting the package:\n{0}\nPrevious reasons:\n{1}".format(traceback.format_exc(), reason)
+            upload.rollback()
+            return real_reject(directory, upload, reason=reason, notify=False)
+
+        raise Exception('Rejecting upload failed after multiple tries. Giving up. Last reason:\n{0}'.format(reason))
 
     return wrapper
 
