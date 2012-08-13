@@ -176,9 +176,9 @@ from daklib.urgencylog import UrgencyLog
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
 import daklib.utils as utils
-from daklib.textutils import fix_maintainer
 from daklib.regexes import *
 
+import daklib.announce
 import daklib.archive
 import daklib.checks
 import daklib.upload
@@ -228,64 +228,30 @@ def try_or_reject(function):
 
     return wrapper
 
-def subst_for_upload(upload):
-    cnf = Config()
-
+def get_processed_upload(upload):
     changes = upload.changes
     control = upload.changes.changes
 
-    if upload.final_suites is None or len(upload.final_suites) == 0:
-        suite_name = '(unknown)'
-    else:
-        suite_names = []
-        for suite in upload.final_suites:
-            if suite.policy_queue:
-                suite_names.append("{0}->{1}".format(suite.suite_name, suite.policy_queue.queue_name))
-            else:
-                suite_names.append(suite.suite_name)
-        suite_name = ','.join(suite_names)
+    pu = daklib.announce.ProcessedUpload()
 
-    maintainer_field = control.get('Maintainer', cnf['Dinstall::MyEmailAddress'])
-    changed_by_field = control.get('Changed-By', maintainer_field)
-    maintainer = fix_maintainer(changed_by_field)
-    if upload.changes.source is not None:
-        addresses = utils.mail_addresses_for_upload(maintainer_field, changed_by_field, changes.primary_fingerprint)
-    else:
-        addresses = utils.mail_addresses_for_upload(maintainer_field, maintainer_field, changes.primary_fingerprint)
+    pu.maintainer = control.get('Maintainer')
+    pu.changed_by = control.get('Changed-By')
+    pu.fingerprint = changes.primary_fingerprint
 
-    # debian-{devel-,}-changes@lists.debian.org toggles writes access based on this header
-    bcc = 'X-DAK: dak process-upload'
-    if 'Dinstall::Bcc' in cnf:
-        bcc = '{0}\nBcc: {1}'.format(bcc, cnf['Dinstall::Bcc'])
+    pu.suites = upload.final_suites or []
+    pu.from_policy_suites = []
 
-    subst = {
-        '__DISTRO__': cnf['Dinstall::MyDistribution'],
-        '__ADMIN_ADDRESS__': cnf['Dinstall::MyAdminAddress'],
+    pu.changes = open(upload.changes.path, 'r').read()
+    pu.changes_filename = upload.changes.filename
+    pu.sourceful = upload.changes.source is not None
+    pu.source = control.get('Source')
+    pu.version = control.get('Version')
+    pu.architecture = control.get('Architecture')
+    pu.bugs = changes.closed_bugs
 
-        '__CHANGES_FILENAME__': upload.changes.filename,
+    pu.program = "process-upload"
 
-        '__SOURCE__': control.get('Source', '(unknown)'),
-        '__ARCHITECTURE__': control.get('Architecture', '(unknown)'),
-        '__VERSION__': control.get('Version', '(unknown)'),
-
-        '__SUITE__': suite_name,
-
-        '__DAK_ADDRESS__': cnf['Dinstall::MyEmailAddress'],
-        '__MAINTAINER_FROM__': maintainer[1],
-        '__MAINTAINER_TO__': ", ".join(addresses),
-        '__MAINTAINER__': changed_by_field,
-        '__BCC__': bcc,
-
-        '__BUG_SERVER__': cnf.get('Dinstall::BugServer'),
-
-        '__FILE_CONTENTS__': open(upload.changes.path, 'r').read(),
-        }
-
-    override_maintainer = cnf.get('Dinstall::OverrideMaintainer')
-    if override_maintainer:
-        subst['__MAINTAINER_TO__'] = subst['__MAINTAINER_FROM__'] = override_maintainer
-
-    return subst
+    return pu
 
 @try_or_reject
 def accept(directory, upload):
@@ -308,41 +274,8 @@ def accept(directory, upload):
             urgency = cnf['Urgency::Default']
         UrgencyLog().log(control['Source'], control['Version'], urgency)
 
-    # send mail to maintainer
-    subst = subst_for_upload(upload)
-    message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.accepted'))
-    utils.send_mail(message)
-
-    # send mail to announce lists and tracking server
-    if accepted_to_real_suite and sourceful_upload:
-        subst = subst_for_upload(upload)
-        announce = set()
-        for suite in upload.final_suites:
-            if suite.policy_queue is not None:
-                continue
-            announce.update(suite.announce or [])
-        announce_address = ", ".join(announce)
-
-        tracking = cnf.get('Dinstall::TrackingServer')
-        if tracking and 'source' in upload.changes.architectures:
-            announce_address = '{0}\nBcc: {1}@{2}'.format(announce_address, control['Source'], tracking)
-
-        subst['__ANNOUNCE_LIST_ADDRESS__'] = announce_address
-
-        message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
-        utils.send_mail(message)
-
-    # Only close bugs for uploads that were not redirected to a policy queue.
-    # process-policy will close bugs for those once they are accepted.
-    subst = subst_for_upload(upload)
-    if accepted_to_real_suite and cnf.find_b('Dinstall::CloseBugs') and sourceful_upload:
-        for bugnum in upload.changes.closed_bugs:
-            subst['__BUG_NUMBER__'] = str(bugnum)
-
-            message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.bug-close'))
-            utils.send_mail(message)
-
-            del subst['__BUG_NUMBER__']
+    pu = get_processed_upload(upload)
+    daklib.announce.announce_accept(pu)
 
     # Move .changes to done, but only for uploads that were accepted to a
     # real suite.  process-policy will handle this for uploads to queues.
@@ -368,9 +301,8 @@ def accept_to_new(directory, upload):
     upload.install_to_new()
     # TODO: tag bugs pending
 
-    subst = subst_for_upload(upload)
-    message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.new'))
-    utils.send_mail(message)
+    pu = get_processed_upload(upload)
+    daklib.announce.announce_new(pu)
 
     SummaryStats().accept_count += 1
     SummaryStats().accept_bytes += upload.changes.bytes
@@ -412,14 +344,8 @@ def real_reject(directory, upload, reason=None, notify=True):
     fh.close()
 
     if notify:
-        subst = subst_for_upload(upload)
-        subst['__REJECTOR_ADDRESS__'] = cnf['Dinstall::MyEmailAddress']
-        subst['__MANUAL_REJECT_MESSAGE__'] = ''
-        subst['__REJECT_MESSAGE__'] = reason
-        subst['__CC__'] = 'X-DAK-Rejection: automatic (moo)'
-
-        message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'queue.rejected'))
-        utils.send_mail(message)
+        pu = get_processed_upload(upload)
+        daklib.announce.announce_reject(pu, reason)
 
     SummaryStats().reject_count += 1
 
