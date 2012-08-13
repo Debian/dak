@@ -309,10 +309,13 @@ def edit_overrides (new, upload, session):
 
 ################################################################################
 
-def check_pkg (upload, upload_copy):
+def check_pkg (upload, upload_copy, session):
+    missing = []
     save_stdout = sys.stdout
     changes = os.path.join(upload_copy.directory, upload.changes.changesname)
     suite_name = upload.target_suite.suite_name
+    handler = PolicyQueueUploadHandler(upload, session)
+    missing = [(m['type'], m["package"]) for m in handler.missing_overrides(hints=missing)]
     try:
         sys.stdout = os.popen("less -R -", 'w', 0)
         print examine_package.display_changes(suite_name, changes)
@@ -324,7 +327,11 @@ def check_pkg (upload, upload_copy):
 
         for binary in upload.binaries:
             binary_file = os.path.join(upload_copy.directory, os.path.basename(binary.poolfile.filename))
-            print examine_package.check_deb(suite_name, binary_file)
+            examined = examine_package.check_deb(suite_name, binary_file)
+            # We always need to call check_deb to display package relations for every binary,
+            # but we print its output only if new overrides are being added.
+            if ("deb", binary.package) in missing:
+                print examined
 
         print examine_package.output_package_relations()
     except IOError as e:
@@ -520,7 +527,7 @@ def do_new(upload, upload_copy, handler, session):
                 print "Hello? Operator! Give me the number for 911!"
                 print "Dinstall in the locked area, cant process packages, come back later"
         elif answer == 'C':
-            check_pkg(upload, upload_copy)
+            check_pkg(upload, upload_copy, session)
         elif answer == 'E' and not Options["Trainee"]:
             missing = edit_overrides (missing, upload, session)
         elif answer == 'M' and not Options["Trainee"]:
