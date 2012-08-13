@@ -532,11 +532,15 @@ def do_new(upload, upload_copy, handler, session):
                 handler.reject(reason)
                 done = True
         elif answer == 'N':
-            edit_note(get_new_comments(upload.changes.source, session=session),
-                      upload, session, bool(Options["Trainee"]))
+            if edit_note(get_new_comments(upload.changes.source, session=session),
+                         upload, session, bool(Options["Trainee"])) == 0:
+                end()
+                sys.exit(0)
         elif answer == 'P' and not Options["Trainee"]:
-            prod_maintainer(get_new_comments(upload.changes.source, session=session),
-                            upload)
+            if prod_maintainer(get_new_comments(upload.changes.source, session=session),
+                               upload) == 0:
+                end()
+                sys.exit(0)
             Logger.log(["NEW PROD", upload.changes.changesname])
         elif answer == 'R' and not Options["Trainee"]:
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
