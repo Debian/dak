@@ -677,7 +677,7 @@ def show_new_comments(uploads, session):
                WHERE package IN :sources
                ORDER BY package, version"""
 
-    r = session.execute(query, params=dict(sources=sources))
+    r = session.execute(query, params=dict(sources=tuple(sources)))
 
     for i in r:
         print "%s_%s\n%s\n(%s)\n\n\n" % (i[0], i[1], i[2], i[3])
