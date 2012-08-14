@@ -214,7 +214,7 @@ def clean_binaries(now_date, session):
          AND NOT EXISTS (SELECT 1 FROM files_archive_map af
                                   JOIN archive_delete_date ad ON af.archive_id = ad.archive_id
                                  WHERE af.file_id = b.file
-                                   AND (af.last_used IS NULL OR af.last_used >= ad.delete_date))
+                                   AND (af.last_used IS NULL OR af.last_used > ad.delete_date))
       RETURNING f.filename
     """)
     for b in q:
@@ -254,7 +254,7 @@ def clean(now_date, archives, max_delete, session):
            AND NOT EXISTS (SELECT 1 FROM files_archive_map af
                                     JOIN archive_delete_date ad ON af.archive_id = ad.archive_id
                                    WHERE af.file_id = source.file
-                                     AND (af.last_used IS NULL OR af.last_used >= ad.delete_date))
+                                     AND (af.last_used IS NULL OR af.last_used > ad.delete_date))
         RETURNING source.id AS id, f.filename AS filename
       ),
       deleted_dsc_files AS (

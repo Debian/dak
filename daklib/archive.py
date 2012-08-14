@@ -49,11 +49,17 @@ class ArchiveTransaction(object):
         self.fs = FilesystemTransaction()
         self.session = DBConn().session()
 
-    def get_file(self, hashed_file, source_name):
+    def get_file(self, hashed_file, source_name, check_hashes=True):
         """Look for file C{hashed_file} in database
 
         @type  hashed_file: L{daklib.upload.HashedFile}
         @param hashed_file: file to look for in the database
+
+        @type  source_name: str
+        @param source_name: source package name
+
+        @type  check_hashes: bool
+        @param check_hashes: check size and hashes match
 
         @raise KeyError: file was not found in the database
         @raise HashMismatchException: hash mismatch
@@ -64,7 +70,10 @@ class ArchiveTransaction(object):
         poolname = os.path.join(utils.poolify(source_name), hashed_file.filename)
         try:
             poolfile = self.session.query(PoolFile).filter_by(filename=poolname).one()
-            if poolfile.filesize != hashed_file.size or poolfile.md5sum != hashed_file.md5sum or poolfile.sha1sum != hashed_file.sha1sum or poolfile.sha256sum != hashed_file.sha256sum:
+            if check_hashes and (poolfile.filesize != hashed_file.size
+                                 or poolfile.md5sum != hashed_file.md5sum
+                                 or poolfile.sha1sum != hashed_file.sha1sum
+                                 or poolfile.sha256sum != hashed_file.sha256sum):
                 raise HashMismatchException('{0}: Does not match file already existing in the pool.'.format(hashed_file.filename))
             return poolfile
         except NoResultFound:
@@ -635,7 +644,7 @@ class ArchiveUpload(object):
                     dst = os.path.join(self.directory, f.filename)
                     if not os.path.exists(dst):
                         try:
-                            db_file = self.transaction.get_file(f, source.dsc['Source'])
+                            db_file = self.transaction.get_file(f, source.dsc['Source'], check_hashes=False)
                             db_archive_file = session.query(ArchiveFile).filter_by(file=db_file).first()
                             fs.copy(db_archive_file.path, dst, symlink=True)
                         except KeyError:
