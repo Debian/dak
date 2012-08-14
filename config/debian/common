@@ -68,6 +68,8 @@ function make_buildd_dir () {
         mv Release Release.gpg buildd/
     done
 
+    STAMP=${STAMP:-$(date "+%Y%m%d%H%M")}
+
     for dist in $(ls -1 ${incoming}/dists/); do
         # Skip project trace directory
         if [ "${dist}x" = "projectx" ]; then continue; fi
@@ -88,6 +90,8 @@ function punew_do() {
     echo >> REPORT
 
     dak generate-packages-sources2 -s "${queue}"
+
+    STAMP=${STAMP:-$(date "+%Y%m%d%H%M")}
 
     local exportdir="${queuedir}${qdir}/tree/${STAMP}"
     local targetdir="${queuedir}${qdir}/export"
