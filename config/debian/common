@@ -96,7 +96,7 @@ function punew_do() {
     local exportdir="${queuedir}${qdir}/tree/${STAMP}"
     local targetdir="${queuedir}${qdir}/export"
     dak export -q "${queue}" -d "${exportdir}" --all
-    ln -sfT ${targetdir} ${exportdir}
+    ln -sfT ${exportdir} ${targetdir}
     find ${queuedir}${qdir}/tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
