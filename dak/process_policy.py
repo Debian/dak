@@ -45,7 +45,8 @@ from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLock
 from daklib.config import Config
 from daklib.archive import ArchiveTransaction
 from daklib.urgencylog import UrgencyLog
-from daklib.textutils import fix_maintainer
+
+import daklib.announce
 
 # Globals
 Options = None
@@ -155,25 +156,8 @@ def comment_accept(upload, srcqueue, comments, transaction):
     if not Options['No-Action']:
         Logger.log(["Policy Queue ACCEPT", srcqueue.queue_name, changesname])
 
-    # Send announcement
-    if upload.source is not None:
-        subst = subst_for_upload(upload)
-        announce = ", ".join(upload.target_suite.announce or [])
-        tracking = cnf.get('Dinstall::TrackingServer')
-        if tracking and upload.source is not None:
-            announce = '{0}\nBcc: {1}@{2}'.format(announce, upload.changes.source, tracking)
-        subst['__ANNOUNCE_LIST_ADDRESS__'] = announce
-        message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
-        utils.send_mail(message)
-
-    # TODO: code duplication. Similar code is in process-upload.
-    if cnf.find_b('Dinstall::CloseBugs') and upload.changes.closes is not None and upload.source is not None:
-        for bugnum in upload.changes.closes:
-            subst['__BUG_NUMBER__'] = bugnum
-            message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.bug-close'))
-            utils.send_mail(message)
-
-            del subst['__BUG_NUMBER__']
+    pu = get_processed_upload(upload)
+    daklib.announce.announce_accept(upload)
 
     # TODO: code duplication. Similar code is in process-upload.
     # Move .changes to done
@@ -190,9 +174,9 @@ def comment_accept(upload, srcqueue, comments, transaction):
 
 @try_or_reject
 def comment_reject(*args):
-    real_comment_reject(*args)
+    real_comment_reject(*args, manual=True)
 
-def real_comment_reject(upload, srcqueue, comments, transaction, notify=True):
+def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, manual=False):
     cnf = Config()
 
     fs = transaction.fs
@@ -231,19 +215,18 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True):
     ### Send mail notification
 
     if notify:
-        subst = subst_for_upload(upload)
-        subst['__MANUAL_REJECT_MESSAGE__'] = ''
-        subst['__REJECT_MESSAGE__'] = comments
+        rejected_by = None
+        reason = comments
 
         # Try to use From: from comment file if there is one.
         # This is not very elegant...
         match = re.match(r"\AFrom: ([^\n]+)\n\n", comments)
         if match:
-            subst['__REJECTOR_ADDRESS__'] = match.group(1)
-            subst['__REJECT_MESSAGE__'] = '\n'.join(comments.splitlines()[2:])
+            rejected_by = match.group(1)
+            reason = '\n'.join(comments.splitlines()[2:])
 
-        message = utils.TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'queue.rejected'))
-        utils.send_mail(message)
+        pu = get_processed_upload(upload)
+        daklib.announce.announce_reject(pu, reason, rejected_by)
 
     print "  REJECT"
     if not Options["No-Action"]:
@@ -274,46 +257,28 @@ def remove_upload(upload, transaction):
 
 ################################################################################
 
-def subst_for_upload(upload):
-    # TODO: similar code in process-upload
-    cnf = Config()
+def get_processed_upload(upload):
+    pu = daklib.announce.ProcessedUpload()
 
-    maintainer_field = upload.changes.changedby or upload.changes.maintainer
-    if upload.source is not None:
-        addresses = utils.mail_addresses_for_upload(upload.changes.maintainer, maintainer_field, upload.changes.fingerprint)
-    else:
-        addresses = utils.mail_addresses_for_upload(upload.changes.maintainer, upload.changes.maintainer, upload.changes.fingerprint)
+    pu.maintainer = upload.changes.maintainer
+    pu.changed_by = upload.changes.changedby
+    pu.fingerprint = upload.changes.fingerprint
+
+    pu.suites = []
+    pu.from_policy_suites = [ upload.target_suite ]
 
     changes_path = os.path.join(upload.policy_queue.path, upload.changes.changesname)
-    changes_contents = open(changes_path, 'r').read()
+    pu.changes = open(changes_path, 'r').read()
+    pu.changes_filename = upload.changes.changesname
+    pu.sourceful = upload.source is not None
+    pu.source = upload.changes.source
+    pu.version = upload.changes.version
+    pu.architecture = upload.changes.architecture
+    pu.bugs = upload.changes.closes
 
-    bcc = 'X-DAK: dak process-policy'
-    if 'Dinstall::Bcc' in cnf:
-        bcc = '{0}\nBcc: {1}'.format(bcc, cnf['Dinstall::Bcc'])
+    pu.program = "process-policy"
 
-    subst = {
-        '__DISTRO__': cnf['Dinstall::MyDistribution'],
-        '__ADMIN_ADDRESS__': cnf['Dinstall::MyAdminAddress'],
-
-        '__CHANGES_FILENAME__': upload.changes.changesname,
-        '__SOURCE__': upload.changes.source,
-        '__VERSION__': upload.changes.version,
-        '__ARCHITECTURE__': upload.changes.architecture,
-        '__MAINTAINER__': maintainer_field,
-        '__MAINTAINER_FROM__': fix_maintainer(maintainer_field)[1],
-        '__MAINTAINER_TO__': ", ".join(addresses),
-        '__CC__': 'X-DAK-Rejection: manual or automatic',
-        '__REJECTOR_ADDRESS__': cnf['Dinstall::MyEmailAddress'],
-        '__BCC__': bcc,
-        '__BUG_SERVER__': cnf.get('Dinstall::BugServer'),
-        '__FILE_CONTENTS__': changes_contents,
-    }
-
-    override_maintainer = cnf.get('Dinstall::OverrideMaintainer')
-    if override_maintainer:
-        subst['__MAINTAINER_TO__'] = override_maintainer
-
-    return subst
+    return pu
 
 ################################################################################
 
