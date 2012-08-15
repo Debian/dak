@@ -157,7 +157,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
         Logger.log(["Policy Queue ACCEPT", srcqueue.queue_name, changesname])
 
     pu = get_processed_upload(upload)
-    daklib.announce.announce_accept(upload)
+    daklib.announce.announce_accept(pu)
 
     # TODO: code duplication. Similar code is in process-upload.
     # Move .changes to done
@@ -232,7 +232,9 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, ma
     if not Options["No-Action"]:
         Logger.log(["Policy Queue REJECT", srcqueue.queue_name, upload.changes.changesname])
 
+    changes = upload.changes
     remove_upload(upload, transaction)
+    session.delete(changes)
 
 ################################################################################
 
@@ -252,7 +254,6 @@ def remove_upload(upload, transaction):
     fs.unlink(os.path.join(queuedir, upload.changes.changesname))
 
     session.delete(upload)
-    session.delete(changes)
     session.flush()
 
 ################################################################################

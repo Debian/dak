@@ -212,7 +212,7 @@ def try_or_reject(function):
         try:
             return function(directory, upload, *args, **kwargs)
         except (daklib.archive.ArchiveException, daklib.checks.Reject) as e:
-            reason = e
+            reason = unicode(e)
         except Exception as e:
             reason = "There was an uncaught exception when processing your upload:\n{0}\nAny original reject reason follows below.".format(traceback.format_exc())
 
