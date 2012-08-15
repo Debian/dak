@@ -109,7 +109,7 @@ def announce_accept(upload):
     cnf = Config()
     subst = _subst_for_upload(upload)
 
-    accepted_to_real_suite = any(suite.policy_queue is None for suite in upload.suites)
+    accepted_to_real_suite = any(suite.policy_queue is None or suite in upload.from_policy_suites for suite in upload.suites)
 
     suite_names = []
     for suite in upload.suites:
@@ -127,9 +127,8 @@ def announce_accept(upload):
         # senf mail to announce lists and tracking server
         announce = set()
         for suite in upload.suites:
-            if suite.policy_queue is None:
-                continue
-            announce.update(suite.announce or [])
+            if suite.policy_queue is None or suite in upload.from_policy_suites:
+                announce.update(suite.announce or [])
 
         announce_list_address = ", ".join(announce)
 

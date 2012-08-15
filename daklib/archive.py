@@ -1127,17 +1127,18 @@ class ArchiveUpload(object):
             if policy_queue is not None:
                 redirected_suite = policy_queue.suite
 
+            source_suites = self.session.query(Suite).filter(Suite.suite_id.in_([suite.suite_id, redirected_suite.suite_id])).subquery()
+
             source_component_func = lambda source: self._source_override(overridesuite, source).component
             binary_component_func = lambda binary: self._binary_component(overridesuite, binary)
 
-            (db_source, db_binaries) = self._install_to_suite(redirected_suite, source_component_func, binary_component_func, extra_source_archives=[suite.archive])
+            (db_source, db_binaries) = self._install_to_suite(redirected_suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
 
             if policy_queue is not None:
                 self._install_policy(policy_queue, suite, db_changes, db_source, db_binaries)
 
             # copy to build queues
             if policy_queue is None or policy_queue.send_to_build_queues:
-                source_suites = self.session.query(Suite).filter_by(suite_id=suite.suite_id).subquery()
                 for build_queue in suite.copy_queues:
                     self._install_to_suite(build_queue.suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
 
