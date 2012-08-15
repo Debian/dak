@@ -457,7 +457,6 @@ def get_reject_reason(reason=''):
 ################################################################################
 
 def do_new(upload, upload_copy, handler, session):
-    print "NEW\n"
     cnf = Config()
 
     run_user_inspect_command(upload, upload_copy)
@@ -474,6 +473,9 @@ def do_new(upload, upload_copy, handler, session):
 
         #if len(byhand) == 0 and len(missing) == 0:
         #    break
+
+        if missing:
+            print "NEW\n"
 
         answer = "XXX"
         if Options["No-Action"] or Options["Automatic"]:
@@ -567,6 +569,9 @@ def do_new(upload, upload_copy, handler, session):
         elif answer == 'Q':
             end()
             sys.exit(0)
+
+        if handler.get_action():
+            print "PENDING %s\n" % handler.get_action()
 
 ################################################################################
 ################################################################################
@@ -668,6 +673,7 @@ def do_pkg(upload, session):
        with UploadCopy(upload) as upload_copy:
         handler = PolicyQueueUploadHandler(upload, session)
         if handler.get_action() is not None:
+            print "PENDING %s\n" % handler.get_action()
             return
 
         do_new(upload, upload_copy, handler, session)
