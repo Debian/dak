@@ -148,7 +148,7 @@ def announce_accept(upload):
             my_subst = subst.copy()
             my_subst['__BUG_NUMBER__'] = str(bug)
 
-            message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.bug-close'))
+            message = TemplateSubst(my_subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.bug-close'))
             send_mail(message)
 
 def announce_new(upload):
