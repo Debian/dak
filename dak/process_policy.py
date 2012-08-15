@@ -140,7 +140,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
         for db_binary in upload.binaries:
             # build queues may miss the source package if this is a binary-only upload
             if suite != upload.target_suite:
-                transaction.copy_source(db_binary.source, suite, source_component_func(upload.source), allow_tainted=allow_tainted)
+                transaction.copy_source(db_binary.source, suite, source_component_func(db_binary.source), allow_tainted=allow_tainted)
             transaction.copy_binary(db_binary, suite, binary_component_func(db_binary), allow_tainted=allow_tainted, extra_archives=[upload.target_suite.archive])
 
     # Copy .changes if needed
