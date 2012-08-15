@@ -157,7 +157,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
         Logger.log(["Policy Queue ACCEPT", srcqueue.queue_name, changesname])
 
     pu = get_processed_upload(upload)
-    daklib.announce.announce_accept(upload)
+    daklib.announce.announce_accept(pu)
 
     # TODO: code duplication. Similar code is in process-upload.
     # Move .changes to done

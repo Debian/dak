@@ -125,18 +125,24 @@ def announce_accept(upload):
 
     if accepted_to_real_suite and upload.sourceful:
         # senf mail to announce lists and tracking server
-        announce = set(suite.announce or [] for suite in upload.suites if suite.policy_queue is None)
+        announce = set()
+        for suite in upload.suites:
+            if suite.policy_queue is None:
+                continue
+            announce.update(suite.announce or [])
+
         announce_list_address = ", ".join(announce)
 
         tracking = cnf.get('Dinstall::TrackingServer')
         if tracking:
             announce_list_address = "{0}\n{1}@{2}".format(announce_list_address, upload.source, tracking)
 
-        my_subst = subst.copy()
-        my_subst['__ANNOUNCE_LIST_ADDRESS__'] = announce_list_address
+        if len(announce_list_address) != 0:
+            my_subst = subst.copy()
+            my_subst['__ANNOUNCE_LIST_ADDRESS__'] = announce_list_address
 
-        message = TemplateSubst(my_subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
-        utils.send_mail(message)
+            message = TemplateSubst(my_subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
+            send_mail(message)
 
     if accepted_to_real_suite and upload.sourceful and cnf.find_b('Dinstall::CloseBugs'):
         for bug in upload.bugs:
