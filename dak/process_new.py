@@ -693,6 +693,43 @@ def show_new_comments(uploads, session):
 
 ################################################################################
 
+def sort_uploads(uploads, session, nobinaries=False):
+    sources = {}
+    sorteduploads = []
+    suitesrc = [s.source for s in session.query(DBSource.source). \
+      filter(DBSource.suites.any(Suite.suite_name.in_(['unstable', 'experimental'])))]
+    comments = [p.package for p in session.query(NewComment.package). \
+      filter_by(trainee=False).distinct()]
+    for upload in uploads:
+        source = upload.changes.source
+        if not source in sources:
+            sources[source] = []
+        sources[source].append({'upload': upload,
+                                'date': upload.changes.created,
+                                'stack': 1,
+                                'binary': True if source in suitesrc else False,
+                                'comments': True if source in comments else False})
+    for src in sources:
+        if len(sources[src]) > 1:
+            changes = sources[src]
+            firstseen = sorted(changes, key=lambda k: (k['date']))[0]['date']
+            changes.sort(key=lambda item:item['date'])
+            for i in range (0, len(changes)):
+                changes[i]['date'] = firstseen
+                changes[i]['stack'] = i + 1
+        sorteduploads += sources[src]
+    if nobinaries:
+        sorteduploads = [u["upload"] for u in sorted(sorteduploads,
+                         key=lambda k: (k["comments"], k["binary"],
+                         k["date"], -k["stack"]))]
+    else:
+        sorteduploads = [u["upload"] for u in sorted(sorteduploads,
+                         key=lambda k: (k["comments"], -k["binary"],
+                         k["date"], -k["stack"]))]
+    return sorteduploads
+
+################################################################################
+
 def end():
     accept_count = SummaryStats().accept_count
     accept_bytes = SummaryStats().accept_bytes
@@ -755,7 +792,7 @@ def main():
 
     if len(uploads) > 1:
         sys.stderr.write("Sorting changes...\n")
-        uploads.sort()
+        uploads = sort_uploads(uploads, session, Options["No-Binaries"])
 
     if Options["Comments"]:
         show_new_comments(uploads, session)
