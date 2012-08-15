@@ -470,7 +470,10 @@ def main():
     if Options["Help"]:
         usage()
 
-    Logger = daklog.Logger("clean-suites", debug=Options["No-Action"])
+    program = "clean-suites"
+    if Options['No-Action']:
+        program = "clean-suites (no action)"
+    Logger = daklog.Logger(program, debug=Options["No-Action"])
 
     session = DBConn().session()
 
