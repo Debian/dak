@@ -265,7 +265,7 @@ def get_processed_upload(upload):
     pu.changed_by = upload.changes.changedby
     pu.fingerprint = upload.changes.fingerprint
 
-    pu.suites = []
+    pu.suites = [ upload.target_suite ]
     pu.from_policy_suites = [ upload.target_suite ]
 
     changes_path = os.path.join(upload.policy_queue.path, upload.changes.changesname)
