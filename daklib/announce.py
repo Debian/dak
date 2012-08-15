@@ -109,7 +109,7 @@ def announce_accept(upload):
     cnf = Config()
     subst = _subst_for_upload(upload)
 
-    accepted_to_real_suite = any(suite.policy_queue in None for suite in upload.suites)
+    accepted_to_real_suite = any(suite.policy_queue is None for suite in upload.suites)
 
     suite_names = []
     for suite in upload.suites:
