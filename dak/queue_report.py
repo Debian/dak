@@ -45,6 +45,7 @@ except ImportError:
 from daklib import utils
 from daklib.dbconn import DBConn, DBSource, has_new_comment, PolicyQueue, \
                           get_uid_from_fingerprint
+from daklib.policy import PolicyQueueUploadHandler
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import *
 
@@ -373,6 +374,7 @@ RRA:MAX:0.5:288:795
 def process_queue(queue, log, rrd_dir):
     msg = ""
     type = queue.queue_name
+    session = DBConn().session()
 
     # Divide the .changes into per-source groups
     per_source = {}
@@ -381,6 +383,10 @@ def process_queue(queue, log, rrd_dir):
         if source not in per_source:
             per_source[source] = {}
             per_source[source]["list"] = []
+            per_source[source]["processed"] = ""
+            handler = PolicyQueueUploadHandler(upload, session)
+            if handler.get_action():
+                per_source[source]["processed"] = " | PENDING %s" % handler.get_action()
         per_source[source]["list"].append(upload)
     # Determine oldest time and have note status for each source group
     for source in per_source.keys():
@@ -481,7 +487,7 @@ def process_queue(queue, log, rrd_dir):
             note = " | [N]"
         else:
             note = ""
-        entries.append([source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
+        entries.append([source, binary, version_list, arch_list, per_source[source]["processed"], note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, filename])
 
     # direction entry consists of "Which field, which direction, time-consider" where
     # time-consider says how we should treat last_modified. Thats all.
@@ -523,7 +529,7 @@ def process_queue(queue, log, rrd_dir):
     if Cnf.has_key("Queue-Report::Options::822"):
         # print stuff out in 822 format
         for entry in entries:
-            (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
+            (source, binary, version_list, arch_list, processed, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, changes_file) = entry
 
             # We'll always have Source, Version, Arch, Mantainer, and Dist
             # For the rest, check to see if we have them, then print them out
@@ -567,17 +573,17 @@ def process_queue(queue, log, rrd_dir):
         if len(entries) > 0:
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
-                (source, binary, version_list, arch_list, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
+                (source, binary, version_list, arch_list, processed, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
                 table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
     # The "normal" output without any formatting.
-        format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
+        format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old%%s\n" % (max_source_len, max_version_len, max_arch_len)
 
         msg = ""
         for entry in entries:
-            (source, binary, version_list, arch_list, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
-            msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
+            (source, binary, version_list, arch_list, processed, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
+            msg += format % (source, version_list, arch_list, note, time_pp(last_modified), processed)
 
         if msg:
             print type.upper()
