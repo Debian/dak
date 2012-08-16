@@ -107,7 +107,7 @@ def headline(s, level=2, bodyelement=None):
         if bodyelement:
             return """<thead>
                 <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
-              </thead>\n"""%{"bodyelement":bodyelement,"title":utils.html_escape(s)}
+              </thead>\n"""%{"bodyelement":bodyelement,"title":utils.html_escape(os.path.basename(s))}
         else:
             return "<h%d>%s</h%d>\n" % (level, utils.html_escape(s), level)
     else:
@@ -478,11 +478,11 @@ def get_copyright (deb_filename):
     copyrightmd5 = md5.md5(cright).hexdigest()
 
     res = ""
-    if printed.copyrights.has_key(copyrightmd5) and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, deb_filename):
+    if printed.copyrights.has_key(copyrightmd5) and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, os.path.basename(deb_filename)):
         res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
                                (printed.copyrights[copyrightmd5]))
     else:
-        printed.copyrights[copyrightmd5] = "%s (%s)" % (package, deb_filename)
+        printed.copyrights[copyrightmd5] = "%s (%s)" % (package, os.path.basename(deb_filename))
     return res+formatted_text(cright)
 
 def get_readme_source (dsc_filename):
