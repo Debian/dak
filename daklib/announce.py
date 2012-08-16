@@ -134,7 +134,7 @@ def announce_accept(upload):
 
         tracking = cnf.get('Dinstall::TrackingServer')
         if tracking:
-            announce_list_address = "{0}\n{1}@{2}".format(announce_list_address, upload.source, tracking)
+            announce_list_address = "{0}\nBcc: {1}@{2}".format(announce_list_address, upload.source, tracking)
 
         if len(announce_list_address) != 0:
             my_subst = subst.copy()
