@@ -112,15 +112,8 @@ def check_sources(now_date, session):
     # Get the list of source packages not in a suite and not used by
     # any binaries.
 
-    #### XXX: this should ignore cases where the files for the binary b
-    ####      have been marked for deletion (so the delay between bins go
-    ####      byebye and sources go byebye is 0 instead of StayOfExecution)
-
     # Check for any sources which are marked for deletion but which
     # are now used again.
-
-    #### XXX: this should also handle deleted binaries specially (ie, not
-    ####      reinstate sources because of them
 
     # TODO: the UPDATE part is the same as in check_binaries. Merge?
 
