@@ -65,7 +65,7 @@ Clean old packages from suites.
 ################################################################################
 
 def check_binaries(now_date, session):
-    print "Checking for orphaned binary packages..."
+    Logger.log(["Checking for orphaned binary packages..."])
 
     # Get the list of binary packages not in a suite and mark them for
     # deletion.
@@ -107,20 +107,13 @@ def check_binaries(now_date, session):
 ########################################
 
 def check_sources(now_date, session):
-    print "Checking for orphaned source packages..."
+    Logger.log(["Checking for orphaned source packages..."])
 
     # Get the list of source packages not in a suite and not used by
     # any binaries.
 
-    #### XXX: this should ignore cases where the files for the binary b
-    ####      have been marked for deletion (so the delay between bins go
-    ####      byebye and sources go byebye is 0 instead of StayOfExecution)
-
     # Check for any sources which are marked for deletion but which
     # are now used again.
-
-    #### XXX: this should also handle deleted binaries specially (ie, not
-    ####      reinstate sources because of them
 
     # TODO: the UPDATE part is the same as in check_binaries. Merge?
 
@@ -138,7 +131,7 @@ def check_sources(now_date, session):
                               JOIN binaries b ON af_bin.file_id = b.file
                              WHERE b.source = df.source
                                AND af_bin.archive_id = af.archive_id
-                               AND af_bin.last_used > ad.delete_date)
+                               AND (af_bin.last_used IS NULL OR af_bin.last_used > ad.delete_date))
           OR EXISTS (SELECT 1 FROM extra_src_references esr
                          JOIN bin_associations ba ON esr.bin_id = ba.bin
                          JOIN binaries b ON ba.bin = b.id
@@ -180,7 +173,7 @@ def check_files(now_date, session):
     # and then mark the file for deletion.  This probably masks a bug somwhere
     # else but is better than collecting cruft forever
 
-    print "Checking for unused files..."
+    Logger.log(["Checking for unused files..."])
     q = session.execute("""
     UPDATE files_archive_map af
        SET last_used = :last_used
@@ -206,7 +199,7 @@ def clean_binaries(now_date, session):
     # XXX: why doesn't this remove the files here as well? I don't think it
     #      buys anything keeping this separate
 
-    print "Deleting from binaries table... "
+    Logger.log(["Deleting from binaries table... "])
     q = session.execute("""
       DELETE FROM binaries b
        USING files f
@@ -228,7 +221,7 @@ def clean(now_date, archives, max_delete, session):
     count = 0
     size = 0
 
-    print "Cleaning out packages..."
+    Logger.log(["Cleaning out packages..."])
 
     morguedir = cnf.get("Dir::Morgue", os.path.join("Dir::Pool", 'morgue'))
     morguesubdir = cnf.get("Clean-Suites::MorgueSubDir", 'pool')
@@ -244,7 +237,7 @@ def clean(now_date, archives, max_delete, session):
         os.makedirs(dest)
 
     # Delete from source
-    print "Deleting from source table... "
+    Logger.log(["Deleting from source table..."])
     q = session.execute("""
       WITH
       deleted_sources AS (
@@ -278,7 +271,7 @@ def clean(now_date, archives, max_delete, session):
     old_files = session.query(ArchiveFile).filter('files_archive_map.last_used <= (SELECT delete_date FROM archive_delete_date ad WHERE ad.archive_id = files_archive_map.archive_id)').join(Archive)
     if max_delete is not None:
         old_files = old_files.limit(max_delete)
-        print "Limiting removals to %d" % max_delete
+        Logger.log(["Limiting removals to %d" % max_delete])
 
     if archives is not None:
         archive_ids = [ a.archive_id for a in archives ]
@@ -323,7 +316,6 @@ def clean(now_date, archives, max_delete, session):
 
     if count > 0:
         Logger.log(["total", count, utils.size_type(size)])
-        print "Cleaned %d files, %s." % (count, utils.size_type(size))
 
     # Delete entries in files no longer referenced by any archive
     query = """
@@ -338,7 +330,7 @@ def clean(now_date, archives, max_delete, session):
 ################################################################################
 
 def clean_maintainers(now_date, session):
-    print "Cleaning out unused Maintainer entries..."
+    Logger.log(["Cleaning out unused Maintainer entries..."])
 
     # TODO Replace this whole thing with one SQL statement
     q = session.execute("""
@@ -361,12 +353,11 @@ SELECT m.id, m.name FROM maintainer m
 
     if count > 0:
         Logger.log(["total", count])
-        print "Cleared out %d maintainer entries." % (count)
 
 ################################################################################
 
 def clean_fingerprints(now_date, session):
-    print "Cleaning out unused fingerprint entries..."
+    Logger.log(["Cleaning out unused fingerprint entries..."])
 
     # TODO Replace this whole thing with one SQL statement
     q = session.execute("""
@@ -389,7 +380,6 @@ SELECT f.id, f.fingerprint FROM fingerprint f
 
     if count > 0:
         Logger.log(["total", count])
-        print "Cleared out %d fingerprint entries." % (count)
 
 ################################################################################
 
@@ -398,7 +388,7 @@ def clean_empty_directories(session):
     Removes empty directories from pool directories.
     """
 
-    print "Cleaning out empty directories..."
+    Logger.log(["Cleaning out empty directories..."])
 
     count = 0
 
