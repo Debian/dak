@@ -138,7 +138,7 @@ def check_sources(now_date, session):
                               JOIN binaries b ON af_bin.file_id = b.file
                              WHERE b.source = df.source
                                AND af_bin.archive_id = af.archive_id
-                               AND af_bin.last_used > ad.delete_date)
+                               AND (af_bin.last_used IS NULL OR af_bin.last_used > ad.delete_date))
           OR EXISTS (SELECT 1 FROM extra_src_references esr
                          JOIN bin_associations ba ON esr.bin_id = ba.bin
                          JOIN binaries b ON ba.bin = b.id
