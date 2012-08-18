@@ -68,6 +68,10 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
         else:
             changes_prefix = changes_prefix + '.changes'
 
+        # We need to escape "_" as we use it with the LIKE operator (via the
+        # SQLA startwith) later.
+        changes_prefix = changes_prefix.replace("_", r"\_")
+
         uploads = session.query(PolicyQueueUpload).filter_by(policy_queue=srcqueue) \
             .join(PolicyQueueUpload.changes).filter(DBChange.changesname.startswith(changes_prefix)) \
             .order_by(PolicyQueueUpload.source_id)
