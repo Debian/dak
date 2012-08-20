@@ -1188,8 +1188,9 @@ class ArchiveUpload(object):
                 source_component_name = guess
                 break
         if source_component_name is None:
-            raise Exception('Could not guess source component.')
-        source_component = self.session.query(Component).filter_by(component_name=source_component_name).one()
+            source_component = self.session.query(Component).order_by(Component.component_id).first()
+        else:
+            source_component = self.session.query(Component).filter_by(component_name=source_component_name).one()
         source_component_func = lambda source: source_component
 
         db_changes = self._install_changes()
