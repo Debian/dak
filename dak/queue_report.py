@@ -498,16 +498,16 @@ def process_queue(queue, log, rrd_dir):
         age =  Cnf["Queue-Report::Options::Age"]
     if Cnf.has_key("Queue-Report::Options::New"):
     # If we produce html we always have oldest first.
-        direction.append([5,-1,"ao"])
+        direction.append([6,-1,"ao"])
     else:
         if Cnf.has_key("Queue-Report::Options::Sort"):
             for i in Cnf["Queue-Report::Options::Sort"].split(","):
                 if i == "ao":
                     # Age, oldest first.
-                    direction.append([5,-1,age])
+                    direction.append([6,-1,age])
                 elif i == "an":
                     # Age, newest first.
-                    direction.append([5,1,age])
+                    direction.append([6,1,age])
                 elif i == "na":
                     # Name, Ascending.
                     direction.append([0,1,0])
@@ -516,10 +516,10 @@ def process_queue(queue, log, rrd_dir):
                     direction.append([0,-1,0])
                 elif i == "nl":
                     # Notes last.
-                    direction.append([4,1,0])
+                    direction.append([5,1,0])
                 elif i == "nf":
                     # Notes first.
-                    direction.append([4,-1,0])
+                    direction.append([5,-1,0])
     entries.sort(lambda x, y: sortfunc(x, y))
     # Yes, in theory you can add several sort options at the commandline with. But my mind is to small
     # at the moment to come up with a real good sorting function that considers all the sidesteps you
@@ -566,7 +566,7 @@ def process_queue(queue, log, rrd_dir):
     source_count = len(per_source_items)
 
     if Cnf.has_key("Queue-Report::Options::New"):
-        direction.append([5,1,"ao"])
+        direction.append([6,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
     # Output for a html file. First table header. then table_footer.
     # Any line between them is then a <tr> printed from subroutine table_row.

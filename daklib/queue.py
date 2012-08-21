@@ -108,8 +108,7 @@ def prod_maintainer(notes, upload):
     # Here we prepare an editor and get them ready to prod...
     (fd, temp_filename) = utils.temp_filename()
     temp_file = os.fdopen(fd, 'w')
-    for note in notes:
-        temp_file.write(note.comment)
+    temp_file.write("\n\n=====\n\n".join([note.comment for note in notes]))
     temp_file.close()
     editor = os.environ.get("EDITOR","vi")
     answer = 'E'

@@ -26,9 +26,9 @@ from unstable when removing them from testing causes no dependency
 problems. The release team can force a removal from testing if it is
 really needed, please contact them if this should be the case.
 
-We try to close Bugs which have been reported against this package
-automatically.  But please check all old bugs, if they where closed
-correctly or should have been re-assign to another package.
+We try to close bugs which have been reported against this package
+automatically. But please check all old bugs, if they were closed
+correctly or should have been re-assigned to another package.
 
 Thank you for reporting the bug, which will now be closed.  If you
 have further comments please address them to __BUG_NUMBER__@__BUG_SERVER__.
