@@ -534,7 +534,7 @@ def do_new(upload, upload_copy, handler, session):
             missing = edit_overrides (missing, upload, session)
         elif answer == 'M' and not Options["Trainee"]:
             reason = Options.get('Manual-Reject', '') + "\n"
-            reason = reason + "\n".join([n.comment for n in get_new_comments(upload.changes.source, session=session)])
+            reason = reason + "\n\n=====\n\n".join([n.comment for n in get_new_comments(upload.changes.source, session=session)])
             reason = get_reject_reason(reason)
             if reason is not None:
                 Logger.log(["NEW REJECT", upload.changes.changesname])
