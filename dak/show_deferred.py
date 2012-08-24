@@ -27,6 +27,7 @@ import rrdtool
 from debian import deb822
 
 from daklib.dbconn import *
+from daklib.gpg import SignedFile
 from daklib import utils
 from daklib.regexes import re_html_escaping, html_escaping
 
@@ -109,11 +110,12 @@ def table_header():
 def table_footer():
     return '</table><br/><p>non-NEW uploads are <a href="/deferred/">available</a>, see the <a href="ftp://ftp-master.debian.org/pub/UploadQueue/README">UploadQueue-README</a> for more information.</p></center><br/>\n'
 
-def table_row(changesname, delay, changed_by, closes):
+def table_row(changesname, delay, changed_by, closes, fingerprint):
     global row_number
 
     res = '<tr class="%s">'%((row_number%2) and 'odd' or 'even')
-    res += (3*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay,changed_by)))
+    res += (2*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay)))
+    res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html_escape(changed_by), fingerprint)
     res += ('<td valign="top">%s</td>' %
              ''.join(map(lambda close:  '<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
     res += '</tr>\n'
@@ -188,6 +190,8 @@ def get_upload_data(changesfn):
 
     uploader = achanges.get('changed-by')
     uploader = re.sub(r'^\s*(\S.*)\s+<.*>',r'\1',uploader)
+    with utils.open_file(changesfn) as f:
+        fingerprint = SignedFile(f.read(), keyrings=get_active_keyring_paths()).fingerprint
     if Cnf.has_key("Show-Deferred::LinkPath"):
         isnew = 0
         suites = get_suites_source_in(achanges['source'])
@@ -210,7 +214,7 @@ def get_upload_data(changesfn):
                 if os.path.exists(qfn):
                     os.symlink(qfn,lfn)
                     os.chmod(qfn, 0o644)
-    return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes','').split(),achanges, delaydays)
+    return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes','').split(), fingerprint, achanges, delaydays)
 
 def list_uploads(filelist, rrd_dir):
     uploads = map(get_upload_data, filelist)
@@ -219,7 +223,7 @@ def list_uploads(filelist, rrd_dir):
     print header()
     if uploads:
         print table_header()
-        print ''.join(map(lambda x: table_row(*x[1:5]), uploads)).encode('utf-8')
+        print ''.join(map(lambda x: table_row(*x[1:6]), uploads)).encode('utf-8')
         print table_footer()
     else:
         print '<h1>Currently no deferred uploads to Debian</h1>'
@@ -231,13 +235,14 @@ def list_uploads(filelist, rrd_dir):
         try:
             counts = [0]*16
             for u in uploads:
-                counts[u[6]] += 1
+                counts[u[7]] += 1
                 print >> f, "Changes-file: %s"%u[1]
                 fields = """Location: DEFERRED
 Delayed-Until: %s
-Delay-Remaining: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2])
+Delay-Remaining: %s
+Fingerprint: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2], u[5])
                 print >> f, fields
-                encoded = unicode(u[5]).encode('utf-8')
+                encoded = unicode(u[6]).encode('utf-8')
                 print >> f, encoded.rstrip()
                 open(os.path.join(Cnf["Show-Deferred::LinkPath"],u[1]),"w").write(encoded+fields+'\n')
                 print >> f
