@@ -361,11 +361,7 @@ class ArchiveTransaction(object):
         # Uploaders are the maintainer and co-maintainers from the Uploaders field
         db_source.uploaders.append(maintainer)
         if 'Uploaders' in control:
-            def split_uploaders(field):
-                import re
-                for u in re.sub(">[ ]*,", ">\t", field).split("\t"):
-                    yield u.strip()
-
+            from daklib.textutils import split_uploaders
             for u in split_uploaders(control['Uploaders']):
                 db_source.uploaders.append(get_or_set_maintainer(u, session))
         session.flush()

@@ -113,3 +113,8 @@ def fix_maintainer(maintainer):
     return (rfc822_maint, rfc2047_maint, name, email)
 
 ################################################################################
+
+def split_uploaders(field):
+    import re
+    for u in re.sub(">[ ]*,", ">\t", field).split("\t"):
+        yield u.strip()
