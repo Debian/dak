@@ -2,7 +2,7 @@
 
 from base_test import DakTestCase
 
-from daklib.dbconn import split_uploaders
+from daklib.textutils import split_uploaders
 
 import unittest
 

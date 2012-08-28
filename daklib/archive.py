@@ -361,11 +361,7 @@ class ArchiveTransaction(object):
         # Uploaders are the maintainer and co-maintainers from the Uploaders field
         db_source.uploaders.append(maintainer)
         if 'Uploaders' in control:
-            def split_uploaders(field):
-                import re
-                for u in re.sub(">[ ]*,", ">\t", field).split("\t"):
-                    yield u.strip()
-
+            from daklib.textutils import split_uploaders
             for u in split_uploaders(control['Uploaders']):
                 db_source.uploaders.append(get_or_set_maintainer(u, session))
         session.flush()
@@ -1027,8 +1023,9 @@ class ArchiveUpload(object):
             package, version, archext = parts
             arch, ext = archext.split('.', 1)
 
-            rule = automatic_byhand_packages.get(package)
-            if rule is None:
+            try:
+                rule = automatic_byhand_packages.subtree(package)
+            except KeyError:
                 remaining.append(f)
                 continue
 
@@ -1188,8 +1185,9 @@ class ArchiveUpload(object):
                 source_component_name = guess
                 break
         if source_component_name is None:
-            raise Exception('Could not guess source component.')
-        source_component = self.session.query(Component).filter_by(component_name=source_component_name).one()
+            source_component = self.session.query(Component).order_by(Component.component_id).first()
+        else:
+            source_component = self.session.query(Component).filter_by(component_name=source_component_name).one()
         source_component_func = lambda source: source_component
 
         db_changes = self._install_changes()
