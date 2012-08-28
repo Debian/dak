@@ -1023,8 +1023,9 @@ class ArchiveUpload(object):
             package, version, archext = parts
             arch, ext = archext.split('.', 1)
 
-            rule = automatic_byhand_packages.get(package)
-            if rule is None:
+            try:
+                rule = automatic_byhand_packages.subtree(package)
+            except KeyError:
                 remaining.append(f)
                 continue
 
