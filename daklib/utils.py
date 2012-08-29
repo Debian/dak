@@ -40,6 +40,7 @@ import time
 import re
 import email as modemail
 import subprocess
+import ldap
 
 from dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
@@ -1407,6 +1408,19 @@ def gpg_get_key_addresses(fingerprint):
                 addresses.append(m.group(1))
     key_uid_email_cache[fingerprint] = addresses
     return addresses
+
+################################################################################
+
+def get_login_from_ldap(fingerprint):
+    """retrieve login from LDAP linked to a given fingerprint"""
+
+    LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
+    LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
+    l = ldap.open(LDAPServer)
+    l.simple_bind_s('','')
+    Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
+                       '(keyfingerprint=%s)' % fingerprint, ['uid'])
+    return Attrs[0][1]['uid'][0]
 
 ################################################################################
 
