@@ -347,3 +347,19 @@ Canadians: This is a lighthouse. Your call.
 
 <mhy> I wish they wouldnt leave biscuits out, thats just tempting. Damnit.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+<Ganneff> WARNING 2012-08-27 20:16:19 Got unexpected notice from ChanServ on OFTC:
+<Ganneff>         IrcMsg(prefix="ChanServ!services@services.oftc.net", command="NOTICE",
+<Ganneff>         args=('dak', '[#debian-ftp] "hello, have you tried rebooting? Didn\'t
+<Ganneff>         work? Have you tried ignoring it?"')).
+<Ganneff> hihi
+<DktrKranz> actually, we could patch that notice to be "Have you tried to turn it off and on again", a-la-IT-Crowd
+<Ganneff> yeah well, but we dont want them to turn the archive off and on again
+<Ganneff> thats MY job, damn you.
+<Ganneff> i turn off cron
+<Ganneff> and forget to turn it back on
+<Ganneff> me mine my job
+<DktrKranz> may I call you Roy then?
+<Ganneff> may i kick you?
+<Ganneff> im not a geek. im married and have a son. nono geek no.
