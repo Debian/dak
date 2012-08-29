@@ -47,6 +47,7 @@ from daklib.dbconn import DBConn, DBSource, has_new_comment, PolicyQueue, \
                           get_uid_from_fingerprint
 from daklib.policy import PolicyQueueUploadHandler
 from daklib.textutils import fix_maintainer
+from daklib.utils import get_login_from_ldap
 from daklib.dak_exceptions import *
 
 Cnf = None
@@ -318,11 +319,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     print "<span class=\"changed-by\">Changed-By: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
 
     if sponsor:
-        try:
-            (login, domain) = sponsor.split("@", 1)
-            print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(login), utils.html_escape(login))
-        except Exception as e:
-            pass
+        print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(sponsor), utils.html_escape(sponsor))
 
     print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
     print "</td>"
@@ -467,10 +464,14 @@ def process_queue(queue, log, rrd_dir):
 
                 fingerprint = dbc.fingerprint
                 sponsor_name = get_uid_from_fingerprint(fingerprint).name
-                sponsor_email = get_uid_from_fingerprint(fingerprint).uid + "@debian.org"
-                if sponsor_name != maintainer["maintainername"] and sponsor_name != changeby["changedbyname"] and \
-                        sponsor_email != maintainer["maintaineremail"] and sponsor_name != changeby["changedbyemail"]:
-                    sponsor = sponsor_email
+                sponsor_login = get_uid_from_fingerprint(fingerprint).uid
+                if '@' in sponsor_login:
+                    sponsor_login = get_login_from_ldap(fingerprint)
+                if (sponsor_name != maintainer["maintainername"] and
+                  sponsor_name != changeby["changedbyname"] and
+                  sponsor_login + '@debian.org' != maintainer["maintaineremail"] and
+                  sponsor_name != changeby["changedbyemail"]):
+                    sponsor = sponsor_login
 
             for arch in dbc.architecture.split():
                 arches.add(arch)
@@ -548,7 +549,7 @@ def process_queue(queue, log, rrd_dir):
                (name, mail) = changedby.split(":", 1)
                log.write("Changed-By: " + name + " <"+mail+">" + "\n")
             if sponsor:
-               log.write("Sponsored-By: " + "@".join(sponsor.split("@")[:2]) + "\n")
+               log.write("Sponsored-By: %s@debian.org\n" % sponsor)
             log.write("Distribution:")
             for dist in distribution:
                log.write(" " + dist)
