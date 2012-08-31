@@ -47,7 +47,7 @@ from daklib.dbconn import DBConn, DBSource, has_new_comment, PolicyQueue, \
                           get_uid_from_fingerprint
 from daklib.policy import PolicyQueueUploadHandler
 from daklib.textutils import fix_maintainer
-from daklib.utils import get_login_from_ldap
+from daklib.utils import get_logins_from_ldap
 from daklib.dak_exceptions import *
 
 Cnf = None
@@ -416,6 +416,7 @@ def process_queue(queue, log, rrd_dir):
     max_source_len = 0
     max_version_len = 0
     max_arch_len = 0
+    logins = get_logins_from_ldap()
     for i in per_source_items:
         maintainer = {}
         maint=""
@@ -466,7 +467,8 @@ def process_queue(queue, log, rrd_dir):
                 sponsor_name = get_uid_from_fingerprint(fingerprint).name
                 sponsor_login = get_uid_from_fingerprint(fingerprint).uid
                 if '@' in sponsor_login:
-                    sponsor_login = get_login_from_ldap(fingerprint)
+                    if fingerprint in logins:
+                        sponsor_login = logins[fingerprint]
                 if (sponsor_name != maintainer["maintainername"] and
                   sponsor_name != changeby["changedbyname"] and
                   sponsor_login + '@debian.org' != maintainer["maintaineremail"] and

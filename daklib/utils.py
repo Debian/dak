@@ -1411,7 +1411,7 @@ def gpg_get_key_addresses(fingerprint):
 
 ################################################################################
 
-def get_login_from_ldap(fingerprint):
+def get_logins_from_ldap(fingerprint='*'):
     """retrieve login from LDAP linked to a given fingerprint"""
 
     LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
@@ -1419,8 +1419,12 @@ def get_login_from_ldap(fingerprint):
     l = ldap.open(LDAPServer)
     l.simple_bind_s('','')
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
-                       '(keyfingerprint=%s)' % fingerprint, ['uid'])
-    return Attrs[0][1]['uid'][0]
+                       '(keyfingerprint=%s)' % fingerprint,
+                       ['uid', 'keyfingerprint'])
+    login = {}
+    for elem in Attrs:
+        login[elem[1]['keyFingerPrint'][0]] = elem[1]['uid'][0]
+    return login
 
 ################################################################################
 
