@@ -876,7 +876,6 @@ class ArchiveUpload(object):
 
             for chk in (
                     checks.TransitionCheck,
-                    checks.UploadBlockCheck,
                     checks.ACLCheck,
                     checks.NoSourceOnlyCheck,
                     checks.LintianCheck,
@@ -884,6 +883,7 @@ class ArchiveUpload(object):
                 chk().check(self)
 
             for chk in (
+                    checks.ACLCheck,
                     checks.SourceFormatCheck,
                     checks.SuiteArchitectureCheck,
                     checks.VersionCheck,
@@ -1173,15 +1173,21 @@ class ArchiveUpload(object):
         binaries = self.changes.binaries
         byhand = self.changes.byhand_files
 
-        new_queue = self.transaction.session.query(PolicyQueue).filter_by(queue_name='new').one()
-        if len(byhand) > 0:
-            new_queue = self.transaction.session.query(PolicyQueue).filter_by(queue_name='byhand').one()
-        new_suite = new_queue.suite
-
         # we need a suite to guess components
         suites = list(self.final_suites)
         assert len(suites) == 1, "NEW uploads must be to a single suite"
         suite = suites[0]
+
+        # decide which NEW queue to use
+        if suite.new_queue is None:
+            new_queue = self.transaction.session.query(PolicyQueue).filter_by(queue_name='new').one()
+        else:
+            new_queue = suite.new_queue
+        if len(byhand) > 0:
+            # There is only one global BYHAND queue
+            new_queue = self.transaction.session.query(PolicyQueue).filter_by(queue_name='byhand').one()
+        new_suite = new_queue.suite
+
 
         def binary_component_func(binary):
             return self._binary_component(suite, binary, only_overrides=False)
