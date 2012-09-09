@@ -42,7 +42,6 @@ lintian:
     - binary-file-compressed-with-upx
     - file-in-usr-marked-as-conffile
     - build-info-in-binary-control-file-section
-    - debian-control-with-duplicate-fields
     - not-allowed-control-file
     - control-file-has-bad-permissions
     - control-file-has-bad-owner
@@ -52,7 +51,6 @@ lintian:
     - copyright-file-compressed
     - copyright-file-is-symlink
     - usr-share-doc-symlink-to-foreign-package
-    - old-style-copyright-file
     - copyright-refers-to-incorrect-directory
     - package-has-no-description
     - description-synopsis-is-empty
@@ -73,7 +71,6 @@ lintian:
     - uploader-name-missing
     - uploader-address-malformed
     - uploader-address-is-on-localhost
-    - no-source-field
     - source-field-does-not-match-pkg-name
     - symlink-has-too-many-up-segments
     - debian-rules-not-a-makefile
