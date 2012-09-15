@@ -364,16 +364,14 @@ class ACLCheck(Check):
                 raise Reject("Uploading byhand packages is not allowed for DMs.")
 
         # Reject NEW packages
-        distributions = upload.changes.distributions
-        assert len(distributions) == 1
-        suite = session.query(Suite).filter_by(suite_name=distributions[0]).one()
-        overridesuite = suite
-        if suite.overridesuite is not None:
-            overridesuite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
-        if upload._check_new(overridesuite):
+        if upload.new:
             raise Reject('Uploading NEW packages is not allowed for DMs.')
 
         # Check DM-Upload-Allowed
+        suites = upload.final_suites
+        assert len(suites) == 1
+        suite = list(suites)[0]
+
         last_suites = ['unstable', 'experimental']
         if suite.suite_name.endswith('-backports'):
             last_suites = [suite.suite_name]
@@ -405,7 +403,7 @@ class ACLCheck(Check):
         # via buildds (but people who try this should not be DMs).
         for binary_name in upload.changes.binary_names:
             binaries = session.query(DBBinary).join(DBBinary.source) \
-                .join(DBBinary.suites).filter(Suite.suite_name.in_(upload.changes.distributions)) \
+                .filter(DBBinary.suites.contains(suite)) \
                 .filter(DBBinary.package == binary_name)
             for binary in binaries:
                 if binary.source.source != upload.changes.changes['Source']:
