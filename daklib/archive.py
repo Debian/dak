@@ -595,6 +595,11 @@ class ArchiveUpload(object):
         @type: bool
         """
 
+        self._checked = False
+        """checks passes. set by C{check}
+        @type: bool
+        """
+
         self._new_queue = self.session.query(PolicyQueue).filter_by(queue_name='new').one()
         self._new = self._new_queue.suite
 
@@ -867,6 +872,8 @@ class ArchiveUpload(object):
                 self.reject_reasons.append('No target suite found. Please check your target distribution and that you uploaded to the right archive.')
                 return False
 
+            self.final_suites = final_suites
+
             for chk in (
                     checks.TransitionCheck,
                     checks.UploadBlockCheck,
@@ -887,7 +894,7 @@ class ArchiveUpload(object):
             if len(self.reject_reasons) != 0:
                 return False
 
-            self.final_suites = final_suites
+            self._checked = True
             return True
         except checks.Reject as e:
             self.reject_reasons.append(unicode(e))
@@ -1004,6 +1011,7 @@ class ArchiveUpload(object):
         assert len(self.reject_reasons) == 0
         assert self.changes.valid_signature
         assert self.final_suites is not None
+        assert self._checked
 
         byhand = self.changes.byhand_files
         if len(byhand) == 0:
@@ -1115,6 +1123,7 @@ class ArchiveUpload(object):
         assert len(self.reject_reasons) == 0
         assert self.changes.valid_signature
         assert self.final_suites is not None
+        assert self._checked
         assert not self.new
 
         db_changes = self._install_changes()
