@@ -850,26 +850,31 @@ class ArchiveUpload(object):
         assert self.changes.valid_signature
 
         try:
+            # Validate signatures and hashes before we do any real work:
             for chk in (
                     checks.SignatureCheck,
                     checks.ChangesCheck,
-                    checks.TransitionCheck,
-                    checks.UploadBlockCheck,
                     checks.HashesCheck,
                     checks.SourceCheck,
                     checks.BinaryCheck,
                     checks.BinaryTimestampCheck,
-                    checks.ACLCheck,
                     checks.SingleDistributionCheck,
-                    checks.NoSourceOnlyCheck,
-                    checks.LintianCheck,
                     ):
                 chk().check(self)
 
             final_suites = self._final_suites()
             if len(final_suites) == 0:
-                self.reject_reasons.append('Ended with no suite to install to.')
+                self.reject_reasons.append('No target suite found. Please check your target distribution and that you uploaded to the right archive.')
                 return False
+
+            for chk in (
+                    checks.TransitionCheck,
+                    checks.UploadBlockCheck,
+                    checks.ACLCheck,
+                    checks.NoSourceOnlyCheck,
+                    checks.LintianCheck,
+                    ):
+                chk().check(self)
 
             for chk in (
                     checks.SourceFormatCheck,
