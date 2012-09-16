@@ -178,12 +178,7 @@ def main():
         changes.append((db_uid_byid.get(u, [None])[0], "Removed key: %s" % (f)))
         session.execute("""UPDATE fingerprint
                               SET keyring = NULL,
-                                  source_acl_id = NULL,
-                                  binary_acl_id = NULL,
-                                  binary_reject = TRUE
                             WHERE id = :fprid""", {'fprid': fid})
-
-        session.execute("""DELETE FROM binary_acl_map WHERE fingerprint_id = :fprid""", {'fprid': fid})
 
     # For the keys in this keyring, add/update any fingerprints that've
     # changed.
@@ -208,18 +203,8 @@ def main():
             if newuid:
                 fp.uid_id = newuid
 
-            fp.binary_acl_id = keyring.default_binary_acl_id
-            fp.source_acl_id = keyring.default_source_acl_id
-            fp.default_binary_reject = keyring.default_binary_reject
             session.add(fp)
             session.flush()
-
-            for k in keyring.keyring_acl_map:
-                ba = BinaryACLMap()
-                ba.fingerprint_id = fp.fingerprint_id
-                ba.architecture_id = k.architecture_id
-                session.add(ba)
-                session.flush()
 
         else:
             if newuid and olduid != newuid and olduid == -1:
@@ -245,28 +230,13 @@ def main():
 
                 # Only change the keyring if it won't result in a loss of permissions
                 if movekey:
-                    session.execute("""DELETE FROM binary_acl_map WHERE fingerprint_id = :fprid""", {'fprid': oldfid})
-
                     session.execute("""UPDATE fingerprint
-                                          SET keyring = :keyring,
-                                              source_acl_id = :source_acl_id,
-                                              binary_acl_id = :binary_acl_id,
-                                              binary_reject = :binary_reject
+                                          SET keyring = :keyring
                                         WHERE id = :fpr""",
                                     {'keyring': keyring.keyring_id,
-                                     'source_acl_id': keyring.default_source_acl_id,
-                                     'binary_acl_id': keyring.default_binary_acl_id,
-                                     'binary_reject': keyring.default_binary_reject,
                                      'fpr': oldfid})
 
                     session.flush()
-
-                    for k in keyring.keyring_acl_map:
-                        ba = BinaryACLMap()
-                        ba.fingerprint_id = oldfid
-                        ba.architecture_id = k.architecture_id
-                        session.add(ba)
-                        session.flush()
 
                 else:
                     print "Key %s exists in both %s and %s keyrings. Not demoting." % (f,

@@ -369,6 +369,20 @@ validator = Validator()
 
 ################################################################################
 
+class ACL(ORMObject):
+    def __repr__(self):
+        return "<ACL {0}>".format(self.name)
+
+__all__.append('ACL')
+
+class ACLPerSource(ORMObject):
+    def __repr__(self):
+        return "<ACLPerSource acl={0} fingerprint={1} source={2} reason={3}>".format(self.acl.name, self.fingerprint.fingerprint, self.source, self.reason)
+
+__all__.append('ACLPerSource')
+
+################################################################################
+
 class Architecture(ORMObject):
     def __init__(self, arch_string = None, description = None):
         self.arch_string = arch_string
@@ -639,28 +653,6 @@ def get_component_by_package_suite(package, suite_list, arch_list=[], session=No
         return binary.poolfile.component.component_name
 
 __all__.append('get_component_by_package_suite')
-
-################################################################################
-
-class BinaryACL(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<BinaryACL %s>' % self.binary_acl_id
-
-__all__.append('BinaryACL')
-
-################################################################################
-
-class BinaryACLMap(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<BinaryACLMap %s>' % self.binary_acl_map_id
-
-__all__.append('BinaryACLMap')
 
 ################################################################################
 
@@ -1362,17 +1354,6 @@ def get_primary_keyring_path(session=None):
         return None
 
 __all__.append('get_primary_keyring_path')
-
-################################################################################
-
-class KeyringACLMap(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<KeyringACLMap %s>' % self.keyring_acl_map_id
-
-__all__.append('KeyringACLMap')
 
 ################################################################################
 
@@ -2157,17 +2138,6 @@ __all__.append('import_metadata_into_db')
 
 ################################################################################
 
-class SourceACL(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<SourceACL %s>' % self.source_acl_id
-
-__all__.append('SourceACL')
-
-################################################################################
-
 class SrcFormat(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -2417,17 +2387,6 @@ __all__.append('get_uid_from_fingerprint')
 
 ################################################################################
 
-class UploadBlock(object):
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __repr__(self):
-        return '<UploadBlock %s (%s)>' % (self.source, self.upload_block_id)
-
-__all__.append('UploadBlock')
-
-################################################################################
-
 class MetadataKey(ORMObject):
     def __init__(self, key = None):
         self.key = key
@@ -2551,14 +2510,16 @@ class DBConn(object):
 
     def __setuptables(self):
         tables = (
+            'acl',
+            'acl_architecture_map',
+            'acl_fingerprint_map',
+            'acl_per_source',
             'architecture',
             'archive',
             'bin_associations',
             'bin_contents',
             'binaries',
             'binaries_metadata',
-            'binary_acl',
-            'binary_acl_map',
             'build_queue',
             'changelogs_text',
             'changes',
@@ -2571,7 +2532,6 @@ class DBConn(object):
             'files_archive_map',
             'fingerprint',
             'keyrings',
-            'keyring_acl_map',
             'maintainer',
             'metadata_keys',
             'new_comments',
@@ -2585,18 +2545,17 @@ class DBConn(object):
             'priority',
             'section',
             'source',
-            'source_acl',
             'source_metadata',
             'src_associations',
             'src_contents',
             'src_format',
             'src_uploaders',
             'suite',
+            'suite_acl_map',
             'suite_architectures',
             'suite_build_queue_copy',
             'suite_src_formats',
             'uid',
-            'upload_blocks',
             'version_check',
         )
 
@@ -2639,6 +2598,20 @@ class DBConn(object):
                    backref=backref('architectures', order_by=self.tbl_architecture.c.arch_string))),
             extension = validator)
 
+        mapper(ACL, self.tbl_acl,
+               properties = dict(
+                architectures = relation(Architecture, secondary=self.tbl_acl_architecture_map, collection_class=set),
+                fingerprints = relation(Fingerprint, secondary=self.tbl_acl_fingerprint_map, collection_class=set),
+                match_keyring = relation(Keyring, primaryjoin=(self.tbl_acl.c.match_keyring_id == self.tbl_keyrings.c.id)),
+                per_source = relation(ACLPerSource, collection_class=set),
+                ))
+
+        mapper(ACLPerSource, self.tbl_acl_per_source,
+               properties = dict(
+                acl = relation(ACL),
+                fingerprint = relation(Fingerprint),
+                ))
+
         mapper(Archive, self.tbl_archive,
                properties = dict(archive_id = self.tbl_archive.c.id,
                                  archive_name = self.tbl_archive.c.name))
@@ -2676,14 +2649,6 @@ class DBConn(object):
                                      collection_class=attribute_mapped_collection('key'))),
                 extension = validator)
 
-        mapper(BinaryACL, self.tbl_binary_acl,
-               properties = dict(binary_acl_id = self.tbl_binary_acl.c.id))
-
-        mapper(BinaryACLMap, self.tbl_binary_acl_map,
-               properties = dict(binary_acl_map_id = self.tbl_binary_acl_map.c.id,
-                                 fingerprint = relation(Fingerprint, backref="binary_acl_map"),
-                                 architecture = relation(Architecture)))
-
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
                                  component_name = self.tbl_component.c.name),
@@ -2717,8 +2682,7 @@ class DBConn(object):
                                  uid = relation(Uid),
                                  keyring_id = self.tbl_fingerprint.c.keyring,
                                  keyring = relation(Keyring),
-                                 source_acl = relation(SourceACL),
-                                 binary_acl = relation(BinaryACL)),
+                                 acl = relation(ACL)),
                extension = validator)
 
         mapper(Keyring, self.tbl_keyrings,
@@ -2737,11 +2701,6 @@ class DBConn(object):
                                  changedby = self.tbl_changes.c.changedby,
                                  date = self.tbl_changes.c.date,
                                  version = self.tbl_changes.c.version))
-
-        mapper(KeyringACLMap, self.tbl_keyring_acl_map,
-               properties = dict(keyring_acl_map_id = self.tbl_keyring_acl_map.c.id,
-                                 keyring = relation(Keyring, backref="keyring_acl_map"),
-                                 architecture = relation(Architecture)))
 
         mapper(Maintainer, self.tbl_maintainer,
                properties = dict(maintainer_id = self.tbl_maintainer.c.id,
@@ -2821,9 +2780,6 @@ class DBConn(object):
                                      collection_class=attribute_mapped_collection('key'))),
                extension = validator)
 
-        mapper(SourceACL, self.tbl_source_acl,
-               properties = dict(source_acl_id = self.tbl_source_acl.c.id))
-
         mapper(SrcFormat, self.tbl_src_format,
                properties = dict(src_format_id = self.tbl_src_format.c.id,
                                  format_name = self.tbl_src_format.c.format_name))
@@ -2831,22 +2787,19 @@ class DBConn(object):
         mapper(Suite, self.tbl_suite,
                properties = dict(suite_id = self.tbl_suite.c.id,
                                  policy_queue = relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.policy_queue_id == self.tbl_policy_queue.c.id)),
+                                 new_queue = relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.new_queue_id == self.tbl_policy_queue.c.id)),
                                  copy_queues = relation(BuildQueue,
                                      secondary=self.tbl_suite_build_queue_copy),
                                  srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
                                      backref=backref('suites', lazy='dynamic')),
-                                 archive = relation(Archive, backref='suites')),
+                                 archive = relation(Archive, backref='suites'),
+                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set)),
                 extension = validator)
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
                                  fingerprint = relation(Fingerprint)),
                extension = validator)
-
-        mapper(UploadBlock, self.tbl_upload_blocks,
-               properties = dict(upload_block_id = self.tbl_upload_blocks.c.id,
-                                 fingerprint = relation(Fingerprint, backref="uploadblocks"),
-                                 uid = relation(Uid, backref="uploadblocks")))
 
         mapper(BinContents, self.tbl_bin_contents,
             properties = dict(

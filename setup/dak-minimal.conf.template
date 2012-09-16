@@ -37,6 +37,7 @@ Dinstall
 
 Dir
 {
+  Base "__DAKBASE__";
   Root "__DAKBASE__/ftp/";
   Pool "__DAKBASE__/ftp/pool/";
   Templates "__DAKBASE__/templates/";

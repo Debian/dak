@@ -143,7 +143,9 @@ def announce_accept(upload):
             message = TemplateSubst(my_subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
             send_mail(message)
 
-    if accepted_to_real_suite and upload.sourceful and cnf.find_b('Dinstall::CloseBugs'):
+    close_bugs_default = cnf.find_b('Dinstall::CloseBugs')
+    close_bugs = any(s.close_bugs if s.close_bugs is not None else close_bugs_default for s in upload.suites)
+    if accepted_to_real_suite and upload.sourceful and close_bugs:
         for bug in upload.bugs:
             my_subst = subst.copy()
             my_subst['__BUG_NUMBER__'] = str(bug)
