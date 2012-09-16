@@ -166,7 +166,7 @@ def do_pkg(upload_id):
     htmlfile = os.path.join(cnf['Show-New::HTMLPath'], htmlname)
 
     # Have we already processed this?
-    if False and os.path.exists(htmlfile) and \
+    if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > time.mktime(changes.created.timetuple()):
             with open(htmlfile, "r") as fd:
                 if fd.read() != timeout_str:
