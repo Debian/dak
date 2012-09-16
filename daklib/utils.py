@@ -1444,11 +1444,24 @@ def clean_symlink (src, dest, root):
 def temp_filename(directory=None, prefix="dak", suffix="", mode=None, group=None):
     """
     Return a secure and unique filename by pre-creating it.
-    If 'directory' is non-null, it will be the directory the file is pre-created in.
-    If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
-    If 'suffix' is non-null, the filename will end with it.
 
-    Returns a pair (fd, name).
+    @type directory: str
+    @param directory: If non-null it will be the directory the file is pre-created in.
+
+    @type prefix: str
+    @param prefix: The filename will be prefixed with this string
+
+    @type suffix: str
+    @param suffix: The filename will end with this string
+
+    @type mode: str
+    @param mode: If set the file will get chmodded to those permissions
+
+    @type group: str
+    @param group: If set the file will get chgrped to the specified group.
+
+    @rtype: list
+    @return: Returns a pair (fd, name)
     """
 
     (tfd, tfname) = tempfile.mkstemp(suffix, prefix, directory)
@@ -1463,11 +1476,25 @@ def temp_filename(directory=None, prefix="dak", suffix="", mode=None, group=None
 def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
     """
     Return a secure and unique directory by pre-creating it.
-    If 'parent' is non-null, it will be the directory the directory is pre-created in.
-    If 'prefix' is non-null, the filename will be prefixed with it, default is dak.
-    If 'suffix' is non-null, the filename will end with it.
 
-    Returns a pathname to the new directory
+    @type parent: str
+    @param parent: If non-null it will be the directory the directory is pre-created in.
+
+    @type prefix: str
+    @param prefix: The filename will be prefixed with this string
+
+    @type suffix: str
+    @param suffix: The filename will end with this string
+
+    @type mode: str
+    @param mode: If set the file will get chmodded to those permissions
+
+    @type group: str
+    @param group: If set the file will get chgrped to the specified group.
+
+    @rtype: list
+    @return: Returns a pair (fd, name)
+
     """
 
     (tfd, tfname) = tempfile.mkdtemp(suffix, prefix, parent)
