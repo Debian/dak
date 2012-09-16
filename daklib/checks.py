@@ -354,6 +354,10 @@ class ACLCheck(Check):
     """Check the uploader is allowed to upload the packages in .changes"""
 
     def _does_hijack(self, session, upload, suite):
+        # Try to catch hijacks.
+        # This doesn't work correctly. Uploads to experimental can still
+        # "hijack" binaries from unstable. Also one can hijack packages
+        # via buildds (but people who try this should not be DMs).
         for binary_name in upload.changes.binary_names:
             binaries = session.query(DBBinary).join(DBBinary.source) \
                 .filter(DBBinary.suites.contains(suite)) \
