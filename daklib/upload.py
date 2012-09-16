@@ -270,6 +270,13 @@ class Changes(object):
         return self._source
 
     @property
+    def source_name(self):
+        """source package name
+        @type: str
+        """
+        return re_field_source.match(self.changes['Source']).group('package')
+
+    @property
     def binaries(self):
         """included binary packages
         @type: list of L{daklib.upload.Binary}
