@@ -1503,7 +1503,8 @@ def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
     if mode:
         os.chmod(tfname, mode)
     if group:
-        os.chown(tfname, -1, group)
+        gid = grp.getgrnam(group).gr_gid
+        os.chown(tfname, -1, gid)
     return tfname
 
 ################################################################################
