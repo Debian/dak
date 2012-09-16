@@ -27,6 +27,7 @@ import datetime
 import email.Header
 import os
 import pwd
+import grp
 import select
 import socket
 import shutil
@@ -1468,7 +1469,8 @@ def temp_filename(directory=None, prefix="dak", suffix="", mode=None, group=None
     if mode:
         os.chmod(tfname, mode)
     if group:
-        os.chown(tfname, -1, group)
+        gid = grp.getgrnam(group).gr_gid
+        os.chown(tfname, -1, gid)
     return (tfd, tfname)
 
 ################################################################################
