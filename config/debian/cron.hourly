@@ -29,7 +29,7 @@ fi
 dak queue-report -n > $webdir/new.html
 dak queue-report -8 -d new,byhand,stable-new,oldstable-new -r $webdir/stat
 dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
-dak graph -n new,byhand,p-u-new,o-p-u-new,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
+dak graph -n new,byhand,stable-new,oldstable-new,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
 
 cd $webdir
 cat removals-20*.txt > removals-full.txt
