@@ -566,7 +566,7 @@ class LintianCheck(Check):
         except yaml.YAMLError as msg:
             raise Exception('Could not read lintian tags file {0}, YAML error: {1}'.format(tagfile, msg))
 
-        fd, temp_filename = utils.temp_filename()
+        fd, temp_filename = utils.temp_filename(mode=0o644)
         temptagfile = os.fdopen(fd, 'w')
         for tags in lintiantags.itervalues():
             for tag in tags:
@@ -575,8 +575,10 @@ class LintianCheck(Check):
 
         changespath = os.path.join(upload.directory, changes.filename)
         try:
-            # FIXME: no shell
-            cmd = "lintian --show-overrides --tags-from-file {0} {1}".format(temp_filename, changespath)
+            if cnf.unpribgroup:
+                cmd = "sudo -H -u {0} -- /usr/bin/lintian --show-overrides --tags-from-file {1} {2}".format(cnf.unprivgroup, temp_filename, changespath)
+            else:
+                cmd = "/usr/bin/lintian --show-overrides --tags-from-file {0} {1}".format(temp_filename, changespath)
             result, output = commands.getstatusoutput(cmd)
         finally:
             os.unlink(temp_filename)

@@ -1441,7 +1441,7 @@ def clean_symlink (src, dest, root):
 
 ################################################################################
 
-def temp_filename(directory=None, prefix="dak", suffix=""):
+def temp_filename(directory=None, prefix="dak", suffix="", mode=None, group=None):
     """
     Return a secure and unique filename by pre-creating it.
     If 'directory' is non-null, it will be the directory the file is pre-created in.
@@ -1451,11 +1451,16 @@ def temp_filename(directory=None, prefix="dak", suffix=""):
     Returns a pair (fd, name).
     """
 
-    return tempfile.mkstemp(suffix, prefix, directory)
+    (tfd, tfname) = tempfile.mkstemp(suffix, prefix, directory)
+    if mode:
+        os.chmod(tfname, mode)
+    if group:
+        os.chown(tfname, -1, group)
+    return (tfd, tfname)
 
 ################################################################################
 
-def temp_dirname(parent=None, prefix="dak", suffix=""):
+def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
     """
     Return a secure and unique directory by pre-creating it.
     If 'parent' is non-null, it will be the directory the directory is pre-created in.
@@ -1465,7 +1470,12 @@ def temp_dirname(parent=None, prefix="dak", suffix=""):
     Returns a pathname to the new directory
     """
 
-    return tempfile.mkdtemp(suffix, prefix, parent)
+    (tfd, tfname) = tempfile.mkdtemp(suffix, prefix, parent)
+    if mode:
+        os.chmod(tfname, mode)
+    if group:
+        os.chown(tfname, -1, group)
+    return (tfd, tfname)
 
 ################################################################################
 

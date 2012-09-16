@@ -618,11 +618,12 @@ class ArchiveUpload(object):
         cnf = Config()
         session = self.transaction.session
 
-        self.directory = tempfile.mkdtemp(dir=cnf.get('Dir::TempPath'))
+        (None, self.directory) = utils.temp_dirname(parent=cnf.get('Dir::TempPath'),
+                                                    mode=0o2750, cnf.unprivgroup)
         with FilesystemTransaction() as fs:
             src = os.path.join(self.original_directory, self.original_changes.filename)
             dst = os.path.join(self.directory, self.original_changes.filename)
-            fs.copy(src, dst)
+            fs.copy(src, dst, mode=0o640)
 
             self.changes = upload.Changes(self.directory, self.original_changes.filename, self.keyrings)
 
@@ -631,7 +632,7 @@ class ArchiveUpload(object):
                 dst = os.path.join(self.directory, f.filename)
                 if not os.path.exists(src):
                     continue
-                fs.copy(src, dst)
+                fs.copy(src, dst, mode=0o640)
 
             source = self.changes.source
             if source is not None:

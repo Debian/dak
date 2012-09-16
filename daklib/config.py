@@ -119,7 +119,8 @@ class Config(object):
         """
         for field in [('db_revision',      None,       int),
                       ('defaultsuitename', 'unstable', str),
-                      ('exportpath',       '',         str)
+                      ('exportpath',       '',         str),
+                      ('unprivgroup',      None,       str)
                       ]:
             setattr(self, 'get_%s' % field[0], lambda s=None, x=field[0], y=field[1], z=field[2]: self.get_db_value(x, y, z))
             setattr(Config, '%s' % field[0], property(fget=getattr(self, 'get_%s' % field[0])))
@@ -133,4 +134,3 @@ class Config(object):
             return get_suite(suitename)
 
     defaultsuite = property(get_defaultsuite)
-
