@@ -405,6 +405,7 @@ class ACLCheck(Check):
         acl_per_source = session.query(ACLPerSource).filter_by(acl=acl, fingerprint=upload.fingerprint, source=source_name).first()
         if acl.allow_per_source:
             # XXX: Drop DMUA part here and switch to new implementation.
+            # XXX: Send warning mail once users can set the new DMUA flag
             dmua_status, dmua_reason = self._check_dmua(upload)
             if not dmua_status:
                 return False, dmua_reason
