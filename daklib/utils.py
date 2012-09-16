@@ -1497,12 +1497,12 @@ def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
 
     """
 
-    (tfd, tfname) = tempfile.mkdtemp(suffix, prefix, parent)
+    tfname = tempfile.mkdtemp(suffix, prefix, parent)
     if mode:
         os.chmod(tfname, mode)
     if group:
         os.chown(tfname, -1, group)
-    return (tfd, tfname)
+    return tfname
 
 ################################################################################
 

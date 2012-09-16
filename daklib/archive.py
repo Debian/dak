@@ -624,7 +624,7 @@ class ArchiveUpload(object):
         session = self.transaction.session
 
         self.directory = utils.temp_dirname(parent=cnf.get('Dir::TempPath'),
-                                            mode=0o2750, group=cnf.unprivgroup)[1]
+                                            mode=0o2750, group=cnf.unprivgroup)
         with FilesystemTransaction() as fs:
             src = os.path.join(self.original_directory, self.original_changes.filename)
             dst = os.path.join(self.directory, self.original_changes.filename)
