@@ -57,9 +57,9 @@ class _FilesystemCopyAction(_FilesystemAction):
             try:
                 os.link(source, self.destination)
             except OSError:
-                shutil.copy2(source, self.destination)
+                shutil.copy(source, self.destination)
         else:
-            shutil.copy2(source, self.destination)
+            shutil.copy(source, self.destination)
 
         self.need_cleanup = True
         if mode is not None:
