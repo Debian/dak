@@ -122,7 +122,7 @@ class FilesystemTransaction(object):
     def __init__(self):
         self.actions = []
 
-    def copy(self, source, destination, link=True, symlink=False, mode=None):
+    def copy(self, source, destination, link=False, symlink=False, mode=None):
         """copy C{source} to C{destination}
 
         @type  source: str
