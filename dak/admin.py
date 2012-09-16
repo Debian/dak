@@ -584,9 +584,9 @@ def show_keyring(command):
     if mode == 'list-all':
         pass
     elif mode == 'list-binary':
-        q = q.filter(Keyring.default_source_acl_id == None)
+        q = q.join(Keyring.acl).filter(ACL.allow_source == False)
     elif mode == 'list-source':
-        q = q.filter(Keyring.default_source_acl_id != None)
+        q = q.join(Keyring.acl).filter(ACL.allow_source == True)
     else:
         die("E: keyring command unknown")
 

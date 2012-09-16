@@ -2687,7 +2687,8 @@ class DBConn(object):
 
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
-                                 keyring_id = self.tbl_keyrings.c.id))
+                                 keyring_id = self.tbl_keyrings.c.id,
+                                 acl = relation(ACL, primaryjoin=(self.tbl_keyrings.c.acl_id == self.tbl_acl.c.id)))),
 
         mapper(DBChange, self.tbl_changes,
                properties = dict(change_id = self.tbl_changes.c.id,
