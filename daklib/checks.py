@@ -389,9 +389,9 @@ class ACLCheck(Check):
                 uploaded_arches = set(upload.changes.architectures)
                 uploaded_arches.discard('source')
                 allowed_arches = set(a.arch_string for a in acl.architectures)
-                for a in uploaded_arches:
-                    if a not in allowed_arches:
-                        return False, "uploads for architecture {0} are not allowed".format(a)
+                forbidden_arches = uploaded_arches - allowed_arches
+                if len(forbidden_arches) != 0:
+                    return False, "uploads for architecture(s) {0} are not allowed".format(", ".join(forbidden_arches))
         if not acl.allow_hijack:
             for suite in upload.final_suites:
                 does_hijack, hijacked_binary, hijacked_from = self._does_hijack(session, upload, suite)
