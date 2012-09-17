@@ -45,6 +45,12 @@ class Reject(Exception):
     """exception raised by failing checks"""
     pass
 
+class RejectStupidMaintainerException(Exception):
+    """exception raised by failing the external hashes check"""
+
+    def __str__(self):
+        return "'%s' has mismatching %s from the external files db ('%s' [current] vs '%s' [external])" % self.args[:4]
+
 class Check(object):
     """base class for checks
 
@@ -162,10 +168,47 @@ class HashesCheck(Check):
         changes = upload.changes
         for f in changes.files.itervalues():
             f.check(upload.directory)
-            source = changes.source
+        source = changes.source
         if source is not None:
             for f in source.files.itervalues():
                 f.check(upload.directory)
+
+class ExternalHashesCheck(Check):
+    """Checks hashes in .changes and .dsc against an external database."""
+    def check_single(self, session, f):
+        q = session.execute("SELECT size, md5sum, sha1sum, sha256sum FROM external_files WHERE filename LIKE '%%/%s'" % f.filename)
+        (ext_size, ext_md5sum, ext_sha1sum, ext_sha256sum) = q.fetchone() or (None, None, None, None)
+
+        if not ext_size:
+            return
+
+        if ext_size != f.size:
+            raise RejectStupidMaintainerException(f.filename, 'size', f.size, ext_size)
+
+        if ext_md5sum != f.md5sum:
+            raise RejectStupidMaintainerException(f.filename, 'md5sum', f.md5sum, ext_md5sum)
+
+        if ext_sha1sum != f.sha1sum:
+            raise RejectStupidMaintainerException(f.filename, 'sha1sum', f.sha1sum, ext_sha1sum)
+
+        if ext_sha256sum != f.sha256sum:
+            raise RejectStupidMaintainerException(f.filename, 'sha256sum', f.sha256sum, ext_sha256sum)
+
+    def check(self, upload):
+        cnf = Config()
+
+        if not cnf.use_extfiles:
+            return
+
+        session = upload.session
+        changes = upload.changes
+
+        for f in changes.files.itervalues():
+            self.check_single(session, f)
+        source = changes.source
+        if source is not None:
+            for f in source.files.itervalues():
+                self.check_single(session, f)
 
 class BinaryCheck(Check):
     """Check binary packages for syntax errors."""
