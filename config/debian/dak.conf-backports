@@ -1,0 +1,15 @@
+Dir {
+  Log "/srv/ftp-master.debian.org/log/backports/";
+  Lock "/srv/ftp-master.debian.org/lock/backports/";
+};
+
+Rm {
+  LogFile "/srv/backports-web.debian.org/underlay/removals.txt";
+  LogFile822 "/srv/backports-web.debian.org/underlay/removals.822";
+};
+
+Process-New
+{
+  DinstallLockFile "/srv/ftp-master.debian.org/lock/backports/processnew.lock";
+  LockDir "/srv/ftp-master.debian.org/lock/backports/new/";
+};

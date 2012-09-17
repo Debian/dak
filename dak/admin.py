@@ -556,6 +556,8 @@ def show_config(command):
             print "PGPORT=%s" % cnf["DB::Port"]
             e.append('PGPORT')
         print "export " + " ".join(e)
+    elif mode == 'get':
+        print cnf.get(args[2])
     else:
         session = DBConn().session()
         try:

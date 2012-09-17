@@ -87,9 +87,13 @@ def _subst_for_upload(upload):
 
     return subst
 
+def _whitelists(upload):
+    return [ s.mail_whitelist for s in upload.suites ]
+
 def announce_reject(upload, reason, rejected_by=None):
     cnf = Config()
     subst = _subst_for_upload(upload)
+    whitelists = _whitelists(upload)
 
     automatic = rejected_by is None
 
@@ -103,11 +107,12 @@ def announce_reject(upload, reason, rejected_by=None):
         subst['__BCC__'] = '{0}\nBcc: {1}'.format(subst['__BCC__'], cnf['Dinstall::MyEmailAddress'])
 
     message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'queue.rejected'))
-    send_mail(message)
+    send_mail(message, whitelists=whitelists)
 
 def announce_accept(upload):
     cnf = Config()
     subst = _subst_for_upload(upload)
+    whitelists = _whitelists(upload)
 
     accepted_to_real_suite = any(suite.policy_queue is None or suite in upload.from_policy_suites for suite in upload.suites)
 
@@ -121,7 +126,7 @@ def announce_accept(upload):
     subst['__SUITE__'] = ', '.join(suite_names) or '(none)'
 
     message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.accepted'))
-    send_mail(message)
+    send_mail(message, whitelists=whitelists)
 
     if accepted_to_real_suite and upload.sourceful:
         # senf mail to announce lists and tracking server
@@ -141,7 +146,7 @@ def announce_accept(upload):
             my_subst['__ANNOUNCE_LIST_ADDRESS__'] = announce_list_address
 
             message = TemplateSubst(my_subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.announce'))
-            send_mail(message)
+            send_mail(message, whitelists=whitelists)
 
     close_bugs_default = cnf.find_b('Dinstall::CloseBugs')
     close_bugs = any(s.close_bugs if s.close_bugs is not None else close_bugs_default for s in upload.suites)
@@ -151,11 +156,12 @@ def announce_accept(upload):
             my_subst['__BUG_NUMBER__'] = str(bug)
 
             message = TemplateSubst(my_subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.bug-close'))
-            send_mail(message)
+            send_mail(message, whitelists=whitelists)
 
 def announce_new(upload):
     cnf = Config()
     subst = _subst_for_upload(upload)
+    whitelists = _whitelists(upload)
 
     message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.new'))
-    send_mail(message)
+    send_mail(message, whitelists=whitelists)

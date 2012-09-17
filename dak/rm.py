@@ -210,6 +210,7 @@ def main ():
 
     # Additional suite checks
     suite_ids_list = []
+    whitelists = []
     suites = utils.split_args(Options["Suite"])
     suites_list = utils.join_with_commas_and(suites)
     if not Options["No-Action"]:
@@ -217,6 +218,7 @@ def main ():
             s = get_suite(suite, session=session)
             if s is not None:
                 suite_ids_list.append(s.suite_id)
+                whitelists.append(s.mail_whitelist)
             if suite in ("oldstable", "stable"):
                 print "**WARNING** About to remove from the (old)stable suite!"
                 print "This should only be done just prior to a (point) release and not at"
@@ -498,7 +500,7 @@ def main ():
                 mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close-with-related")
             else:
                 mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close")
-            utils.send_mail(mail_message)
+            utils.send_mail(mail_message, whitelists=whitelists)
 
     # close associated bug reports
     if Options["Do-Close"]:
