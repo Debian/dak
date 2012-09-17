@@ -91,6 +91,7 @@ def init (cnf):
             utils.fubar("%s must be a directory." % (del_dir))
 
     # Move to the directory to clean
+    incoming = Options.get("Incoming")
     if not incoming:
         incoming = cnf.get('Dir::Unchecked')
         if not incoming:
