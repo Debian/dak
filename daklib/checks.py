@@ -162,7 +162,7 @@ class HashesCheck(Check):
         changes = upload.changes
         for f in changes.files.itervalues():
             f.check(upload.directory)
-            source = changes.source
+        source = changes.source
         if source is not None:
             for f in source.files.itervalues():
                 f.check(upload.directory)
