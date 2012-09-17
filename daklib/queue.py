@@ -104,6 +104,7 @@ def check_valid(overrides, session):
 def prod_maintainer(notes, upload):
     cnf = Config()
     changes = upload.changes
+    whitelists = [ upload.target_suite.mail_whitelist ]
 
     # Here we prepare an editor and get them ready to prod...
     (fd, temp_filename) = utils.temp_filename()
@@ -154,7 +155,7 @@ def prod_maintainer(notes, upload):
         Subst,cnf["Dir::Templates"]+"/process-new.prod")
 
     # Send the prod mail
-    utils.send_mail(prod_mail_message)
+    utils.send_mail(prod_mail_message, whitelists=whitelists)
 
     print "Sent prodding message"
 

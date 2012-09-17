@@ -603,8 +603,16 @@ def build_package_list(dsc, session = None):
 
 ################################################################################
 
-def send_mail (message, filename=""):
-    """sendmail wrapper, takes _either_ a message string or a file as arguments"""
+def send_mail (message, filename="", whitelists=None):
+    """sendmail wrapper, takes _either_ a message string or a file as arguments
+
+    @type  whitelists: list of (str or None)
+    @param whitelists: path to whitelists. C{None} or an empty list whitelists
+                       everything, otherwise an address is whitelisted if it is
+                       included in any of the lists.
+                       In addition a global whitelist can be specified in
+                       Dinstall::MailWhiteList.
+    """
 
     maildir = Cnf.get('Dir::Mail')
     if maildir:
@@ -624,23 +632,24 @@ def send_mail (message, filename=""):
         os.write (fd, message)
         os.close (fd)
 
-    if Cnf.has_key("Dinstall::MailWhiteList") and \
-           Cnf["Dinstall::MailWhiteList"] != "":
+    if whitelists is None or None in whitelists:
+        whitelists = []
+    if Cnf.get('Dinstall::MailWhiteList', ''):
+        whitelists.append(Cnf['Dinstall::MailWhiteList'])
+    if len(whitelists) != 0:
         message_in = open_file(filename)
         message_raw = modemail.message_from_file(message_in)
         message_in.close();
 
         whitelist = [];
-        whitelist_in = open_file(Cnf["Dinstall::MailWhiteList"])
-        try:
+        for path in whitelists:
+          with open_file(path, 'r') as whitelist_in:
             for line in whitelist_in:
                 if not re_whitespace_comment.match(line):
                     if re_re_mark.match(line):
                         whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
                     else:
                         whitelist.append(re.compile(re.escape(line.strip())))
-        finally:
-            whitelist_in.close()
 
         # Fields to check.
         fields = ["To", "Bcc", "Cc"]
@@ -657,7 +666,7 @@ def send_mail (message, filename=""):
                             mail_whitelisted = 1
                             break
                     if not mail_whitelisted:
-                        print "Skipping %s since it's not in %s" % (item, Cnf["Dinstall::MailWhiteList"])
+                        print "Skipping {0} since it's not whitelisted".format(item)
                         continue
                     match.append(item)
 
