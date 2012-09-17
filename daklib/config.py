@@ -120,7 +120,8 @@ class Config(object):
         for field in [('db_revision',      None,       int),
                       ('defaultsuitename', 'unstable', str),
                       ('exportpath',       '',         str),
-                      ('unprivgroup',      None,       str)
+                      ('unprivgroup',      None,       str),
+                      ('use_extfiles',     None,       int)
                       ]:
             setattr(self, 'get_%s' % field[0], lambda s=None, x=field[0], y=field[1], z=field[2]: self.get_db_value(x, y, z))
             setattr(Config, '%s' % field[0], property(fget=getattr(self, 'get_%s' % field[0])))
