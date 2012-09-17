@@ -183,7 +183,7 @@ class ExternalHashesCheck(Check):
             return
 
         if ext_size != f.size:
-            raise RejectStupidMaintainerException(f.filename, 'size', f.size, ext_size))
+            raise RejectStupidMaintainerException(f.filename, 'size', f.size, ext_size)
 
         if ext_md5sum != f.md5sum:
             raise RejectStupidMaintainerException(f.filename, 'md5sum', f.md5sum, ext_md5sum)
