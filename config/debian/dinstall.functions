@@ -177,8 +177,7 @@ function release() {
 function dakcleanup() {
     log "Cleanup old packages/files"
     dak clean-suites -m 10000
-    # XXX: reactivate once clean-queues is fixed
-    #dak clean-queues
+    dak clean-queues -i "$unchecked"
 }
 
 function buildd_dir() {
