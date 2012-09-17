@@ -43,6 +43,9 @@ CREATE TABLE external_files (
     modified timestamp with time zone DEFAULT now() NOT NULL
 );
 """,
+"""
+INSERT INTO config(name, value) VALUES ('use_extfiles', 0);
+"""
 ]
 
 ################################################################################
