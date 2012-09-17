@@ -91,12 +91,10 @@ def init (cnf):
             utils.fubar("%s must be a directory." % (del_dir))
 
     # Move to the directory to clean
-    incoming = Options["Incoming"]
-    if incoming == "":
-        incoming_queue = get_policy_queue('unchecked')
-        if not incoming_queue:
-            utils.fubar("Cannot find 'unchecked' queue")
-        incoming = incoming_queue.path
+    if not incoming:
+        incoming = cnf.get('Dir::Unchecked')
+        if not incoming:
+            utils.fubar("Cannot find 'unchecked' directory")
 
     try:
         os.chdir(incoming)
