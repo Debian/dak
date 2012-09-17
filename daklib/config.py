@@ -28,6 +28,7 @@ Config access class
 
 ################################################################################
 
+import grp
 import os
 import apt_pkg
 import socket
@@ -75,6 +76,19 @@ class Config(object):
         conffile = self.Cnf.get("Config::" + res[0] + "::DakConfig")
         if conffile:
             apt_pkg.read_config_file_isc(self.Cnf, conffile)
+
+        # Read group-specific options
+        if 'ByGroup' in self.Cnf:
+            bygroup = self.Cnf.subtree('ByGroup')
+            groups = set([os.getgid()])
+            groups.update(os.getgroups())
+
+            for group in bygroup.list():
+                gid = grp.getgrnam(group).gr_gid
+                if gid in groups:
+                    if bygroup.get(group):
+                        apt_pkg.read_config_file_isc(self.Cnf, bygroup[group])
+                    break
 
         # Rebind some functions
         # TODO: Clean this up
