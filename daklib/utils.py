@@ -43,6 +43,7 @@ import email as modemail
 import subprocess
 import ldap
 
+import daklib.config as config
 from dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
                    get_active_keyring_paths, get_primary_keyring_path, \
@@ -1550,14 +1551,7 @@ def get_changes_files(from_dir):
 
 ################################################################################
 
-apt_pkg.init()
-
-Cnf = apt_pkg.Configuration()
-if not os.getenv("DAK_TEST"):
-    apt_pkg.read_config_file_isc(Cnf,default_config)
-
-if which_conf_file() != default_config:
-    apt_pkg.read_config_file_isc(Cnf,which_conf_file())
+Cnf = config.Config().Cnf
 
 ################################################################################
 
