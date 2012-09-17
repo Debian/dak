@@ -1,0 +1,53 @@
+Protocol 2
+ConnectTimeout 30
+ServerAliveInterval 30
+
+Host bugs-sync
+  Hostname bugs-master.debian.org
+  User debbugs
+  IdentityFile /srv/ftp-master.debian.org/s3kr1t/id_debbugs-vt
+  ForwardX11 no
+  ForwardAgent no
+  StrictHostKeyChecking yes
+  PasswordAuthentication no
+  BatchMode yes
+
+Host ddtp-sync
+  Hostname i18n.debian.net
+  User ddtp-dak
+  IdentityFile /srv/ftp-master.debian.org/s3kr1t/ddtp-dak.rsa
+  ForwardX11 no
+  ForwardAgent no
+  StrictHostKeyChecking yes
+  PasswordAuthentication no
+  BatchMode yes
+
+Host morgue-sync
+  Hostname stabile.debian.org
+  User dak
+  IdentityFile /srv/ftp-master.debian.org/s3kr1t/push_morgue
+  ForwardX11 no
+  ForwardAgent no
+  StrictHostKeyChecking yes
+  PasswordAuthentication no
+  BatchMode yes
+
+Host ries-sync
+  Hostname ries.debian.org
+  User dak
+  IdentityFile /home/dak/.ssh/id_franck
+  ForwardX11 no
+  ForwardAgent no
+  StrictHostKeyChecking yes
+  PasswordAuthentication no
+  BatchMode yes
+
+Host external-security
+  Hostname chopin.debian.org
+  User dak
+  IdentityFile /home/dak/.ssh/push_external_files
+  ForwardX11 no
+  ForwardAgent no
+  StrictHostKeyChecking yes
+  PasswordAuthentication no
+  BatchMode yes
