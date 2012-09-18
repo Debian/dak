@@ -950,7 +950,7 @@ class ArchiveUpload(object):
         if suite.copychanges:
             src = os.path.join(self.directory, self.changes.filename)
             dst = os.path.join(suite.archive.path, 'dists', suite.suite_name, self.changes.filename)
-            self.transaction.fs.copy(src, dst)
+            self.transaction.fs.copy(src, dst, mode=suite.archive.mode)
 
         return (db_source, db_binaries)
 
@@ -998,7 +998,7 @@ class ArchiveUpload(object):
         self.transaction.session.flush()
 
         dst = os.path.join(policy_queue.path, self.changes.filename)
-        self.transaction.fs.copy(self.changes.path, dst)
+        self.transaction.fs.copy(self.changes.path, dst, mode=policy_queue.change_perms)
 
         return u
 
@@ -1075,7 +1075,7 @@ class ArchiveUpload(object):
 
         src = os.path.join(self.directory, hashed_file.filename)
         dst = os.path.join(policy_queue.path, hashed_file.filename)
-        fs.copy(src, dst)
+        fs.copy(src, dst, mode=policy_queue.change_perms)
 
         return byhand_file
 
