@@ -174,8 +174,8 @@ class HashesCheck(Check):
             for f in changes.files.itervalues():
                 f.check(upload.directory)
             source = changes.source
-            what = source.filename
             if source is not None:
+                what = source.filename
                 for f in source.files.itervalues():
                     f.check(upload.directory)
         except IOError as e:
