@@ -1,0 +1,12 @@
+From: __DAK_ADDRESS__
+To: __MAINTAINER_TO__
+Cc: __CC__
+__BCC__
+X-Debian: DAK
+Precedence: bulk
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+Subject: Results of processing __FILENAME__
+
+__RESULTS__

@@ -1850,6 +1850,26 @@ __all__.append('get_sections')
 
 ################################################################################
 
+class SignatureHistory(ORMObject):
+    @classmethod
+    def from_signed_file(cls, signed_file):
+        """signature history entry from signed file
+
+        @type  signed_file: L{daklib.gpg.SignedFile}
+        @param signed_file: signed file
+
+        @rtype: L{SignatureHistory}
+        """
+        self = cls()
+        self.fingerprint = signed_file.primary_fingerprint
+        self.signature_timestamp = signed_file.signature_timestamp
+        self.contents_sha1 = signed_file.contents_sha1()
+        return self
+
+__all__.append('SignatureHistory')
+
+################################################################################
+
 class SrcContents(ORMObject):
     def __init__(self, file = None, source = None):
         self.file = file
@@ -2544,6 +2564,7 @@ class DBConn(object):
             'policy_queue_byhand_file',
             'priority',
             'section',
+            'signature_history',
             'source',
             'source_metadata',
             'src_associations',
@@ -2761,6 +2782,8 @@ class DBConn(object):
         mapper(Section, self.tbl_section,
                properties = dict(section_id = self.tbl_section.c.id,
                                  section=self.tbl_section.c.section))
+
+        mapper(SignatureHistory, self.tbl_signature_history)
 
         mapper(DBSource, self.tbl_source,
                properties = dict(source_id = self.tbl_source.c.id,

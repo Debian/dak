@@ -19,6 +19,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+import apt_pkg
+import datetime
 import errno
 import fcntl
 import os
@@ -141,6 +143,17 @@ class SignedFile(object):
 
         return dict( (fd, "".join(read_lines[fd])) for fd in read_lines.keys() )
 
+    def _parse_date(self, value):
+        """parse date string in YYYY-MM-DD format
+
+        @rtype:   L{datetime.datetime}
+        @returns: datetime objects for 0:00 on the given day
+        """
+        year, month, day = value.split('-')
+        date = datetime.date(int(year), int(month), int(day))
+        time = datetime.time(0, 0)
+        return datetime.datetime.combine(date, time)
+
     def _parse_status(self, line):
         fields = line.split()
         if fields[0] != "[GNUPG:]":
@@ -153,6 +166,7 @@ class SignedFile(object):
             self.valid = True
             self.fingerprint = fields[2]
             self.primary_fingerprint = fields[11]
+            self.signature_timestamp = self._parse_date(fields[3])
 
         if fields[1] == "BADARMOR":
             raise GpgException("Bad armor.")
@@ -189,5 +203,8 @@ class SignedFile(object):
             os.execvp(self.gpg, args)
         finally:
             os._exit(1)
+
+    def contents_sha1(self):
+        return apt_pkg.sha1sum(self.contents)
 
 # vim: set sw=4 et:
