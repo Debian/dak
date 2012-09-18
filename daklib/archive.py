@@ -1105,7 +1105,7 @@ class ArchiveUpload(object):
         for binary in self.changes.binaries:
             control = binary.control
             source_package, source_version = binary.source
-            line = " ".join([control['Package'], control['Version'], source_package, source_version])
+            line = " ".join([control['Package'], control['Version'], control['Architecture'], source_package, source_version])
             print >>debinfo, line
         debinfo.close()
 
