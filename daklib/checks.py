@@ -34,6 +34,7 @@ import daklib.utils as utils
 import apt_inst
 import apt_pkg
 from apt_pkg import version_compare
+import errno
 import os
 import time
 import yaml
@@ -165,13 +166,23 @@ class ChangesCheck(Check):
 class HashesCheck(Check):
     """Check hashes in .changes and .dsc are valid."""
     def check(self, upload):
-        changes = upload.changes
-        for f in changes.files.itervalues():
-            f.check(upload.directory)
-        source = changes.source
-        if source is not None:
-            for f in source.files.itervalues():
+        what = None
+        try:
+            changes = upload.changes
+            what = changes.filename
+            for f in changes.files.itervalues():
                 f.check(upload.directory)
+            source = changes.source
+            what = source.filename
+            if source is not None:
+                for f in source.files.itervalues():
+                    f.check(upload.directory)
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                raise Reject('{0} refers to non-existing file: {1}\n'
+                             'Perhaps you need to include it in your upload?'
+                             .format(what, os.path.basename(e.filename)))
+            raise
 
 class ExternalHashesCheck(Check):
     """Checks hashes in .changes and .dsc against an external database."""

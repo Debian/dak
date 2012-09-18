@@ -489,3 +489,10 @@ class Source(object):
         if len(fields) > 1:
             return fields[0]
         return "main"
+
+    @property
+    def filename(self):
+        """filename of .dsc file
+        @type: str
+        """
+        return self._dsc_file.filename
