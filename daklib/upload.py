@@ -439,6 +439,10 @@ class Source(object):
                     raise InvalidSourceException("Multiple .dsc found ({0} and {1})".format(self._dsc_file.filename, f.filename))
                 else:
                     self._dsc_file = f
+
+        # make sure the hash for the dsc is valid before we use it
+        self._dsc_file.check(directory)
+
         dsc_file_path = os.path.join(directory, self._dsc_file.filename)
         data = open(dsc_file_path, 'r').read()
         self._signed_file = SignedFile(data, keyrings, require_signature)
@@ -489,3 +493,10 @@ class Source(object):
         if len(fields) > 1:
             return fields[0]
         return "main"
+
+    @property
+    def filename(self):
+        """filename of .dsc file
+        @type: str
+        """
+        return self._dsc_file.filename
