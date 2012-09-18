@@ -30,6 +30,7 @@ from daklib.regexes import *
 from daklib.textutils import fix_maintainer, ParseMaintError
 import daklib.lintian as lintian
 import daklib.utils as utils
+from daklib.upload import InvalidHashException
 
 import apt_inst
 import apt_pkg
@@ -183,6 +184,8 @@ class HashesCheck(Check):
                              'Perhaps you need to include it in your upload?'
                              .format(what, os.path.basename(e.filename)))
             raise
+        except InvalidHashException as e:
+            raise Reject('{0}: {1}'.format(what, unicode(e)))
 
 class ExternalHashesCheck(Check):
     """Checks hashes in .changes and .dsc against an external database."""
