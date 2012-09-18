@@ -387,7 +387,7 @@ while (1) {
 
   # ping target only if there is the possibility that we'll contact it (but
   # also don't wait too long).
-  my @have_changes = <*.changes *.commands>;
+  my @have_changes = <*.changes *.commands *.dak-commands>;
   for ( my $delayed_dirs = 0 ;
         $delayed_dirs <= $conf::max_delayed ;
         $delayed_dirs++ )
@@ -487,7 +487,7 @@ sub check_dir() {
            return
          );
 
-    # look for *.commands files but not in delayed queues
+    # look for *.commands and *.dak-commands files but not in delayed queues
     if ( $adelay == -1 ) {
       foreach $file (<*.commands>) {
         init_mail($file);
@@ -498,6 +498,15 @@ sub check_dir() {
         write_status_file() if $conf::statusdelay;
         finish_mail();
       } ## end foreach $file (<*.commands>)
+	  foreach $file (<*.dak-commands>) {
+		init_mail($file);
+		block_signals();
+		process_dak_commands($file);
+		unblock_signals();
+		$main::dstat = "c";
+		write_status_file() if $conf::statusdelay;
+		finish_mail();
+	  }
     } ## end if ( $adelay == -1 )
     opendir( INC, "." )
       or (
@@ -1116,6 +1125,53 @@ outer_loop: while (<CHANGES>) {
   #		msg( "log", "Deleted files in upload not in $changes: @other_files\n" );
   #}
 } ## end sub process_changes($\@)
+
+#
+# process one .dak-commands file
+#
+sub process_dak_commands {
+  my $commands = shift;
+
+  # TODO: get mail address from signed contents
+  # and NOT implement a third parser for armored PGP...
+  $main::mail_addr = undef;
+
+  # check signature
+  my $signator = pgp_check($commands);
+  if (!$signator) {
+	msg("log,mail",
+	    "$main::current_incoming_short/$commands has bad PGP/GnuPG signature!\n");
+	msg("log,mail",
+		"Removing $main::current_incoming_short/$commands\n");
+	rm($commands);
+	return;
+  }
+  elsif ($signator eq 'LOCAL ERROR') {
+	debug("Can't check signature for $main::current_incoming_short/$commands -- don't process it for now");
+	return;
+  }
+  msg("log,mail", "(PGP/GnuPG signature by $signator)\n");
+
+  # check target
+  my @filenames = ($commands);
+  if (my $ls_l = is_on_target($commands, @filenames)) {
+	msg("log,mail", "$main::current_incoming_short/$commands is already present on target host:\n");
+	msg("log,mail", "$ls_l\n");
+	msg("log,mail", "Job $commands removed.\n");
+	rm($commands);
+	return;
+  }
+
+  if (!copy_to_target($commands)) {
+	msg("log,mail", "$commands couldn't be uploaded to target.\n");
+	msg("log,mail", "Giving up and removing it.\n");
+	rm($commands);
+	return;
+  }
+
+  rm($commands);
+  msg("mail", "$commands uploaded successfully to $conf::target\n");
+}
 
 #
 # process one .commands file
