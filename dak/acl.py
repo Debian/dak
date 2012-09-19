@@ -72,12 +72,47 @@ def acl_set_fingerprints(acl_name, entries):
 
     session.commit()
 
+def acl_export_per_source(acl_name):
+    session = DBConn().session()
+    acl = session.query(ACL).filter_by(name=acl_name).one()
+
+    query = """
+      SELECT
+        f.fingerprint,
+        (SELECT COALESCE(u.name, '') || ' <' || u.uid || '>'
+           FROM uid u
+           JOIN fingerprint f2 ON u.id = f2.uid
+          WHERE f2.id = f.id) AS name,
+        STRING_AGG(a.source, ' ' ORDER BY a.source)
+      FROM acl_per_source a
+      JOIN fingerprint f ON a.fingerprint_id = f.id
+      LEFT JOIN uid u ON f.uid = u.id
+      WHERE a.acl_id = :acl_id
+      GROUP BY f.id, f.fingerprint
+      ORDER BY name
+      """
+
+    for row in session.execute(query, {'acl_id': acl.id}):
+        print "Fingerprint:", row[0]
+        print "Uid:", row[1]
+        print "Allow:", row[2]
+        print
+
+    session.rollback()
+    session.close()
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    if len(argv) != 3 or argv[1] != 'set-fingerprints':
+    if len(argv) != 3:
         usage()
         sys.exit(1)
 
-    acl_set_fingerprints(argv[2], sys.stdin)
+    if argv[1] == 'set-fingerprints':
+        acl_set_fingerprints(argv[2], sys.stdin)
+    elif argv[1] == 'export-per-source':
+        acl_export_per_source(argv[2])
+    else:
+        usage()
+        sys.exit(1)
