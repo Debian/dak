@@ -206,6 +206,8 @@ class CommandFile(object):
                 aps.acl = acl
                 aps.fingerprint = fpr
                 aps.source = source
+                aps.created_by = fingerprint
+                aps.reason = section.get('Reason')
                 session.add(aps)
                 self.log.log(['dm', 'allow', fpr.fingerprint, source])
                 self.result.append('Allowed: {0}'.format(source))

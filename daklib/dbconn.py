@@ -2630,7 +2630,8 @@ class DBConn(object):
         mapper(ACLPerSource, self.tbl_acl_per_source,
                properties = dict(
                 acl = relation(ACL),
-                fingerprint = relation(Fingerprint),
+                fingerprint = relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.fingerprint_id == self.tbl_fingerprint.c.id)),
+                created_by = relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.created_by_id == self.tbl_fingerprint.c.id)),
                 ))
 
         mapper(Archive, self.tbl_archive,
