@@ -699,7 +699,7 @@ class ArchiveUpload(object):
                 if src == suite_name:
                     suite_name = dst
                     if rtype != "silent-map":
-                        self.warnings.append('Mapping {0} to {0}.'.format(src, dst))
+                        self.warnings.append('Mapping {0} to {1}.'.format(src, dst))
             elif rtype == "ignore":
                 ignored = fields[1]
                 if suite_name == ignored:
