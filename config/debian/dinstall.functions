@@ -403,6 +403,7 @@ function transitionsclean() {
 function dm() {
     log "Updating DM html page"
     $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
+    dak acl export-per-source dm >$exportdir/dm.txt
 }
 
 function bts() {

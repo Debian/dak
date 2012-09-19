@@ -128,6 +128,7 @@ function do_unchecked () {
 
     echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
     dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
+    dak process-commands -d "$unchecked" >> $report
 }
 
 # process NEW policy queue
