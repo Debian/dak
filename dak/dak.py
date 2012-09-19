@@ -71,6 +71,8 @@ def init():
          "Process NEW and BYHAND packages"),
         ("process-upload",
          "Process packages in queue/unchecked"),
+        ("process-commands",
+         "Process command files (*.dak-commands)"),
         ("process-policy",
          "Process packages in policy queues from COMMENTS files"),
 

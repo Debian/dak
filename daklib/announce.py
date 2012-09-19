@@ -47,6 +47,8 @@ class ProcessedUpload(object):
     # program
     program = "unknown-program"
 
+    warnings = []
+
 def _subst_for_upload(upload):
     cnf = Config()
 
@@ -79,6 +81,7 @@ def _subst_for_upload(upload):
         '__SOURCE__': upload.source,
         '__VERSION__': upload.version,
         '__ARCHITECTURE__': upload.architecture,
+        '__WARNINGS__': '\n'.join(upload.warnings),
         }
 
     override_maintainer = cnf.get('Dinstall::OverrideMaintainer')

@@ -1,18 +1,12 @@
 From: __DAK_ADDRESS__
 To: __MAINTAINER_TO__
+Cc: __CC__
 __BCC__
 X-Debian: DAK
-X-Debian-Package: __SOURCE__
 Precedence: bulk
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-Subject: __CHANGES_FILENAME__ ACCEPTED into __SUITE__
+Subject: Results of processing __FILENAME__
 
-__WARNINGS__
-
-Accepted:
-
-__FILE_CONTENTS__
-
-Thank you for your contribution to __DISTRO__.
+__RESULTS__

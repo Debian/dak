@@ -464,8 +464,11 @@ class ACLCheck(Check):
             # XXX: Drop DMUA part here and switch to new implementation.
             # XXX: Send warning mail once users can set the new DMUA flag
             dmua_status, dmua_reason = self._check_dmua(upload)
-            if not dmua_status:
-                return False, dmua_reason
+            if acl_per_source is None:
+                if not dmua_status:
+                    return False, dmua_reason
+                else:
+                    upload.warn('DM flag not set, but accepted as DMUA was set.')
             #if acl_per_source is None:
             #    return False, "not allowed to upload source package '{0}'".format(source_name)
         if acl.deny_per_source and acl_per_source is not None:

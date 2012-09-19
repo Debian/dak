@@ -251,6 +251,8 @@ def get_processed_upload(upload):
 
     pu.program = "process-upload"
 
+    pu.warnings = upload.warnings
+
     return pu
 
 @try_or_reject
@@ -258,6 +260,7 @@ def accept(directory, upload):
     cnf = Config()
 
     Logger.log(['ACCEPT', upload.changes.filename])
+    print "ACCEPT"
 
     upload.install()
 
@@ -297,6 +300,7 @@ def accept_to_new(directory, upload):
     cnf = Config()
 
     Logger.log(['ACCEPT-TO-NEW', upload.changes.filename])
+    print "ACCEPT-TO-NEW"
 
     upload.install_to_new()
     # TODO: tag bugs pending
@@ -316,6 +320,7 @@ def real_reject(directory, upload, reason=None, notify=True):
     cnf = Config()
 
     Logger.log(['REJECT', upload.changes.filename])
+    print "REJECT"
 
     fs = upload.transaction.fs
     rejectdir = cnf['Dir::Reject']

@@ -603,6 +603,16 @@ class ArchiveUpload(object):
         self._new_queue = self.session.query(PolicyQueue).filter_by(queue_name='new').one()
         self._new = self._new_queue.suite
 
+    def warn(self, message):
+        """add a warning message
+
+        Adds a warning message that can later be seen in C{self.warnings}
+
+        @type  message: string
+        @param message: warning message
+        """
+        self.warnings.append(message)
+
     def prepare(self):
         """prepare upload for further processing
 
