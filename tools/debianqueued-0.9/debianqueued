@@ -1132,6 +1132,8 @@ outer_loop: while (<CHANGES>) {
 sub process_dak_commands {
   my $commands = shift;
 
+  msg("log", "processing ${main::current_incoming_short}/$commands\n");
+
   # TODO: get mail address from signed contents
   # and NOT implement a third parser for armored PGP...
   $main::mail_addr = undef;
