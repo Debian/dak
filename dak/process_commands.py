@@ -41,7 +41,7 @@ def main(argv=None):
                  ('d', 'directory', 'Process-Commands::Options::Directory', 'HasArg')]
 
     cnf = Config()
-    cnf['Process-Command::Options::Dummy'] = ''
+    cnf['Process-Commands::Options::Dummy'] = ''
     filenames = apt_pkg.parse_commandline(cnf.Cnf, arguments, argv)
     options = cnf.subtree('Process-Commands::Options')
 

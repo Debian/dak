@@ -364,7 +364,8 @@ def clean_fingerprints(now_date, session):
 SELECT f.id, f.fingerprint FROM fingerprint f
   WHERE f.keyring IS NULL
     AND NOT EXISTS (SELECT 1 FROM binaries b WHERE b.sig_fpr = f.id)
-    AND NOT EXISTS (SELECT 1 FROM source s WHERE s.sig_fpr = f.id)""")
+    AND NOT EXISTS (SELECT 1 FROM source s WHERE s.sig_fpr = f.id)
+    AND NOT EXISTS (SELECT 1 FROM acl_per_source aps WHERE aps.created_by_id = f.id)""")
 
     count = 0
 

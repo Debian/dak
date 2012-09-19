@@ -72,6 +72,8 @@ class CommandFile(object):
 
             if action == 'dm':
                 self.action_dm(self.fingerprint, section, session)
+            elif action == 'break-the-archive':
+                self.action_break_the_archive(self.fingerprint, section, session)
             else:
                 raise CommandError('Unknown action: {0}'.format(action))
         except StopIteration:
@@ -206,6 +208,8 @@ class CommandFile(object):
                 aps.acl = acl
                 aps.fingerprint = fpr
                 aps.source = source
+                aps.created_by = fingerprint
+                aps.reason = section.get('Reason')
                 session.add(aps)
                 self.log.log(['dm', 'allow', fpr.fingerprint, source])
                 self.result.append('Allowed: {0}'.format(source))
@@ -220,3 +224,11 @@ class CommandFile(object):
             self.result.append('Denied: {0}'.format(source))
 
         session.commit()
+
+    def action_break_the_archive(self, fingerprint, section, session):
+        name = 'Dave'
+        uid = fingerprint.uid
+        if uid is not None and uid.name is not None:
+            name = uid.name.split()[0]
+
+        self.result.append("DAK9000: I'm sorry, {0}. I'm afraid I can't do that.".format(name))
