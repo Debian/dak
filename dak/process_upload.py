@@ -251,6 +251,8 @@ def get_processed_upload(upload):
 
     pu.program = "process-upload"
 
+    pu.warnings = upload.warnings
+
     return pu
 
 @try_or_reject
