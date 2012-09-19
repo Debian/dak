@@ -28,7 +28,7 @@ from daklib.fstransactions import FilesystemTransaction
 from daklib.utils import find_next_free
 
 def usage():
-    print """Usage: dak command <command-file>...
+    print """Usage: dak process-commands [-d <directory>] [<command-file>...]
 
 process command files
 """
@@ -41,9 +41,9 @@ def main(argv=None):
                  ('d', 'directory', 'Process-Commands::Options::Directory', 'HasArg')]
 
     cnf = Config()
-    cnf['Command::Options::Dummy'] = ''
+    cnf['Process-Command::Options::Dummy'] = ''
     filenames = apt_pkg.parse_commandline(cnf.Cnf, arguments, argv)
-    options = cnf.subtree('Command::Options')
+    options = cnf.subtree('Process-Commands::Options')
 
     if 'Help' in options or (len(filenames) == 0 and 'Directory' not in options):
         usage()
