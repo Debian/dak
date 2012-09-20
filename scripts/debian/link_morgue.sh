@@ -51,7 +51,22 @@ function log () {
         echo "$(date +"%b %d %H:%M:%S") $(hostname -s) ${prefix}[$$]: $@"
 }
 
-export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+case "$(hostname)" in
+    franck)
+	SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+	archive=ftp-master
+        ;;
+    chopin)
+	SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
+	archive=security-master
+	;;
+    *)
+	echo "Unknown host $(hostname)" >&2
+	exit 1
+	;;
+esac
+
+export SCRIPTVARS
 . $SCRIPTVARS
 
 function byebye_lock() {
@@ -113,7 +128,7 @@ if [ "$(hostname -s)" != "stabile" ]; then
     # on the other side should contain (one line, no #)
 # command="rsync --server -lHogDtpRe.Lsf --remove-source-files . /srv/morgue.debian.org/sync/ftp-master",
 # no-port-forwarding,no-X11-forwarding,no-agent-forwarding,from="ftp-master.debian.org" ssh-rsa...
-    rsync -aHq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 " --remove-source-files --from0 --files-from=${LISTFILE} $base/morgue/ morgue-sync:/srv/morgue.debian.org/sync/ftp-master
+    rsync -aHq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 " --remove-source-files --from0 --files-from=${LISTFILE} $base/morgue/ morgue-sync:/srv/morgue.debian.org/sync/$archive
 
     # And remove empty subdirs. To remove entire hierarchies we probably should run this
     # in a loop, but why bother? They'll be gone in a few days then, so meh.
