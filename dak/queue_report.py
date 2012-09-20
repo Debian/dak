@@ -416,7 +416,10 @@ def process_queue(queue, log, rrd_dir):
     max_source_len = 0
     max_version_len = 0
     max_arch_len = 0
-    logins = get_logins_from_ldap()
+    try:
+        logins = get_logins_from_ldap()
+    except:
+        logins = dict()
     for i in per_source_items:
         maintainer = {}
         maint=""
