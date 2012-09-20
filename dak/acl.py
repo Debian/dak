@@ -23,9 +23,17 @@ from daklib.config import Config
 from daklib.dbconn import DBConn, Fingerprint, Uid, ACL
 
 def usage():
-    print """Usage: dak acl set-fingerprints <acl-name>
+    print """Usage:
+  dak acl set-fingerprints <acl-name>
+  dak acl export-per-source <acl-name>
 
-Reads list of fingerprints from stdin and sets the ACL <acl-name> to these.
+  set-fingerprints:
+    Reads list of fingerprints from stdin and sets the ACL <acl-name> to these.
+    Accepted input formats are "uid:<uid>", "name:<name>" and
+    "fpr:<fingerprint>".
+
+  export-per-source:
+    Export per source upload rights for ACL <acl-name>.
 """
 
 def get_fingerprint(entry, session):
