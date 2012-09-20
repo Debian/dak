@@ -399,7 +399,7 @@ def process_queue(queue, log, rrd_dir):
             else:
                 if mtime < oldest:
                     oldest = mtime
-            have_note += has_new_comment(d.changes.source, d.changes.version)
+            have_note += has_new_comment(d.policy_queue, d.changes.source, d.changes.version)
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none
@@ -416,7 +416,10 @@ def process_queue(queue, log, rrd_dir):
     max_source_len = 0
     max_version_len = 0
     max_arch_len = 0
-    logins = get_logins_from_ldap()
+    try:
+        logins = get_logins_from_ldap()
+    except:
+        logins = dict()
     for i in per_source_items:
         maintainer = {}
         maint=""
