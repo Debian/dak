@@ -188,6 +188,7 @@ def edit_note(note, upload, session, trainee=False):
         return 0
 
     comment = NewComment()
+    comment.policy_queue = upload.policy_queue
     comment.package = upload.changes.source
     comment.version = upload.changes.version
     comment.comment = newnote

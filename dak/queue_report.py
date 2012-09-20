@@ -399,7 +399,7 @@ def process_queue(queue, log, rrd_dir):
             else:
                 if mtime < oldest:
                     oldest = mtime
-            have_note += has_new_comment(d.changes.source, d.changes.version)
+            have_note += has_new_comment(d.policy_queue, d.changes.source, d.changes.version)
         per_source[source]["oldest"] = oldest
         if not have_note:
             per_source[source]["note_state"] = 0; # none

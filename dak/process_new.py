@@ -137,7 +137,7 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
         if not m['valid']:
             line = line + ' [!]'
         print >>file, line
-    notes = get_new_comments(upload.changes.source)
+    notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
         print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
               % (note.author, note.version, note.notedate, note.comment)
@@ -534,19 +534,19 @@ def do_new(upload, upload_copy, handler, session):
             missing = edit_overrides (missing, upload, session)
         elif answer == 'M' and not Options["Trainee"]:
             reason = Options.get('Manual-Reject', '') + "\n"
-            reason = reason + "\n\n=====\n\n".join([n.comment for n in get_new_comments(upload.changes.source, session=session)])
+            reason = reason + "\n\n=====\n\n".join([n.comment for n in get_new_comments(upload.policy_queue, upload.changes.source, session=session)])
             reason = get_reject_reason(reason)
             if reason is not None:
                 Logger.log(["NEW REJECT", upload.changes.changesname])
                 handler.reject(reason)
                 done = True
         elif answer == 'N':
-            if edit_note(get_new_comments(upload.changes.source, session=session),
+            if edit_note(get_new_comments(upload.policy_queue, upload.changes.source, session=session),
                          upload, session, bool(Options["Trainee"])) == 0:
                 end()
                 sys.exit(0)
         elif answer == 'P' and not Options["Trainee"]:
-            if prod_maintainer(get_new_comments(upload.changes.source, session=session),
+            if prod_maintainer(get_new_comments(upload.policy_queue, upload.changes.source, session=session),
                                upload) == 0:
                 end()
                 sys.exit(0)
@@ -554,13 +554,13 @@ def do_new(upload, upload_copy, handler, session):
         elif answer == 'R' and not Options["Trainee"]:
             confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
             if confirm == "y":
-                for c in get_new_comments(upload.changes.source, upload.changes.version, session=session):
+                for c in get_new_comments(upload.policy_queue, upload.changes.source, upload.changes.version, session=session):
                     session.delete(c)
                 session.commit()
         elif answer == 'O' and not Options["Trainee"]:
             confirm = utils.our_raw_input("Really clear all notes (y/N)? ").lower()
             if confirm == "y":
-                for c in get_new_comments(upload.changes.source, session=session):
+                for c in get_new_comments(upload.policy_queue, upload.changes.source, session=session):
                     session.delete(c)
                 session.commit()
 
@@ -699,13 +699,13 @@ def show_new_comments(uploads, session):
 
 ################################################################################
 
-def sort_uploads(uploads, session, nobinaries=False):
+def sort_uploads(new_queue, uploads, session, nobinaries=False):
     sources = {}
     sorteduploads = []
     suitesrc = [s.source for s in session.query(DBSource.source). \
       filter(DBSource.suites.any(Suite.suite_name.in_(['unstable', 'experimental'])))]
     comments = [p.package for p in session.query(NewComment.package). \
-      filter_by(trainee=False).distinct()]
+      filter_by(trainee=False, policy_queue=new_queue).distinct()]
     for upload in uploads:
         source = upload.changes.source
         if not source in sources:
@@ -798,7 +798,7 @@ def main():
 
     if len(uploads) > 1:
         sys.stderr.write("Sorting changes...\n")
-        uploads = sort_uploads(uploads, session, Options["No-Binaries"])
+        uploads = sort_uploads(new_queue, uploads, session, Options["No-Binaries"])
 
     if Options["Comments"]:
         show_new_comments(uploads, session)

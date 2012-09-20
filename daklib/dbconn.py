@@ -1474,7 +1474,7 @@ class NewComment(object):
 __all__.append('NewComment')
 
 @session_wrapper
-def has_new_comment(package, version, session=None):
+def has_new_comment(policy_queue, package, version, session=None):
     """
     Returns true if the given combination of C{package}, C{version} has a comment.
 
@@ -1492,7 +1492,7 @@ def has_new_comment(package, version, session=None):
     @return: true/false
     """
 
-    q = session.query(NewComment)
+    q = session.query(NewComment).filter_by(policy_queue=policy_queue)
     q = q.filter_by(package=package)
     q = q.filter_by(version=version)
 
@@ -1501,7 +1501,7 @@ def has_new_comment(package, version, session=None):
 __all__.append('has_new_comment')
 
 @session_wrapper
-def get_new_comments(package=None, version=None, comment_id=None, session=None):
+def get_new_comments(policy_queue, package=None, version=None, comment_id=None, session=None):
     """
     Returns (possibly empty) list of NewComment objects for the given
     parameters
@@ -1523,7 +1523,7 @@ def get_new_comments(package=None, version=None, comment_id=None, session=None):
     @return: A (possibly empty) list of NewComment objects will be returned
     """
 
-    q = session.query(NewComment)
+    q = session.query(NewComment).filter_by(policy_queue=policy_queue)
     if package is not None: q = q.filter_by(package=package)
     if version is not None: q = q.filter_by(version=version)
     if comment_id is not None: q = q.filter_by(comment_id=comment_id)
@@ -2734,7 +2734,8 @@ class DBConn(object):
                 extension = validator)
 
         mapper(NewComment, self.tbl_new_comments,
-               properties = dict(comment_id = self.tbl_new_comments.c.id))
+               properties = dict(comment_id = self.tbl_new_comments.c.id,
+                                 policy_queue = relation(PolicyQueue)))
 
         mapper(Override, self.tbl_override,
                properties = dict(suite_id = self.tbl_override.c.suite,
