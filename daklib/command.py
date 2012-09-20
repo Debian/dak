@@ -157,7 +157,7 @@ class CommandFile(object):
             self.result.append('')
         except Exception as e:
             self.log.log(['ERROR', e])
-            self.result.append("There was an error processing this section:\n{0}".format(e))
+            self.result.append("There was an error processing this section. No changes were committed.\nDetails:\n{0}".format(e))
             result = False
 
         self._notify_uploader()
@@ -203,6 +203,10 @@ class CommandFile(object):
             self.result.append('Uid: {0}'.format(addresses[0]))
 
         for source in self._split_packages(section.get('Allow', '')):
+            # Check for existance of source package to catch typos
+            if session.query(DBSource).filter_by(source=source).first() is None:
+                raise CommandError('Tried to grant permissions for unknown source package: {0}'.format(source))
+
             if session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr, source=source).first() is None:
                 aps = ACLPerSource()
                 aps.acl = acl
@@ -219,7 +223,11 @@ class CommandFile(object):
         session.flush()
 
         for source in self._split_packages(section.get('Deny', '')):
-            session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr, source=source).delete()
+            count = session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr, source=source).delete()
+            if count == 0:
+                raise CommandError('Tried to remove upload permissions for package {0}, '
+                                   'but no upload permissions were granted before.'.format(source))
+
             self.log.log(['dm', 'deny', fpr.fingerprint, source])
             self.result.append('Denied: {0}'.format(source))
 
