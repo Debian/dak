@@ -62,20 +62,23 @@ class CommandFile(object):
     def _evaluate_sections(self, sections, session):
         session.rollback()
         try:
-            sections.next()
-            section = sections.section
+            while True:
+                sections.next()
+                section = sections.section
 
-            action = section.get('Action', None)
-            if action is None:
-                raise CommandError('Encountered section without Action field')
-            self.result.append('Action: {0}'.format(action))
+                action = section.get('Action', None)
+                if action is None:
+                    raise CommandError('Encountered section without Action field')
+                self.result.append('Action: {0}'.format(action))
 
-            if action == 'dm':
-                self.action_dm(self.fingerprint, section, session)
-            elif action == 'break-the-archive':
-                self.action_break_the_archive(self.fingerprint, section, session)
-            else:
-                raise CommandError('Unknown action: {0}'.format(action))
+                if action == 'dm':
+                    self.action_dm(self.fingerprint, section, session)
+                elif action == 'break-the-archive':
+                    self.action_break_the_archive(self.fingerprint, section, session)
+                else:
+                    raise CommandError('Unknown action: {0}'.format(action))
+
+                self.result.append('')
         except StopIteration:
             pass
         finally:
@@ -163,7 +166,6 @@ class CommandFile(object):
         self._notify_uploader()
 
         session.close()
-        self.log.log(['done', self.filename])
 
         return result
 
