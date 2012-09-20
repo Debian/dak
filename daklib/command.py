@@ -191,7 +191,8 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr = session.query(Fingerprint).filter_by(fingerprint=section['Fingerprint']).one()
+        fpr_hash = section['Fingerprint'].translate(None, ' ')
+        fpr = session.query(Fingerprint).filter_by(fingerprint=fpr_hash).one()
         if fpr.keyring is None or fpr.keyring.keyring_name not in cnf.value_list('Command::DM::Keyrings'):
             raise CommandError('Key {0} is not in DM keyring.'.format(fpr.fingerprint))
         addresses = gpg_get_key_addresses(fpr.fingerprint)
