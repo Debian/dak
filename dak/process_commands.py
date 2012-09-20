@@ -20,11 +20,13 @@ import apt_pkg
 import datetime
 import os
 import sys
+import time
 
 from daklib.config import Config
 from daklib.command import CommandError, CommandFile
 from daklib.daklog import Logger
 from daklib.fstransactions import FilesystemTransaction
+from daklib.gpg import GpgException
 from daklib.utils import find_next_free
 
 def usage():
@@ -64,13 +66,21 @@ def main(argv=None):
             log.log(['unexpected filename', basename])
             continue
 
-        command = CommandFile(fn, log)
-        if command.evaluate():
-            log.log(['moving to done', basename])
-            dst = find_next_free(os.path.join(donedir, basename))
-        else:
-            log.log(['moving to reject', basename])
+        try:
+            command = CommandFile(fn, log)
+            command.evaluate()
+        except:
+            created = os.stat(fn).st_mtime
+            now = time.time()
+            too_new = (now - created < int(cnf.get('Dinstall::SkipTime', '60')))
+            if too_new:
+                log.log(['skipped (too new)'])
+                continue
+            log.log(['reject', basename])
             dst = find_next_free(os.path.join(rejectdir, basename))
+        else:
+            log.log(['done', basename])
+            dst = find_next_free(os.path.join(donedir, basename))
 
         with FilesystemTransaction() as fs:
             fs.move(fn, dst, mode=0o644)

@@ -62,20 +62,23 @@ class CommandFile(object):
     def _evaluate_sections(self, sections, session):
         session.rollback()
         try:
-            sections.next()
-            section = sections.section
+            while True:
+                sections.next()
+                section = sections.section
 
-            action = section.get('Action', None)
-            if action is None:
-                raise CommandError('Encountered section without Action field')
-            self.result.append('Action: {0}'.format(action))
+                action = section.get('Action', None)
+                if action is None:
+                    raise CommandError('Encountered section without Action field')
+                self.result.append('Action: {0}'.format(action))
 
-            if action == 'dm':
-                self.action_dm(self.fingerprint, section, session)
-            elif action == 'break-the-archive':
-                self.action_break_the_archive(self.fingerprint, section, session)
-            else:
-                raise CommandError('Unknown action: {0}'.format(action))
+                if action == 'dm':
+                    self.action_dm(self.fingerprint, section, session)
+                elif action == 'break-the-archive':
+                    self.action_break_the_archive(self.fingerprint, section, session)
+                else:
+                    raise CommandError('Unknown action: {0}'.format(action))
+
+                self.result.append('')
         except StopIteration:
             pass
         finally:
@@ -157,13 +160,12 @@ class CommandFile(object):
             self.result.append('')
         except Exception as e:
             self.log.log(['ERROR', e])
-            self.result.append("There was an error processing this section:\n{0}".format(e))
+            self.result.append("There was an error processing this section. No changes were committed.\nDetails:\n{0}".format(e))
             result = False
 
         self._notify_uploader()
 
         session.close()
-        self.log.log(['done', self.filename])
 
         return result
 
@@ -189,7 +191,8 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr = session.query(Fingerprint).filter_by(fingerprint=section['Fingerprint']).one()
+        fpr_hash = section['Fingerprint'].translate(None, ' ')
+        fpr = session.query(Fingerprint).filter_by(fingerprint=fpr_hash).one()
         if fpr.keyring is None or fpr.keyring.keyring_name not in cnf.value_list('Command::DM::Keyrings'):
             raise CommandError('Key {0} is not in DM keyring.'.format(fpr.fingerprint))
         addresses = gpg_get_key_addresses(fpr.fingerprint)
@@ -203,6 +206,10 @@ class CommandFile(object):
             self.result.append('Uid: {0}'.format(addresses[0]))
 
         for source in self._split_packages(section.get('Allow', '')):
+            # Check for existance of source package to catch typos
+            if session.query(DBSource).filter_by(source=source).first() is None:
+                raise CommandError('Tried to grant permissions for unknown source package: {0}'.format(source))
+
             if session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr, source=source).first() is None:
                 aps = ACLPerSource()
                 aps.acl = acl
@@ -219,7 +226,11 @@ class CommandFile(object):
         session.flush()
 
         for source in self._split_packages(section.get('Deny', '')):
-            session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr, source=source).delete()
+            count = session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr, source=source).delete()
+            if count == 0:
+                raise CommandError('Tried to remove upload permissions for package {0}, '
+                                   'but no upload permissions were granted before.'.format(source))
+
             self.log.log(['dm', 'deny', fpr.fingerprint, source])
             self.result.append('Denied: {0}'.format(source))
 
