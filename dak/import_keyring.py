@@ -177,7 +177,7 @@ def main():
 
         changes.append((db_uid_byid.get(u, [None])[0], "Removed key: %s" % (f)))
         session.execute("""UPDATE fingerprint
-                              SET keyring = NULL,
+                              SET keyring = NULL
                             WHERE id = :fprid""", {'fprid': fid})
 
     # For the keys in this keyring, add/update any fingerprints that've
