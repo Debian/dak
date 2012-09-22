@@ -59,17 +59,23 @@ class CommandFile(object):
         session.add(signature_history)
         session.commit()
 
+    def _quote_section(self, section):
+        lines = []
+        for l in str(section).splitlines():
+            lines.append("> {0}".format(l))
+        return "\n".join(lines)
+
     def _evaluate_sections(self, sections, session):
         session.rollback()
         try:
             while True:
                 sections.next()
                 section = sections.section
+                self.result.append(self._quote_section(section))
 
                 action = section.get('Action', None)
                 if action is None:
                     raise CommandError('Encountered section without Action field')
-                self.result.append('Action: {0}'.format(action))
 
                 if action == 'dm':
                     self.action_dm(self.fingerprint, section, session)
