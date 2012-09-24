@@ -255,7 +255,7 @@ class PolicyQueueUploadHandler(object):
             if section.find('/') != -1:
                 component = section.split('/', 1)[0]
             override = self._binary_override(binary, component)
-            if override is None:
+            if override is None and not any(o['package'] == binary.package and o['type'] == binary.binarytype for o in missing):
                 hint = hints_map.get((binary.binarytype, binary.package))
                 if hint is not None:
                     missing.append(hint)
