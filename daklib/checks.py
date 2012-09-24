@@ -53,6 +53,15 @@ class RejectStupidMaintainerException(Exception):
     def __str__(self):
         return "'%s' has mismatching %s from the external files db ('%s' [current] vs '%s' [external])" % self.args[:4]
 
+class RejectACL(Reject):
+    """exception raise by failing ACL checks"""
+    def __init__(self, acl, reason):
+        self.acl = acl
+        self.reason = reason
+
+    def __str__(self):
+        return "ACL {0}: {1}".format(self.acl.name, self.reason)
+
 class Check(object):
     """base class for checks
 
@@ -528,12 +537,12 @@ class ACLCheck(Check):
             raise Reject('No ACL for fingerprint {0}'.format(fingerprint.fingerprint))
         result, reason = self._check_acl(session, upload, acl)
         if not result:
-            raise Reject(reason)
+            raise RejectACL(acl, reason)
 
         for acl in session.query(ACL).filter_by(is_global=True):
             result, reason = self._check_acl(session, upload, acl)
             if result == False:
-                raise Reject(reason)
+                raise RejectACL(acl, reason)
 
         return True
 
