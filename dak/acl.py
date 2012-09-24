@@ -84,14 +84,17 @@ def acl_export_per_source(acl_name):
     session = DBConn().session()
     acl = session.query(ACL).filter_by(name=acl_name).one()
 
-    query = """
+    query = r"""
       SELECT
         f.fingerprint,
         (SELECT COALESCE(u.name, '') || ' <' || u.uid || '>'
            FROM uid u
            JOIN fingerprint f2 ON u.id = f2.uid
           WHERE f2.id = f.id) AS name,
-        STRING_AGG(a.source, ' ' ORDER BY a.source)
+        STRING_AGG(
+          a.source
+          || COALESCE(' (' || (SELECT fingerprint FROM fingerprint WHERE id = a.created_by_id) || ')', ''),
+          E',\n ' ORDER BY a.source)
       FROM acl_per_source a
       JOIN fingerprint f ON a.fingerprint_id = f.id
       LEFT JOIN uid u ON f.uid = u.id
