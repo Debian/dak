@@ -1151,7 +1151,14 @@ class ArchiveUpload(object):
             if policy_queue is not None:
                 redirected_suite = policy_queue.suite
 
-            source_suites = self.session.query(Suite).filter(Suite.suite_id.in_([suite.suite_id, redirected_suite.suite_id])).subquery()
+            # source can be in the suite we install to or any suite we enhance
+            source_suite_ids = set([suite.suite_id, redirected_suite.suite_id])
+            for enhanced_suite_id, in self.session.query(VersionCheck.reference_id) \
+                    .filter(VersionCheck.suite_id.in_(source_suite_ids)) \
+                    .filter(VersionCheck.check == 'Enhances'):
+                source_suite_ids.add(enhanced_suite_id)
+
+            source_suites = self.session.query(Suite).filter(Suite.suite_id.in_(source_suite_ids)).subquery()
 
             source_component_func = lambda source: self._source_override(overridesuite, source).component
             binary_component_func = lambda binary: self._binary_component(overridesuite, binary)
