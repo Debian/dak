@@ -42,7 +42,7 @@ def getSources(suite, component, session, timestamp = None):
     if timestamp:
         extra_cond = "AND extract(epoch from sa.created) > %d" % timestamp
     query = """
-        SELECT s.id, archive.path || '/pool/', c.name || '/' || f.filename
+        SELECT s.id, archive.path || 'pool/', c.name || '/' || f.filename
             FROM source s
             JOIN src_associations sa
                 ON s.id = sa.source AND sa.suite = :suite %s
@@ -112,7 +112,7 @@ CREATE TEMP TABLE gf_candidates (
     source text);
 
 INSERT INTO gf_candidates (id, filename, path, architecture, src, source)
-    SELECT bc.id, c.name || '/' || f.filename, archive.path || '/pool/' , bc.architecture, bc.source as src, s.source
+    SELECT bc.id, c.name || '/' || f.filename, archive.path || 'pool/' , bc.architecture, bc.source as src, s.source
         FROM b_candidates bc
         JOIN source s ON bc.source = s.id
         JOIN files f ON bc.file = f.id
