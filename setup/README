@@ -8,8 +8,8 @@ and the following packages for dak itself:
    binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
    symlinks python-debian
 
-(the schema assumes at least postgresql 9.0; ftpmaster in Debian currently uses
-the squeeze postgresql 9.0 backport)
+(the schema assumes at least postgresql 9.1; ftpmaster in Debian currently uses
+the squeeze postgresql 9.1 backport)
 
 The following roles are assumed to exist:
  * dak: database superuser: needs to be an actual user
@@ -26,7 +26,7 @@ Set up the dak user:
 Create postgres roles and database:
 # sudo -u postgres psql
   CREATE USER dak CREATEROLE;
-  CREATE ROLE ftpmaster;
+  CREATE ROLE ftpmaster WITH ROLE dak;
   CREATE ROLE ftpteam WITH ROLE ftpmaster;
   CREATE ROLE ftptrainee WITH ROLE ftpmaster, ftpteam;
 
@@ -173,35 +173,14 @@ Add overrides, Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Qu
 ACCEPT
 -----------------------------------------------------------------------
 
-At this stage, the package has been ACCEPTed from NEW into NEWSTAGE.
-We now need to finally ACCEPT it into the pool:
+At this stage, the package has been marked as ACCEPTed from NEW.
+We now need to process the NEW policy queue:
 
-# cd /srv/dak/queue/newstage
-# dak process-upload *.changes
+# dak process-policy new
 
 -----------------------------------------------------------------------
-hello_2.6-1_amd64.changes
-ACCEPT
-
-
-hello_2.6-1.debian.tar.gz
-  to main/h/hello/hello_2.6-1.debian.tar.gz
-hello_2.6-1.dsc
-  to main/h/hello/hello_2.6-1.dsc
-hello_2.6-1_amd64.deb
-  to main/h/hello/hello_2.6-1_amd64.deb
-hello_2.6.orig.tar.gz
-  to main/h/hello/hello_2.6.orig.tar.gz
-
-
-Override entries for your package:
-hello_2.6-1.dsc - optional devel
-hello_2.6-1_amd64.deb - optional devel
-
-Announcing to debian-devel-changes@lists.debian.org
-[A]ccept, Skip, Quit ?A
-Installing.
-Installed 1 package set, 646 KB.
+Processing changes file: hello_2.6-1_amd64.changes
+  ACCEPT
 -----------------------------------------------------------------------
 
 We can now see that dak knows about the package:
