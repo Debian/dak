@@ -3,11 +3,11 @@ Rough Guide to doing Stable Point Releases in Debian
 
 - sudo to dak
 - bash:
-suite=oldstable
-suitename=lenny
-pusuite=oldstable-proposed-updates
-oldrev=5.0.8
-newrev=5.0.9
+suite=stable
+suitename=squeeze
+pusuite=proposed-updates
+oldrev=6.0.5
+newrev=6.0.6
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -35,9 +35,9 @@ Note: unstable first, then testing
 - ask rms if they have RMs to do.
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
-diver=20090123lenny9
-dioldver=20090123lenny8
+diver=20110106+squeeze4+b2
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
+dioldver=20110106+squeeze4
 cd $ftpdir/dists/${suite}/main
 if [ "${dioldver}" != "empty" ]; then
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -78,7 +78,7 @@ dak generate-filelist -s ${suite}
 - Let SRM see if all is ok
 
 - then:
-dak generate-packages-sources -s ${suite} ; dak contents generate -f -s ${suite}
+dak generate-packages-sources -s ${suite} ; dak contents generate -f -s ${suite} -a ftp-master
 
 cd $ftpdir/dists/${suite}
 for carch in $(dak admin s-a list-arch ${suite}); do
