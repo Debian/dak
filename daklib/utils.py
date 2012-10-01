@@ -1837,7 +1837,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 component, = session.query(Component.component_name) \
                     .join(Component.overrides) \
                     .filter(Override.suite == overridesuite) \
-                    .filter(Override.package == source) \
+                    .filter(Override.package == re.sub('/(contrib|non-free)$', '', source)) \
                     .join(Override.overridetype).filter(OverrideType.overridetype == 'dsc') \
                     .first()
                 if component != "main":
