@@ -26,6 +26,11 @@ set -u
 # the important part here)
 set -E
 
+# We sleep a while here, as cron - and as such @reboot jobs like this
+# one - are started pretty early during boot. With parts of the system
+# still missing, most noticable for us is a not-yet-started postgres...
+sleep 75
+
 # import the general variable set.
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
