@@ -42,7 +42,7 @@ $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 
 
 # Tell ries to sync its tree
-ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 -i ${base}/s3kr1t/pushddmirror dak@ries.debian.org sync
+${scriptsdir}/sync-dd ries-sync ries-sync1 ries-sync2 sync
 
 $scriptsdir/generate-di
 

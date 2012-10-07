@@ -1,0 +1,109 @@
+#! /bin/bash
+
+# Copyright (C) 2011, Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2012, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+set -e
+set -u
+set -E
+
+export LANG=C
+export LC_ALL=C
+
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
+usage() {
+  echo "usage: $0 <lock> <host1> <host2> sync|pool"
+  echo
+  echo "sync dd-accessible copy of the archive"
+  echo
+  echo "arguments:"
+  echo "  lock:      file used for locking"
+  echo "  host1:     hostname for syncing /srv/ftp-master.debian.org"
+  echo "  host2:     hostname for syncing /srv/ftp.debian.org"
+  echo "  sync|pool: sync excludes ftp/, pool syncs ftp/ too"
+  exit ${1:-0}
+}
+
+if [ $# -ne 4 ]; then
+  usage 1
+fi
+
+lockfile="${lockdir}/${1}"
+host1="${2}"
+host2="${3}"
+mode="${4}"
+
+# extra options for rsync of /srv/ftp-master.debian.org
+extra1=""
+
+case "${mode}" in
+    sync)
+        extra1="${extra1} --exclude /ftp/"
+	;;
+    pool)
+	;;
+    *)
+	echo "Unknown mode ${mode}." >&2
+	exit 1
+	;;
+esac
+
+cleanup() {
+  rm -f "${lockfile}"
+}
+trap cleanup EXIT TERM HUP INT QUIT
+
+# Also, NEVER use --delete-excluded!
+if lockfile -r3 "${lockfile}"; then
+    rsync -aH -B8192
+	${extra1}
+        --exclude "/backup/*.xz" \
+	--exclude "/backup/dump*" \
+	--exclude "/database/*.db" \
+	--exclude ".da-backup.trace" \
+	--exclude "lost+found" \
+	--exclude "/lock/" \
+	--exclude "/mirror/" \
+	--exclude "/morgue/" \
+	--exclude "/queue/unchecked/" \
+	--exclude "/s3kr1t" \
+	--exclude "/scripts/s3kr1t" \
+	--exclude "/tmp/" \
+	--delete --delete-after \
+	--timeout 3600 \
+	-e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+	/srv/ftp-master.debian.org/ "${host1}:/srv/ftp-master.debian.org/"
+   # command for the remote side:
+   # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
+
+   rsync -avH -B8192 \
+       --exclude mirror \
+       --exclude rsync/ \
+       --exclude lost+found \
+       --exclude .da-backup.trace \
+       --exclude web-users/ \
+       --delete --delete-after \
+       --timeout 3600 \
+       -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+       /srv/ftp.debian.org/ "${host2}:/srv/ftp.debian.org/"
+   # command for the remote side:
+   # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp.debian.org/"
+else
+    echo "Couldn't get the lock, not syncing"
+    exit 0
+fi

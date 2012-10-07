@@ -414,7 +414,7 @@ function bts() {
 function ddaccess() {
     # Tell our dd accessible mirror to sync itself up. Including ftp dir.
     log "Trigger dd accessible parts sync including ftp dir"
-    ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 -i ${base}/s3kr1t/pushddmirror dak@ries.debian.org pool
+    ${scriptsdir}/sync-dd ries-sync ries-sync1 ries-sync2 pool
 }
 
 function mirrorpush() {
