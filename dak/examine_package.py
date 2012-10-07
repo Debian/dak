@@ -514,7 +514,7 @@ def get_readme_source (dsc_filename):
     return res
 
 def check_dsc (suite, dsc_filename, session = None):
-    (dsc) = read_changes_or_dsc(suite, dsc_filename, session)
+    dsc = read_changes_or_dsc(suite, dsc_filename, session)
     dsc_basename = os.path.basename(dsc_filename)
     return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
            "\n" + \
