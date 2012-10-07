@@ -91,7 +91,7 @@ if lockfile -r3 "${lockfile}"; then
    # command for the remote side:
    # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
 
-   rsync -avH -B8192 \
+   rsync -aH -B8192 \
        --exclude mirror \
        --exclude rsync/ \
        --exclude lost+found \
