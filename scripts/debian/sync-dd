@@ -70,8 +70,8 @@ trap cleanup EXIT TERM HUP INT QUIT
 
 # Also, NEVER use --delete-excluded!
 if lockfile -r3 "${lockfile}"; then
-    rsync -aH -B8192
-	${extra1}
+    rsync -aH -B8192 \
+	${extra1} \
         --exclude "/backup/*.xz" \
 	--exclude "/backup/dump*" \
 	--exclude "/database/*.db" \
