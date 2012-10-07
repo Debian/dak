@@ -515,12 +515,13 @@ def get_readme_source (dsc_filename):
 
 def check_dsc (suite, dsc_filename, session = None):
     (dsc) = read_changes_or_dsc(suite, dsc_filename, session)
+    dsc_basename = os.path.basename(dsc_filename)
     return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
            "\n" + \
-           foldable_output("lintian check for %s" % dsc_filename,
+           foldable_output("lintian check for %s" % dsc_basename,
 	       "source-lintian", do_lintian(dsc_filename)) + \
            "\n" + \
-           foldable_output("README.source for %s" % dsc_filename,
+           foldable_output("README.source for %s" % dsc_basename,
                "source-readmesource", get_readme_source(dsc_filename))
 
 def check_deb (suite, deb_filename, session = None):
