@@ -78,6 +78,10 @@ FROM
 source s
 JOIN src_associations sa ON s.id = sa.source
 JOIN files f ON s.file=f.id
+JOIN files_archive_map fam
+  ON fam.file_id = f.id
+     AND fam.archive_id = (SELECT archive_id FROM suite WHERE id = :suite)
+     AND fam.component_id = :component
 JOIN override o ON o.package = s.source
 JOIN section sec ON o.section = sec.id
 JOIN priority pri ON o.priority = pri.id
