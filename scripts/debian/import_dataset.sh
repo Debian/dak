@@ -59,7 +59,7 @@ if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     BRITNEY=" --britney"
 fi
 
-cat ${INPUTFILE} | dak control-suite --set ${IMPORTSUITE} ${BRITNEY}
+dak control-suite --set ${IMPORTSUITE} ${BRITNEY} < ${INPUTFILE}
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     NOW=$(date "+%Y%m%d%H%M")
