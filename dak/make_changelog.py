@@ -178,7 +178,7 @@ def export_files(session, archive, clpool):
                JOIN files f ON f.id = s.file
                JOIN files_archive_map fam ON f.id = fam.file_id AND fam.archive_id = su.id
                JOIN component c ON fam.component_id = c.id
-               WHERE su.archive = :archive_id
+               WHERE su.archive_id = :archive_id
                ORDER BY s.source, suite"""
 
     for p in session.execute(query, {'archive_id': archive.archive_id}):
