@@ -84,7 +84,7 @@ for suite in stable testing; do
     cd ${incoming}/${suite}.new
     apt-ftparchive packages . ${overridedir}/override.${overridecodename}.all3 >Packages
     gzip -9c --rsyncable <Packages >Packages.gz
-    apt-ftparchive sources . ${overridedir}/override.${overridecodename}.all3.src >Sources
+    apt-ftparchive sources . ${overridedir}/override.${overridecodename}.all3 >Sources
     gzip -9c --rsyncable <Sources >Sources.gz
     rm -f Release
 
