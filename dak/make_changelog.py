@@ -258,7 +258,7 @@ def main():
     Cnf = utils.get_conf()
     cnf = Config()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
-                 ('a','archive','Make-Changelog::Options::Help','HasArg'),
+                 ('a','archive','Make-Changelog::Options::Archive','HasArg'),
                  ('s','suite','Make-Changelog::Options::Suite','HasArg'),
                  ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
                  ('n','binnmu','Make-Changelog::Options::binNMU'),
