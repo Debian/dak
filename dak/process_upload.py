@@ -385,6 +385,9 @@ def action(directory, upload):
     print
     print "\n".join(package_info)
     print
+    if len(upload.warnings) > 0:
+        print "\n".join(upload.warnings)
+        print
 
     if len(upload.reject_reasons) > 0:
         print "Reason:"
