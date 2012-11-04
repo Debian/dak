@@ -37,13 +37,11 @@ fi
 trap cleanup EXIT
 
 for queue in embargoed; do
-    cd ${queuedir}/${queue}/COMMENTS
-    comments=$(find . -maxdepth 1 -mindepth 1 -type f '(' -name "ACCEPT.*.changes" -o -name "REJECT.*.changes" ')' | sed -e "s,./,," | xargs)
-    if [ -n "$comments" ]; then
+    echo "$timestamp: processing ${queue}" >> ${report}
+    dak process-policy ${queue} >> ${report}
+    accepted=$(find ${queuedir}/accepted -type f -name "*.changes")
+    if [ -n "${accepted}" ]; then
 	dopolicy=true
-	echo "$timestamp": ${comments:-"Nothing to do for ${queue}"}  >> $report
-	dak process-policy ${queue} >> ${report}
-	find /srv/security-master.debian.org/queue/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
     fi
 done
 
@@ -103,6 +101,7 @@ done
 
 if [ "x${dopolicy}x" = "xtruex" ]; then
     # We had something approved from a policy queue, push out new archive
+    find /srv/security-master.debian.org/queue/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
     dak dominate
     #dak generate-filelist
     cd $configdir
