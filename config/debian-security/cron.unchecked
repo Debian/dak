@@ -67,6 +67,16 @@ if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
     exit 0
 fi
 
+# export policy queues
+for queue in embargoed; do
+    pushd ${queuedir}/${queue}
+    rm -rf export.new
+    dak export -q ${queue} -d export.new --all
+    rsync -a --delete export.new/. export/.
+    rm -rf export.new
+    popd
+done
+
 # manage build queues
 dak manage-build-queues -a
 dak generate-packages-sources2 -a build-queues
@@ -94,7 +104,9 @@ for suite in stable testing; do
     mv ${suite}.Release ${suite}.new/Release
     mv ${suite}.Release.gpg ${suite}.new/Release.gpg
 
-    mv ${suite} ${suite}.old
+    if [ -d ${suite} ]; then
+	mv ${suite} ${suite}.old
+    fi
     mv ${suite}.new ${suite}
     rm -rf ${suite}.old
 done
