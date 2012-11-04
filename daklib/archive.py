@@ -740,17 +740,20 @@ class ArchiveUpload(object):
         @return: C{True} if the upload is NEW, C{False} otherwise
         """
         session = self.session
+        new = False
 
         # Check for missing overrides
         for b in self.changes.binaries:
             override = self._binary_override(suite, b)
             if override is None:
-                return True
+                self.warnings.append('binary:{0} is NEW.'.format(b.control['Package']))
+                new = True
 
         if self.changes.source is not None:
             override = self._source_override(suite, self.changes.source)
             if override is None:
-                return True
+                self.warnings.append('source:{0} is NEW.'.format(self.changes.source.control['Source']))
+                new = True
 
         # Check if we reference a file only in a tainted archive
         files = self.changes.files.values()
@@ -764,7 +767,10 @@ class ArchiveUpload(object):
             in_untainted_archive = (query_untainted.first() is not None)
 
             if in_archive and not in_untainted_archive:
-                return True
+                self.warnings.append('{0} is only available in NEW.'.format(f.filename))
+                new = True
+
+        return new
 
     def _final_suites(self):
         session = self.session
