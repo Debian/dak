@@ -89,7 +89,6 @@ def _do_Approve():
     # 1. use process-policy to go through the COMMENTS dir
     spawn("dak process-policy embargoed")
     spawn("dak process-policy unembargoed")
-    newstage=get_policy_queue('newstage')
 
     print "Locking unchecked"
     lockfile='/srv/security-master.debian.org/lock/unchecked.lock'
