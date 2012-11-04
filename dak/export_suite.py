@@ -76,9 +76,13 @@ def main(argv=None):
 
     with FilesystemTransaction() as fs:
         for f in files:
+            af = session.query(ArchiveFile) \
+                        .join(ArchiveFile.component).join(ArchiveFile.file) \
+                        .filter(ArchiveFile.archive == suite.archive) \
+                        .filter(ArchiveFile.file == f).one()
             dst = os.path.join(directory, f.basename)
             if not os.path.exists(dst):
-                fs.copy(f.fullpath, dst, symlink=symlink)
+                fs.copy(af.path, dst, symlink=symlink)
         fs.commit()
 
 if __name__ == '__main__':

@@ -1030,7 +1030,9 @@ class PoolFile(ORMObject):
     @property
     def fullpath(self):
         session = DBConn().session().object_session(self)
-        af = session.query(ArchiveFile).join(Archive).filter(ArchiveFile.file == self).first()
+        af = session.query(ArchiveFile).join(Archive) \
+                    .filter(ArchiveFile.file == self) \
+                    .order_by(Archive.tainted.desc()).first()
         return af.path
 
     @property
