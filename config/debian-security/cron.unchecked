@@ -66,11 +66,6 @@ fi
 cd ${base}
 find ${queuedir}/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
 
-if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
-    echo "$timestamp": Nothing to do >> $report
-    exit 0
-fi
-
 # export policy queues
 for queue in embargoed; do
     pushd ${queuedir}/${queue}
@@ -80,6 +75,11 @@ for queue in embargoed; do
     rm -rf export.new
     popd
 done
+
+if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
+    echo "$timestamp": Nothing to do >> $report
+    exit 0
+fi
 
 # manage build queues
 dak manage-build-queues -a
