@@ -21,7 +21,7 @@ for file in override*.gz; do
 done
 find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
 
-for suite in $suites; do
+for suite in stable testing; do
     case $suite in
         stable) override_suite=squeeze;;
         testing) override_suite=wheezy;;
