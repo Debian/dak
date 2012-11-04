@@ -79,7 +79,7 @@ if ! lockfile -r100 "$LOCKFILE"; then
 fi
 trap cleanup EXIT
 
-dak clean-queues
+dak clean-queues -i ${unchecked}
 dak clean-queues -i $disembargo
 dak clean-suites
 

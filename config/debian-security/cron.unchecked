@@ -36,14 +36,16 @@ if ! lockfile -r8 "$LOCKFILE"; then
 fi
 trap cleanup EXIT
 
-cd $newstage
-changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
-if [ -n "$changes" ]; then
-    dopolicy=true
-    echo "$timestamp": ${changes:-"Nothing to do in newstage"}  >> $report
-    rsync -a -q $newstage/. /srv/queued/ftpmaster/.
-    dak process-upload -a -d "$newstage" >> $report
-fi
+for queue in embargoed; do
+    cd ${queuedir}/${queue}/COMMENTS
+    comments=$(find . -maxdepth 1 -mindepth 1 -type f '(' -name "ACCEPT.*.changes" -o -name "REJECT.*.changes" ')' | sed -e "s,./,," | xargs)
+    if [ -n "$comments" ]; then
+	dopolicy=true
+	echo "$timestamp": ${comments:-"Nothing to do for ${queue}"}  >> $report
+	dak process-policy ${queue} >> ${report}
+	find /srv/security-master.debian.org/queue/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
+    fi
+done
 
 cd $unchecked
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
@@ -76,8 +78,8 @@ if [ "x${dopolicy}x" = "xtruex" ]; then
     cd $configdir
     $configdir/map.sh
     #apt-ftparchive generate apt.conf
-    dak generate-packages-sources2
-    dak generate-releases
+    dak generate-packages-sources2 -a security
+    dak generate-releases -a security
     /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh
     sudo -u archvsync -H /home/archvsync/signal_security
 fi
