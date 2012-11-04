@@ -312,6 +312,7 @@ def main ():
         usage()
 
     Logger = daklog.Logger('generate-releases')
+    pool = DakProcessPool()
 
     session = DBConn().session()
 
@@ -331,8 +332,6 @@ def main ():
         suites = query.all()
 
     broken=[]
-
-    pool = DakProcessPool()
 
     for s in suites:
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
