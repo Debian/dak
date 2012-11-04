@@ -96,16 +96,16 @@ def _do_Approve():
     spawn("lockfile -r42 {0}".format(lockfile))
 
     try:
+        # 1. Install accepted packages
+        print "Installing accepted packages into security archive"
+        for queue in ("embargoed",):
+            spawn("dak process-policy {0}".format(queue))
 
         # 2. sync the stuff to ftpmaster
         print "Sync stuff for upload to ftpmaster"
-        spawn("rsync -a -q %s/. /srv/queued/ftpmaster/." % (newstage.path))
+        spawn("find /srv/security-master.debian.org/queue/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +")
 
-        # 3. Now run process-upload in the newstage dir
-        print "Now put it into the security archive"
-        spawn("dak process-upload -a -d %s" % (newstage.path))
-
-        # 4. Run all the steps that are needed to publish the changed archive
+        # 3. Run all the steps that are needed to publish the changed archive
         print "Domination"
         spawn("dak dominate")
         #    print "Generating filelist for apt-ftparchive"
@@ -113,9 +113,9 @@ def _do_Approve():
         print "Updating Packages and Sources files... This may take a while, be patient"
         spawn("/srv/security-master.debian.org/dak/config/debian-security/map.sh")
         #    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
-        spawn("dak generate-packages-sources2")
+        spawn("dak generate-packages-sources2 -a security")
         print "Updating Release files..."
-        spawn("dak generate-releases")
+        spawn("dak generate-releases -a security")
         print "Triggering security mirrors... (this may take a while)"
         spawn("/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh")
         spawn("sudo -u archvsync -H /home/archvsync/signal_security")
