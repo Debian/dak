@@ -153,6 +153,26 @@ def comment_accept(upload, srcqueue, comments, transaction):
         dst = os.path.join(upload.target_suite.path, upload.changes.changesname)
         fs.copy(src, dst, mode=upload.target_suite.archive.mode)
 
+    # Copy upload to Process-Policy::CopyDir
+    # Used on security.d.o to sync accepted packages to ftp-master, but this
+    # should eventually be replaced by something else.
+    copydir = cnf.get('Process-Policy::CopyDir') or None
+    if copydir is not None:
+        mode = upload.target_suite.archive.mode
+        if upload.source is not None:
+            for f in [ df.poolfile for df in upload.source.srcfiles ]:
+                dst = os.path.join(copydir, f.basename)
+                fs.copy(f.fullpath, dst, mode=mode)
+
+        for db_binary in upload.binaries:
+            f = db_binary.poolfile
+            dst = os.path.join(copydir, f.basename)
+            fs.copy(f.fullpath, dst, mode=mode)
+
+        src = os.path.join(upload.policy_queue.path, upload.changes.changesname)
+        dst = os.path.join(copydir, upload.changes.changesname)
+        fs.copy(src, dst, mode=mode)
+
     if upload.source is not None and not Options['No-Action']:
         urgency = upload.changes.urgency
         if urgency not in cnf.value_list('Urgency::Valid'):
