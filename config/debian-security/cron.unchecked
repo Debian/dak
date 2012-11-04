@@ -68,13 +68,13 @@ find ${queuedir}/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
 
 # export policy queues
 for queue in embargoed; do
-    pushd ${queuedir}/${queue}
+    cd ${queuedir}/${queue}
     rm -rf export.new
     mkdir export.new
     dak export -q ${queue} -d export.new --all
     rsync -a --delete export.new/. export/.
     rm -rf export.new
-    popd
+    cd ${base}
 done
 
 if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
