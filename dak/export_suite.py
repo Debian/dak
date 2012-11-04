@@ -80,6 +80,14 @@ def main(argv=None):
                         .join(ArchiveFile.component).join(ArchiveFile.file) \
                         .filter(ArchiveFile.archive == suite.archive) \
                         .filter(ArchiveFile.file == f).first()
+            # XXX: Remove later. There was a bug that caused only the *.dsc to
+            # be installed in build queues and we do not want to break them.
+            # The bug was fixed in 55d2c7e6e2418518704623246021021e05b90e58
+            # on 2012-11-04
+            if af is None:
+                af = session.query(ArchiveFile) \
+                            .join(ArchiveFile.component).join(ArchiveFile.file) \
+                            .filter(ArchiveFile.file == f).first()
             dst = os.path.join(directory, f.basename)
             if not os.path.exists(dst):
                 fs.copy(af.path, dst, symlink=symlink)
