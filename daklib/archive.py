@@ -803,8 +803,12 @@ class ArchiveUpload(object):
         if suite.overridesuite is not None:
             suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
+        mapped_component = get_mapped_component(binary.component)
+        if mapped_component is None:
+            return None
+
         query = self.session.query(Override).filter_by(suite=suite, package=binary.control['Package']) \
-                .join(Component).filter(Component.component_name == binary.component) \
+                .join(Component).filter(Component.component_name == mapped_component.component_name) \
                 .join(OverrideType).filter(OverrideType.overridetype == binary.type)
 
         try:
