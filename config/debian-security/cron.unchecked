@@ -89,9 +89,9 @@ for suite in stable testing; do
     rm -f Release
 
     cd ${incoming}
-    apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite incoming" -o APT::FTPArchive::Release::Architectures="$archs" release ${suite}.new >${suite}.Release
+    apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite security" -o APT::FTPArchive::Release::Architectures="$archs" release ${suite}.new >${suite}.Release
 
-    gpg --secret-keyring /srv/security-master.debian.org/s3kr1t/dot-gnupg/secring.gpg /srv/security-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o ${suite}.Release.gpg ${suite}.Release
+    gpg --secret-keyring /srv/security-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/security-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o ${suite}.Release.gpg ${suite}.Release
 
     mv ${suite}.Release ${suite}.new/Release
     mv ${suite}.Release.gpg ${suite}.new/Release.gpg
