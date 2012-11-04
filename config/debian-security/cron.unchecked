@@ -70,6 +70,7 @@ find ${queuedir}/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
 for queue in embargoed; do
     pushd ${queuedir}/${queue}
     rm -rf export.new
+    mkdir export.new
     dak export -q ${queue} -d export.new --all
     rsync -a --delete export.new/. export/.
     rm -rf export.new
@@ -91,6 +92,7 @@ dak generate-releases -a build-queues >/dev/null
 for suite in stable testing; do
     overridecodename=$(dak admin suite show ${suite} | awk '$1 == "OverrideCodename:" { print $2 }')
     rm -rf ${incoming}/${suite}.new
+    mkdir ${incoming}/${suite}.new
     dak export-suite -s buildd-${suite} -d ${incoming}/${suite}.new
 
     cd ${incoming}/${suite}.new
