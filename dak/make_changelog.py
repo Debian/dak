@@ -160,10 +160,11 @@ def display_changes(uploads, index):
         print upload[index]
         prev_upload = upload[0]
 
-def export_files(session, pool, clpool):
+def export_files(session, archive, clpool):
     """
     Export interesting files from source packages.
     """
+    pool = os.path.join(archive.path, 'pool')
 
     sources = {}
     unpack = {}
@@ -177,9 +178,10 @@ def export_files(session, pool, clpool):
                JOIN files f ON f.id = s.file
                JOIN files_archive_map fam ON f.id = fam.file_id AND fam.archive_id = su.id
                JOIN component c ON fam.component_id = c.id
+               WHERE su.archive = :archive_id
                ORDER BY s.source, suite"""
 
-    for p in session.execute(query):
+    for p in session.execute(query, {'archive_id': archive.archive_id}):
         if not sources.has_key(p[0]):
             sources[p[0]] = {}
         sources[p[0]][p[1]] = (re_no_epoch.sub('', p[2]), p[3])
@@ -256,6 +258,7 @@ def main():
     Cnf = utils.get_conf()
     cnf = Config()
     Arguments = [('h','help','Make-Changelog::Options::Help'),
+                 ('a','archive','Make-Changelog::Options::Help','HasArg'),
                  ('s','suite','Make-Changelog::Options::Suite','HasArg'),
                  ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
                  ('n','binnmu','Make-Changelog::Options::binNMU'),
@@ -283,8 +286,9 @@ def main():
 
     if export:
         if cnf.exportpath:
+            archive = session.query(Archive).filter_by(archive_name=Options['Archive']).one()
             exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
-            export_files(session, Cnf['Dir::Pool'], exportpath)
+            export_files(session, archive, exportpath)
         else:
             utils.fubar('No changelog export path defined')
     elif binnmu:

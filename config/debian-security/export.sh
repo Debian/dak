@@ -19,7 +19,7 @@ export LC_ALL=C
 # extract changelogs and stuff
 function changelogs() {
     log "Extracting changelogs"
-    dak make-changelog -e
+    dak make-changelog -e -a security
     mkdir -p ${exportpublic}/changelogs
     cd ${exportpublic}/changelogs
     rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
