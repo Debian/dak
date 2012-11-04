@@ -79,7 +79,7 @@ def main(argv=None):
             af = session.query(ArchiveFile) \
                         .join(ArchiveFile.component).join(ArchiveFile.file) \
                         .filter(ArchiveFile.archive == suite.archive) \
-                        .filter(ArchiveFile.file == f).one()
+                        .filter(ArchiveFile.file == f).first()
             dst = os.path.join(directory, f.basename)
             if not os.path.exists(dst):
                 fs.copy(af.path, dst, symlink=symlink)
