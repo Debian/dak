@@ -100,10 +100,6 @@ def _do_Approve():
         for queue in ("embargoed",):
             spawn("dak process-policy {0}".format(queue))
 
-        # 2. sync the stuff to ftpmaster
-        print "Sync stuff for upload to ftpmaster"
-        spawn("find /srv/security-master.debian.org/queue/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +")
-
         # 3. Run all the steps that are needed to publish the changed archive
         print "Domination"
         spawn("dak dominate")

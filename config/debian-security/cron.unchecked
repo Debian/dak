@@ -62,6 +62,10 @@ if [ -n "$changes" ]; then
     dak process-upload -a -d "$disembargo" >> $reportdis
 fi
 
+# sync accepted files to ftpmaster
+cd ${base}
+find ${queuedir}/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
+
 if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
     echo "$timestamp": Nothing to do >> $report
     exit 0
@@ -113,7 +117,6 @@ done
 
 if [ "x${dopolicy}x" = "xtruex" ]; then
     # We had something approved from a policy queue, push out new archive
-    find /srv/security-master.debian.org/queue/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
     dak dominate
     #dak generate-filelist
     cd $configdir
