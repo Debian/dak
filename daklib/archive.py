@@ -335,6 +335,8 @@ class ArchiveTransaction(object):
         db_source.suites.append(suite)
 
         if not created:
+            for f in db_source.srcfiles:
+                self._copy_file(f.poolfile, archive, component, allow_tainted=allow_tainted)
             return db_source
 
         ### Now add remaining files and copy them to the archive.
