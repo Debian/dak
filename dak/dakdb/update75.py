@@ -54,7 +54,7 @@ def _track_files_per_archive(cnf, c):
        FROM files f
        JOIN location l ON f.location = l.id""", (archive_id,))
 
-    c.execute("""UPDATE files f SET filename = substring(f.filename FROM '/(.*)')
+    c.execute("""UPDATE files f SET filename = substring(f.filename FROM c.name || '/(.*)')
       FROM location l, component c
       WHERE f.location = l.id AND l.component = c.id
         AND f.filename LIKE c.name || '/%'""")
