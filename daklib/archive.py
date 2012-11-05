@@ -754,7 +754,7 @@ class ArchiveUpload(object):
         if self.changes.source is not None:
             override = self._source_override(suite, self.changes.source)
             if override is None:
-                self.warnings.append('source:{0} is NEW.'.format(self.changes.source.control['Source']))
+                self.warnings.append('source:{0} is NEW.'.format(self.changes.source.dsc['Source']))
                 new = True
 
         # Check if we reference a file only in a tainted archive
