@@ -261,6 +261,23 @@ def __suite_add(d, args, addallarches=False):
 
     s.commit()
 
+def __suite_rm(d, args):
+    die_arglen(args, 3, "E: removing a suite requires at least a name")
+    name = args[2]
+    print "Removing suite {0}".format(name)
+    if not dryrun:
+        try:
+            s = d.session()
+            su = get_suite(name.lower())
+            if su is None:
+                die("E: Cannot find suite {0}".format(name))
+            s.delete(su)
+            s.commit()
+        except IntegrityError as e:
+            die("E: Integrity error removing suite {0} (suite-arch entries probably still exist)".format(name))
+        except SQLAlchemyError as e:
+            die("E: Error removing suite {0} ({1})".format(name, e))
+    print "Suite {0} removed".format(name)
 
 def suite(command):
     args = [str(x) for x in command]
@@ -275,6 +292,8 @@ def suite(command):
         __suite_list(d, args)
     elif mode == 'show':
         __suite_show(d, args)
+    elif mode == 'rm':
+        __suite_rm(d, args)
     elif mode == 'add':
         __suite_add(d, args, False)
     elif mode == 'add-all-arches':
