@@ -92,6 +92,33 @@ class HashedFile(object):
         @type: str of C{None}
         """
 
+    @classmethod
+    def from_file(cls, directory, filename, section=None, priority=None):
+        """create with values for an existing file
+
+        Create a C{HashedFile} object that refers to an already existing file.
+
+        @type  directory: str
+        @param directory: directory the file is located in
+
+        @type  filename: str
+        @param filename: filename
+
+        @type  section: str or C{None}
+        @param section: optional section as given in .changes files
+
+        @type  priority: str or C{None}
+        @param priority: optional priority as given in .changes files
+
+        @rtype:  L{HashedFile}
+        @return: C{HashedFile} object for the given file
+        """
+        path = os.path.join(directory, filename)
+        size = os.stat(path).st_size
+        with open(path, 'r') as fh:
+            hashes = apt_pkg.Hashes(fh)
+        return cls(filename, size, hashes.md5, hashes.sha1, hashes.sha256, section, priority)
+
     def check(self, directory):
         """Validate hashes
 
@@ -387,6 +414,11 @@ class Binary(object):
         @type: dict-like
         """
 
+    @classmethod
+    def from_file(cls, directory, filename):
+        hashed_file = HashedFile.from_file(directory, filename)
+        return cls(directory, hashed_file)
+
     @property
     def source(self):
         """get tuple with source package name and version
@@ -452,6 +484,11 @@ class Source(object):
         """
 
         self._files = None
+
+    @classmethod
+    def from_file(cls, directory, filename, keyrings, require_signature=True):
+        hashed_file = HashedFile.from_file(directory, filename)
+        return cls(directory, [hashed_file], keyrings, require_signature)
 
     @property
     def files(self):
