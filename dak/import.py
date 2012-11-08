@@ -79,7 +79,7 @@ def import_source(log, transaction, suite, component, directory, hashed_file,
         section = session.query(Section).filter_by(section=section_name).one()
         priority = session.query(Priority).filter_by(priority='extra').one()
 
-        override = Override(package=control.dsc['Source'], suite=overridesuite, component=component,
+        override = Override(package=source.dsc['Source'], suite=overridesuite, component=component,
                             section=section, priority=priority, overridetype=overridetype)
         session.add(override)
         log.log(['add-source-override', suite.suite_name, component.component_name, control.dsc['Source'], section.section, priority.priority])
