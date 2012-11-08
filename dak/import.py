@@ -76,7 +76,7 @@ def import_source(log, transaction, suite, component, directory, hashed_file,
         section_name = 'misc'
         if component.component_name != 'main':
             section_name = "{0}/{1}".format(component.component_name, section_name)
-        section = session.query(Section).filter_by(section=section).one()
+        section = session.query(Section).filter_by(section=section_name).one()
         priority = session.query(Priority).filter_by(priority='extra').one()
 
         override = Override(package=control.dsc['Source'], suite=overridesuite, component=component,
