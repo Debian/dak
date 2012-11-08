@@ -82,7 +82,7 @@ def import_source(log, transaction, suite, component, directory, hashed_file,
         override = Override(package=source.dsc['Source'], suite=overridesuite, component=component,
                             section=section, priority=priority, overridetype=overridetype)
         session.add(override)
-        log.log(['add-source-override', suite.suite_name, component.component_name, control.dsc['Source'], section.section, priority.priority])
+        log.log(['add-source-override', suite.suite_name, component.component_name, source.dsc['Source'], section.section, priority.priority])
 
 def import_binary(log, transaction, suite, component, directory, hashed_file, fingerprint=None, add_overrides=False):
     filename = hashed_file.filename
