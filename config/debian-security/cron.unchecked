@@ -28,15 +28,6 @@ if ! lockfile -r8 "$LOCKFILE"; then
 fi
 trap cleanup EXIT
 
-for queue in embargoed unembargoed; do
-    echo "$timestamp: processing ${queue}" >> ${report}
-    dak process-policy ${queue} | mail -a "X-Debian: DAK" -e -s "Automatically accepted from ${queue}" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
-done
-accepted=$(find ${queuedir}/accepted -type f -name "*.changes")
-if [ -n "${accepted}" ]; then
-    dopolicy=true
-fi
-
 cd $unchecked
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
 if [ -n "$changes" ]; then
@@ -47,11 +38,19 @@ fi
 
 cd $disembargo
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
-
 if [ -n "$changes" ]; then
     doanything=true
     echo "$timestamp": ${changes:-"Nothing to do in disembargo"}  >> $reportdis
     dak process-upload -a -d "$disembargo" >> $reportdis
+fi
+
+for queue in embargoed unembargoed; do
+    echo "$timestamp: processing ${queue}" >> ${report}
+    dak process-policy ${queue} | mail -a "X-Debian: DAK" -e -s "Automatically accepted from ${queue}" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+done
+accepted=$(find ${queuedir}/accepted -type f -name "*.changes")
+if [ -n "${accepted}" ]; then
+    dopolicy=true
 fi
 
 # sync accepted files to ftpmaster
