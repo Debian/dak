@@ -18,14 +18,6 @@ doanything=false
 dopolicy=false
 LOCKFILE="$lockdir/unchecked.lock"
 
-# So first we should go and see if any process-policy action is done
-dak process-policy embargoed | mail -a "X-Debian: DAK" -e -s "Automatically accepted from embargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
-dak process-policy unembargoed | mail -a "X-Debian: DAK" -e -s "Automatically accepted from unembargoed" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
-
-# Now, if this really did anything, we can then sync it over. Files
-# in newstage mean they are (late) accepts of security stuff, need
-# to sync to ftp-master
-
 cleanup() {
     rm -f "$LOCKFILE"
 }
@@ -36,14 +28,14 @@ if ! lockfile -r8 "$LOCKFILE"; then
 fi
 trap cleanup EXIT
 
-for queue in embargoed; do
+for queue in embargoed unembargoed; do
     echo "$timestamp: processing ${queue}" >> ${report}
-    dak process-policy ${queue} >> ${report}
-    accepted=$(find ${queuedir}/accepted -type f -name "*.changes")
-    if [ -n "${accepted}" ]; then
-	dopolicy=true
-    fi
+    dak process-policy ${queue} | mail -a "X-Debian: DAK" -e -s "Automatically accepted from ${queue}" team@security.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
 done
+accepted=$(find ${queuedir}/accepted -type f -name "*.changes")
+if [ -n "${accepted}" ]; then
+    dopolicy=true
+fi
 
 cd $unchecked
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
