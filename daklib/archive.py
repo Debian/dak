@@ -33,6 +33,7 @@ import os
 import shutil
 import subprocess
 from sqlalchemy.orm.exc import NoResultFound
+import sqlalchemy.exc
 import tempfile
 import traceback
 
@@ -1004,8 +1005,11 @@ class ArchiveUpload(object):
         db_changes.changelog_id = changelog_id
         db_changes.closes = self.changes.closed_bugs
 
-        self.transaction.session.add(db_changes)
-        self.transaction.session.flush()
+        try:
+            self.transaction.session.add(db_changes)
+            self.transaction.session.flush()
+        except sqlalchemy.exc.IntegrityError:
+            raise ArchiveException('{0} is already known.'.format(self.changes.filename))
 
         return db_changes
 
