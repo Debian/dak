@@ -162,16 +162,19 @@ def comment_accept(upload, srcqueue, comments, transaction):
         if upload.source is not None:
             for f in [ df.poolfile for df in upload.source.srcfiles ]:
                 dst = os.path.join(copydir, f.basename)
-                fs.copy(f.fullpath, dst, mode=mode)
+                if not os.path.exists(dst):
+                    fs.copy(f.fullpath, dst, mode=mode)
 
         for db_binary in upload.binaries:
             f = db_binary.poolfile
             dst = os.path.join(copydir, f.basename)
-            fs.copy(f.fullpath, dst, mode=mode)
+            if not os.path.exists(dst):
+                fs.copy(f.fullpath, dst, mode=mode)
 
         src = os.path.join(upload.policy_queue.path, upload.changes.changesname)
         dst = os.path.join(copydir, upload.changes.changesname)
-        fs.copy(src, dst, mode=mode)
+        if not os.path.exists(dst):
+            fs.copy(src, dst, mode=mode)
 
     if upload.source is not None and not Options['No-Action']:
         urgency = upload.changes.urgency
