@@ -525,7 +525,7 @@ def main ():
             utils.fubar("Closing bugs for multiple source packages is not supported.  Do it yourself.")
         Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
         Subst_close_other["__SOURCE__"] = source_pkg
-        other_bugs = bts.get_bugs('src', source_pkg, 'status', 'open')
+        other_bugs = bts.get_bugs('src', source_pkg, 'status', 'open', 'status', 'forwarded')
         if other_bugs:
             logfile.write("Also closing bug(s):")
             logfile822.write("Also-Bugs:")
