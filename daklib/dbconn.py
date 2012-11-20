@@ -2892,7 +2892,7 @@ class DBConn(object):
             engine_args['pool_size'] = int(cnf['DB::PoolSize'])
         if cnf.has_key('DB::MaxOverflow'):
             engine_args['max_overflow'] = int(cnf['DB::MaxOverflow'])
-        if sa_major_version == '0.6' and cnf.has_key('DB::Unicode') and \
+        if sa_major_version in ('0.6', '0.7') and cnf.has_key('DB::Unicode') and \
             cnf['DB::Unicode'] == 'false':
             engine_args['use_native_unicode'] = False
 
