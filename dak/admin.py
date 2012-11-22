@@ -103,6 +103,7 @@ Perform administrative work on the dak database.
                             primary mirror MIRROR.
      archive rm NAME        remove archive NAME (will only work if there are
                             no files and no suites in the archive)
+     archive rename OLD NEW rename archive OLD to NEW
 
   version-check / v-c:
      v-c list                        show version checks for all suites
@@ -429,10 +430,23 @@ def archive_rm(name):
     else:
         session.commit()
 
+def archive_rename(oldname, newname):
+    session = DBConn().session()
+    archive = get_archive(oldname, session)
+    archive.archive_name = newname
+    session.flush()
+
+    if dryrun:
+        session.rollback()
+    else:
+        session.commit()
+
 def archive(command):
     mode = command[1]
     if mode == 'list':
         archive_list()
+    elif mode == 'rename':
+        archive_rename(command[2], command[3])
     elif mode == 'add':
         archive_add(command[2:])
     elif mode == 'rm':
