@@ -86,7 +86,7 @@ class ArchiveTransaction(object):
         Will not give an error when the file is already present.
 
         @rtype:  L{daklib.dbconn.PoolFile}
-        @return: batabase object for the new file
+        @return: database object for the new file
         """
         session = self.session
 
