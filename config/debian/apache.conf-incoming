@@ -34,6 +34,11 @@
     # test access to check functionality, ganneff
     allow from 213.146.108.162
 
+    # for testing sbuild-db; rleigh@codelibre.net
+    # nagini.codelibre.net
+    allow from 80.68.93.164
+    allow from 2001:41c8:1:5750::2
+
     # Should be in DSA list
     # amd64
     # vitry (archive rebuild)
