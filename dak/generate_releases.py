@@ -173,9 +173,7 @@ class ReleaseWriter(object):
 
         out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
 
-        ## FIXME: Components need to be adjusted to whatever will be in the db
-        ## Needs putting in the DB
-        components = ['main', 'contrib', 'non-free']
+        components = [ c.component_name for c in session.query(Component) ]
 
         out.write("Components: %s\n" % ( " ".join(map(lambda x: "%s%s" % (suite_suffix, x), components ))))
 
