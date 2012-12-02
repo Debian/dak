@@ -668,7 +668,7 @@ class SuiteArchitectureCheck(Check):
         for arch in upload.changes.architectures:
             query = session.query(Architecture).filter_by(arch_string=arch).filter(Architecture.suites.contains(suite))
             if query.first() is None:
-                raise Reject('Architecture {0} is not allowed in suite {2}'.format(arch, suite.suite_name))
+                raise Reject('Architecture {0} is not allowed in suite {1}'.format(arch, suite.suite_name))
 
         return True
 
