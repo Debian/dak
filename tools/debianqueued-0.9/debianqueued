@@ -1708,6 +1708,13 @@ sub pgp_check($) {
   my $stat;
   local (*PIPE);
 
+  if ($file =~ /^([-\w.+~]+)$/) {
+    $file = $1;
+  } else {
+    msg( "log", "Tainted filename, skipping: $file\n" );
+    return "LOCAL ERROR";
+  }
+
   $stat = 1;
   if ( -x $conf::gpg ) {
     debug(   "executing $conf::gpg --no-options --batch "
