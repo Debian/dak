@@ -240,7 +240,6 @@ sub check_incoming_writable();
 sub rm(@);
 sub md5sum($);
 sub is_debian_file($);
-sub get_maintainer($);
 sub debian_file_stem($);
 sub msg($@);
 sub debug(@);
@@ -570,86 +569,6 @@ sub check_dir() {
         msg( "log",
              "Deleted stray file ${main::current_incoming_short}/$file\n" )
           if rm($file);
-      } elsif (
-        $age > $conf::no_changes_timeout
-        && is_debian_file($file)
-        &&
-
-        # not already reported
-          !( $stats[ST_MODE] & S_ISGID )
-        && ( $pattern   = debian_file_stem($file) )
-        && ( @job_files = glob($pattern) )
-        &&
-
-        # If a .changes is in the list, it has the same stem as the
-        # found file (probably a .orig.tar.gz). Don't report in this
-        # case.
-        !( grep( /\.changes$/, @job_files ) )
-              )
-      {
-        $maint = get_maintainer($file);
-
-        # Don't send a mail if this looks like the recompilation of a
-        # package for a non-i386 arch. For those, the maintainer field is
-        # useless :-(
-        if ( !grep( /(\.dsc|_(i386|all)\.deb)$/, @job_files ) ) {
-          msg( "log", "Found an upload without .changes and with no ",
-               ".dsc file\n" );
-          msg( "log",
-               "Not sending a report, because probably ",
-               "recompilation job\n" );
-        } elsif ($maint) {
-          init_mail();
-          $main::mail_addr = $maint;
-          $main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
-          $main::mail_subject =
-            "Incomplete upload found in " . "Debian upload queue";
-          msg(
-               "mail",
-               "Probably you are the uploader of the following "
-                 . "file(s) in\n"
-             );
-          msg( "mail", "the Debian upload queue directory:\n  " );
-          msg( "mail", join( "\n  ", @job_files ), "\n" );
-          msg(
-               "mail",
-               "This looks like an upload, but a .changes file "
-                 . "is missing, so the job\n"
-             );
-          msg( "mail", "cannot be processed.\n\n" );
-          msg(
-               "mail",
-               "If no .changes file arrives within ",
-               print_time( $conf::stray_remove_timeout - $age ),
-               ", the files will be deleted.\n\n"
-             );
-          msg(
-               "mail",
-               "If you didn't upload those files, please just "
-                 . "ignore this message.\n"
-             );
-          finish_mail();
-          msg(
-               "log",
-               "Sending problem report for an upload without a "
-                 . ".changes\n"
-             );
-          msg( "log", "Maintainer: $maint\n" );
-        } else {
-          msg(
-               "log",
-               "Found an upload without .changes, but can't "
-                 . "find a maintainer address\n"
-             );
-        } ## end else [ if ( !grep( /(\.dsc|_(i386|all)\.deb)$/...
-        msg( "log", "Files: @job_files\n" );
-
-        # remember we already have sent a mail regarding this file
-        foreach (@job_files) {
-          my @st = stat($_);
-          next if !@st;    # file may have disappeared in the meantime
-          chmod +( $st[ST_MODE] |= S_ISGID ), $_;
-        }
       } else {
         debug(
 "found stray file ${main::current_incoming_short}/$file, deleting in ",
@@ -2229,67 +2148,6 @@ sub is_debian_file($) {
   return $file =~ /\.(deb|dsc|(diff|tar)\.gz)$/
     && $file !~ /\.orig\.tar\.gz/;
 }
-
-#
-# try to extract maintainer email address from some a non-.changes file
-# return "" if not possible
-#
-sub get_maintainer($) {
-  my $file       = shift;
-  my $maintainer = "";
-  local (*F);
-
-  if ( $file =~ /\.diff\.gz$/ ) {
-
-    # parse a diff
-    open( F, "$conf::gzip -dc '$file' 2>/dev/null |" ) or return "";
-    while (<F>) {
-
-      # look for header line of a file */debian/control
-      last if m,^\+\+\+\s+[^/]+/debian/control(\s+|$),;
-    }
-    while (<F>) {
-      last if /^---/;   # end of control file patch, no Maintainer: found
-                        # inside control file patch look for Maintainer: field
-      $maintainer = $1, last if /^\+Maintainer:\s*(.*)$/i;
-    }
-    while (<F>) { }     # read to end of file to avoid broken pipe
-    close(F) or return "";
-  } elsif ( $file =~ /\.(deb|dsc|tar\.gz)$/ ) {
-    if ( $file =~ /\.deb$/ && $conf::ar ) {
-
-      # extract control.tar.gz from .deb with ar, then let tar extract
-      # the control file itself
-      open( F,
-                "($conf::ar p '$file' control.tar.gz | "
-              . "$conf::tar -xOf - "
-              . "--use-compress-program $conf::gzip "
-              . "control) 2>/dev/null |"
-          ) or return "";
-    } elsif ( $file =~ /\.dsc$/ ) {
-
-      # just do a plain grep
-      debug("get_maint: .dsc, no cmd");
-      open( F, "<$file" ) or return "";
-    } elsif ( $file =~ /\.tar\.gz$/ ) {
-
-      # let tar extract a file */debian/control
-      open( F,
-                "$conf::tar -xOf '$file' "
-              . "--use-compress-program $conf::gzip "
-              . "\\*/debian/control 2>&1 |"
-          ) or return "";
-    } else {
-      return "";
-    }
-    while (<F>) {
-      $maintainer = $1, last if /^Maintainer:\s*(.*)$/i;
-    }
-    close(F) or return "";
-  } ## end elsif ( $file =~ /\.(deb|dsc|tar\.gz)$/)
-
-  return $maintainer;
-} ## end sub get_maintainer($)
 
 #
 # return a pattern that matches all files that probably belong to one job
