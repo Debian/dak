@@ -2095,17 +2095,9 @@ sub check_incoming_writable() {
     unlink $file;
     ftp_cmd( "delete", $file );
   } elsif ( $conf::upload_method eq "copy" ) {
-    unlink("$main::current_targetdir/$testfile");
-    unless (open my $fh, ">>", "$main::current_targetdir/$testfile") {
+    unless(POSIX::access($main::current_targetdir, &POSIX::W_OK)) {
+      $msg = "No write access: $!";
       $stat = 1;
-      $msg = "Could not create $testfile: $!";
-    }
-    else {
-      close $fh;
-      unless (unlink("$main::current_targetdir/$testfile")) {
-        $stat = 1;
-        $msg = "Could not unlink file $testfile: $!";
-      }
     }
   }
   chomp($msg);
