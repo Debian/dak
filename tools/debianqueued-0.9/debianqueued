@@ -2134,9 +2134,10 @@ sub rm(@) {
 #
 sub md5sum($) {
   my $file = shift;
+  my $md5 = Digest::MD5->new;
 
   open my $fh, "<", $file or return "";
-  my $md5 = $md5->addfile($fh);
+  $md5->addfile($fh);
   close $fh;
 
   return $md5->hexdigest;
