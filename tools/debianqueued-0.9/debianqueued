@@ -45,16 +45,11 @@ $junk = $conf::valid_files;
 $junk = $conf::max_upload_retries;
 $junk = $conf::upload_delay_1;
 $junk = $conf::upload_delay_2;
-$junk = $conf::ar;
-$junk = $conf::gzip;
-$junk = $conf::cp;
 $junk = $conf::check_md5sum;
 
 #$junk = $conf::ls;
-$junk         = $conf::chmod;
 $junk         = $conf::ftpdebug;
 $junk         = $conf::ftptimeout;
-$junk         = $conf::no_changes_timeout;
 $junk         = @conf::nonus_packages;
 $junk         = @conf::test_binaries;
 $junk         = @conf::maintainer_mail;
@@ -182,7 +177,7 @@ do {
 # check if all programs exist
 my $prg;
 foreach $prg ( $conf::gpg, $conf::ssh, $conf::scp, $conf::ssh_agent,
-               $conf::ssh_add, $conf::md5sum, $conf::mail, $conf::mkfifo )
+               $conf::ssh_add, $conf::mail, $conf::mkfifo )
 {
   die "Required program $prg doesn't exist or isn't executable\n"
     if !-x $prg;
