@@ -69,6 +69,8 @@ package main;
 ($main::hostname, undef, undef, undef, undef) = gethostbyname(hostname());
 
 my %packages = ();
+my $re_file_safe_prefix = qr/\A([a-zA-Z0-9][a-zA-Z0-9_.:~+-]*)/s;
+my $re_file_safe = qr/$re_file_safe_prefix\z/s;
 
 # extract -r and -k args
 $main::arg = "";
@@ -680,7 +682,7 @@ outer_loop: while (<CHANGES>) {
 
         # forbid shell meta chars in the name, we pass it to a
         # subshell several times...
-        $field[5] =~ /^([a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*)/;
+        $field[5] =~ /$re_file_safe/;
         if ( $1 ne $field[5] ) {
           msg( "log", "found suspicious filename $field[5]\n" );
           next;
@@ -747,7 +749,7 @@ outer_loop: while (<CHANGES>) {
 
         # forbid shell meta chars in the name, we pass it to a
         # subshell several times...
-        $field[5] =~ /^([a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*)/;
+        $field[5] =~ /$re_file_safe/;
         if ( $1 ne $field[5] ) {
           msg( "log", "found suspicious filename $field[5]\n" );
           msg(
@@ -1407,7 +1409,7 @@ outer_loop: while (<COMMANDS>) {
       } elsif ( $conf::upload_method ne "copy" ) {
         msg( "mail,log", "cancel not available\n" );
       } elsif (
-          $word[1] !~ m,^[a-zA-Z0-9.+_:@=%-][~a-zA-Z0-9.+_:@=%-]*\.changes$, )
+          $word[1] !~ m,$re_file_safe_prefix.changes\z, )
       {
         msg( "mail,log",
           "argument to cancel must be one .changes filename without path\n" );
@@ -1708,7 +1710,7 @@ sub pgp_check($) {
   my $stat;
   local (*PIPE);
 
-  if ($file =~ /^([-\w.+~]+)$/) {
+  if ($file =~ /$re_file_safe/) {
     $file = $1;
   } else {
     msg( "log", "Tainted filename, skipping: $file\n" );
