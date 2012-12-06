@@ -23,6 +23,7 @@ use Socket qw( PF_INET AF_INET SOCK_STREAM );
 use Config;
 use Sys::Hostname;
 use File::Copy;
+use Digest::MD5;
 
 setlocale(&POSIX::LC_ALL, "C");
 
@@ -2212,14 +2213,12 @@ sub rm(@) {
 #
 sub md5sum($) {
   my $file = shift;
-  my $line;
 
-  chomp( $line = `$conf::md5sum $file` );
-  debug( "md5sum($file): ",
-           $? ? "exit status $?"
-         : $line =~ /^(\S+)/ ? $1
-         :                     "match failed" );
-  return $? ? "" : $line =~ /^(\S+)/ ? $1 : "";
+  open my $fh, "<", $file or return "";
+  my $md5 = $md5->addfile($fh);
+  close $fh;
+
+  return $md5->hexdigest;
 } ## end sub md5sum($)
 
 #
