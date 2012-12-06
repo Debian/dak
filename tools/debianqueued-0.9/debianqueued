@@ -234,7 +234,6 @@ sub ftp_code();
 sub ftp_error();
 sub ssh_cmd($);
 sub scp_cmd(@);
-sub local_cmd($;$);
 sub check_alive(;$);
 sub check_incoming_writable();
 sub rm(@);
@@ -1486,9 +1485,14 @@ sub copy_to_target(@) {
       goto err if !$rv;
     }
   } else {
-    ( $msgs, $stat ) =
-      local_cmd( "$conf::cp @files $main::current_targetdir", 'NOCD' );
-    goto err if $stat;
+    for my $file (@files) {
+      eval { File::Copy::copy($file, $main::current_targetdir) };
+      if ($@) {
+        $stat = 1;
+        $msgs = $@;
+        goto err;
+      }
+    }
   }
 
   # check md5sums or sizes on target against our own
@@ -1527,9 +1531,14 @@ sub copy_to_target(@) {
         } ## end foreach $file (@files)
       } ## end if ( !$have_md5sums )
     } else {
-      ( $msgs, $stat ) = local_cmd("$conf::md5sum @files");
-      goto err if $stat;
-      @md5sum = split( "\n", $msgs );
+      for my $file (@files) {
+        my $md5 = eval { md5sum("$main::current_targetdir/$file") };
+        if ($@) {
+          $msgs = $@;
+          goto err;
+        }
+        push @md5sum, "$md5 $file" if $md5;
+      }
     }
 
     @expected_files = @files;
@@ -1575,8 +1584,12 @@ sub copy_to_target(@) {
         goto err if !$rv;
       } ## end foreach $file (@files)
     } else {
-      ( $msgs, $stat ) = local_cmd("$conf::chmod 644 @files");
-      goto err if $stat;
+      for my $file (@files) {
+        unless (chmod 0644, "$main::current_targetdir/$file") {
+          $msgs = "Could not chmod $file: $!";
+          goto err;
+        }
+      }
     }
   } ## end if ($conf::chmod_on_target)
 
@@ -1593,7 +1606,7 @@ err:
 
   # If "permission denied" was among the errors, test if the incoming is
   # writable at all.
-  if ( $msgs =~ /(permission denied|read-?only file)/i ) {
+  if ( $msgs && $msgs =~ /(permission denied|read-?only file)/i ) {
     if ( !check_incoming_writable() ) {
       msg( "log,mail", "(The incoming directory seems to be ",
            "unwritable.)\n" );
@@ -2017,19 +2030,6 @@ sub scp_cmd(@) {
   return ( $msg, $stat );
 } ## end sub scp_cmd(@)
 
-sub local_cmd($;$) {
-  my $cmd  = shift;
-  my $nocd = shift;
-  my ( $msg, $stat );
-
-  my $ecmd = ( $nocd ? "" : "cd $main::current_targetdir; " ) . $cmd;
-  debug("executing $ecmd");
-  $msg  = `($ecmd) 2>&1`;
-  $stat = $?;
-  return ( $msg, $stat );
-
-} ## end sub local_cmd($;$)
-
 #
 # check if target is alive (code stolen from Net::Ping.pm)
 #
@@ -2094,8 +2094,18 @@ sub check_incoming_writable() {
     unlink $file;
     ftp_cmd( "delete", $file );
   } elsif ( $conf::upload_method eq "copy" ) {
-    ( $msg, $stat ) =
-      local_cmd( "rm -f $testfile; touch $testfile; " . "rm -f $testfile" );
+    unlink("$main::current_targetdir/$testfile");
+    unless (open my $fh, ">>", "$main::current_targetdir/$testfile") {
+      $stat = 1;
+      $msg = "Could not create $testfile: $!";
+    }
+    else {
+      close $fh;
+      unless (unlink("$main::current_targetdir/$testfile")) {
+        $stat = 1;
+        $msg = "Could not unlink file $testfile: $!";
+      }
+    }
   }
   chomp($msg);
   debug("exit status: $stat, output was: $msg");
