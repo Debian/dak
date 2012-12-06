@@ -490,6 +490,7 @@ sub check_dir() {
     # look for *.commands and *.dak-commands files but not in delayed queues
     if ( $adelay == -1 ) {
       foreach $file (<*.commands>) {
+        next unless $file =~ /$re_file_safe/;
         init_mail($file);
         block_signals();
         process_commands($file);
@@ -499,6 +500,7 @@ sub check_dir() {
         finish_mail();
       } ## end foreach $file (<*.commands>)
 	  foreach $file (<*.dak-commands>) {
+		next unless $file =~ /$re_file_safe/;
 		init_mail($file);
 		block_signals();
 		process_dak_commands($file);
@@ -522,6 +524,7 @@ sub check_dir() {
     @changes = grep /\.changes$/, @files;
     push( @keep_files, @changes );    # .changes files aren't stray
     foreach $file (@changes) {
+      next unless $file =~ /$re_file_safe/;
       init_mail($file);
 
       # wrap in an eval to allow jumpbacks to here with die in case
@@ -562,6 +565,7 @@ sub check_dir() {
       my ( $maint, $pattern, @job_files );
       if (    $file =~ /^junk-for-writable-test/
            || $file !~ m,$conf::valid_files,
+           || $file !~ /$re_file_safe/
            || $age >= $conf::stray_remove_timeout )
       {
         msg( "log",
