@@ -82,7 +82,7 @@ if ( @ARGV == 1 && $ARGV[0] =~ /^-[rk]$/ ) {
 
 # test for another instance of the queued already running
 my ( $pid, $delayed_dirs, $adelayedcore );
-if ( open( PIDFILE, "<$conf::pidfile" ) ) {
+if ( open( PIDFILE, "<", $conf::pidfile ) ) {
   chomp( $pid = <PIDFILE> );
   close(PIDFILE);
   if ( !$pid ) {
@@ -318,7 +318,7 @@ chdir($conf::incoming)
 $SIG{"HUP"} = "IGNORE";
 
 # open logfile, make it unbuffered
-open( LOG, ">>$conf::logfile" )
+open( LOG, ">>", $conf::logfile )
   or die "Cannot open my logfile $conf::logfile: $!\n";
 chmod( 0644, $conf::logfile )
   or die "Cannot set modes of $conf::logfile: $!\n";
@@ -328,11 +328,11 @@ sleep(1);
 $SIG{"HUP"} = \&close_log;
 
 # redirect stdin, ... to /dev/null
-open( STDIN, "</dev/null" )
+open( STDIN, "<", "/dev/null" )
   or die "$main::progname: Can't redirect stdin to /dev/null: $!\n";
-open( STDOUT, ">&LOG" )
+open( STDOUT, ">&", \*LOG )
   or die "$main::progname: Can't redirect stdout to $conf::logfile: $!\n";
-open( STDERR, ">&LOG" )
+open( STDERR, ">&", \*LOG )
   or die "$main::progname: Can't redirect stderr to $conf::logfile: $!\n";
 
 # ok, from this point usually no "die" anymore, stderr is gone!
@@ -360,7 +360,7 @@ END {
 }
 
 # write the pid file
-open( PIDFILE, ">$conf::pidfile" )
+open( PIDFILE, ">", $conf::pidfile )
   or msg( "log", "Can't open $conf::pidfile: $!\n" );
 printf PIDFILE "%5d\n", $$;
 close(PIDFILE);
@@ -591,7 +591,7 @@ sub get_filelist_from_known_good_changes($) {
   my (@filenames);
 
   # parse the .changes file
-  open( CHANGES, "<$changes" )
+  open( CHANGES, "<", $changes )
     or die "$changes: $!\n";
 outer_loop: while (<CHANGES>) {
     if (/^Files:/i) {
@@ -639,7 +639,7 @@ sub process_changes($\@) {
   msg( "log", "processing ${main::current_incoming_short}/$changes\n" );
 
   # parse the .changes file
-  open( CHANGES, "<$changes" )
+  open( CHANGES, "<", $changes )
     or die "Cannot open ${main::current_incoming_short}/$changes: $!\n";
   $pgplines        = 0;
   $extralines      = 0;
@@ -790,7 +790,7 @@ outer_loop: while (<CHANGES>) {
   $failure_file = $changes . ".failures";
   $retries = $last_retry = 0;
   if ( -f $failure_file ) {
-    open( FAILS, "<$failure_file" )
+    open( FAILS, "<", $failure_file )
       or die "Cannot open $main::current_incoming_short/$failure_file: $!\n";
     my $line = <FAILS>;
     close(FAILS);
@@ -987,7 +987,7 @@ outer_loop: while (<CHANGES>) {
       rm( $changes, @filenames, $failure_file );
     } else {
       $last_retry = time;
-      if ( open( FAILS, ">$failure_file" ) ) {
+      if ( open( FAILS, ">", $failure_file ) ) {
         print FAILS "$retries $last_retry\n";
         close(FAILS);
         chmod( 0600, $failure_file )
@@ -1113,7 +1113,7 @@ sub process_commands($) {
   msg( "log", "processing $main::current_incoming_short/$commands\n" );
 
   # parse the .commands file
-  if ( !open( COMMANDS, "<$commands" ) ) {
+  if ( !open( COMMANDS, "<", $commands ) ) {
     msg( "log", "Cannot open $main::current_incoming_short/$commands: $!\n" );
     return;
   }
@@ -1730,7 +1730,7 @@ sub fork_statusd() {
 
     # open the FIFO for writing; this blocks until someone (probably ftpd)
     # opens it for reading
-    open( STATFIFO, ">$conf::statusfile" )
+    open( STATFIFO, ">", $conf::statusfile )
       or die "Cannot open $conf::statusfile\n";
     select(STATFIFO);
 
@@ -1776,7 +1776,7 @@ sub write_status_file() {
 
   return if !$conf::statusfile;
 
-  open( STATFILE, ">$conf::statusfile" )
+  open( STATFILE, ">", $conf::statusfile )
     or ( msg( "log", "Could not open $conf::statusfile: $!\n" ), return );
   my $oldsel = select(STATFILE);
 
@@ -2083,7 +2083,7 @@ sub check_incoming_writable() {
     my $file = "junk-for-writable-test-" . format_time();
     $file =~ s/[ :.]/-/g;
     local (*F);
-    open( F, ">$file" );
+    open( F, ">", $file );
     close(F);
     my $rv;
     ( $rv, $msg ) = ftp_cmd( "put", $file );
@@ -2370,16 +2370,16 @@ sub close_log($) {
   close(STDOUT);
   close(STDERR);
 
-  open( LOG, ">>$conf::logfile" )
+  open( LOG, ">>", $conf::logfile )
     or die "Cannot open my logfile $conf::logfile: $!\n";
   chmod( 0644, $conf::logfile )
     or msg( "log", "Cannot set modes of $conf::logfile: $!\n" );
   select( ( select(LOG), $| = 1 )[0] );
 
-  open( STDOUT, ">&LOG" )
+  open( STDOUT, ">&", \*LOG )
     or msg( "log",
       "$main::progname: Can't redirect stdout to " . "$conf::logfile: $!\n" );
-  open( STDERR, ">&LOG" )
+  open( STDERR, ">&", \*LOG )
     or msg( "log",
       "$main::progname: Can't redirect stderr to " . "$conf::logfile: $!\n" );
   msg( "log", "Restart after SIGHUP\n" );
