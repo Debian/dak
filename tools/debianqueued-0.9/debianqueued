@@ -239,8 +239,6 @@ sub check_alive(;$);
 sub check_incoming_writable();
 sub rm(@);
 sub md5sum($);
-sub is_debian_file($);
-sub debian_file_stem($);
 sub msg($@);
 sub debug(@);
 sub init_mail(;$);
@@ -2139,36 +2137,6 @@ sub md5sum($) {
 
   return $md5->hexdigest;
 } ## end sub md5sum($)
-
-#
-# check if a file probably belongs to a Debian upload
-#
-sub is_debian_file($) {
-  my $file = shift;
-  return $file =~ /\.(deb|dsc|(diff|tar)\.gz)$/
-    && $file !~ /\.orig\.tar\.gz/;
-}
-
-#
-# return a pattern that matches all files that probably belong to one job
-#
-sub debian_file_stem($) {
-  my $file = shift;
-  my ( $pkg, $version );
-
-  # strip file suffix
-  $file =~ s,\.(deb|dsc|changes|(orig\.)?tar\.gz|diff\.gz)$,,;
-
-  # if not is *_* (name_version), can't derive a stem and return just
-  # the file's name
-  return $file if !( $file =~ /^([^_]+)_([^_]+)/ );
-  ( $pkg, $version ) = ( $1, $2 );
-
-  # strip Debian revision from version
-  $version =~ s/^(.*)-[\d.+-]+$/$1/;
-
-  return "${pkg}_${version}*";
-} ## end sub debian_file_stem($)
 
 #
 # output a messages to several destinations
