@@ -1649,25 +1649,31 @@ sub pgp_check($) {
 
   $stat = 1;
   if ( -x $conf::gpg ) {
-    debug(   "executing $conf::gpg --no-options --batch "
-           . "--no-default-keyring --always-trust "
-           . "--keyring "
-           . join( " --keyring ", @conf::keyrings )
-           . " --verify '$file'" );
-    if (
-         !open( PIPE,
-                    "$conf::gpg --no-options --batch "
-                  . "--no-default-keyring --always-trust "
-                  . "--keyring "
-                  . join( " --keyring ", @conf::keyrings )
-                  . " --verify '$file'"
-                  . " 2>&1 |"
-              )
-       )
-    {
-      msg( "log", "Can't open pipe to $conf::gpg: $!\n" );
+    my @command = ("$conf::gpg", "--no-options", "--batch", "--no-tty",
+                   "--trust-model", "always", "--no-default-keyring",
+		   (map +("--keyring" => $_), @conf::keyrings),
+		   "--verify", "-");
+    debug(   "executing " . join(" ", @command) );
+
+    my $child = open(PIPE, "-|");
+    if (!defined($child)) {
+      msg("log", "Can't open pipe to $conf::gpg: $!\n");
       return "LOCAL ERROR";
-    } ## end if ( !open( PIPE, "$conf::gpg --no-options --batch "...
+    }
+    if ($child == 0) {
+      unless (open(STDERR, ">&", \*STDOUT)) {
+        print "Could not redirect STDERR.";
+	exit(-1);
+      }
+      unless (open(STDIN, "<", $file)) {
+        print "Could not open $file: $!";
+	exit(-1);
+      }
+      { exec(@command) }; # BLOCK avoids warning about likely unreachable code
+      print "Could not exec gpg: $!";
+      exit(-1);
+    }
+
     $output .= $_ while (<PIPE>);
     close(PIPE);
     $stat = $?;
