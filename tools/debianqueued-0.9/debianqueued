@@ -1325,7 +1325,7 @@ outer_loop: while (<COMMANDS>) {
       } elsif ( $conf::upload_method ne "copy" ) {
         msg( "mail,log", "cancel not available\n" );
       } elsif (
-          $word[1] !~ m,$re_file_safe_prefix.changes\z, )
+          $word[1] !~ m,$re_file_safe_prefix\.changes\z, )
       {
         msg( "mail,log",
           "argument to cancel must be one .changes filename without path\n" );
