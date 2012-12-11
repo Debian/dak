@@ -66,6 +66,7 @@ Generate the Release files
   -f, --force                Allow processing of untouchable suites
                              CAREFUL: Only to be used at (point) release time!
   -h, --help                 show this help and exit
+  -q, --quiet                Don't output progress
 
 SUITE can be a space seperated list, e.g.
    --suite=unstable testing
@@ -293,7 +294,7 @@ def main ():
 
     cnf = Config()
 
-    for i in ["Help", "Suite", "Force"]:
+    for i in ["Help", "Suite", "Force", "Quiet"]:
         if not cnf.has_key("Generate-Releases::Options::%s" % (i)):
             cnf["Generate-Releases::Options::%s" % (i)] = ""
 
@@ -301,6 +302,7 @@ def main ():
                  ('a','archive','Generate-Releases::Options::Archive','HasArg'),
                  ('s',"suite","Generate-Releases::Options::Suite"),
                  ('f',"force","Generate-Releases::Options::Force"),
+                 ('q',"quiet","Generate-Releases::Options::Quiet"),
                  ('o','option','','ArbItem')]
 
     suite_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
@@ -337,7 +339,8 @@ def main ():
             print "Skipping %s (untouchable)" % s.suite_name
             continue
 
-        print "Processing %s" % s.suite_name
+        if not Options["Quiet"]:
+            print "Processing %s" % s.suite_name
         Logger.log(['Processing release file for Suite: %s' % (s.suite_name)])
         pool.apply_async(generate_helper, (s.suite_id, ))
 
