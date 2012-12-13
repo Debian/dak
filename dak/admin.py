@@ -442,7 +442,7 @@ def archive_add(args):
 
 def archive_rm(name):
     session = DBConn().session()
-    archive = session.query(Archive).filter_by(archive_name=name).one()
+    archive = get_archive(name, session)
     session.delete(archive)
     session.flush()
 
