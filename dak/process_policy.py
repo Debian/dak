@@ -81,7 +81,8 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
 
         if opref != npref:
             newcomm = npref + comm[len(opref):]
-            transaction.fs.move(os.path.join(dir, comm), os.path.join(dir, newcomm))
+            newcomm = utils.find_next_free(os.path.join(dir, newcomm))
+            transaction.fs.move(os.path.join(dir, comm), newcomm)
 
 ################################################################################
 
