@@ -196,7 +196,7 @@ class PolicyQueueUploadHandler(object):
 
         fn = os.path.join(self.upload.policy_queue.path, 'COMMENTS', fn1)
         try:
-            fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
             os.write(fh, 'NOTOK\n')
             os.write(fh, 'From: {0} <{1}>\n\n'.format(utils.whoami(), cnf['Dinstall::MyAdminAddress']))
             os.write(fh, reason)
