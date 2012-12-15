@@ -20,10 +20,16 @@ dak import-users-from-passwd
 
 # do not run show-new and other stuff in parallel
 LOCKFILE="$lockdir/unchecked.lock"
+cleanup() {
+    rm -f "${LOCKFILE}"
+}
+
 if lockfile -r16 $LOCKFILE 2> /dev/null; then
+    trap cleanup EXIT
     do_new
     dak show-new > /dev/null || true
-    rm -f $LOCKFILE
+    cleanup
+    trap - EXIT
 fi
 
 dak queue-report -n > $webdir/new.html
