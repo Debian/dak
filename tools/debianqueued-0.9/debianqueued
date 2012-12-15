@@ -629,17 +629,34 @@ sub process_changes($\@) {
   format_status_str( $main::current_changes,
                      "$main::current_incoming_short/$changes" );
   $main::dstat = "c";
+  $main::mail_addr = "";
   write_status_file() if $conf::statusdelay;
 
   @$keep_list = ();
   msg( "log", "processing ${main::current_incoming_short}/$changes\n" );
+
+  # run PGP on the file to check the signature
+  if ( !( $signator = pgp_check($changes) ) ) {
+    msg(
+       "log,mail",
+       "$main::current_incoming_short/$changes has bad PGP/GnuPG signature!\n"
+    );
+    goto remove_only_changes;
+  } elsif ( $signator eq "LOCAL ERROR" ) {
+
+    # An error has appened when starting pgp... Don't process the file,
+    # but also don't delete it
+    debug(
+"Can't PGP/GnuPG check $main::current_incoming_short/$changes -- don't process it for now"
+    );
+    return;
+  } ## end elsif ( $signator eq "LOCAL ERROR")
 
   # parse the .changes file
   open( CHANGES, "<", $changes )
     or die "Cannot open ${main::current_incoming_short}/$changes: $!\n";
   $pgplines        = 0;
   $extralines      = 0;
-  $main::mail_addr = "";
   @files           = ();
 outer_loop: while (<CHANGES>) {
     if (/^---+(BEGIN|END) PGP .*---+$/) {
@@ -794,39 +811,6 @@ outer_loop: while (<CHANGES>) {
       if $line =~ /^(\d+)\s+(\d+)$/;
     push( @$keep_list, $failure_file );
   } ## end if ( -f $failure_file )
-
-  # run PGP on the file to check the signature
-  if ( !( $signator = pgp_check($changes) ) ) {
-    msg(
-       "log,mail",
-       "$main::current_incoming_short/$changes has bad PGP/GnuPG signature!\n"
-    );
-    msg( "log", "(uploader $main::mail_addr)\n" );
-  remove_only_changes:
-    msg(
-      "log,mail",
-"Removing $main::current_incoming_short/$changes, but keeping its associated ",
-      "files for now.\n"
-    );
-    rm($changes);
-
-    # Set SGID bit on associated files, so that the test for Debian files
-    # without a .changes doesn't consider them.
-    foreach (@filenames) {
-      my @st = stat($_);
-      next if !@st;    # file may have disappeared in the meantime
-      chmod +( $st[ST_MODE] |= S_ISGID ), $_;
-    }
-    return;
-  } elsif ( $signator eq "LOCAL ERROR" ) {
-
-    # An error has appened when starting pgp... Don't process the file,
-    # but also don't delete it
-    debug(
-"Can't PGP/GnuPG check $main::current_incoming_short/$changes -- don't process it for now"
-    );
-    return;
-  } ## end elsif ( $signator eq "LOCAL ERROR")
 
   die "Cannot stat ${main::current_incoming_short}/$changes (??): $!\n"
     if !( @changes_stats = stat($changes) );
@@ -1014,6 +998,17 @@ outer_loop: while (<CHANGES>) {
   msg( "log",
        "$changes processed successfully (uploader $main::mail_addr)\n" );
 
+  return;
+
+  remove_only_changes:
+  msg(
+    "log,mail",
+    "Removing $main::current_incoming_short/$changes, but keeping its "
+    . "associated files for now.\n"
+    );
+  rm($changes);
+  return;
+
   # Check for files that have the same stem as the .changes (and weren't
   # mentioned there) and delete them. It happens often enough that people
   # upload a .orig.tar.gz where it isn't needed and also not in the
@@ -1104,9 +1099,28 @@ sub process_commands($) {
 
   format_status_str( $main::current_changes, $commands );
   $main::dstat = "c";
+  $main::mail_addr = "";
   write_status_file() if $conf::statusdelay;
 
   msg( "log", "processing $main::current_incoming_short/$commands\n" );
+
+  # run PGP on the file to check the signature
+  if ( !( $signator = pgp_check($commands) ) ) {
+    msg(
+      "log,mail",
+      "$main::current_incoming_short/$commands has bad PGP/GnuPG signature!\n"
+    );
+    goto remove;
+  } elsif ( $signator eq "LOCAL ERROR" ) {
+
+    # An error has appened when starting pgp... Don't process the file,
+    # but also don't delete it
+    debug(
+"Can't PGP/GnuPG check $main::current_incoming_short/$commands -- don't process it for now"
+    );
+    return;
+  } ## end elsif ( $signator eq "LOCAL ERROR")
+  msg( "log", "(PGP/GnuPG signature by $signator)\n" );
 
   # parse the .commands file
   if ( !open( COMMANDS, "<", $commands ) ) {
@@ -1114,7 +1128,6 @@ sub process_commands($) {
     return;
   }
   $pgplines        = 0;
-  $main::mail_addr = "";
   @cmds            = ();
 outer_loop: while (<COMMANDS>) {
     if (/^---+(BEGIN|END) PGP .*---+$/) {
@@ -1162,27 +1175,6 @@ outer_loop: while (<COMMANDS>) {
     msg( "mail", "or better yet - use dcut for commands files\n" );
     goto remove;
   } ## end if ( $pgplines < 3 )
-
-  # run PGP on the file to check the signature
-  if ( !( $signator = pgp_check($commands) ) ) {
-    msg(
-      "log,mail",
-      "$main::current_incoming_short/$commands has bad PGP/GnuPG signature!\n"
-    );
-  remove:
-    msg( "log,mail", "Removing $main::current_incoming_short/$commands\n" );
-    rm($commands);
-    return;
-  } elsif ( $signator eq "LOCAL ERROR" ) {
-
-    # An error has appened when starting pgp... Don't process the file,
-    # but also don't delete it
-    debug(
-"Can't PGP/GnuPG check $main::current_incoming_short/$commands -- don't process it for now"
-    );
-    return;
-  } ## end elsif ( $signator eq "LOCAL ERROR")
-  msg( "log", "(PGP/GnuPG signature by $signator)\n" );
 
   # now process commands
   msg(
@@ -1364,6 +1356,12 @@ outer_loop: while (<COMMANDS>) {
   rm($commands);
   msg( "log",
        "-- End of $main::current_incoming_short/$commands processing\n" );
+  return;
+
+  remove:
+  msg("log,mail", "Removing $main::current_incoming_short/$commands\n");
+  rm($commands);
+  return;
 } ## end sub process_commands($)
 
 sub age_delayed_queues() {
