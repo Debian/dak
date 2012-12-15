@@ -1637,8 +1637,9 @@ sub pgp_check($) {
   my $output = "";
   my $signator;
   my $found = 0;
-  my $stat;
+  my $stat = 1;
   local (*PIPE);
+  local $_;
 
   if ($file =~ /$re_file_safe/) {
     $file = $1;
@@ -1647,7 +1648,41 @@ sub pgp_check($) {
     return "LOCAL ERROR";
   }
 
-  $stat = 1;
+  # check the file has only one clear-signed section
+  my $fh;
+  unless (open $fh, "<", $file) {
+	  msg("log,mail", "Could not open $file\n");
+	  return "";
+  }
+  unless (<$fh> eq "-----BEGIN PGP SIGNED MESSAGE-----\n") {
+	  msg("log,mail", "$file: does not start with a clearsigned message\n");
+	  return "";
+  }
+  my $pgplines = 1;
+  while (<$fh>) {
+	  if (/\A- /) {
+		  msg("log,mail", "$file: dash-escaped messages are not accepted\n");
+		  return "";
+	  }
+	  elsif ($_ eq "-----BEGIN PGP SIGNATURE-----\n"
+		     || $_ eq "-----END PGP SIGNATURE-----\n") {
+		  $pgplines++;
+	  }
+	  elsif (/\A--/) {
+		  msg("log,mail", "$file: unexpected OpenPGP armor\n");
+		  return "";
+	  }
+	  elsif ($pgplines > 3 && /\S/) {
+		  msg("log,mail", "$file: found text after end of signature\n");
+		  return "";
+	  }
+  }
+  if ($pgplines != 3) {
+	  msg("log,mail", "$file: doesn't seem to be a valid clearsigned OpenPGP message\n");
+	  return "";
+  }
+  close $fh;
+
   if ( -x $conf::gpg ) {
     my @command = ("$conf::gpg", "--no-options", "--batch", "--no-tty",
                    "--trust-model", "always", "--no-default-keyring",
