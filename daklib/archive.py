@@ -887,9 +887,8 @@ class ArchiveUpload(object):
         try:
             # Validate signatures and hashes before we do any real work:
             for chk in (
-                    checks.SignatureCheck,
+                    checks.SignatureAndHashesCheck,
                     checks.ChangesCheck,
-                    checks.HashesCheck,
                     checks.ExternalHashesCheck,
                     checks.SourceCheck,
                     checks.BinaryCheck,
