@@ -297,6 +297,13 @@ class Changes(object):
         return self._source
 
     @property
+    def sourceful(self):
+        """C{True} if the upload includes source
+        @type: bool
+        """
+        return "source" in self.architectures
+
+    @property
     def source_name(self):
         """source package name
         @type: str

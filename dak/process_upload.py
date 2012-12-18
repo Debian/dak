@@ -243,7 +243,7 @@ def get_processed_upload(upload):
 
     pu.changes = open(upload.changes.path, 'r').read()
     pu.changes_filename = upload.changes.filename
-    pu.sourceful = upload.changes.source is not None
+    pu.sourceful = upload.changes.sourceful
     pu.source = control.get('Source')
     pu.version = control.get('Version')
     pu.architecture = control.get('Architecture')
