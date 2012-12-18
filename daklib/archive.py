@@ -652,7 +652,13 @@ class ArchiveUpload(object):
                     continue
                 fs.copy(src, dst, mode=0o640)
 
-            source = self.changes.source
+            source = None
+            try:
+                source = self.changes.source
+            except Exception:
+                # Do not raise an exception here if the .dsc is invalid.
+                pass
+
             if source is not None:
                 for f in source.files.itervalues():
                     src = os.path.join(self.original_directory, f.filename)
