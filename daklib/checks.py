@@ -147,7 +147,7 @@ class SignatureAndHashesCheck(Check):
                              .format(filename, os.path.basename(e.filename)))
             raise
         except InvalidHashException as e:
-            raise Reject('{0}: {1}'.format(what, unicode(e)))
+            raise Reject('{0}: {1}'.format(filename, unicode(e)))
 
 class ChangesCheck(Check):
     """Check changes file for syntax errors."""
