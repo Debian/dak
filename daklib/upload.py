@@ -45,7 +45,13 @@ class InvalidHashException(Exception):
         self.expected = expected
         self.actual = actual
     def __str__(self):
-        return "Invalid {0} hash for {1}: expected {2}, but got {3}.".format(self.hash_name, self.filename, self.expected, self.actual)
+        return ("Invalid {0} hash for {1}:\n"
+                "According to the control file the {0} hash should be {2},\n"
+                "but {1} has {3}.\n"
+                "\n"
+                "If you did not include {1} in you upload, a different version\n"
+                "might already be known to the archive software.") \
+                .format(self.hash_name, self.filename, self.expected, self.actual)
 
 class InvalidFilenameException(Exception):
     def __init__(self, filename):
