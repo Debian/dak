@@ -79,6 +79,10 @@ class CommandFile(object):
 
                 if action == 'dm':
                     self.action_dm(self.fingerprint, section, session)
+                elif action == 'dm-remove':
+                    self.action_dm_remove(self.fingerprint, section, session)
+                elif action == 'dm-migrate':
+                    self.action_dm_migrate(self.fingerprint, section, session)
                 elif action == 'break-the-archive':
                     self.action_break_the_archive(self.fingerprint, section, session)
                 else:
@@ -241,6 +245,75 @@ class CommandFile(object):
 
             self.log.log(['dm', 'deny', fpr.fingerprint, source])
             self.result.append('Denied: {0}'.format(source))
+
+        session.commit()
+
+    def _action_dm_admin_common(self, fingerprint, section, session):
+        cnf = Config()
+
+        if 'Command::DM-Admin::AdminFingerprints' not in cnf \
+                or 'Command::DM::ACL' not in cnf:
+            raise CommandError('DM admin command is not configured for this archive.')
+
+        allowed_fingerprints = cnf.value_list('Command::DM-Admin::AdminFingerprints')
+        if fingerprint.fingerprint not in allowed_fingerprints:
+            raise CommandError('Key {0} is not allowed to admin DM'.format(fingerprint.fingerprint))
+
+    def action_dm_remove(self, fingerprint, section, session):
+        self._action_dm_admin_common(fingerprint, section, session)
+
+        cnf = Config()
+        acl_name = cnf.get('Command::DM::ACL', 'dm')
+        acl = session.query(ACL).filter_by(name=acl_name).one()
+
+        fpr_hash = section['Fingerprint'].translate(None, ' ')
+        fpr = session.query(Fingerprint).filter_by(fingerprint=fpr_hash).first()
+        if fpr is None:
+            self.result.append('Unknown fingerprint: {0}\nNo action taken.'.format(fpr_hash))
+            return
+
+        self.log.log(['dm-remove', fpr.fingerprint])
+
+        count = 0
+        for entry in session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr):
+            self.log.log(['dm-remove', fpr.fingerprint, 'source={0}'.format(entry.source)])
+            count += 1
+            session.delete(entry)
+
+        self.result.append('Removed: {0}.\n{1} acl entries removed.'.format(fpr.fingerprint, count))
+
+        session.commit()
+
+    def action_dm_migrate(self, fingerprint, section, session):
+        self._action_dm_admin_common(fingerprint, section, session)
+        cnf = Config()
+        acl_name = cnf.get('Command::DM::ACL', 'dm')
+        acl = session.query(ACL).filter_by(name=acl_name).one()
+
+        fpr_hash_from = section['From'].translate(None, ' ')
+        fpr_from = session.query(Fingerprint).filter_by(fingerprint=fpr_hash_from).first()
+        if fpr_from is None:
+            self.result.append('Unknown fingerprint (From): {0}\nNo action taken.'.format(fpr_hash_from))
+            return
+
+        fpr_hash_to = section['To'].translate(None, ' ')
+        fpr_to = session.query(Fingerprint).filter_by(fingerprint=fpr_hash_to).first()
+        if fpr_to is None:
+            self.result.append('Unknown fingerprint (To): {0}\nNo action taken.'.format(fpr_hash_to))
+            return
+        if fpr_to.keyring is None or fpr_to.keyring.keyring_name not in cnf.value_list('Command::DM::Keyrings'):
+            self.result.append('Key (To) {0} is not in DM keyring.\nNo action taken.'.format(fpr_to.fingerprint))
+            return
+
+        self.log.log(['dm-migrate', 'from={0}'.format(fpr_hash_from), 'to={0}'.format(fpr_hash_to)])
+
+        count = 0
+        for entry in session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr_from):
+            self.log.log(['dm-migrate', 'from={0}'.format(fpr_hash_from), 'to={0}'.format(fpr_hash_to), 'source={0}'.format(entry.source)])
+            entry.fingerprint = fpr_to
+            count += 1
+
+        self.result.append('Migrated {0} to {1}.\n{2} acl entries changed.'.format(fpr_hash_from, fpr_hash_to, count))
 
         session.commit()
 
