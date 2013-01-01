@@ -484,7 +484,7 @@ function i18n2() {
         dak control-suite -l ${suite} >${codename}
     done
     echo "${STAMP}" > timestamp
-    gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 55BE302B --detach-sign -o timestamp.gpg timestamp
+    gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o timestamp.gpg timestamp
     rm -f md5sum
     md5sum * > md5sum
     cd ${webdir}/
