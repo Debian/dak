@@ -33,7 +33,7 @@ ln -sf $DATE current
 chmod g+w $DATE
 chown dak:ftpteam $DATE
 
-DATE=$(date -d yesterday +$Y-%m)
+DATE=$(date -d yesterday +%Y-%m)
 cd /srv/upload.debian.org/queued
 /srv/upload.debian.org/queued/debianqueued -k || true
 mv log log.${DATE}
