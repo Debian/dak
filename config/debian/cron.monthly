@@ -26,11 +26,19 @@ for m in mail bxamail; do
     fi;
 done
 
-DATE=`date +%Y-%m`
+DATE=$(date +%Y-%m)
 cd ${base}/log
 touch $DATE
 ln -sf $DATE current
 chmod g+w $DATE
 chown dak:ftpteam $DATE
+
+DATE=$(date -d yesterday +$Y-%m)
+cd /srv/upload.debian.org/queued
+/srv/upload.debian.org/queued/debianqueued -k || true
+mv log log.${DATE}
+touch log
+xz -9 log.${DATE}
+/srv/upload.debian.org/queued/debianqueued 2>/dev/null
 
 ################################################################################
