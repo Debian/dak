@@ -244,7 +244,7 @@ def reportWithoutSource(suite_name, suite_id, session, rdeps=False):
         print "    dak rm -m %s -s %s -a all -p -R -b %s" % \
             (message, suite_name, package)
         if rdeps:
-            if utils.check_reverse_depends([package], suite_name, ["all"], session, True):
+            if utils.check_reverse_depends([package], suite_name, [], session, True):
                 print
             else:
                 print "  - No dependency problem found\n"
