@@ -667,7 +667,7 @@ class ArchiveUpload(object):
                         try:
                             db_file = self.transaction.get_file(f, source.dsc['Source'], check_hashes=False)
                             db_archive_file = session.query(ArchiveFile).filter_by(file=db_file).first()
-                            fs.copy(db_archive_file.path, dst, symlink=True)
+                            fs.copy(db_archive_file.path, dst, mode=0o640)
                         except KeyError:
                             # Ignore if get_file could not find it. Upload will
                             # probably be rejected later.
