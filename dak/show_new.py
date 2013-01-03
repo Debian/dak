@@ -245,13 +245,14 @@ def init(session):
 ################################################################################
 
 def main():
+    pool = DakProcessPool(processes=5)
+
     session = DBConn().session()
     upload_ids = [ u.id for u in init(session) ]
     session.close()
 
     examine_package.use_html=1
 
-    pool = DakProcessPool(processes=5)
     p = pool.map_async(do_pkg, upload_ids)
     pool.close()
 
