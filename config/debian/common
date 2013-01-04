@@ -36,7 +36,7 @@ function make_buildd_dir () {
     dak manage-build-queues -a
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
-    ${scriptdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-buildd
+    ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-buildd
 
     for suite in unstable experimental; do
         rm -rf "$incoming/dists/$suite/buildd"
