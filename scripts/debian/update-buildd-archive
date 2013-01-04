@@ -1,0 +1,68 @@
+#! /bin/bash
+#
+# Copyright 2012, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+set -e
+set -u
+
+usage() {
+  echo "usage: $0 <source> <target>"
+  echo
+  echo "Update a minimalistic mirror for buildd archives."
+  exit ${1:-0}
+}
+
+if [ $# -ne 2 ]; then
+  usage 1
+fi
+
+source="${1}"
+dest="${2}"
+
+if [ ! -d "${source}/dists" -o ! -d "${source}/pool" ]; then
+  echo "${source}: does not look like a Debian archive" >&2
+  exit 1
+fi
+
+if [ ! -d "${dest}" ]; then
+  echo "${dest}: destination does not exist or is not a directory" >&2
+  exit 1
+fi
+
+# Make sure ${dest}/dists exists to avoid a special case later
+if [ ! -d "${dest}/dists" ]; then
+  mkdir "${dest}/dists"
+fi
+for olddir in dists.new dists.old; do
+  if [ -e "${dest}/${olddir}" ]; then
+    echo "Removing old ${olddir}..."
+    rm -r "${dest}/${olddir}"
+  fi
+done
+
+# Make sure ${dest}/pool exists
+if [ ! -e "${dest}/pool" ]; then
+  # Files are only removed from the build queues once they are no longer
+  # referenced. Having a symlink should thus not cause problems.
+  ln -s "${source}/pool" "${dest}/pool"
+fi
+
+# Finally copy dists/ to dists.new/, rename it and remove old version
+cp -a "${source}/dists" "${dest}/dists.new"
+mv "${dest}/dists" "${dest}/dists.old"
+mv "${dest}/dists.new" "${dest}/dists"
+rm -r "${dest}/dists.old"

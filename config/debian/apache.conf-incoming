@@ -20,7 +20,7 @@
   Alias /buildd-unstable /srv/incoming.debian.org/dists/unstable/current/
   Alias /buildd-experimental /srv/incoming.debian.org/dists/experimental/current/
 
-  <DirectoryMatch ~ "^/srv/(incoming\.debian\.org/(dists/|builddweb)|ftp\.debian\.org/mirror)">
+  <DirectoryMatch ~ "^/srv/(incoming\.debian\.org/(dists/|builddweb|debian-buildd/)|ftp\.debian\.org/mirror)">
     Order allow,deny
 
     Use DebianBuilddHostList
