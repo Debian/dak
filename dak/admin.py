@@ -65,6 +65,8 @@ Perform administrative work on the dak database.
      k list-all             list all keyrings
      k list-binary          list all keyrings with a NULL source acl
      k list-source          list all keyrings with a non NULL source acl
+     k add-buildd NAME ARCH...   add buildd keyring with upload permission
+                                 for the given architectures
 
   architecture / a:
      a list                 show a list of architectures
@@ -609,8 +611,40 @@ def show_keyring(command):
     for k in q.all():
         print k.keyring_name
 
-dispatch['keyring'] = show_keyring
-dispatch['k'] = show_keyring
+def keyring_add_buildd(command):
+    name = command[2]
+    arch_names = command[3:]
+
+    session = DBConn().session()
+    arches = session.query(Architecture).filter(Architecture.arch_string.in_(arch_names))
+
+    acl = ACL()
+    acl.name = 'buildd-{0}'.format('+'.join(arch_names))
+    acl.architectures.update(arches)
+    acl.allow_new = True
+    acl.allow_binary = True
+    acl.allow_binary_only = True
+    acl.allow_hijack = True
+    session.add(acl)
+
+    k = Keyring()
+    k.keyring_name = name
+    k.acl = acl
+    k.priority = 10
+    session.add(k)
+
+    session.commit()
+
+def keyring(command):
+    if command[1].startswith('list-'):
+        show_keyring(command)
+    elif command[1] == 'add-buildd':
+        keyring_add_buildd(command)
+    else:
+        die("E: keyring command unknown")
+
+dispatch['keyring'] = keyring
+dispatch['k'] = keyring
 
 ################################################################################
 
