@@ -15,6 +15,7 @@
 
   # buildd direct access -- buildds only
   Alias /debian /srv/ftp.debian.org/mirror
+  Alias /debian-buildd /srv/incoming.debian.org/debian-buildd
 
   # New suite aliases
   Alias /buildd-unstable /srv/incoming.debian.org/dists/unstable/current/
