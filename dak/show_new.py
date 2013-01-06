@@ -153,6 +153,8 @@ def html_footer():
 
 
 def do_pkg(upload_id):
+    cnf = Config()
+
     session = DBConn().session()
     upload = session.query(PolicyQueueUpload).filter_by(id=upload_id).one()
 
@@ -178,8 +180,10 @@ def do_pkg(upload_id):
     htmlfiles_to_process.append(htmlfile)
     sources.append(htmlname)
 
+    group = cnf.get('Dinstall::UnprivGroup') or None
+
     with open(htmlfile, 'w') as outfile:
-      with policy.UploadCopy(upload) as upload_copy:
+      with policy.UploadCopy(upload, group=group) as upload_copy:
         handler = policy.PolicyQueueUploadHandler(upload, session)
         missing = [ (o['type'], o['package']) for o in handler.missing_overrides() ]
         distribution = changes.distribution

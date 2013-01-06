@@ -662,6 +662,8 @@ def do_pkg(upload, session):
     dsc = upload.source
 
     cnf = Config()
+    group = cnf.get('Dinstall::UnprivGroup') or None
+
     #bcc = "X-DAK: dak process-new"
     #if cnf.has_key("Dinstall::Bcc"):
     #    u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
@@ -670,7 +672,7 @@ def do_pkg(upload, session):
 
     try:
       with lock_package(upload.changes.source):
-       with UploadCopy(upload) as upload_copy:
+       with UploadCopy(upload, group=group) as upload_copy:
         handler = PolicyQueueUploadHandler(upload, session)
         if handler.get_action() is not None:
             print "PENDING %s\n" % handler.get_action()

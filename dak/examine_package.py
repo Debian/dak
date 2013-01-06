@@ -60,6 +60,7 @@ import commands
 import threading
 
 from daklib import utils
+from daklib.config import Config
 from daklib.dbconn import DBConn, get_component_by_package_suite
 from daklib.gpg import SignedFile
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
@@ -77,7 +78,7 @@ printed.copyrights = {}
 package_relations = {}           #: Store relations of packages for later output
 
 # default is to not output html.
-use_html = 0
+use_html = False
 
 ################################################################################
 
@@ -446,7 +447,7 @@ def output_deb_info(suite, filename, packagename, session = None):
         to_print += " "+format_field(key,field_value)+'\n'
     return to_print
 
-def do_command (command, filename, escaped=0):
+def do_command (command, filename, escaped=False):
     o = os.popen("%s %s" % (command, filename))
     if escaped:
         return escaped_text(o.read())
@@ -454,10 +455,20 @@ def do_command (command, filename, escaped=0):
         return formatted_text(o.read())
 
 def do_lintian (filename):
+    cnf = Config()
+    cmd = []
+
+    user = cnf.get('Dinstall::UnprivUser') or None
+    if user is not None:
+        cmd.extend(['sudo', '-H', '-u', user])
+
+    color = 'always'
     if use_html:
-        return do_command("lintian --show-overrides --color html", filename, 1)
-    else:
-        return do_command("lintian --show-overrides --color always", filename, 1)
+        color = 'html'
+
+    cmd.extend(['lintian', '--show-overrides', '--color', color])
+
+    return do_command(' '.join(cmd), filename, escaped=True)
 
 def get_copyright (deb_filename):
     global printed
@@ -604,7 +615,7 @@ def main ():
 
     if Options["Html-Output"]:
         global use_html
-        use_html = 1
+        use_html = True
 
     stdout_fd = sys.stdout
 

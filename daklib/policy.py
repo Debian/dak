@@ -39,7 +39,7 @@ class UploadCopy(object):
     given by the C{directory} attribute.  The copy will be removed on leaving
     the with-block.
     """
-    def __init__(self, upload):
+    def __init__(self, upload, group=None):
         """initializer
 
         @type  upload: L{daklib.dbconn.PolicyQueueUpload}
@@ -48,6 +48,7 @@ class UploadCopy(object):
 
         self.directory = None
         self.upload = upload
+        self.group = group
 
     def export(self, directory, mode=None, symlink=True, ignore_existing=False):
         """export a copy of the upload
@@ -97,9 +98,17 @@ class UploadCopy(object):
     def __enter__(self):
         assert self.directory is None
 
+        mode = 0o0700
+        symlink = True
+        if self.group is not None:
+            mode = 0o2750
+            symlink = False
+
         cnf = Config()
-        self.directory = tempfile.mkdtemp(dir=cnf.get('Dir::TempPath'))
-        self.export(self.directory, symlink=True)
+        self.directory = utils.temp_dirname(parent=cnf.get('Dir::TempPath'),
+                                            mode=mode,
+                                            group=self.group)
+        self.export(self.directory, symlink=symlink)
         return self
 
     def __exit__(self, *args):

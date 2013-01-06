@@ -638,11 +638,14 @@ class LintianCheck(Check):
 
         changespath = os.path.join(upload.directory, changes.filename)
         try:
-            if cnf.unprivgroup:
-                cmd = "sudo -H -u {0} -- /usr/bin/lintian --show-overrides --tags-from-file {1} {2}".format(cnf.unprivgroup, temp_filename, changespath)
-            else:
-                cmd = "/usr/bin/lintian --show-overrides --tags-from-file {0} {1}".format(temp_filename, changespath)
-            result, output = commands.getstatusoutput(cmd)
+            cmd = []
+
+            user = cnf.get('Dinstall::UnprivUser') or None
+            if user is not None:
+                cmd.extend(['sudo', '-H', '-u', user])
+
+            cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
+            result, output = commands.getstatusoutput(" ".join(cmd))
         finally:
             os.unlink(temp_filename)
 

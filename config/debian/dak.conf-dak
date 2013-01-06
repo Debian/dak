@@ -1,0 +1,4 @@
+Dinstall {
+  UnprivUser "dak-unpriv";
+  UnprivGroup "dak-unpriv";
+};
