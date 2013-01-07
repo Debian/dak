@@ -256,10 +256,12 @@ def main():
     upload_ids = [ u.id for u in init(session) ]
     session.close()
 
-    p = pool.map_async(do_pkg, upload_ids)
+    for upload_id in upload_ids:
+        pool.apply_async(do_pkg, [upload_id])
     pool.close()
 
-    p.wait(timeout=600)
+    #p.wait(timeout=600)
+    pool.join()
     for htmlfile in htmlfiles_to_process:
         with open(htmlfile, "w") as fd:
             fd.write(timeout_str)
