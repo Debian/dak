@@ -471,6 +471,16 @@ def do_new(upload, upload_copy, handler, session):
         missing = handler.missing_overrides(hints=missing)
         broken = not check_valid(missing, session)
 
+        changesname = os.path.basename(upload.changes.changesname)
+
+        print
+        print changesname
+        print "-" * len(changesname)
+        print
+        print "   Target:     {0}".format(upload.target_suite.suite_name)
+        print "   Changed-By: {0}".format(upload.changes.changedby)
+        print
+
         #if len(byhand) == 0 and len(missing) == 0:
         #    break
 
@@ -806,8 +816,6 @@ def main():
         show_new_comments(uploads, session)
     else:
         for upload in uploads:
-            print "\n" + os.path.basename(upload.changes.changesname)
-
             do_pkg (upload, session)
 
     end()
