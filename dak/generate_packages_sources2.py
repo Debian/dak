@@ -67,28 +67,35 @@ SELECT
    WHERE s.id=sm.src_id
   )
   ||
+  CASE
+    WHEN src_associations_full.extra_source THEN E'\nExtra-Source-Only\: yes'
+    ELSE ''
+  END
+  ||
   E'\nDirectory\: pool/' || :component_name || '/' || SUBSTRING(f.filename FROM E'\\A(.*)/[^/]*\\Z')
   ||
-  E'\nPriority\: ' || pri.priority
+  E'\nPriority\: ' || COALESCE(pri.priority, 'extra')
   ||
-  E'\nSection\: ' || sec.section
+  E'\nSection\: ' || COALESCE(sec.section, 'misc')
 
 FROM
 
 source s
-JOIN src_associations sa ON s.id = sa.source
+JOIN src_associations_full ON src_associations_full.suite = :suite AND s.id = src_associations_full.source
 JOIN files f ON s.file=f.id
 JOIN files_archive_map fam
   ON fam.file_id = f.id
      AND fam.archive_id = (SELECT archive_id FROM suite WHERE id = :suite)
      AND fam.component_id = :component
-JOIN override o ON o.package = s.source
-JOIN section sec ON o.section = sec.id
-JOIN priority pri ON o.priority = pri.id
+LEFT JOIN override o ON o.package = s.source
+                     AND o.suite = :overridesuite
+                     AND o.component = :component
+                     AND o.type = :dsc_type
+LEFT JOIN section sec ON o.section = sec.id
+LEFT JOIN priority pri ON o.priority = pri.id
 
 WHERE
-  sa.suite = :suite
-  AND o.suite = :overridesuite AND o.component = :component AND o.type = :dsc_type
+  (src_associations_full.extra_source OR o.suite IS NOT NULL)
 
 ORDER BY
 s.source, s.version
