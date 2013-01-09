@@ -2560,6 +2560,7 @@ class DBConn(object):
             'changelogs_text',
             'changes',
             'component',
+            'component_suite',
             'config',
             'dsc_files',
             'external_overrides',
@@ -2835,7 +2836,10 @@ class DBConn(object):
                                  srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
                                      backref=backref('suites', lazy='dynamic')),
                                  archive = relation(Archive, backref='suites'),
-                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set)),
+                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
+                                 components = relation(Component, secondary=self.tbl_component_suite,
+                                                   order_by=self.tbl_component.c.ordering,
+                                                   backref=backref('suite'))),
                 extension = validator)
 
         mapper(Uid, self.tbl_uid,
