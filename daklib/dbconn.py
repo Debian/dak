@@ -311,7 +311,7 @@ class ORMObject(object):
         return object_session(self)
 
     def clone(self, session = None):
-        '''
+        """
         Clones the current object in a new session and returns the new clone. A
         fresh session is created if the optional session parameter is not
         provided. The function will fail if a session is provided and has
@@ -324,8 +324,8 @@ class ORMObject(object):
         WARNING: Only persistent (committed) objects can be cloned. Changes
         made to the original object that are not committed yet will get lost.
         The session of the new object will always be rolled back to avoid
-        ressource leaks.
-        '''
+        resource leaks.
+        """
 
         if self.session() is None:
             raise RuntimeError( \
