@@ -77,6 +77,14 @@ Perform administrative work on the dak database.
                             If SUITELIST is given, add to each of the
                             suites at the same time
 
+  component:
+     component list         show a list of components
+     component rm COMPONENT remove a component (will only work if
+                            empty)
+     component add NAME DESCRIPTION ORDERING
+                            add component NAME with DESCRIPTION.
+                            Ordered at ORDERING.
+
   suite / s:
      s list                 show a list of suites
      s show SUITE           show config details for a suite
@@ -190,6 +198,77 @@ def architecture(command):
 
 dispatch['architecture'] = architecture
 dispatch['a'] = architecture
+
+################################################################################
+
+def component_list():
+    session = DBConn().session()
+    for component in session.query(Component).order_by(Component.component_name):
+        print "{0} ordering={1}".format(component.component_name, component.ordering)
+
+def component_add(args):
+    (name, description, ordering) = args[0:3]
+
+    attributes = dict(
+        component_name=name,
+        description=description,
+        ordering=ordering,
+        )
+
+    for option in args[3:]:
+        (key, value) = option.split('=')
+        attributes[key] = value
+
+    session = DBConn().session()
+
+    component = Component()
+    for key, value in attributes.iteritems():
+        setattr(component, key, value)
+
+    session.add(component)
+    session.flush()
+
+    if dryrun:
+        session.rollback()
+    else:
+        session.commit()
+
+def component_rm(name):
+    session = DBConn().session()
+    component = get_component(name, session)
+    session.delete(component)
+    session.flush()
+
+    if dryrun:
+        session.rollback()
+    else:
+        session.commit()
+
+def component_rename(oldname, newname):
+    session = DBConn().session()
+    component = get_component(oldname, session)
+    component.component_name = newname
+    session.flush()
+
+    if dryrun:
+        session.rollback()
+    else:
+        session.commit()
+
+def component(command):
+    mode = command[1]
+    if mode == 'list':
+        component_list()
+    elif mode == 'rename':
+        component_rename(command[2], command[3])
+    elif mode == 'add':
+        component_add(command[2:])
+    elif mode == 'rm':
+        component_rm(command[2])
+    else:
+        die("E: component command unknown")
+
+dispatch['component'] = component
 
 ################################################################################
 
