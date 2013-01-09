@@ -86,7 +86,8 @@ Perform administrative work on the dak database.
                             Ordered at ORDERING.
 
   suite / s:
-     s list                 show a list of suites
+     s list [--print-archive]
+                            show a list of suites
      s show SUITE           show config details for a suite
      s add SUITE VERSION [ label=LABEL ] [ description=DESCRIPTION ]
                          [ origin=ORIGIN ] [ codename=CODENAME ]
@@ -274,8 +275,11 @@ dispatch['component'] = component
 
 def __suite_list(d, args):
     s = d.session()
-    for j in s.query(Suite).order_by(Suite.suite_name).all():
-        print j.suite_name
+    for j in s.query(Suite).join(Suite.archive).order_by(Archive.archive_name, Suite.suite_name).all():
+        if len(args) > 2 and args[2] == "--print-archive":
+            print "{0} {1}".format(j.archive.archive_name, j.suite_name)
+        else:
+            print "{0}".format(j.suite_name)
 
 def __suite_show(d, args):
     if len(args) < 2:
