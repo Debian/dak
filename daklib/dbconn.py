@@ -433,27 +433,6 @@ def get_architecture(architecture, session=None):
 
 __all__.append('get_architecture')
 
-# TODO: should be removed because the implementation is too trivial
-@session_wrapper
-def get_architecture_suites(architecture, session=None):
-    """
-    Returns list of Suite objects for given C{architecture} name
-
-    @type architecture: str
-    @param architecture: Architecture name to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: list of Suite objects for the given name (may be empty)
-    """
-
-    return get_architecture(architecture, session).suites
-
-__all__.append('get_architecture_suites')
-
 ################################################################################
 
 class Archive(object):
