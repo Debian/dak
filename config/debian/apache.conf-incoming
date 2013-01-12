@@ -13,6 +13,9 @@
     Order deny,allow
   </Directory>
 
+  <Files /srv/incoming.debian.org/robots.txt>
+    Order deny,allow
+  </Files>
   Alias /robots.txt /srv/incoming.debian.org/robots.txt
 
   # buildd direct access -- buildds only
