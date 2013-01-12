@@ -138,7 +138,10 @@ function do_new () {
 	log "Doing NEW processing"
     fi
     (dak process-policy new; dak process-policy byhand) | mail -a "X-Debian: DAK" -e -s "NEW and BYHAND processing" ftpmaster@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
-    dak clean-suites -a new
+
+    dak process-policy backports-new | mail -a "X-Debian: DAK" -e -s "NEW processing for backports-new" team@backports.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+
+    dak clean-suites -a new,backports-new
 }
 
 function sync_debbugs () {
@@ -179,4 +182,15 @@ function pg_timestamp() {
     tsname=${1:-"unknown"}
     log "Saving postgres transaction id for ${tsname}"
     psql -tAc 'select txid_current();' > $base/backup/txid_${tsname}_$(date +%Y.%m.%d-%H:%M:%S)
+}
+
+function get_archiveroot() {
+    local archivename="$1"
+    local query="SELECT path FROM archive WHERE name='${archivename}'"
+    local archiveroot="$(psql -tAc "${query}")"
+    if [ -z "${archiveroot}" ]; then
+        echo "get_archiveroot: couldn't get archiveroot for '${archivename}'" >&2
+        return 1
+    fi
+    echo "${archiveroot}"
 }

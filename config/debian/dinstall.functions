@@ -146,14 +146,21 @@ function overrides() {
 }
 
 function mpfm() {
+    local archiveroot
+
     log "Generating package / file mapping"
-    dak make-pkg-file-mapping ftp-master | bzip2 -9 > $base/ftp/indices/package-file.map.bz2
+    for archive in "${public_archives[@]}"; do
+        archiveroot="$(get_archiveroot "${archive}")"
+        dak make-pkg-file-mapping "${archive}" | bzip2 -9 > "${archiveroot}/indices/package-file.map.bz2"
+    done
 }
 
 function packages() {
     log "Generating Packages and Sources files"
-    dak generate-packages-sources2 -a ftp-master
-    dak contents generate -a ftp-master
+    for archive in "${public_archives[@]}"; do
+        dak generate-packages-sources2 -a "${archive}"
+        dak contents generate -a "${archive}"
+    done
 }
 
 function pdiff() {
@@ -170,8 +177,11 @@ function release() {
             $scriptsdir/generate-i18n-Index $dist;
         done
     )
+
     log "Generating Release files"
-    dak generate-releases -a ftp-master
+    for archive in "${public_archives[@]}"; do
+        dak generate-releases -a "${archive}"
+    done
 }
 
 function dakcleanup() {
@@ -188,28 +198,38 @@ function buildd_dir() {
 }
 
 function mklslar() {
-    cd $ftpdir
+    local archiveroot
+    local FILENAME=ls-lR
 
-    FILENAME=ls-lR
+    for archive in "${public_archives[@]}"; do
+        archiveroot="$(get_archiveroot "${archive}")"
+        cd "${archiveroot}"
 
-    log "Removing any core files ..."
-    find -type f -name core -print -delete
+        log "Removing any core files ..."
+        find -type f -name core -print -delete
 
-    log "Checking symlinks ..."
-    symlinks -rd .
+        log "Checking symlinks ..."
+        symlinks -rd .
 
-    log "Creating recursive directory listing ... "
-    rm -f ${FILENAME}.gz
-    TZ=UTC ls -lR | gzip -9c --rsyncable > ${FILENAME}.gz
+        log "Creating recursive directory listing ... "
+        rm -f ${FILENAME}.gz
+        TZ=UTC ls -lR | gzip -9c --rsyncable > ${FILENAME}.gz
+    done
 }
 
 function mkmaintainers() {
+    local archiveroot
+
     log 'Creating Maintainers index ... '
 
-    cd $indices
-    dak make-maintainers -a ftp-master ${scriptdir}/masterfiles/pseudo-packages.maintainers
-    gzip -9v --rsyncable <Maintainers >Maintainers.gz
-    gzip -9v --rsyncable <Uploaders >Uploaders.gz
+    for archive in "${public_archives[@]}"; do
+        archiveroot="$(get_archiveroot "${archive}")"
+        cd "${archiveroot}/indices"
+
+        dak make-maintainers -a "${archive}" ${scriptdir}/masterfiles/pseudo-packages.maintainers
+        gzip -9v --rsyncable <Maintainers >Maintainers.gz
+        gzip -9v --rsyncable <Uploaders >Uploaders.gz
+    done
 }
 
 function copyoverrides() {

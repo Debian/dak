@@ -30,6 +30,8 @@ exportpublic=$public/rsync/export/
 
 ftpgroup=debadmin
 
+public_archives=(ftp-master backports)
+
 TMPDIR=${base}/tmp
 
 PATH=$masterdir:$PATH
