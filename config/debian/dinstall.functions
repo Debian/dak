@@ -401,8 +401,7 @@ function transitionsclean() {
 }
 
 function dm() {
-    log "Updating DM html page"
-    $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
+    log "Updating DM permissions page"
     dak acl export-per-source dm >$exportdir/dm.txt
 }
 

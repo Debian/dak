@@ -434,7 +434,7 @@ function transitionsclean() {
 
 function dm() {
     log "Updating DM html page"
-    $scriptsdir/dm-monitor >$webdir/dm-uploaders.html
+    #$scriptsdir/dm-monitor >$webdir/dm-uploaders.html
 }
 
 function bts() {
