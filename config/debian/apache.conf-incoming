@@ -13,6 +13,8 @@
     Order deny,allow
   </Directory>
 
+  Alias /robots.txt /srv/incoming.debian.org/robots.txt
+
   # buildd direct access -- buildds only
   Alias /debian /srv/ftp.debian.org/mirror
   Alias /debian-buildd /srv/incoming.debian.org/debian-buildd
