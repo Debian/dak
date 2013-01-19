@@ -35,10 +35,10 @@ chown dak:ftpteam $DATE
 
 DATE=$(date -d yesterday +%Y-%m)
 cd /srv/upload.debian.org/queued
-/srv/upload.debian.org/queued/debianqueued -k || true
-mv log log.${DATE}
-touch log
+sudo -u dak-unpriv /srv/upload.debian.org/queued/debianqueued -k || true
+mv run/log log.${DATE}
+sudo -u dak-unpriv touch run/log
 xz -9 log.${DATE}
-/srv/upload.debian.org/queued/debianqueued 2>/dev/null
+sudo -u dak-unpriv /srv/upload.debian.org/queued/debianqueued 2>/dev/null
 
 ################################################################################
