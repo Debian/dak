@@ -15,5 +15,5 @@ PATH=/usr/local/bin:/usr/bin:/bin
 
 # We do like our queued and make sure it will always be there.
 # Luckily it checks itself and doesn't start if it already runs
-@reboot /srv/queued/debianqueued-0.9/debianqueued
-*/10        *          *   *   *   /srv/queued/debianqueued-0.9/debianqueued 2>/dev/null
+@reboot sudo -u dak-unpriv /srv/queued/debianqueued-0.9/debianqueued
+*/10        *          *   *   *   sudo -u dak-unpriv /srv/queued/debianqueued-0.9/debianqueued 2>/dev/null
