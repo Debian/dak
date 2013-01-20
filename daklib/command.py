@@ -35,15 +35,15 @@ class CommandError(Exception):
     pass
 
 class CommandFile(object):
-    def __init__(self, path, log=None):
+    def __init__(self, filename, data, log=None):
         if log is None:
             from daklib.daklog import Logger
             log = Logger()
         self.cc = []
         self.result = []
         self.log = log
-        self.path = path
-        self.filename = os.path.basename(path)
+        self.filename = filename
+        self.data = data
 
     def _check_replay(self, signed_file, session):
         """check for replays
@@ -130,8 +130,7 @@ class CommandFile(object):
         keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
         keyring_files = [ k.keyring_name for k in keyrings ]
 
-        raw_contents = open(self.path, 'r').read()
-        signed_file = SignedFile(raw_contents, keyring_files)
+        signed_file = SignedFile(self.data, keyring_files)
         if not signed_file.valid:
             self.log.log(['invalid signature', self.filename])
             return False

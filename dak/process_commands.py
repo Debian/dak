@@ -66,8 +66,11 @@ def main(argv=None):
             log.log(['unexpected filename', basename])
             continue
 
+        with open(fn, 'r') as fh:
+            data = fh.read()
+
         try:
-            command = CommandFile(fn, log)
+            command = CommandFile(basename, data, log)
             command.evaluate()
         except:
             created = os.stat(fn).st_mtime
@@ -83,7 +86,8 @@ def main(argv=None):
             dst = find_next_free(os.path.join(donedir, basename))
 
         with FilesystemTransaction() as fs:
-            fs.move(fn, dst, mode=0o644)
+            fs.unlink(fn)
+            fs.create(dst, mode=0o644).write(data)
             fs.commit()
 
     log.close()
