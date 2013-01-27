@@ -77,6 +77,9 @@ def acl_set_fingerprints(acl_name, entries):
     acl.fingerprints.clear()
     for entry in entries:
         entry = entry.strip()
+        if entry.startswith('#') or len(entry) == 0:
+            continue
+
         fps = get_fingerprint(entry, session)
         if len(fps) == 0:
             print "Unknown key for '{0}'".format(entry)
