@@ -55,7 +55,7 @@ def get_fingerprint(entry, session):
     @return: fingerprint for the entry
     """
     field, value = entry.split(":", 1)
-    q = session.query(Fingerprint)
+    q = session.query(Fingerprint).join(Fingerprint.keyring).filter(Keyring.active == True)
 
     if field == 'uid':
         q = q.join(Fingerprint.uid).filter(Uid.uid == value)
@@ -64,7 +64,7 @@ def get_fingerprint(entry, session):
     elif field == 'fpr':
         q = q.filter(Fingerprint.fingerprint == value)
     elif field == 'keyring':
-        q = q.join(Fingerprint.keyring).filter(Keyring.keyring_name == value)
+        q = q.filter(Keyring.keyring_name == value)
     else:
         raise Exception('Unknown selector "{0}".'.format(field))
 
