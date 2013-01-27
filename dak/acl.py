@@ -65,6 +65,8 @@ def get_fingerprint(entry, session):
         q = q.filter(Fingerprint.fingerprint == value)
     elif field == 'keyring':
         q = q.join(Fingerprint.keyring).filter(Keyring.keyring_name == value)
+    else:
+        raise Exception('Unknown selector "{0}".'.format(field))
 
     return q.all()
 
