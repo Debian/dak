@@ -20,7 +20,7 @@ import apt_pkg
 import sys
 
 from daklib.config import Config
-from daklib.dbconn import DBConn, Fingerprint, Uid, ACL
+from daklib.dbconn import DBConn, Fingerprint, Keyring, Uid, ACL
 
 def usage():
     print """Usage:
@@ -44,6 +44,7 @@ def get_fingerprint(entry, session):
         uid:<uid>
         name:<name>
         fpr:<fingerprint>
+        keyring:<keyring-name>
 
     @type  entry: string
     @param entry: ACL entry
@@ -62,6 +63,8 @@ def get_fingerprint(entry, session):
         q = q.join(Fingerprint.uid).filter(Uid.name == value)
     elif field == 'fpr':
         q = q.filter(Fingerprint.fingerprint == value)
+    elif field == 'keyring':
+        q = q.join(Fingerprint.keyring).filter(Keyring.keyring_name == value)
 
     return q.all()
 
