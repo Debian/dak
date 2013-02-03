@@ -920,9 +920,7 @@ outer_loop: while (<CHANGES>) {
     return;
   } ## end if ( $retries > 0 && (...
 
-  if ( $conf::upload_method eq "ftp" ) {
-    return if !ftp_open();
-  }
+  return if !ftp_open();
 
   # check if the job is already present on target
   # (moved to here, to avoid bothering target as long as there are errors in
@@ -1067,6 +1065,8 @@ sub process_dak_commands {
 	return;
   }
   msg("log,mail", "(PGP/GnuPG signature by $signator)\n");
+
+  return if !ftp_open();
 
   # check target
   my @filenames = ($commands);
@@ -1933,6 +1933,7 @@ sub send_status() {
 # open FTP connection to target host if not already open
 #
 sub ftp_open() {
+  return 1 unless $conf::upload_method eq "ftp";
 
   if ($main::FTP_chan) {
 
