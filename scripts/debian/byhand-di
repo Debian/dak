@@ -32,7 +32,7 @@ case $SUITE in
     "")
 	error "Error: unable to determine suite from Changes file"
 	;;
-    unstable|sid)
+    unstable|sid|*-proposed-updates)
 	: # nothing to do
 	;;
     *)
