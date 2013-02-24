@@ -595,6 +595,7 @@ def usage (exit_code=0):
   -h, --help                show this help and exit.
   -m, --manual-reject=MSG   manual reject with `msg'
   -n, --no-action           don't do anything
+  -q, --queue=QUEUE         operate on a different queue
   -t, --trainee             FTP Trainee mode
   -V, --version             display the version number and exit
 
