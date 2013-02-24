@@ -1,6 +1,6 @@
 Dir {
-  Log "/srv/ftp-master.debian.org/log/backports/";
-  Lock "/srv/ftp-master.debian.org/lock/backports/";
+  Log "/srv/backports-master.debian.org/log/";
+  Lock "/srv/backports-master.debian.org/lock/";
 };
 
 Rm {
@@ -10,8 +10,8 @@ Rm {
 
 Process-New
 {
-  DinstallLockFile "/srv/ftp-master.debian.org/lock/backports/processnew.lock";
-  LockDir "/srv/ftp-master.debian.org/lock/backports/new/";
+  DinstallLockFile "/srv/backports-master.debian.org/lock/processnew.lock";
+  LockDir "/srv/backports-master.debian.org/lock/new/";
   Options::Queue "backports-new";
 };
 
