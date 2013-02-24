@@ -12,4 +12,9 @@ Process-New
 {
   DinstallLockFile "/srv/ftp-master.debian.org/lock/backports/processnew.lock";
   LockDir "/srv/ftp-master.debian.org/lock/backports/new/";
+  Options::Queue "backports-new";
+};
+
+Queue-Report {
+  Options::Directories "backports-new";
 };
