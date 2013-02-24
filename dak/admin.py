@@ -82,7 +82,7 @@ Perform administrative work on the dak database.
      s show SUITE           show config details for a suite
      s add SUITE VERSION [ label=LABEL ] [ description=DESCRIPTION ]
                          [ origin=ORIGIN ] [ codename=CODENAME ]
-                         [ signingkey=SIGNINGKEY ]
+                         [ signingkey=SIGNINGKEY ] [ archive=ARCHIVE ]
                             add suite SUITE, version VERSION.
                             label, description, origin, codename
                             and signingkey are optional.
