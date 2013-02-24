@@ -3,6 +3,8 @@
 # Fetches latest copy of pseudo-packages
 # Joerg Jaspert <joerg@debian.org>
 
+set -e
+
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 

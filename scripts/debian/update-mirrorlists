@@ -1,7 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Very Very hackish script...  dont laugh.
 # Michael Beattie <mjb@debian.org>
+
+set -e
 
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
