@@ -219,12 +219,17 @@ function mklslar() {
 
 function mkmaintainers() {
     local archiveroot
+    local indices
 
     log 'Creating Maintainers index ... '
 
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
-        cd "${archiveroot}/indices"
+	indices="${archiveroot}/indices"
+	if ! [ -d "${indices}" ]; then
+	    mkdir "${indices}"
+	fi
+        cd "${indices}"
 
         dak make-maintainers -a "${archive}" ${scriptdir}/masterfiles/pseudo-packages.maintainers
         gzip -9v --rsyncable <Maintainers >Maintainers.gz
