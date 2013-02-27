@@ -718,7 +718,7 @@ class ArchiveUpload(object):
             elif rtype == "reject":
                 rejected = fields[1]
                 if suite_name == rejected:
-                    self.reject_reasons.append('Uploads to {0} are not accepted.'.format(rejected))
+                    raise checks.Reject('Uploads to {0} are not accepted.'.format(rejected))
             ## XXX: propup-version and map-unreleased not yet implemented
         return suite_name
 
