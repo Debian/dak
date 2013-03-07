@@ -191,6 +191,8 @@ def parse_file_list(control, has_priority_and_section):
             continue
         (sha1sum, size, filename) = line.split()
         entry = entries.get(filename, None)
+        if entry is None:
+            raise InvalidChangesException('{0} is listed in Checksums-Sha1, but not in Files.'.format(filename))
         if entry is not None and entry.get('size', None) != long(size):
             raise InvalidChangesException('Size for {0} in Files and Checksum-Sha1 fields differ.'.format(filename))
         entry['sha1sum'] = sha1sum
@@ -200,6 +202,8 @@ def parse_file_list(control, has_priority_and_section):
             continue
         (sha256sum, size, filename) = line.split()
         entry = entries.get(filename, None)
+        if entry is None:
+            raise InvalidChangesException('{0} is listed in Checksums-Sha256, but not in Files.'.format(filename))
         if entry is not None and entry.get('size', None) != long(size):
             raise InvalidChangesException('Size for {0} in Files and Checksum-Sha256 fields differ.'.format(filename))
         entry['sha256sum'] = sha256sum
