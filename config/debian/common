@@ -33,12 +33,15 @@ function wbtrigger() {
 
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
+    local overridesuite
+    local suite
+
     dak manage-build-queues -a
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
     ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-buildd
 
-    for suite in unstable experimental; do
+    for suite in unstable experimental squeeze-backports; do
         rm -rf "$incoming/dists/$suite/buildd"
         dak export-suite -s "buildd-$suite" -d "$incoming/dists/$suite/buildd"
     done
@@ -52,15 +55,20 @@ function make_buildd_dir () {
         if [ "${suite}x" = "projectx" ]; then continue; fi
         cd ${incoming}/dists/${suite}/buildd
 
-        apt-ftparchive packages . $overridedir/override.sid.all3 >Packages
+        overridesuite=sid
+        if [ "${suite}" = "squeeze-backports" ]; then
+            overridesuite="${suite}"
+        fi
+
+        apt-ftparchive packages . $overridedir/override.${overridesuite}.all3 >Packages
         gzip -9c --rsyncable <Packages >Packages.gz
-        apt-ftparchive sources . $overridedir/override.sid.all3 >Sources
+        apt-ftparchive sources . $overridedir/override.${overridesuite}.all3 >Sources
         gzip -9c --rsyncable <Sources >Sources.gz
 
         rm -f buildd/Release
         cd ..
         apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite incoming" -o APT::FTPArchive::Release::Architectures="$archs" release buildd >Release
-        if [ "$suite" = "experimental" ]; then
+        if [ "$suite" = "experimental" -o "${suite}" = "squeeze-backports" ]; then
             echo "NotAutomatic: yes" >>Release
         fi
 

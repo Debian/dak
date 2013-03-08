@@ -63,11 +63,13 @@ function do_buildd () {
         LOCKDAILY="YES"
         cd $overridedir
         dak make-overrides &>/dev/null
-        rm -f override.sid.all3 override.sid.all3.src
+        rm -f override.sid.all3 override.sid.all3.src override.squeeze-backports.all3 override.squeeze-backports.all3.src
         for i in main contrib non-free main.debian-installer; do
             cat override.sid.$i >> override.sid.all3
+            cat override.squeeze-backports.$i >> override.squeeze-backports.all3
             if [ "$i" != "main.debian-installer" ]; then
                 cat override.sid.$i.src >> override.sid.all3.src
+                cat override.squeeze-backports.$i.src >> override.squeeze-backports.all3.src
             fi
         done
         make_buildd_dir
