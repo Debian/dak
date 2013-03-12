@@ -43,6 +43,7 @@ function make_buildd_dir () {
 
     for suite in unstable experimental squeeze-backports; do
         rm -rf "$incoming/dists/$suite/buildd"
+        mkdir -p "$incoming/dists/$suite/buildd"
         dak export-suite -s "buildd-$suite" -d "$incoming/dists/$suite/buildd"
     done
     rm -f ${incoming}/public/*
