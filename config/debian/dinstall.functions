@@ -404,7 +404,7 @@ function mkchecksums() {
 function mirror() {
     local archiveroot
 
-    log "Regenerating \"public\" mirror/ hardlink fun for ${archive}"
+    log "Regenerating \"public\" mirror/ hardlink fun"
     DATE_SERIAL=$(date +"%Y%m%d01")
     FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
     if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
