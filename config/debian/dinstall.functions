@@ -509,6 +509,7 @@ function mirrorpush() {
     echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
     echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
     sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
+    sudo -H -u archvsync /home/archvsync/runmirrors -a backports > ~dak/runmirrorsbpo.log 2>&1 &
 }
 
 function i18n2() {
