@@ -139,6 +139,8 @@ def import_dump(log, transaction, suite, component, fh,
                     fingerprint=fingerprint, changed_by=changed_by,
                     keyrings=keyrings, require_signature=require_signature, add_overrides=add_overrides)
 
+        transaction.commit()
+
 _export_query = r"""
 WITH
 tmp AS
