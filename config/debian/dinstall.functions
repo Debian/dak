@@ -385,19 +385,26 @@ function mkfilesindices() {
 }
 
 function mkchecksums() {
-    dsynclist=$dbdir/dsync.list
-    md5list=$indices/md5sums
+    local archiveroot
 
-    log -n "Creating md5 / dsync index file ... "
+    for archive in "${public_archives[@]}"; do
+        dsynclist=$dbdir/dsync.${archive}.list
+        md5list=$indices/md5sums
 
-    cd "$ftpdir"
-    ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
-    ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
-    ${bindir}/dsync-flist -q link-dups $dsynclist || true
+        log -n "Creating md5 / dsync index file for ${archive}... "
+
+        archiveroot="$(get_archiveroot "${archive}")"
+        cd "$archiveroot"
+        ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
+        ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
+        ${bindir}/dsync-flist -q link-dups $dsynclist || true
+    done
 }
 
 function mirror() {
-    log "Regenerating \"public\" mirror/ hardlink fun"
+    local archiveroot
+
+    log "Regenerating \"public\" mirror/ hardlink fun for ${archive}"
     DATE_SERIAL=$(date +"%Y%m%d01")
     FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
     if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
@@ -409,8 +416,16 @@ function mirror() {
     echo "Using dak v1" >> ${TRACEFILE}
     echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
     echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
-    cd ${mirrordir}
-    rsync -aH --link-dest ${ftpdir} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${ftpdir}/. .
+
+    # Ugly "hack", but hey, it does what we want.
+    cp ${TRACEFILE} ${TRACEFILE_BDO}
+
+    for archive in "${public_archives[@]}"; do
+        archiveroot="$(get_archiveroot "${archive}")"
+        mirrordir="${archiveroot}/../mirror"
+        cd ${mirrordir}
+        rsync -aH --link-dest ${archiveroot} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${archiveroot}/. .
+    done
 }
 
 function expire() {
