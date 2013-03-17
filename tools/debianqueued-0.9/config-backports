@@ -80,10 +80,10 @@ $statusdelay = 30;
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-sparc-keyring.gpg");
 
 # our log file
-$logfile = "$queued_dir/log";
+$logfile = "$queued_dir/run/log";
 
 # our pid file
-$pidfile = "$queued_dir/pid";
+$pidfile = "$queued_dir/run/pid";
 
 # upload method (ssh, copy, ftp)
 $upload_method = "ftp";
