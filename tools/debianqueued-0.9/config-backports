@@ -53,7 +53,7 @@ $valid_files = '(\.changes|\.tar\.(?:gz|bz2|xz)|\.dsc|\.u?deb|diff\.gz|\.sh)$';
 $chmod_on_target = 0;
 
 # Do an md5sum check after upload?
-$check_md5sum = 1;
+$check_md5sum = 0;
 
 # name of the status file or named pipe in the incoming dir
 $statusfile = "$incoming/status";
@@ -63,7 +63,7 @@ $statusfile = "$incoming/status";
 $statusdelay = 30;
 
 # names of the keyring files
-@keyrings = ( "/srv/backports-master.debian.org/keyrings/keyring.gpg",
+@keyrings = ( "/srv/keyring.debian.org/keyrings/debian-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/debian-maintainers.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-alpha-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-amd64-keyring.gpg",
@@ -86,16 +86,16 @@ $logfile = "$queued_dir/log";
 $pidfile = "$queued_dir/pid";
 
 # upload method (ssh, copy, ftp)
-$upload_method = "copy";
+$upload_method = "ftp";
 
 # name of target host (ignored on copy method)
-$target = "localhost";
+$target = "ftp-master.debian.org";
 
 # login name on target host (for ssh, always 'ftp' for ftp, ignored for copy)
-$targetlogin = "queue";
+$targetlogin = "ftp";
 
 # incoming on target host
-$targetdir = "/srv/backports-master.debian.org/queue/unchecked/";
+$targetdir = "/pub/UploadQueue/";
 
 # incoming/delayed on target host
 $targetdir_delayed = "/srv/upload.debian.org/DEFERRED/%d-day";
