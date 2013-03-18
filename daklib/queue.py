@@ -201,7 +201,7 @@ def edit_note(note, upload, session, trainee=False):
 
 # FIXME: Should move into the database
 # suite names DMs can upload to
-dm_suites = ['unstable', 'experimental', 'squeeze-backports']
+dm_suites = ['unstable', 'experimental', 'squeeze-backports','squeeze-backports-sloppy', 'wheezy-backports']
 
 def get_newest_source(source, session):
     'returns the newest DBSource object in dm_suites'
