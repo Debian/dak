@@ -48,6 +48,7 @@ Generate an index of packages <=> Maintainers / Uploaders.
 
   -a, --archive=ARCHIVE      archive to take packages from
   -s, --source               output source packages only
+  -p, --print                print package list to stdout instead of writing it to files
   -h, --help                 show this help and exit
 """
     sys.exit(exit_code)
@@ -71,8 +72,9 @@ def main():
 
     Arguments = [('h',"help","Make-Maintainers::Options::Help"),
                  ('a',"archive","Make-Maintainers::Options::Archive",'HasArg'),
-                 ('s',"source","Make-Maintainers::Options::Source")]
-    for i in ["Help", "Source" ]:
+                 ('s',"source","Make-Maintainers::Options::Source"),
+                 ('p',"print","Make-Maintainers::Options::Print")]
+    for i in ["Help", "Source", "Print" ]:
         if not cnf.has_key("Make-Maintainers::Options::%s" % (i)):
             cnf["Make-Maintainers::Options::%s" % (i)] = ""
 
@@ -133,17 +135,22 @@ def main():
             maintainers[package] = maintainer
             uploaders[package] = [maintainer]
 
-    maintainer_file = open('Maintainers', 'w')
-    uploader_file = open('Uploaders', 'w')
-    for package in sorted(uploaders):
-        maintainer_file.write(format(package, maintainers[package]))
-        for uploader in uploaders[package]:
-            uploader_file.write(format(package, uploader))
-    uploader_file.close()
-    maintainer_file.close()
-    Logger.close()
+    if Options["Print"]:
+        for package in sorted(maintainers):
+            sys.stdout.write(format(package, maintainers[package]))
+    else:
+        maintainer_file = open('Maintainers', 'w')
+        uploader_file = open('Uploaders', 'w')
+        for package in sorted(uploaders):
+            maintainer_file.write(format(package, maintainers[package]))
+            for uploader in uploaders[package]:
+                uploader_file.write(format(package, uploader))
+        uploader_file.close()
+        maintainer_file.close()
 
-################################################################################
+        Logger.close()
+
+###############################################################################
 
 if __name__ == '__main__':
     main()
