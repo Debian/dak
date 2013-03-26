@@ -47,6 +47,7 @@ def usage (exit_code=0):
 Generate an index of packages <=> Maintainers / Uploaders.
 
   -a, --archive=ARCHIVE      archive to take packages from
+  -s, --source               output source packages only
   -h, --help                 show this help and exit
 """
     sys.exit(exit_code)
@@ -69,9 +70,11 @@ def main():
     cnf = Config()
 
     Arguments = [('h',"help","Make-Maintainers::Options::Help"),
-                 ('a','archive','Make-Maintainers::Options::Archive','HasArg')]
-    if not cnf.has_key("Make-Maintainers::Options::Help"):
-        cnf["Make-Maintainers::Options::Help"] = ""
+                 ('a',"archive","Make-Maintainers::Options::Archive",'HasArg'),
+                 ('s',"source","Make-Maintainers::Options::Source")]
+    for i in ["Help", "Source" ]:
+        if not cnf.has_key("Make-Maintainers::Options::%s" % (i)):
+            cnf["Make-Maintainers::Options::%s" % (i)] = ""
 
     extra_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Make-Maintainers::Options")
@@ -110,11 +113,12 @@ def main():
         maintainers[source.source] = source.maintainer.name
         uploaders[source.source] = uploader_list(source)
 
-    Logger.log(['binaries'])
-    for binary in binary_query:
-        if binary.package not in maintainers:
-            maintainers[binary.package] = binary.maintainer.name
-            uploaders[binary.package] = uploader_list(binary.source)
+    if not Options["Source"]:
+        Logger.log(['binaries'])
+        for binary in binary_query:
+                if binary.package not in maintainers:
+                    maintainers[binary.package] = binary.maintainer.name
+                    uploaders[binary.package] = uploader_list(binary.source)
 
     Logger.log(['files'])
     # Process any additional Maintainer files (e.g. from pseudo
