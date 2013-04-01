@@ -223,7 +223,8 @@ def init(session):
     cnf = Config()
 
     Arguments = [('h',"help","Show-New::Options::Help"),
-                 ("p","html-path","Show-New::HTMLPath","HasArg")]
+                 ("p","html-path","Show-New::HTMLPath","HasArg"),
+                 ('q','queue','Show-New::Options::Queue','HasArg')]
 
     for i in ["help"]:
         if not cnf.has_key("Show-New::Options::%s" % (i)):
@@ -235,8 +236,9 @@ def init(session):
     if Options["help"]:
         usage()
 
+    queue_names = Options.find('Queue', 'new').split(',')
     uploads = session.query(PolicyQueueUpload) \
-        .join(PolicyQueueUpload.policy_queue).filter(PolicyQueue.queue_name == 'new') \
+        .join(PolicyQueueUpload.policy_queue).filter(PolicyQueue.queue_name.in_(queue_names)) \
         .join(PolicyQueueUpload.changes).order_by(DBChange.source)
 
     if len(changesnames) > 0:
