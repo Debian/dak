@@ -385,15 +385,15 @@ function mkfilesindices() {
 }
 
 function mkchecksums() {
-    local archiveroot
+    local archiveroot dsynclist md5list
 
     for archive in "${public_archives[@]}"; do
+        archiveroot="$(get_archiveroot "${archive}")"
         dsynclist=$dbdir/dsync.${archive}.list
-        md5list=$indices/md5sums
+        md5list=${archiveroot}/indices/md5sums
 
         log -n "Creating md5 / dsync index file for ${archive}... "
 
-        archiveroot="$(get_archiveroot "${archive}")"
         cd "$archiveroot"
         ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
         ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
