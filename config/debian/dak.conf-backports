@@ -4,8 +4,8 @@ Dir {
 };
 
 Rm {
-  LogFile "/srv/backports-web.debian.org/underlay/removals.txt";
-  LogFile822 "/srv/backports-web.debian.org/underlay/removals.822";
+  LogFile "/srv/backports-master.debian.org/log/removals.txt";
+  LogFile822 "/srv/backports-master.debian.org/log/removals.822";
 };
 
 Process-New
