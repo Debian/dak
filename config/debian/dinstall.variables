@@ -28,9 +28,6 @@ LOCK_DAILY="$lockdir/daily.lock"
 # Lock cron.unchecked from doing work
 LOCK_ACCEPTED="$lockdir/unchecked.lock"
 
-# Lock process-new from doing work
-LOCK_NEW="$lockdir/processnew.lock"
-
 # This file is simply used to indicate to britney whether or not
 # the Packages file updates completed sucessfully.  It's not a lock
 # from our point of view

@@ -207,7 +207,6 @@ GO=(
 stage $GO
 
 lockfile "$LOCK_ACCEPTED"
-lockfile "$LOCK_NEW"
 trap remove_all_locks EXIT TERM HUP INT QUIT
 
 GO=(

@@ -11,7 +11,7 @@ function remove_daily_lock() {
 
 # Remove all locks
 function remove_all_locks() {
-    rm -f $LOCK_DAILY $LOCK_ACCEPTED $LOCK_NEW
+    rm -f $LOCK_DAILY $LOCK_ACCEPTED
 }
 
 # If we error out this one is called, *FOLLOWED* by cleanup above

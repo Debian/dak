@@ -32,7 +32,6 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 
 LOCKDAILY=""
 LOCKFILE="$lockdir/unchecked.lock"
-LOCK_NEW="$lockdir/processnew.lock"
 NOTICE="$lockdir/daily.lock"
 LOCK_BUILDD="$lockdir/buildd.lock"
 
