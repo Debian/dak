@@ -232,6 +232,7 @@ def split_depends (d_str) :
 
 def read_control (filename):
     recommends = []
+    predepends = []
     depends = []
     section = ''
     maintainer = ''
@@ -249,6 +250,10 @@ def read_control (filename):
     deb_file.close()
 
     control_keys = control.keys()
+
+    if "Pre-Depends" in control:
+        predepends_str = control["Pre-Depends"]
+        predepends = split_depends(predepends_str)
 
     if "Depends" in control:
         depends_str = control["Depends"]
@@ -286,7 +291,7 @@ def read_control (filename):
         else:
             maintainer = escape_if_needed(maintainer)
 
-    return (control, control_keys, section, depends, recommends, arch, maintainer)
+    return (control, control_keys, section, predepends, depends, recommends, arch, maintainer)
 
 def read_changes_or_dsc (suite, filename, session = None):
     dsc = {}
@@ -415,7 +420,7 @@ def output_package_relations ():
     return foldable_output("Package relations", "relations", to_print)
 
 def output_deb_info(suite, filename, packagename, session = None):
-    (control, control_keys, section, depends, recommends, arch, maintainer) = read_control(filename)
+    (control, control_keys, section, predepends, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
         return formatted_text("no control info")
@@ -423,7 +428,10 @@ def output_deb_info(suite, filename, packagename, session = None):
     if not package_relations.has_key(packagename):
         package_relations[packagename] = {}
     for key in control_keys :
-        if key == 'Depends':
+        if key == 'Pre-Depends':
+            field_value = create_depends_string(suite, predepends, session)
+            package_relations[packagename][key] = field_value
+        elif key == 'Depends':
             field_value = create_depends_string(suite, depends, session)
             package_relations[packagename][key] = field_value
         elif key == 'Recommends':
