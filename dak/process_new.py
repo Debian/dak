@@ -527,17 +527,12 @@ def do_new(upload, upload_copy, handler, session):
             continue
 
         if answer == 'A' and not Options["Trainee"]:
-            try:
-                check_daily_lock()
-                add_overrides(missing, upload.target_suite, session)
-                if Config().find_b("Dinstall::BXANotify"):
-                    do_bxa_notification(missing, upload, session)
-                handler.accept()
-                done = True
-                Logger.log(["NEW ACCEPT", upload.changes.changesname])
-            except CantGetLockError:
-                print "Hello? Operator! Give me the number for 911!"
-                print "Dinstall in the locked area, cant process packages, come back later"
+            add_overrides(missing, upload.target_suite, session)
+            if Config().find_b("Dinstall::BXANotify"):
+                do_bxa_notification(missing, upload, session)
+            handler.accept()
+            done = True
+            Logger.log(["NEW ACCEPT", upload.changes.changesname])
         elif answer == 'C':
             check_pkg(upload, upload_copy, session)
         elif answer == 'E' and not Options["Trainee"]:
@@ -624,24 +619,6 @@ ENVIRONMENT VARIABLES
     sys.exit(exit_code)
 
 ################################################################################
-
-def check_daily_lock():
-    """
-    Raises CantGetLockError if the dinstall daily.lock exists.
-    """
-
-    cnf = Config()
-    try:
-        lockfile = cnf.get("Process-New::DinstallLockFile",
-                           os.path.join(cnf['Dir::Lock'], 'processnew.lock'))
-
-        os.open(lockfile,
-                os.O_RDONLY | os.O_CREAT | os.O_EXCL)
-    except OSError as e:
-        if e.errno == errno.EEXIST or e.errno == errno.EACCES:
-            raise CantGetLockError
-
-    os.unlink(lockfile)
 
 @contextlib.contextmanager
 def lock_package(package):
