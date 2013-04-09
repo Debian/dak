@@ -1,3 +1,7 @@
+Dinstall {
+  Dinstall::MyAdminAddress "backports-team@debian.org";
+};
+
 Dir {
   Log "/srv/backports-master.debian.org/log/";
   Lock "/srv/backports-master.debian.org/lock/";
