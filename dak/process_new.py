@@ -64,6 +64,7 @@ from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLock
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
 from daklib.policy import UploadCopy, PolicyQueueUploadHandler
+from sqlalchemy.sql import not_
 
 # Globals
 Options = None
@@ -118,6 +119,21 @@ class Priority_Completer:
 
 ################################################################################
 
+def claimed_overrides(upload, missing, session):
+    source = [upload.source.source]
+    binaries = set([x.package for x in upload.binaries])
+    suites = ('unstable','experimental')
+    for m in missing:
+        if m['type'] != 'dsc':
+            binaries.remove(m['package'])
+    return session.query(DBBinary).filter(DBBinary.package.in_(binaries)). \
+                         join(DBBinary.source). \
+                         filter(not_(DBSource.source.in_(source))). \
+                         join(DBBinary.suites). \
+                         filter(Suite.suite_name.in_(suites))
+
+################################################################################
+
 def print_new (upload, missing, indexed, session, file=sys.stdout):
     check_valid(missing, session)
     index = 0
@@ -137,6 +153,11 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
         if not m['valid']:
             line = line + ' [!]'
         print >>file, line
+    claimed = claimed_overrides(upload, missing, session)
+    if claimed.count():
+        print '\nCLAIMED OVERRIDES'
+        for c in claimed:
+            print '%s:\t%s' % (c.source.source, c.package)
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
         print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
