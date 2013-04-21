@@ -174,6 +174,19 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
 
         packages = d.keys()
         packages.sort()
+
+        # Calculate optimal column sizes
+        sizes = [10, 13, 10]
+        for pkg in packages:
+            versions = d[pkg].keys()
+            for version in versions:
+                suites = d[pkg][version].keys()
+                for suite in suites:
+                       sizes[0] = max(sizes[0], len(pkg))
+                       sizes[1] = max(sizes[1], len(version))
+                       sizes[2] = max(sizes[2], len(suite))
+        fmt = "%%%is | %%%is | %%%is | "  % tuple(sizes)
+
         for pkg in packages:
             versions = d[pkg].keys()
             versions.sort(apt_pkg.version_compare)
@@ -184,7 +197,7 @@ SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
                     arches = d[pkg][version][suite]
                     arches.sort(utils.arch_compare_sw)
                     if Options["Format"] == "": #normal
-                        sys.stdout.write("%10s | %10s | %13s | " % (pkg, version, suite))
+                        sys.stdout.write(fmt % (pkg, version, suite))
                         sys.stdout.write(", ".join(arches))
                         sys.stdout.write('\n')
                     elif Options["Format"] in [ "control-suite", "heidi" ]:

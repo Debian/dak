@@ -385,6 +385,7 @@ def process_queue(queue, log, rrd_dir):
             if handler.get_action():
                 per_source[source]["processed"] = " | PENDING %s" % handler.get_action()
         per_source[source]["list"].append(upload)
+        per_source[source]["list"].sort(lambda x, y: cmp(x.changes.created, y.changes.created), reverse=True)
     # Determine oldest time and have note status for each source group
     for source in per_source.keys():
         source_list = per_source[source]["list"]
@@ -484,7 +485,7 @@ def process_queue(queue, log, rrd_dir):
         arches_list = list(arches)
         arches_list.sort(utils.arch_compare_sw)
         arch_list = " ".join(arches_list)
-        version_list = " ".join(versions)
+        version_list = " ".join(sorted(versions, reverse=True))
         if len(version_list) > max_version_len:
             max_version_len = len(version_list)
         if len(arch_list) > max_arch_len:
