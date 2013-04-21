@@ -22,6 +22,7 @@ lintian:
     - missing-pre-dependency-on-multiarch-support
     - bad-perm-for-file-in-etc-sudoers.d
     - source-contains-waf-binary
+    - md5sum-mismatch
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
