@@ -126,11 +126,16 @@ def claimed_overrides(upload, missing, session):
     for m in missing:
         if m['type'] != 'dsc':
             binaries.remove(m['package'])
-    return session.query(DBBinary).filter(DBBinary.package.in_(binaries)). \
-                         join(DBBinary.source). \
-                         filter(not_(DBSource.source.in_(source))). \
-                         join(DBBinary.suites). \
-                         filter(Suite.suite_name.in_(suites))
+    if binaries:
+        return session.query(DBBinary.package, DBSource.source).distinct(). \
+                             filter(DBBinary.package.in_(binaries)). \
+                             join(DBBinary.source). \
+                             filter(not_(DBSource.source.in_(source))). \
+                             join(DBBinary.suites). \
+                             filter(Suite.suite_name.in_(suites)). \
+                             order_by(DBSource.source, DBBinary.package)
+    else:
+        return None
 
 ################################################################################
 
@@ -154,10 +159,10 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
             line = line + ' [!]'
         print >>file, line
     claimed = claimed_overrides(upload, missing, session)
-    if claimed.count():
+    if claimed and claimed.count():
         print '\nCLAIMED OVERRIDES'
         for c in claimed:
-            print '%s:\t%s' % (c.source.source, c.package)
+            print '%s: %s' % (c.source, c.package)
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
         print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
