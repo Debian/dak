@@ -117,7 +117,15 @@ def time_pp(x):
 def sg_compare (a, b):
     a = a[1]
     b = b[1]
-    """Sort by have note, time of oldest upload."""
+    """Sort by have pending action, have note, time of oldest upload."""
+    # Sort by have pending action
+    a_note_state = a["processed"]
+    b_note_state = b["processed"]
+    if a_note_state < b_note_state:
+        return -1
+    elif a_note_state > b_note_state:
+        return 1
+
     # Sort by have note
     a_note_state = a["note_state"]
     b_note_state = b["note_state"]
@@ -375,6 +383,7 @@ def process_queue(queue, log, rrd_dir):
 
     # Divide the .changes into per-source groups
     per_source = {}
+    total_pending = 0
     for upload in queue.uploads:
         source = upload.changes.source
         if source not in per_source:
@@ -383,7 +392,8 @@ def process_queue(queue, log, rrd_dir):
             per_source[source]["processed"] = ""
             handler = PolicyQueueUploadHandler(upload, session)
             if handler.get_action():
-                per_source[source]["processed"] = " | PENDING %s" % handler.get_action()
+                per_source[source]["processed"] = "PENDING %s" % handler.get_action()
+                total_pending += 1
         per_source[source]["list"].append(upload)
         per_source[source]["list"].sort(lambda x, y: cmp(x.changes.created, y.changes.created), reverse=True)
     # Determine oldest time and have note status for each source group
@@ -585,19 +595,25 @@ def process_queue(queue, log, rrd_dir):
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
     # The "normal" output without any formatting.
-        format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old%%s\n" % (max_source_len, max_version_len, max_arch_len)
-
         msg = ""
         for entry in entries:
             (source, binary, version_list, arch_list, processed, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
-            msg += format % (source, version_list, arch_list, note, time_pp(last_modified), processed)
+            if processed:
+                format="%%-%ds | %%-%ds | %%-%ds | %%s\n" % (max_source_len, max_version_len, max_arch_len)
+                msg += format % (source, version_list, arch_list, processed)
+            else:
+                format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
+                msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
             print type.upper()
             print "-"*len(type)
             print
             print msg
-            print "%s %s source package%s / %s %s package%s in total." % (source_count, type, plural(source_count), total_count, type, plural(total_count))
+            print ("%s %s source package%s / %s %s package%s in total / %s %s package%s to be processed." %
+                   (source_count, type, plural(source_count),
+                    total_count, type, plural(total_count),
+                    total_pending, type, plural(total_pending)))
             print
 
 ################################################################################
