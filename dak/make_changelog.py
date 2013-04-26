@@ -67,7 +67,7 @@ def usage (exit_code=0):
 
        Usage:
        make-changelog -s <suite> -b <base_suite> [OPTION]...
-       make-changelog -e
+       make-changelog -e -a <archive>
 
 Options:
 
@@ -76,7 +76,8 @@ Options:
   -b, --base-suite          suite to be taken as reference for comparison
   -n, --binnmu              display binNMUs uploads instead of source ones
 
-  -e, --export              export interesting files from source packages"""
+  -e, --export              export interesting files from source packages
+  -a, --archive             archive to fetch data from"""
 
     sys.exit(exit_code)
 
