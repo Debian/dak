@@ -194,7 +194,7 @@ def export_files(session, archive, clpool, progress=False):
             if not os.path.exists(path):
                 os.makedirs(path)
             if not os.path.exists(os.path.join(path, \
-                   '%s_%s.changelog' % (p, sources[p][s][0]))):
+                   '%s_%s_changelog' % (p, sources[p][s][0]))):
                 if not unpack.has_key(os.path.join(pool, sources[p][s][1])):
                     unpack[os.path.join(pool, sources[p][s][1])] = (path, set())
                 unpack[os.path.join(pool, sources[p][s][1])][1].add(s)
@@ -222,9 +222,9 @@ def export_files(session, archive, clpool, progress=False):
             for file in files:
                 for f in glob(os.path.join(tempdir, 'debian', '*%s' % file)):
                     for s in unpack[p][1]:
-                        suite = os.path.join(unpack[p][0], '%s.%s' \
+                        suite = os.path.join(unpack[p][0], '%s_%s' \
                                 % (s, os.path.basename(f)))
-                        version = os.path.join(unpack[p][0], '%s_%s.%s' % \
+                        version = os.path.join(unpack[p][0], '%s_%s_%s' % \
                                   (package[0], package[1], os.path.basename(f)))
                         if not os.path.exists(version):
                             os.link(f, version)
