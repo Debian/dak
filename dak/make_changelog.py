@@ -77,7 +77,8 @@ Options:
   -n, --binnmu              display binNMUs uploads instead of source ones
 
   -e, --export              export interesting files from source packages
-  -a, --archive             archive to fetch data from"""
+  -a, --archive             archive to fetch data from
+  -p, --progress            display progress status"""
 
     sys.exit(exit_code)
 
@@ -161,7 +162,7 @@ def display_changes(uploads, index):
         print upload[index]
         prev_upload = upload[0]
 
-def export_files(session, archive, clpool):
+def export_files(session, archive, clpool, progress=False):
     """
     Export interesting files from source packages.
     """
@@ -213,6 +214,11 @@ def export_files(session, archive, clpool):
             unpacked = UnpackedSource(p)
             tempdir = unpacked.get_root_directory()
             stats['unpack'] += 1
+            if progress:
+                if stats['unpack'] % 100 == 0:
+                    sys.stderr.write('%d packages unpacked\n' % stats['unpack'])
+                elif stats['unpack'] % 10 == 0:
+                    sys.stderr.write('.')
             for file in files:
                 for f in glob(os.path.join(tempdir, 'debian', '*%s' % file)):
                     for s in unpack[p][1]:
@@ -263,9 +269,10 @@ def main():
                  ('s','suite','Make-Changelog::Options::Suite','HasArg'),
                  ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
                  ('n','binnmu','Make-Changelog::Options::binNMU'),
-                 ('e','export','Make-Changelog::Options::export')]
+                 ('e','export','Make-Changelog::Options::export'),
+                 ('p','progress','Make-Changelog::Options::progress')]
 
-    for i in ['help', 'suite', 'base-suite', 'binnmu', 'export']:
+    for i in ['help', 'suite', 'base-suite', 'binnmu', 'export', 'progress']:
         if not Cnf.has_key('Make-Changelog::Options::%s' % (i)):
             Cnf['Make-Changelog::Options::%s' % (i)] = ''
 
@@ -275,6 +282,7 @@ def main():
     base_suite = Cnf['Make-Changelog::Options::Base-Suite']
     binnmu = Cnf['Make-Changelog::Options::binNMU']
     export = Cnf['Make-Changelog::Options::export']
+    progress = Cnf['Make-Changelog::Options::progress']
 
     if Options['help'] or not (suite and base_suite) and not export:
         usage()
@@ -289,7 +297,7 @@ def main():
         if cnf.exportpath:
             archive = session.query(Archive).filter_by(archive_name=Options['Archive']).one()
             exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
-            export_files(session, archive, exportpath)
+            export_files(session, archive, exportpath, progress)
         else:
             utils.fubar('No changelog export path defined')
     elif binnmu:
