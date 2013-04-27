@@ -118,7 +118,7 @@ class Priority_Completer:
 
 ################################################################################
 
-def claimed_overrides(upload, missing, session):
+def takenover_binaries(upload, missing, session):
     binaries = set([x.package for x in upload.binaries])
     suites = ('unstable','experimental')
     for m in missing:
@@ -156,11 +156,11 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
         if not m['valid']:
             line = line + ' [!]'
         print >>file, line
-    claimed = claimed_overrides(upload, missing, session)
-    if claimed and claimed.count():
-        print '\nCLAIMED OVERRIDES'
-        for c in claimed:
-            print '%s: %s' % (c.source, c.package)
+    takenover = takenover_binaries(upload, missing, session)
+    if takenover and takenover.count():
+        print '\nBINARIES TAKEN OVER'
+        for t in takenover:
+            print '%s: %s' % (t.source, t.package)
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
         print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
