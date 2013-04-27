@@ -119,21 +119,21 @@ class Priority_Completer:
 ################################################################################
 
 def takenover_binaries(upload, missing, session):
+    rows = []
     binaries = set([x.package for x in upload.binaries])
     suites = ('unstable','experimental')
     for m in missing:
         if m['type'] != 'dsc':
             binaries.remove(m['package'])
     if binaries:
-        return session.query(DBBinary.package, DBSource.source).distinct(). \
+        rows = session.query(DBSource.source, DBBinary.package).distinct(). \
                              filter(DBBinary.package.in_(binaries)). \
                              join(DBBinary.source). \
                              filter(DBSource.source != upload.source.source). \
                              join(DBBinary.suites). \
                              filter(Suite.suite_name.in_(suites)). \
-                             order_by(DBSource.source, DBBinary.package)
-    else:
-        return None
+                             order_by(DBSource.source, DBBinary.package).all()
+    return rows
 
 ################################################################################
 
@@ -157,10 +157,10 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
             line = line + ' [!]'
         print >>file, line
     takenover = takenover_binaries(upload, missing, session)
-    if takenover and takenover.count():
+    if takenover:
         print '\nBINARIES TAKEN OVER'
         for t in takenover:
-            print '%s: %s' % (t.source, t.package)
+            print '%s: %s' % (t[0], t[1])
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
         print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
