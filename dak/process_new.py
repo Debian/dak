@@ -64,7 +64,6 @@ from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLock
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
 from daklib.policy import UploadCopy, PolicyQueueUploadHandler
-from sqlalchemy.sql import not_
 
 # Globals
 Options = None
@@ -120,7 +119,6 @@ class Priority_Completer:
 ################################################################################
 
 def claimed_overrides(upload, missing, session):
-    source = [upload.source.source]
     binaries = set([x.package for x in upload.binaries])
     suites = ('unstable','experimental')
     for m in missing:
@@ -130,7 +128,7 @@ def claimed_overrides(upload, missing, session):
         return session.query(DBBinary.package, DBSource.source).distinct(). \
                              filter(DBBinary.package.in_(binaries)). \
                              join(DBBinary.source). \
-                             filter(not_(DBSource.source.in_(source))). \
+                             filter(DBSource.source != upload.source.source). \
                              join(DBBinary.suites). \
                              filter(Suite.suite_name.in_(suites)). \
                              order_by(DBSource.source, DBBinary.package)
