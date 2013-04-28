@@ -615,11 +615,16 @@ EOF
 # extract changelogs and stuff
 function changelogs() {
     log "Extracting changelogs"
-    #dak make-changelog -e -a ftp-master
+    dak make-changelog -e -a ftp-master
     mkdir -p ${exportpublic}/changelogs
     cd ${exportpublic}/changelogs
     rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
-    sudo -H -u archvsync /home/archvsync/runmirrors metaftpdo > ~dak/runmirrors-metadata.log 2>&1 &
+    sudo -H -u staticsync /usr/local/bin/static-update-component ftp-master.metadata.debian.org >/dev/null 2>&1 &
+
+    dak make-changelog -e -a backports
+    mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
+    cd /srv/backports-master.debian.org/rsync/export/changelogs
+    rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
 }
 
 function gitpdiff() {
