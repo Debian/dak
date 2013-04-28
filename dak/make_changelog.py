@@ -244,13 +244,13 @@ def export_files(session, archive, clpool, progress=False):
         if len(files):
             if root.split('/')[-1] not in sources.keys():
                 if os.path.exists(root):
+                    stats['removed'] += len(os.listdir(root))
                     rmtree(root)
-                    stats['removed'] += 1
             for file in files:
                 if os.path.exists(os.path.join(root, file)):
                     if os.stat(os.path.join(root, file)).st_nlink ==  1:
-                        os.unlink(os.path.join(root, file))
                         stats['removed'] += 1
+                        os.unlink(os.path.join(root, file))
 
     for root, dirs, files in os.walk(clpool):
         stats['files'] += len(files)
