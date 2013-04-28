@@ -243,7 +243,7 @@ def export_files(session, archive, clpool, progress=False):
             print 'make-changelog: unable to unpack %s\n%s' % (p, e)
             stats['errors'] += 1
 
-    for root, dirs, files in os.walk(clpool):
+    for root, dirs, files in os.walk(clpool, topdown=False):
         files = [f for f in files if f != filelist]
         if len(files):
             if root != clpool:
@@ -256,6 +256,11 @@ def export_files(session, archive, clpool, progress=False):
                     if os.stat(os.path.join(root, file)).st_nlink ==  1:
                         stats['removed'] += 1
                         os.unlink(os.path.join(root, file))
+        for dir in dirs:
+            try:
+                os.rmdir(os.path.join(root, dir))
+            except OSError:
+                pass
         stats['files'] += len(files)
     stats['files'] -= stats['removed']
 
