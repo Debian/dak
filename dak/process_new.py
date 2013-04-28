@@ -54,6 +54,7 @@ import pwd
 import apt_pkg, apt_inst
 import examine_package
 import subprocess
+from sqlalchemy import or_
 
 from daklib.dbconn import *
 from daklib.queue import *
@@ -121,11 +122,15 @@ class Priority_Completer:
 def takenover_binaries(upload, missing, session):
     rows = []
     binaries = set([x.package for x in upload.binaries])
-    suites = ('unstable','experimental')
     for m in missing:
         if m['type'] != 'dsc':
             binaries.remove(m['package'])
     if binaries:
+        suite = upload.target_suite.overridesuite or \
+                    upload.target_suite.suite_name
+        suites = [s[0] for s in session.query(Suite.suite_name).filter \
+                                    (or_(Suite.suite_name == suite,
+                                     Suite.overridesuite == suite)).all()]
         rows = session.query(DBSource.source, DBBinary.package).distinct(). \
                              filter(DBBinary.package.in_(binaries)). \
                              join(DBBinary.source). \
@@ -158,7 +163,7 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
         print >>file, line
     takenover = takenover_binaries(upload, missing, session)
     if takenover:
-        print '\nBINARIES TAKEN OVER'
+        print '\n\nBINARIES TAKEN OVER\n'
         for t in takenover:
             print '%s: %s' % (t[0], t[1])
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
