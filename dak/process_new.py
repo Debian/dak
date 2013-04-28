@@ -54,6 +54,7 @@ import pwd
 import apt_pkg, apt_inst
 import examine_package
 import subprocess
+from sqlalchemy import or_
 
 from daklib.dbconn import *
 from daklib.queue import *
@@ -64,7 +65,6 @@ from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLock
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
 from daklib.policy import UploadCopy, PolicyQueueUploadHandler
-from sqlalchemy.sql import not_
 
 # Globals
 Options = None
@@ -119,23 +119,26 @@ class Priority_Completer:
 
 ################################################################################
 
-def claimed_overrides(upload, missing, session):
-    source = [upload.source.source]
+def takenover_binaries(upload, missing, session):
+    rows = []
     binaries = set([x.package for x in upload.binaries])
-    suites = ('unstable','experimental')
     for m in missing:
         if m['type'] != 'dsc':
             binaries.remove(m['package'])
     if binaries:
-        return session.query(DBBinary.package, DBSource.source).distinct(). \
+        suite = upload.target_suite.overridesuite or \
+                    upload.target_suite.suite_name
+        suites = [s[0] for s in session.query(Suite.suite_name).filter \
+                                    (or_(Suite.suite_name == suite,
+                                     Suite.overridesuite == suite)).all()]
+        rows = session.query(DBSource.source, DBBinary.package).distinct(). \
                              filter(DBBinary.package.in_(binaries)). \
                              join(DBBinary.source). \
-                             filter(not_(DBSource.source.in_(source))). \
+                             filter(DBSource.source != upload.source.source). \
                              join(DBBinary.suites). \
                              filter(Suite.suite_name.in_(suites)). \
-                             order_by(DBSource.source, DBBinary.package)
-    else:
-        return None
+                             order_by(DBSource.source, DBBinary.package).all()
+    return rows
 
 ################################################################################
 
@@ -158,11 +161,11 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
         if not m['valid']:
             line = line + ' [!]'
         print >>file, line
-    claimed = claimed_overrides(upload, missing, session)
-    if claimed and claimed.count():
-        print '\nCLAIMED OVERRIDES'
-        for c in claimed:
-            print '%s: %s' % (c.source, c.package)
+    takenover = takenover_binaries(upload, missing, session)
+    if takenover:
+        print '\n\nBINARIES TAKEN OVER\n'
+        for t in takenover:
+            print '%s: %s' % (t[0], t[1])
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
         print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
