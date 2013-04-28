@@ -54,6 +54,7 @@ import sys
 import apt_pkg
 from glob import glob
 from shutil import rmtree
+from yaml import safe_dump
 from daklib.dbconn import *
 from daklib import utils
 from daklib.config import Config
@@ -61,6 +62,8 @@ from daklib.contents import UnpackedSource
 from daklib.regexes import re_no_epoch
 
 ################################################################################
+
+filelist = 'filelist.yaml'
 
 def usage (exit_code=0):
     print """Generate changelog between two suites
@@ -240,26 +243,53 @@ def export_files(session, archive, clpool, progress=False):
             print 'make-changelog: unable to unpack %s\n%s' % (p, e)
             stats['errors'] += 1
 
-    for root, dirs, files in os.walk(clpool):
+    for root, dirs, files in os.walk(clpool, topdown=False):
+        files = [f for f in files if f != filelist]
         if len(files):
-            if root.split('/')[-1] not in sources.keys():
-                if os.path.exists(root):
-                    rmtree(root)
-                    stats['removed'] += 1
+            if root != clpool:
+                if root.split('/')[-1] not in sources.keys():
+                    if os.path.exists(root):
+                        stats['removed'] += len(os.listdir(root))
+                        rmtree(root)
             for file in files:
                 if os.path.exists(os.path.join(root, file)):
                     if os.stat(os.path.join(root, file)).st_nlink ==  1:
-                        os.unlink(os.path.join(root, file))
                         stats['removed'] += 1
-
-    for root, dirs, files in os.walk(clpool):
+                        os.unlink(os.path.join(root, file))
+        for dir in dirs:
+            try:
+                os.rmdir(os.path.join(root, dir))
+            except OSError:
+                pass
         stats['files'] += len(files)
+    stats['files'] -= stats['removed']
+
     print 'make-changelog: file exporting finished'
     print '  * New packages unpacked: %d' % stats['unpack']
     print '  * New files created: %d' % stats['created']
     print '  * New files removed: %d' % stats['removed']
     print '  * Unpack errors: %d' % stats['errors']
     print '  * Files available into changelog pool: %d' % stats['files']
+
+def generate_export_filelist(clpool):
+    clfiles = {}
+    for root, dirs, files in os.walk(clpool):
+        for file in [f for f in files if f != filelist]:
+            clpath = os.path.join(root, file).replace(clpool, '').strip('/')
+            source = clpath.split('/')[2]
+            elements = clpath.split('/')[3].split('_')
+            if source not in clfiles:
+                clfiles[source] = {}
+            if elements[0] == source:
+                if elements[1] not in clfiles[source]:
+                    clfiles[source][elements[1]] = []
+                clfiles[source][elements[1]].append(clpath)
+            else:
+                if elements[0] not in clfiles[source]:
+                    clfiles[source][elements[0]] = []
+                clfiles[source][elements[0]].append(clpath)
+    with open(os.path.join(clpool, filelist), 'w+') as fd:
+        safe_dump(clfiles, fd, default_flow_style=False)
 
 def main():
     Cnf = utils.get_conf()
@@ -298,6 +328,7 @@ def main():
             archive = session.query(Archive).filter_by(archive_name=Options['Archive']).one()
             exportpath = os.path.join(Cnf['Dir::Export'], cnf.exportpath)
             export_files(session, archive, exportpath, progress)
+            generate_export_filelist(exportpath)
         else:
             utils.fubar('No changelog export path defined')
     elif binnmu:
