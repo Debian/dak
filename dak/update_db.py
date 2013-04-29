@@ -37,6 +37,8 @@ import os
 import apt_pkg
 import time
 import errno
+from glob import glob
+from re import findall
 
 from daklib import utils
 from daklib.config import Config
@@ -46,7 +48,6 @@ from daklib.daklog import Logger
 ################################################################################
 
 Cnf = None
-required_database_schema = 97
 
 ################################################################################
 
@@ -155,10 +156,18 @@ Updates dak's database schema to the lastest version. You should disable crontab
             self.update_db_to_zero()
             database_revision = 0
 
+        dbfiles = glob(os.path.join(os.path.dirname(__file__), 'dakdb/update*.py'))
+        required_database_schema = int(max(findall('update(\d+).py', " ".join(dbfiles))))
+
         print "dak database schema at %d" % database_revision
         print "dak version requires schema %d"  % required_database_schema
 
-        if database_revision == required_database_schema:
+        if database_revision < required_database_schema:
+            prompt = "Update database? (y/N) "
+            answer = utils.our_raw_input(prompt)
+            if answer.upper() != 'Y':
+                sys.exit(0)
+        else:
             print "no updates required"
             logger.log(["no updates required"])
             sys.exit(0)
