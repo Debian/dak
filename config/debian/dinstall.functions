@@ -616,12 +616,14 @@ EOF
 function changelogs() {
     log "Extracting changelogs"
     dak make-changelog -e -a ftp-master
+    [ -f ${exportdir}/changelogs/filelist.yaml ] && xz -f ${exportdir}/changelogs/filelist.yaml
     mkdir -p ${exportpublic}/changelogs
     cd ${exportpublic}/changelogs
     rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
     sudo -H -u staticsync /usr/local/bin/static-update-component ftp-master.metadata.debian.org >/dev/null 2>&1 &
 
     #dak make-changelog -e -a backports
+    #[ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml ] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
     #mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
     #cd /srv/backports-master.debian.org/rsync/export/changelogs
     #rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
