@@ -5,7 +5,6 @@ Dinstall {
 Dir {
   Log "/srv/backports-master.debian.org/log/";
   Lock "/srv/backports-master.debian.org/lock/";
-  Export "/srv/backports-master.debian.org/export/";
 };
 
 Rm {

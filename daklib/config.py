@@ -133,7 +133,6 @@ class Config(object):
         """
         for field in [('db_revision',      None,       int),
                       ('defaultsuitename', 'unstable', str),
-                      ('exportpath',       '',         str),
                       ('use_extfiles',     None,       int)
                       ]:
             setattr(self, 'get_%s' % field[0], lambda s=None, x=field[0], y=field[1], z=field[2]: self.get_db_value(x, y, z))
