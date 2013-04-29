@@ -213,7 +213,7 @@ def export_files(session, archive, clpool, progress=False):
     for p in unpack.keys():
         package = os.path.splitext(os.path.basename(p))[0].split('_')
         try:
-            unpacked = UnpackedSource(p)
+            unpacked = UnpackedSource(p, clpool)
             tempdir = unpacked.get_root_directory()
             stats['unpack'] += 1
             if progress:
