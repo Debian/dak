@@ -40,6 +40,9 @@ LOCK_STOP="$lockdir/archive.stop"
 # Lock buildd updates
 LOCK_BUILDD="$lockdir/buildd.lock"
 
+# Lock changelog updates
+LOCK_CHANGELOG="$lockdir/changelog.lock"
+
 # Statefile for the users
 DINSTALLSTATE="${webdir}/dinstall.status"
 
