@@ -322,8 +322,8 @@ def main():
     session = DBConn().session()
 
     if export:
-        (archive, exportpath) = session.query(Archive.archive_name, Archive.changelog). \
-                                    filter_by(archive_name=Options['Archive']).one()
+        archive = session.query(Archive).filter_by(archive_name=Options['Archive']).one()
+        exportpath = archive.changelog
         if exportpath:
             export_files(session, archive, exportpath, progress)
             generate_export_filelist(exportpath)
