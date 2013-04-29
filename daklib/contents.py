@@ -394,11 +394,12 @@ class UnpackedSource(object):
     UnpackedSource extracts a source package into a temporary location and
     gives you some convinient function for accessing it.
     '''
-    def __init__(self, dscfilename):
+    def __init__(self, dscfilename, tmpbasedir=None):
         '''
         The dscfilename is a name of a DSC file that will be extracted.
         '''
-        temp_directory = mkdtemp(dir = Config()['Dir::TempPath'])
+        basedir = tmpbasedir if tmpbasedir else Config()['Dir::TempPath']
+        temp_directory = mkdtemp(dir = basedir)
         self.root_directory = os.path.join(temp_directory, 'root')
         command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
             dscfilename, self.root_directory)
