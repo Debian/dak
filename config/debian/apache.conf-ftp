@@ -18,5 +18,9 @@
     Options MultiViews Indexes SymLinksIfOwnerMatch
   </Directory>
 
+  <Directory /srv/ftp.debian.org/web>
+    AddCharset utf-8 .txt
+  </Directory>
+
   RewriteEngine On
   RewriteRule ^/~(.+) /users/$1 [R=permanent,L]

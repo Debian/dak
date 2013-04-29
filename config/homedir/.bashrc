@@ -54,6 +54,7 @@ export EDITOR=$(which vim)
 export HISTFILESIZE=6000
 export GREP_OPTIONS="--color=auto"
 export CDPATH=".:~:${base}:${public}:${queuedir}"
+export PATH="~/bin/:${PATH}"
 
 alias base='cd ${base}'
 alias config='cd ${configdir}'
