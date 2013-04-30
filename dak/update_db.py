@@ -121,6 +121,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
         print "Determining dak database revision ..."
         cnf = Config()
         logger = Logger('update-db')
+        modules = []
 
         try:
             # Build a connect string
@@ -163,7 +164,14 @@ Updates dak's database schema to the lastest version. You should disable crontab
         print "dak version requires schema %d"  % required_database_schema
 
         if database_revision < required_database_schema:
-            prompt = "Update database? (y/N) "
+            print "\nUpdates to be applied:"
+            for i in range(database_revision, required_database_schema):
+                i += 1
+                dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i)])
+                update_module = getattr(dakdb, "update"+str(i))
+                print "Update %d: %s" % (i, next(s for s in update_module.__doc__.split("\n") if s))
+                modules.append((update_module, i))
+            prompt = "\nUpdate database? (y/N) "
             answer = utils.our_raw_input(prompt)
             if answer.upper() != 'Y':
                 sys.exit(0)
@@ -172,17 +180,16 @@ Updates dak's database schema to the lastest version. You should disable crontab
             logger.log(["no updates required"])
             sys.exit(0)
 
-        for i in range (database_revision, required_database_schema):
+        for module in modules:
+            (update_module, i) = module
             try:
-                dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i+1)])
-                update_module = getattr(dakdb, "update"+str(i+1))
                 update_module.do_update(self)
-                message = "updated database schema from %d to %d" % (database_revision, i+1)
+                message = "updated database schema from %d to %d" % (database_revision, i)
                 print message
                 logger.log([message])
             except DBUpdateError as e:
                 # Seems the update did not work.
-                print "Was unable to update database schema from %d to %d." % (database_revision, i+1)
+                print "Was unable to update database schema from %d to %d." % (database_revision, i)
                 print "The error message received was %s" % (e)
                 logger.log(["DB Schema upgrade failed"])
                 logger.close()
