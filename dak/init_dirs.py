@@ -103,7 +103,7 @@ def process_keyring(fullpath, secret=False):
 ######################################################################
 
 def create_directories():
-    """Create directories referenced in dak.conf and apt.conf."""
+    """Create directories referenced in dak.conf."""
 
     session = DBConn().session()
 
