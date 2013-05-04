@@ -95,7 +95,4 @@ while read dumpname; do
     bzip2 -9fv "$dumpname"
 done
 
-#apt-ftparchive -q clean apt.conf
-#apt-ftparchive -q clean apt.conf.buildd
-
 ################################################################################

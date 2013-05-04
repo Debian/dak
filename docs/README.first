@@ -5,7 +5,7 @@ o Please be careful: dak sends out lots of emails and if not
   configured properly will happily send them to lots of people who
   probably didn't want those emails.
 
-o Don't use the debian dak.conf, apt.conf, cron.* etc. as starting
+o Don't use the debian dak.conf, cron.* etc. as starting
   points for your own configuration files, they're highly Debian
   specific.  Start from scratch and refer to the security.debian.org
   config files (-security) as they're a better example for a private
@@ -93,15 +93,14 @@ o dak examine-package - invoked by 'dak process-new' to "check" NEW packages
 
 [Very incomplete - FIXME]
 
-o Write your own dak.conf and apt.conf files.  dak looks for those
-  config files in /etc/dak/.  /etc/dak/dak.conf can define
-  alternative configuration files with Config::host::DakConfig and
-  Config::host::AptConfig (where "host" is the fully qualified domain
-  name of your machine).
+o Write your own dak.conf file.  dak looks for this
+  config file in /etc/dak/.  /etc/dak/dak.conf can define an
+  alternative configuration file with Config::host::DakConfig
+  (where "host" is the fully qualified domain name of your machine).
 o Create a PostgreSQL database on the host given in dak.conf's DB::Host
   with the name specified in DB::Name.
 o Run 'dak init-dirs': this will create all directories which are specified in
-  dak.conf and apt.conf.
+  dak.conf:
 o If you have an existing archive:
    * Run 'dak init-archive'
   otherwise:
@@ -112,7 +111,7 @@ o If you have an existing archive:
    * Create the following groups in postgres: ftpmaster ftpteam ftptrainee
    * Run 'dak update-db' to upgrade the database schema.
    * Run 'dak init-db': it will populate your database with the values from
-     dak.conf and apt.conf.
+     dak.conf
    * Run 'psql <DB::Name> < add_constraints.sql'.
 o Copy all templates from the "templates" directory to to the directory
   specified in Dir::Templates, and adapt them to your distribution.

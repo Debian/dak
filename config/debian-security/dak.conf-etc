@@ -4,6 +4,5 @@ Config
   {
     DatabaseHostname    "security";
     DakConfig           "/org/security-master.debian.org/dak/config/debian-security/dak.conf";
-    AptConfig           "/org/security-master.debian.org/dak/config/debian-security/apt.conf";
   }
 }

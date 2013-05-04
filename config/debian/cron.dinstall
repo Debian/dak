@@ -478,14 +478,6 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="aptftpcleanup"
-    TIME="apt-ftparchive cleanup"
-    ARGS=""
-    ERR="false"
-)
-#stage $GO
-
 # we need to wait for the background processes before the end of dinstall
 wait
 

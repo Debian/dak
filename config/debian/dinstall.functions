@@ -548,12 +548,6 @@ function stats() {
     dak stats pkg-nums > $webdir/pkg-nums
 }
 
-function aptftpcleanup() {
-    log "Clean up apt-ftparchive's databases"
-    cd $configdir
-    apt-ftparchive -q clean apt.conf
-}
-
 function cleantransactions() {
     log "Cleanup transaction ids older than 3 months"
     cd $base/backup/

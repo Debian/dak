@@ -65,7 +65,6 @@ from collections import defaultdict
 ################################################################################
 
 default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
-default_apt_config = "/etc/dak/apt.conf" #: default apt config, not normally used
 
 alias_cache = None        #: Cache for email alias checks
 key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids

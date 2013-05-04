@@ -5,14 +5,12 @@ Config
     AllowLocalConfig    "false";
     DatabaseHostname    "ftp-master";
     DakConfig           "/srv/ftp-master.debian.org/dak/config/debian/dak.conf";
-    AptConfig           "/srv/ftp-master.debian.org/dak/config/debian/apt.conf";
   }
   ries.debian.org
   {
     AllowLocalConfig    "false";
     DatabaseHostname    "ftp-master";
     DakConfig           "/srv/ftp-master.debian.org/dak/config/debian/dak.conf";
-    AptConfig           "/srv/ftp-master.debian.org/dak/config/debian/apt.conf";
   }
 }
 

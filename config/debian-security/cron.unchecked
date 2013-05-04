@@ -115,7 +115,6 @@ if [ "x${dopolicy}x" = "xtruex" ]; then
     #dak generate-filelist
     cd $configdir
     $configdir/map.sh
-    #apt-ftparchive generate apt.conf
     dak generate-packages-sources2 -a security
     dak generate-releases -a security
     /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh
