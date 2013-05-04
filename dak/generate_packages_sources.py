@@ -106,11 +106,11 @@ TreeDefault
     apt_trees={}
     apt_trees["di"]={}
 
-    apt_trees["stable"]="""
-tree "dists/stable"
+    apt_trees["oldstable"]="""
+tree "dists/oldstable"
 {
-   FileList "/srv/ftp-master.debian.org/database/dists/stable_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/stable_$(SECTION)_source.list";
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_binary-$(ARCH).list";
+   SourceFileList "/srv/ftp-master.debian.org/database/dists/oldstable_$(SECTION)_source.list";
    Sections "main contrib non-free";
    Architectures "%(arch)s";
    BinOverride "override.squeeze.$(SECTION)";
@@ -119,10 +119,10 @@ tree "dists/stable"
 };
 """
 
-    apt_trees["di"]["stable"]="""
-tree "dists/stable/main"
+    apt_trees["di"]["oldstable"]="""
+tree "dists/oldstable/main"
 {
-   FileList "/srv/ftp-master.debian.org/database/dists/stable_main_$(SECTION)_binary-$(ARCH).list";
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_main_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
    BinOverride "override.squeeze.main.$(SECTION)";
@@ -132,9 +132,9 @@ tree "dists/stable/main"
    %(contentsline)s
 };
 
-tree "dists/stable/non-free"
+tree "dists/oldstable/non-free"
 {
-   FileList "/srv/ftp-master.debian.org/database/dists/stable_non-free_$(SECTION)_binary-$(ARCH).list";
+   FileList "/srv/ftp-master.debian.org/database/dists/oldstable_non-free_$(SECTION)_binary-$(ARCH).list";
    Sections "debian-installer";
    Architectures "%(arch)s";
    BinOverride "override.squeeze.main.$(SECTION)";
@@ -145,188 +145,7 @@ tree "dists/stable/non-free"
 };
 """
 
-    apt_trees["squeeze-updates"]="""
-tree "dists/squeeze-updates"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/squeeze-updates_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/squeeze-updates_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.squeeze.$(SECTION)";
-   ExtraOverride "override.squeeze.extra.$(SECTION)";
-   SrcOverride "override.squeeze.$(SECTION).src";
-   Contents " ";
-};
-"""
 
-    apt_trees["testing"]="""
-tree "dists/testing"
-{
-   FakeDI "dists/unstable";
-   FileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/testing_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.wheezy.$(SECTION)";
-   ExtraOverride "override.wheezy.extra.$(SECTION)";
-   SrcOverride "override.wheezy.$(SECTION).src";
-};
-"""
-
-    apt_trees["di"]["testing"]="""
-tree "dists/testing/main"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/testing_main_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.wheezy.main.$(SECTION)";
-   SrcOverride "override.wheezy.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-
-tree "dists/testing/non-free"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/testing_non-free_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.wheezy.main.$(SECTION)";
-   SrcOverride "override.wheezy.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-"""
-
-    apt_trees["unstable"]="""
-tree "dists/unstable"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/unstable_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/unstable_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.sid.$(SECTION)";
-   ExtraOverride "override.sid.extra.$(SECTION)";
-   SrcOverride "override.sid.$(SECTION).src";
-};
-"""
-    apt_trees["di"]["unstable"]="""
-tree "dists/unstable/main"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/unstable_main_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.sid.main.$(SECTION)";
-   SrcOverride "override.sid.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-
-tree "dists/unstable/non-free"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/unstable_non-free_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.sid.main.$(SECTION)";
-   SrcOverride "override.sid.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-"""
-
-    apt_trees["experimental"]="""
-tree "dists/experimental"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/experimental_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/experimental_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.sid.$(SECTION)";
-   SrcOverride "override.sid.$(SECTION).src";
-};
-"""
-    apt_trees["di"]["experimental"]="""
-tree "dists/experimental/main"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/experimental_main_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.sid.main.$(SECTION)";
-   SrcOverride "override.sid.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-
-tree "dists/experimental/non-free"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/experimental_non-free_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.sid.main.$(SECTION)";
-   SrcOverride "override.sid.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   %(contentsline)s
-};
-"""
-
-    apt_trees["testing-proposed-updates"]="""
-tree "dists/testing-proposed-updates"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.wheezy.$(SECTION)";
-   ExtraOverride "override.wheezy.extra.$(SECTION)";
-   SrcOverride "override.wheezy.$(SECTION).src";
-   Contents " ";
-};
-"""
-    apt_trees["di"]["testing-proposed-updates"]="""
-tree "dists/testing-proposed-updates/main"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/testing-proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.wheezy.main.$(SECTION)";
-   SrcOverride "override.wheezy.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   Contents " ";
-};
-"""
-
-    apt_trees["proposed-updates"]="""
-tree "dists/proposed-updates"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_binary-$(ARCH).list";
-   SourceFileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_$(SECTION)_source.list";
-   Sections "main contrib non-free";
-   Architectures "%(arch)s";
-   BinOverride "override.squeeze.$(SECTION)";
-   ExtraOverride "override.squeeze.extra.$(SECTION)";
-   SrcOverride "override.squeeze.$(SECTION).src";
-   Contents " ";
-};
-"""
-    apt_trees["di"]["proposed-updates"]="""
-tree "dists/proposed-updates/main"
-{
-   FileList "/srv/ftp-master.debian.org/database/dists/proposed-updates_main_$(SECTION)_binary-$(ARCH).list";
-   Sections "debian-installer";
-   Architectures "%(arch)s";
-   BinOverride "override.squeeze.main.$(SECTION)";
-   SrcOverride "override.squeeze.main.src";
-   BinCacheDB "packages-debian-installer-$(ARCH).db";
-   Packages::Extensions ".udeb";
-   Contents " ";
-};
-"""
     cnf = Config()
     try:
         # Write apt.conf
