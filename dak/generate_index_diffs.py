@@ -311,9 +311,6 @@ def main():
         format = "%Y-%m-%d-%H%M.%S"
         Options["PatchName"] = time.strftime( format )
 
-    AptCnf = apt_pkg.newConfiguration()
-    apt_pkg.ReadConfigFileISC(AptCnf,utils.which_apt_conf_file())
-
     if Options.has_key("RootDir"):
         Cnf["Dir::Root"] = Options["RootDir"]
 
@@ -338,7 +335,8 @@ def main():
         if SuiteBlock.has_key("Components"):
             components = SuiteBlock.value_list("Components")
         else:
-            components = []
+            print "ALERT: suite %s does not have components set in dak.conf" % (suite)
+            continue
 
         suite_suffix = Cnf.find("Dinstall::SuiteSuffix")
         if components and suite_suffix:
@@ -348,18 +346,9 @@ def main():
 
         tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
 
-        if AptCnf.has_key("tree::%s" % (tree)):
-            sections = AptCnf["tree::%s::Sections" % (tree)].split()
-        elif AptCnf.has_key("bindirectory::%s" % (tree)):
-            sections = AptCnf["bindirectory::%s::Sections" % (tree)].split()
-        else:
-            aptcnf_filename = os.path.basename(utils.which_apt_conf_file())
-            print "ALERT: suite %s not in %s, nor untouchable!" % (suite, aptcnf_filename)
-            continue
-
         # See if there are Translations which might need a new pdiff
         cwd = os.getcwd()
-        for component in sections:
+        for component in components:
             #print "DEBUG: Working on %s" % (component)
             workpath=os.path.join(Cnf["Dir::Root"], tree, component, "i18n")
             if os.path.isdir(workpath):
@@ -380,11 +369,7 @@ def main():
         for archobj in architectures:
             architecture = archobj.arch_string
 
-            # use sections instead of components since dak.conf
-            # treats "foo/bar main" as suite "foo", suitesuffix "bar" and
-            # component "bar/main". suck.
-
-            for component in sections:
+            for component in components:
                 if architecture == "source":
                     longarch = architecture
                     packages = "Sources"

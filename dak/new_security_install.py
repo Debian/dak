@@ -107,7 +107,6 @@ def _do_Approve():
         #    spawn("dak generate-filelist")
         print "Updating Packages and Sources files... This may take a while, be patient"
         spawn("/srv/security-master.debian.org/dak/config/debian-security/map.sh")
-        #    spawn("apt-ftparchive generate %s" % (utils.which_apt_conf_file()))
         spawn("dak generate-packages-sources2 -a security")
         print "Updating Release files..."
         spawn("dak generate-releases -a security")

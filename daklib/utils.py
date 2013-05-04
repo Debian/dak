@@ -789,20 +789,6 @@ def which_conf_file ():
 
     return default_config
 
-def which_apt_conf_file ():
-    res = socket.getfqdn()
-    # In case we allow local config files per user, try if one exists
-    if Cnf.find_b("Config::" + res + "::AllowLocalConfig"):
-        homedir = os.getenv("HOME")
-        confpath = os.path.join(homedir, "/etc/dak.conf")
-        if os.path.exists(confpath):
-            apt_pkg.ReadConfigFileISC(Cnf,default_config)
-
-    if Cnf.get("Config::" + res + "::AptConfig"):
-        return Cnf["Config::" + res + "::AptConfig"]
-    else:
-        return default_apt_config
-
 def which_alias_file():
     hostname = socket.getfqdn()
     aliasfn = '/var/lib/misc/'+hostname+'/forward-alias'
