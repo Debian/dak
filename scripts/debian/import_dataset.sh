@@ -43,6 +43,11 @@ case "${IMPORTSUITE}" in
         INPUTFILE="/srv/release.debian.org/sets/squeeze-updates/current"
         DO_CHANGELOG="false"
         ;;
+    wheezy-updates)
+        # What file we look at.
+        INPUTFILE="/srv/release.debian.org/sets/wheezy-updates/current"
+        DO_CHANGELOG="false"
+        ;;
     *)
         echo "You are so wrong here that I can't even believe it. Sod off."
         exit 42

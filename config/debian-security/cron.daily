@@ -23,8 +23,9 @@ find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
 
 for suite in stable testing; do
     case $suite in
-        stable) override_suite=squeeze;;
-        testing) override_suite=wheezy;;
+        oldstable) override_suite=squeeze;;
+        stable) override_suite=wheezy;;
+        testing) override_suite=jessie;;
         *) echo "Unknown suite type ($suite)"; exit 1;;
     esac
     for component in $components; do
@@ -50,7 +51,7 @@ for suite in stable testing; do
 done
 
 # Generate .all3 overides for the buildd support
-for dist in squeeze wheezy; do
+for dist in squeeze wheezy jessie; do
     rm -f override.$dist.all3
     components="main contrib non-free";
     if [ -f override.$dist.main.debian-installer.gz ]; then
