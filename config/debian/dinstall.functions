@@ -76,7 +76,7 @@ function i18n1() {
             # Lets check!
             if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
                 # Yay, worked, lets copy around
-                for dir in wheezy sid; do
+                for dir in jessie sid; do
                     if [ -d dists/${dir}/ ]; then
                         cd dists/${dir}/main/i18n
                         rsync -aq --delete --delete-after --exclude Translation-en.bz2 --exclude Translation-*.diff/ . ${ftpdir}/dists/${dir}/main/i18n/.
@@ -376,12 +376,12 @@ function mkfilesindices() {
     done
 
     (cd $base/ftp/
-	    for dist in sid wheezy; do
+	    for dist in sid jessie; do
 		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
 	    done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-wheezy.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz) |
     sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
