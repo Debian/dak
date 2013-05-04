@@ -5,5 +5,4 @@ set -e
 if [ "$1" = "configure" ]; then
       # Default (blank) files so that programs at least run --help and stuff
       touch /etc/dak/dak.conf
-      touch /etc/dak/apt.conf
 fi
