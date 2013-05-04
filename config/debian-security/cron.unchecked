@@ -81,7 +81,7 @@ ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-secu
 
 # export build queues in old format
 # XXX: This should be removed later.
-for suite in stable testing; do
+for suite in oldstable stable; do
     overridecodename=$(dak admin suite show ${suite} | awk '$1 == "OverrideCodename:" { print $2 }')
     rm -rf ${incoming}/${suite}.new
     mkdir ${incoming}/${suite}.new
