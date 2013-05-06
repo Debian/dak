@@ -121,6 +121,7 @@ class Priority_Completer:
 
 def takenover_binaries(upload, missing, session):
     rows = []
+    source = upload.source.source if upload.source else upload.changes.source
     binaries = set([x.package for x in upload.binaries])
     for m in missing:
         if m['type'] != 'dsc':
