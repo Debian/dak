@@ -39,7 +39,7 @@
     allow from 206.12.19.8
 
     # franck.d.o
-    allow from 128.148.34.3
+    allow from 138.16.160.12
 
     # test access to check functionality, ganneff
     allow from 213.146.108.162
