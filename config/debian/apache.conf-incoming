@@ -22,6 +22,7 @@
 
   # buildd direct access -- buildds only
   Alias /debian /srv/ftp.debian.org/mirror
+  Alias /debian-backports /srv/backports-master.debian.org/mirror
   Alias /debian-buildd /srv/incoming.debian.org/debian-buildd
 
   # New suite aliases
@@ -29,7 +30,7 @@
   Alias /buildd-experimental /srv/incoming.debian.org/dists/experimental/current/
   Alias /buildd-squeeze-backports /srv/incoming.debian.org/dists/squeeze-backports/current/
 
-  <DirectoryMatch ~ "^/srv/(incoming\.debian\.org/(dists/|builddweb|debian-buildd/)|ftp\.debian\.org/mirror)">
+  <DirectoryMatch ~ "^/srv/(incoming\.debian\.org/(dists/|builddweb|debian-buildd/)|ftp\.debian\.org/mirror|backports-master\.debian\.org/mirror)">
     Order allow,deny
 
     Use DebianBuilddHostList
