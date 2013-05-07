@@ -178,7 +178,7 @@ class ReleaseWriter(object):
 
         components = [ c.component_name for c in session.query(Component) ]
 
-        out.write("Components: %s\n" % ( " ".join(map(lambda x: "%s%s" % (suite_suffix, x), components ))))
+        out.write("Components: %s\n" % (" ".join(components)))
 
         # For exact compatibility with old g-r, write out Description here instead
         # of with the rest of the DB fields above

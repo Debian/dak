@@ -126,6 +126,7 @@ def takenover_binaries(upload, missing, session):
         if m['type'] != 'dsc':
             binaries.remove(m['package'])
     if binaries:
+        source = upload.binaries[0].source.source
         suite = upload.target_suite.overridesuite or \
                     upload.target_suite.suite_name
         suites = [s[0] for s in session.query(Suite.suite_name).filter \
@@ -134,7 +135,7 @@ def takenover_binaries(upload, missing, session):
         rows = session.query(DBSource.source, DBBinary.package).distinct(). \
                              filter(DBBinary.package.in_(binaries)). \
                              join(DBBinary.source). \
-                             filter(DBSource.source != upload.source.source). \
+                             filter(DBSource.source != source). \
                              join(DBBinary.suites). \
                              filter(Suite.suite_name.in_(suites)). \
                              order_by(DBSource.source, DBBinary.package).all()
