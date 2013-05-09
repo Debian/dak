@@ -622,11 +622,11 @@ function changelogs() {
         rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
         sudo -H -u staticsync /usr/local/bin/static-update-component ftp-master.metadata.debian.org >/dev/null 2>&1 &
 
-        #dak make-changelog -e -a backports
-        #[ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml ] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
-        #mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
-        #cd /srv/backports-master.debian.org/rsync/export/changelogs
-        #rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
+        dak make-changelog -e -a backports
+        [ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml ] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
+        mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
+        cd /srv/backports-master.debian.org/rsync/export/changelogs
+        rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
         trap remove_changelog_lock EXIT TERM HUP INT QUIT
     fi
 }
