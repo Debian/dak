@@ -644,7 +644,7 @@ class LintianCheck(Check):
             if user is not None:
                 cmd.extend(['sudo', '-H', '-u', user])
 
-            cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
+            cmd.extend(['LINTIAN_COLL_UNPACKED_SKIP_SIG=1', '/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
             result, output = commands.getstatusoutput(" ".join(cmd))
         finally:
             os.unlink(temp_filename)
