@@ -95,8 +95,9 @@ def sign_release_dir(suite, dirname):
         if os.path.exists(inlinedest):
             os.unlink(inlinedest)
 
+        defkeyid=""
         for keyid in suite.signingkeys or []:
-            defkeyid = "--local-user %s" % keyid
+            defkeyid += "--local-user %s " % keyid
 
         os.system("gpg %s %s %s --detach-sign <%s >>%s" %
                   (keyring, defkeyid, arguments, relname, dest))
