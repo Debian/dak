@@ -95,20 +95,13 @@ def sign_release_dir(suite, dirname):
         if os.path.exists(inlinedest):
             os.unlink(inlinedest)
 
-        # We can only use one key for inline signing so use the first one in
-        # the array for consistency
-        firstkey = True
-
         for keyid in suite.signingkeys or []:
-            defkeyid = "--default-key %s" % keyid
+            defkeyid = "--local-user %s" % keyid
 
-            os.system("gpg %s %s %s --detach-sign <%s >>%s" %
-                    (keyring, defkeyid, arguments, relname, dest))
-
-            if firstkey:
-                os.system("gpg %s %s %s --clearsign <%s >>%s" %
-                        (keyring, defkeyid, arguments, relname, inlinedest))
-                firstkey = False
+        os.system("gpg %s %s %s --detach-sign <%s >>%s" %
+                  (keyring, defkeyid, arguments, relname, dest))
+        os.system("gpg %s %s %s --clearsign <%s >>%s" %
+                  (keyring, defkeyid, arguments, relname, inlinedest))
 
 class ReleaseWriter(object):
     def __init__(self, suite):
