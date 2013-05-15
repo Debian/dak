@@ -1,0 +1,157 @@
+#
+# example configuration file for debianqueued
+#
+
+# set to != 0 for debugging output (to log file)
+$debug = 0;
+
+# various programs:
+# -----------------
+$gpg       = "/usr/bin/gpg";
+$ssh       = "/usr/bin/ssh";
+$scp       = "/usr/bin/scp";
+$ssh_agent = "/usr/bin/ssh-agent";
+$ssh_add   = "/usr/bin/ssh-add";
+$md5sum    = "/usr/bin/md5sum";
+$mail      = "/usr/sbin/sendmail";
+$mkfifo    = "/usr/bin/mkfifo";
+$tar       = "/bin/tar"; # must be GNU tar!
+$gzip      = "/bin/gzip";
+$ar        = "/usr/bin/ar"; # must support p option, optional
+$ls        = "/bin/ls";
+$cp        = "/bin/cp";
+$chmod     = "/bin/chmod";
+
+# binaries which existance should be tested before each queue run
+#@test_binaries = ();
+
+# general options to ssh/scp
+$ssh_options = "-o'BatchMode yes' -o'FallBackToRsh no' ".
+               "-o'ForwardAgent no' -o'ForwardX11 no' ".
+               "-o'PasswordAuthentication no' -o'StrictHostKeyChecking yes'";
+
+# ssh key file to use for connects to master (empty: default ~/.ssh/identity)
+$ssh_key_file = "";
+
+# the incoming dir we live in
+$incoming = "/srv/queued/UploadQueue/OpenSecurityUploadQueue/";
+
+# the delayed incoming directories
+$incoming_delayed = "/srv/queued/UploadQueue/DELAYED/%d-day";
+
+# maximum delay directory, -1 for no delayed directory,
+# incoming_delayed and target_delayed need to exist.
+$max_delayed = -1;
+
+# files not to delete in $incoming (regexp)
+$keep_files = '(status|\.message|README)$';
+
+# file patterns that aren't deleted right away
+$valid_files = '(\.changes|\.tar\.(?:gz|bz2|xz)|\.dsc|\.u?deb|diff\.gz|\.sh)$';
+
+# Change files to mode 644 locally (after md5 check) or only on master?
+$chmod_on_target = 0;
+
+# Do an md5sum check?
+$check_md5sum = 0;
+
+# name of the status file or named pipe in the incoming dir
+$statusfile = "$incoming/status";
+
+# if 0, status file implemented as FIFO; if > 0, status file is plain
+# file and updated with a delay of this many seconds
+$statusdelay = 30;
+
+# names of the keyring files
+@keyrings = ( "/srv/keyring.debian.org/keyrings/debian-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-alpha-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-amd64-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-armhf-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-armel-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-hurd-i386-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-i386-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-ia64-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-kfreebsd-amd64-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-kfreebsd-i386-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-mipsel-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-mips-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-powerpc-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-s390-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-s390x-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-sparc-keyring.gpg");
+
+# our log file
+$logfile = "$queued_dir/run/log";
+
+# our pid file
+$pidfile = "$queued_dir/run/pid";
+
+# upload method (ssh, copy, ftp)
+$upload_method = "copy";
+
+# name of target host (ignored on copy method)
+$target = "localhost";
+
+# login name on target host (for ssh, always 'ftp' for ftp, ignored for copy)
+$targetlogin = "copy";
+
+# incoming on target host
+$targetdir = "/srv/security-master.debian.org/queue/unchecked-disembargo";
+
+# incoming/delayed on target host
+$targetdir_delayed = "/srv/queued/DEFERRED/%d-day";
+
+# select FTP debugging
+$ftpdebug = 0;
+
+# FTP timeout
+$ftptimeout = 900;
+
+# max. number of tries to upload
+$max_upload_retries = 8;
+
+# delay after first failed upload
+$upload_delay_1 = 30*60; # 30 min.
+
+# delay between successive failed uploads
+$upload_delay_2 = 4*60*60; # 4 hours
+
+# packages that must go to nonus.debian.org and thus are rejected here
+#@nonus_packages = qw(gpg-rsaidea);
+
+# timings:
+# --------
+#   time between two queue checks
+$queue_delay = 5*60; # 5 min.
+#   when are stray files deleted?
+$stray_remove_timeout = 24*60*60; # 1 day
+#   delay before reporting problems with a .changes file (not
+#   immediately for to-be-continued uploads)
+$problem_report_timeout = 30*60; # 30 min.
+#   delay before reporting that a .changes file is missing (not
+#   immediately for to-be-continued uploads)
+$no_changes_timeout = 30*60; # 30 min.
+#   when are .changes with persistent problems removed?
+$bad_changes_timeout = 2*24*60*60; # 2 days
+#   how long may a remote operation (ssh/scp) take?
+$remote_timeout = 3*60*60; # 3 hours
+
+# mail address of maintainer
+$maintainer_mail = "ftpmaster\@debian.org";
+
+# to override the TO address of ALL outgoing mail, set this value.
+$overridemail = "dak\@security.debian.org";
+
+# logfile rotating:
+# -----------------
+#    how often to rotate (in days)
+$log_age = 7;
+#    how much old logs to keep
+$log_keep = 4;
+#    send summary mail when rotating logs?
+$mail_summary = 1;
+#    write summary to file when rotating logs? (no if name empty)
+$summary_file = "$queued_dir/summary";
+
+# don't remove this, Perl needs it!
+1;
