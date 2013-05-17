@@ -61,32 +61,62 @@ def clean(build_queue, transaction, now=None):
     delete_before = now - timedelta(seconds=build_queue.stay_of_execution)
     suite = build_queue.suite
 
-    # Remove binaries
+    # Remove binaries subject to the following conditions:
+    # 1. Keep binaries that are in policy queues.
+    # 2. Remove binaries that are not in suites.
+    # 3. Remove binaries that have been in the build queue for some time.
     query = """
         SELECT b.*
           FROM binaries b
           JOIN bin_associations ba ON b.id = ba.bin
          WHERE ba.suite = :suite_id
-           AND ba.created < :delete_before"""
+           AND NOT EXISTS
+               (SELECT 1 FROM policy_queue_upload_binaries_map pqubm
+                         JOIN policy_queue_upload pqu ON pqu.id = pqubm.policy_queue_upload_id
+                         JOIN policy_queue pq ON pq.id = pqu.policy_queue_id
+                         JOIN suite s ON s.policy_queue_id = pq.id
+                         JOIN suite_build_queue_copy sbqc ON sbqc.suite = s.id
+                        WHERE pqubm.binary_id = ba.bin AND pq.send_to_build_queues
+                          AND sbqc.build_queue_id = :build_queue_id)
+           AND (ba.created < :delete_before
+                OR NOT EXISTS
+                   (SELECT 1 FROM bin_associations ba2
+                             JOIN suite_build_queue_copy sbqc ON sbqc.suite = ba2.suite
+                            WHERE ba2.bin = ba.bin AND sbqc.build_queue_id = :build_queue_id))"""
     binaries = session.query(DBBinary).from_statement(query) \
-        .params({'suite_id': suite.suite_id, 'delete_before': delete_before})
+        .params({'build_queue_id': build_queue.queue_id, 'suite_id': suite.suite_id, 'delete_before': delete_before})
     for binary in binaries:
         Logger.log(["removed binary from build queue", build_queue.queue_name, binary.package, binary.version])
         transaction.remove_binary(binary, suite)
 
     # Remove sources
+    # Conditions are similar as for binaries, but we also keep sources
+    # if there is a binary in the build queue that uses it.
     query = """
         SELECT s.*
           FROM source s
           JOIN src_associations sa ON s.id = sa.source
          WHERE sa.suite = :suite_id
-           AND sa.created < :delete_before
-           AND NOT EXISTS (SELECT 1 FROM bin_associations ba
-                                    JOIN binaries b ON ba.bin = b.id
-                                   WHERE ba.suite = :suite_id
-                                     AND b.source = s.id)"""
+           AND NOT EXISTS
+               (SELECT 1 FROM policy_queue_upload pqu
+                         JOIN policy_queue pq ON pq.id = pqu.policy_queue_id
+                         JOIN suite s ON s.policy_queue_id = pq.id
+                         JOIN suite_build_queue_copy sbqc ON sbqc.suite = s.id
+                        WHERE pqu.source_id = sa.source AND pq.send_to_build_queues
+                          AND sbqc.build_queue_id = :build_queue_id)
+           AND (sa.created < :delete_before
+                OR NOT EXISTS
+                   (SELECT 1 FROM src_associations sa2
+                             JOIN suite_build_queue_copy sbqc ON sbqc.suite = sa2.suite
+                            WHERE sbqc.build_queue_id = :build_queue_id
+                              AND sa2.source = sa.source))
+           AND NOT EXISTS
+               (SELECT 1 FROM bin_associations ba
+                         JOIN binaries b ON ba.bin = b.id
+                        WHERE ba.suite = :suite_id
+                          AND b.source = s.id)"""
     sources = session.query(DBSource).from_statement(query) \
-        .params({'suite_id': suite.suite_id, 'delete_before': delete_before})
+        .params({'build_queue_id': build_queue.queue_id, 'suite_id': suite.suite_id, 'delete_before': delete_before})
     for source in sources:
         Logger.log(["removed source from build queue", build_queue.queue_name, source.source, source.version])
         transaction.remove_source(source, suite)
