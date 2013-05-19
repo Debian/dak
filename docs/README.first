@@ -19,14 +19,14 @@ Generic and generally useful
 
 o To process queue/:
 
-  * dak process-unchecked - processes queue/unchecked
-  * dak process-accepted - move files from queue/accepted into the pool (and database)
-  * dak process-new - allows ftp administrator to processes queue/new and queue/byhand
+  * dak process-upload - processes queue/unchecked
+  * dak process-new - allows ftp administrator to process queue/new and queue/byhand
+  * dak process-policy - processes policy queues (including new and byhand)
 
 o To generate indices files:
 
   * dak dominate          - removes obsolete packages from suites
-  * dak generate-filelist - generates file lists for apt-ftparchive
+  * dak generate-packages-sources2 - generate Packages, Sources
   * dak generate-releases - generates Release
 
 o To clean things up:
@@ -51,7 +51,6 @@ o dak init-archive - initializes a projectb database from an exisiting archive
 Generic but not overly useful (in normal use)
 ---------------------------------------------
 
-o dak dot-dak-decode - dumps info in .dak files
 o dak import-users-from-passwd - sync PostgreSQL users with system users
 o dak cruft-report - check for obsolete or duplicated packages
 o dak init-dirs - directory creation in the initial setup of an archive
@@ -79,8 +78,6 @@ Very Incomplete or otherwise not generally useful
 -------------------------------------------------
 
 o dak init-db - currently only initializes a DB from a dak.conf config file
-o dak compare-suites - looks for version descrepancies that shouldn't exist in many
-		       archives
 o dak check-overrides - override cruft checker that doesn't work well with New Incoming
 
 Scripts invoked by other scripts
@@ -91,28 +88,4 @@ o dak examine-package - invoked by 'dak process-new' to "check" NEW packages
 			How do I get started?
 			=====================
 
-[Very incomplete - FIXME]
-
-o Write your own dak.conf file.  dak looks for this
-  config file in /etc/dak/.  /etc/dak/dak.conf can define an
-  alternative configuration file with Config::host::DakConfig
-  (where "host" is the fully qualified domain name of your machine).
-o Create a PostgreSQL database on the host given in dak.conf's DB::Host
-  with the name specified in DB::Name.
-o Run 'dak init-dirs': this will create all directories which are specified in
-  dak.conf:
-o If you have an existing archive:
-   * Run 'dak init-archive'
-  otherwise:
-   * Create the table structure.  init_pool.sql contains all SQL statements
-     which are needed for this.  After changing all occurences of "projectb"
-     to the name of your database (as defined in DB::Name) you can run:
-         psql <DB::Name> < init_pool.sql
-   * Create the following groups in postgres: ftpmaster ftpteam ftptrainee
-   * Run 'dak update-db' to upgrade the database schema.
-   * Run 'dak init-db': it will populate your database with the values from
-     dak.conf
-   * Run 'psql <DB::Name> < add_constraints.sql'.
-o Copy all templates from the "templates" directory to to the directory
-  specified in Dir::Templates, and adapt them to your distribution.
-
+Please refer to setup/README for instructions how to setup dak.
