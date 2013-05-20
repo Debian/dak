@@ -107,7 +107,7 @@ def announce_reject(upload, reason, rejected_by=None):
         subst['__REJECTOR_ADDRESS__'] = rejected_by
 
     if not automatic:
-        subst['__BCC__'] = '{0}\nBcc: {1}'.format(subst['__BCC__'], cnf['Dinstall::MyEmailAddress'])
+        subst['__BCC__'] = '{0}\nBcc: {1}'.format(subst['__BCC__'], subst['__REJECTOR_ADDRESS__'])
 
     message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'queue.rejected'))
     send_mail(message, whitelists=whitelists)
