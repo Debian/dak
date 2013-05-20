@@ -72,11 +72,11 @@ def check_override_compliance(package, priority, archive_path, suite_name, cnf, 
                 dep_list = Packages.Section.Find("Depends")
                 if dep_list:
                     if package_name == package:
-                        for d in apt_pkg.ParseDepends(dep_list):
+                        for d in apt_pkg.parse_depends(dep_list):
                             for i in d:
                                 depends.add(i[0])
                     else:
-                        for d in apt_pkg.ParseDepends(dep_list):
+                        for d in apt_pkg.parse_depends(dep_list):
                             for i in d:
                                 if i[0] == package:
                                     rdepends.add(package_name)

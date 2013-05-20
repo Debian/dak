@@ -383,14 +383,14 @@ def validate_sources(suite, component):
     """
     filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
     print "Processing %s..." % (filename)
-    # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+    # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
     (fd, temp_filename) = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
     sources = utils.open_file(temp_filename)
-    Sources = apt_pkg.ParseTagFile(sources)
+    Sources = apt_pkg.TagFile(sources)
     while Sources.Step():
         source = Sources.Section.Find('Package')
         directory = Sources.Section.Find('Directory')
@@ -425,14 +425,14 @@ def validate_packages(suite, component, architecture):
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
                % (Cnf["Dir::Root"], suite, component, architecture)
     print "Processing %s..." % (filename)
-    # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+    # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
     (fd, temp_filename) = utils.temp_filename()
     (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
     if (result != 0):
         sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
         sys.exit(result)
     packages = utils.open_file(temp_filename)
-    Packages = apt_pkg.ParseTagFile(packages)
+    Packages = apt_pkg.TagFile(packages)
     while Packages.Step():
         filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'))
         if not os.path.exists(filename):
@@ -487,7 +487,7 @@ def chk_bd_process_dir (unused, dirname, filenames):
             field = dsc.get(field_name)
             if field:
                 try:
-                    apt_pkg.ParseSrcDepends(field)
+                    apt_pkg.parse_src_depends(field)
                 except:
                     print "E: [%s] %s: %s" % (filename, field_name, field)
                     pass

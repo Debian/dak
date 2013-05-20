@@ -681,14 +681,14 @@ def main ():
     components = get_component_names(session)
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (suite.archive.path, suite_name, component)
-        # apt_pkg.ParseTagFile needs a real file handle and can't handle a GzipFile instance...
+        # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
         (fd, temp_filename) = utils.temp_filename()
         (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
         if (result != 0):
             sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
             sys.exit(result)
         sources = utils.open_file(temp_filename)
-        Sources = apt_pkg.ParseTagFile(sources)
+        Sources = apt_pkg.TagFile(sources)
         while Sources.Step():
             source = Sources.Section.Find('Package')
             source_version = Sources.Section.Find('Version')
@@ -730,7 +730,7 @@ def main ():
             if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
                 continue
             filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (suite.archive.path, suite_name, component, architecture)
-            # apt_pkg.ParseTagFile needs a real file handle
+            # apt_pkg.TagFile needs a real file handle
             (fd, temp_filename) = utils.temp_filename()
             (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
             if (result != 0):
@@ -742,7 +742,7 @@ def main ():
                 nfu_entries = parse_nfu(architecture)
 
             packages = utils.open_file(temp_filename)
-            Packages = apt_pkg.ParseTagFile(packages)
+            Packages = apt_pkg.TagFile(packages)
             while Packages.Step():
                 package = Packages.Section.Find('Package')
                 source = Packages.Section.Find('Source', "")

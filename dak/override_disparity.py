@@ -97,7 +97,7 @@ def main():
                 if Options['package'] and package != Options['package']:
                     continue
                 if dep_list:
-                    for d in apt_pkg.ParseDepends(dep_list):
+                    for d in apt_pkg.parse_depends(dep_list):
                         for i in d:
                             if not depends.has_key(package):
                                 depends[package] = set()
