@@ -201,7 +201,7 @@ def export_files(session, archive, clpool, progress=False):
                     unpack[os.path.join(pool, sources[p][s][1])] = (path, set())
                 unpack[os.path.join(pool, sources[p][s][1])][1].add(s)
             else:
-                for file in glob('%s/%s_%s*' % (path, p, sources[p][s][0])):
+                for file in glob('%s/%s_%s_*' % (path, p, sources[p][s][0])):
                     link = '%s%s' % (s, file.split('%s_%s' \
                                       % (p, sources[p][s][0]))[1])
                     try:
