@@ -105,11 +105,11 @@ function punew_do() {
 
     STAMP=${STAMP:-$(date "+%Y%m%d%H%M")}
 
-    local exportdir="${queuedir}${qdir}/tree/${STAMP}"
-    local targetdir="${queuedir}${qdir}/export"
+    local exportdir="${qdir}/tree/${STAMP}"
+    local targetdir="${qdir}/export"
     dak export -q "${queue}" -d "${exportdir}" --all
     ln -sfT ${exportdir} ${targetdir}
-    find ${queuedir}${qdir}/tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
+    find "${qdir}/tree" -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
 # These versions used in dinstall
@@ -118,7 +118,7 @@ function punew() {
         log "Doing automated p-u-new processing"
     fi
     cd "${queuedir}/p-u-new"
-    punew_do "$1" "p-u-new" "debian-release@lists.debian.org"
+    punew_do "$1" "${queuedir}/p-u-new" "debian-release@lists.debian.org"
 }
 
 function opunew() {
@@ -126,7 +126,7 @@ function opunew() {
         log "Doing automated o-p-u-new processing"
     fi
     cd "${queuedir}/o-p-u-new"
-    punew_do "$1" "o-p-u-new" "debian-release@lists.debian.org"
+    punew_do "$1" "${queuedir}/o-p-u-new" "debian-release@lists.debian.org"
 }
 
 function backports_policy() {
