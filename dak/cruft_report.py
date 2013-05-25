@@ -689,11 +689,11 @@ def main ():
             sys.exit(result)
         sources = utils.open_file(temp_filename)
         Sources = apt_pkg.TagFile(sources)
-        while Sources.Step():
-            source = Sources.Section.Find('Package')
-            source_version = Sources.Section.Find('Version')
-            architecture = Sources.Section.Find('Architecture')
-            binaries = Sources.Section.Find('Binary')
+        while Sources.step():
+            source = Sources.section.find('Package')
+            source_version = Sources.section.find('Version')
+            architecture = Sources.section.find('Architecture')
+            binaries = Sources.section.find('Binary')
             binaries_list = [ i.strip() for i in  binaries.split(',') ]
 
             if "bnb" in checks:
@@ -743,10 +743,10 @@ def main ():
 
             packages = utils.open_file(temp_filename)
             Packages = apt_pkg.TagFile(packages)
-            while Packages.Step():
-                package = Packages.Section.Find('Package')
-                source = Packages.Section.Find('Source', "")
-                version = Packages.Section.Find('Version')
+            while Packages.step():
+                package = Packages.section.find('Package')
+                source = Packages.section.find('Source', "")
+                version = Packages.section.find('Version')
                 if source == "":
                     source = package
                 if bin2source.has_key(package) and \

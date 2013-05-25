@@ -67,9 +67,9 @@ def check_override_compliance(package, priority, archive_path, suite_name, cnf, 
     for arch in arches:
         for component in components:
             Packages = utils.get_packages_from_ftp(archive_path, suite_name, component, arch)
-            while Packages.Step():
-                package_name = Packages.Section.Find("Package")
-                dep_list = Packages.Section.Find("Depends")
+            while Packages.step():
+                package_name = Packages.section.find("Package")
+                dep_list = Packages.section.find("Depends")
                 if dep_list:
                     if package_name == package:
                         for d in apt_pkg.parse_depends(dep_list):

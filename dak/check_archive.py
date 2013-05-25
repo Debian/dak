@@ -391,10 +391,10 @@ def validate_sources(suite, component):
         sys.exit(result)
     sources = utils.open_file(temp_filename)
     Sources = apt_pkg.TagFile(sources)
-    while Sources.Step():
-        source = Sources.Section.Find('Package')
-        directory = Sources.Section.Find('Directory')
-        files = Sources.Section.Find('Files')
+    while Sources.step():
+        source = Sources.section.find('Package')
+        directory = Sources.section.find('Directory')
+        files = Sources.section.find('Files')
         for i in files.split('\n'):
             (md5, size, name) = i.split()
             filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name)
@@ -434,7 +434,7 @@ def validate_packages(suite, component, architecture):
     packages = utils.open_file(temp_filename)
     Packages = apt_pkg.TagFile(packages)
     while Packages.Step():
-        filename = "%s/%s" % (Cnf["Dir::Root"], Packages.Section.Find('Filename'))
+        filename = "%s/%s" % (Cnf["Dir::Root"], Packages.section.find('Filename'))
         if not os.path.exists(filename):
             print "W: %s missing." % (filename)
     packages.close()

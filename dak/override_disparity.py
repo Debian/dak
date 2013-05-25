@@ -91,9 +91,9 @@ def main():
     for arch in arches:
         for component in components:
             Packages = utils.get_packages_from_ftp(suite.archive.path, suite_name, component, arch)
-            while Packages.Step():
-                package = Packages.Section.Find('Package')
-                dep_list = Packages.Section.Find('Depends')
+            while Packages.step():
+                package = Packages.section.find('Package')
+                dep_list = Packages.section.find('Depends')
                 if Options['package'] and package != Options['package']:
                     continue
                 if dep_list:
