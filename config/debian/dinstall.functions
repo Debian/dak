@@ -627,9 +627,9 @@ function changelogs() {
         mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
         cd /srv/backports-master.debian.org/rsync/export/changelogs
         rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
+        remove_changelog_lock
         trap remove_changelog_lock EXIT TERM HUP INT QUIT
     fi
-    remove_changelog_lock
 }
 
 function gitpdiff() {
