@@ -103,6 +103,7 @@ pg_timestamp preunchecked >/dev/null
 # Process policy queues
 punew stable-new
 opunew oldstable-new
+backports_policy
 
 # Finally deal with unchecked
 do_unchecked

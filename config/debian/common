@@ -95,8 +95,10 @@ function make_buildd_dir () {
 function punew_do() {
     local queue="$1"
     local qdir="$2"
+    local to="${3}"
+
     date -u -R >> REPORT
-    dak process-policy "${queue}" | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in ${queue}" debian-release@lists.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+    dak process-policy "${queue}" | tee -a REPORT | mail -a "X-Debian: DAK" -e -s "NEW changes in ${queue}" "${to}" -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     echo >> REPORT
 
     dak generate-packages-sources2 -s "${queue}"
@@ -116,7 +118,7 @@ function punew() {
         log "Doing automated p-u-new processing"
     fi
     cd "${queuedir}/p-u-new"
-    punew_do "$1" "p-u-new"
+    punew_do "$1" "p-u-new" "debian-release@lists.debian.org"
 }
 
 function opunew() {
@@ -124,7 +126,20 @@ function opunew() {
         log "Doing automated o-p-u-new processing"
     fi
     cd "${queuedir}/o-p-u-new"
-    punew_do "$1" "o-p-u-new"
+    punew_do "$1" "o-p-u-new" "debian-release@lists.debian.org"
+}
+
+function backports_policy() {
+    local queue="backports-policy"
+    local qdir="/srv/backports-master.debian.org/queue/policy"
+    local to="backports-team@debian.org"
+
+    if [ "${PROGRAM}" = "dinstall" ]; then
+        log "Doing automated ${queue} processing"
+    fi
+
+    cd "${qdir}"
+    punew_do "${queue}" "${qdir}" "${to}"
 }
 
 # Do the unchecked processing, in case we have files.

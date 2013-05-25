@@ -226,6 +226,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="backports_policy"
+    TIME="backports-policy"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
+GO=(
     FUNC="cruft"
     TIME="cruft"
     ARGS=""
