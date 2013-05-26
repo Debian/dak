@@ -433,7 +433,7 @@ def validate_packages(suite, component, architecture):
         sys.exit(result)
     packages = utils.open_file(temp_filename)
     Packages = apt_pkg.TagFile(packages)
-    while Packages.Step():
+    while Packages.step():
         filename = "%s/%s" % (Cnf["Dir::Root"], Packages.section.find('Filename'))
         if not os.path.exists(filename):
             print "W: %s missing." % (filename)
