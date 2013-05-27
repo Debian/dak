@@ -23,6 +23,7 @@ lintian:
     - bad-perm-for-file-in-etc-sudoers.d
     - source-contains-waf-binary
     - md5sum-mismatch
+    - non-standard-toplevel-dir
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
