@@ -173,7 +173,7 @@ def parse_file_list(control, has_priority_and_section):
     """
     entries = {}
 
-    for line in control["Files"].split('\n'):
+    for line in control.get("Files", "").split('\n'):
         if len(line) == 0:
             continue
 
@@ -186,7 +186,7 @@ def parse_file_list(control, has_priority_and_section):
 
         entries[filename] = entry
 
-    for line in control["Checksums-Sha1"].split('\n'):
+    for line in control.get("Checksums-Sha1", "").split('\n'):
         if len(line) == 0:
             continue
         (sha1sum, size, filename) = line.split()
@@ -197,7 +197,7 @@ def parse_file_list(control, has_priority_and_section):
             raise InvalidChangesException('Size for {0} in Files and Checksum-Sha1 fields differ.'.format(filename))
         entry['sha1sum'] = sha1sum
 
-    for line in control["Checksums-Sha256"].split('\n'):
+    for line in control.get("Checksums-Sha256", "").split('\n'):
         if len(line) == 0:
             continue
         (sha256sum, size, filename) = line.split()
