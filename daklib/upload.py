@@ -281,7 +281,7 @@ class Changes(object):
         """list of architectures included in the upload
         @type: list of str
         """
-        return self.changes['Architecture'].split()
+        return self.changes.get('Architecture', '').split()
 
     @property
     def distributions(self):
