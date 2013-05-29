@@ -443,7 +443,7 @@ class ACLCheck(Check):
                 .filter(DBBinary.package == binary_name)
             for binary in binaries:
                 if binary.source.source != upload.changes.changes['Source']:
-                    return True, binary, binary.source.source
+                    return True, binary.package, binary.source.source
         return False, None, None
 
     def _check_acl(self, session, upload, acl):
