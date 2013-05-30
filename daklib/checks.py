@@ -336,9 +336,9 @@ class BinaryTimestampCheck(Check):
                 self.past_files = dict()
             def callback(self, member, data):
                 if member.mtime > future_cutoff:
-                    future_files[member.name] = member.mtime
+                    self.future_files[member.name] = member.mtime
                 elif member.mtime < past_cutoff:
-                    past_files[member.name] = member.mtime
+                    self.past_files[member.name] = member.mtime
 
         def format_reason(filename, direction, files):
             reason = "{0}: has {1} file(s) with a timestamp too far in the {2}:\n".format(filename, len(files), direction)
