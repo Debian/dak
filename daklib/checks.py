@@ -328,7 +328,7 @@ class BinaryTimestampCheck(Check):
     def check(self, upload):
         cnf = Config()
         future_cutoff = time.time() + cnf.find_i('Dinstall::FutureTimeTravelGrace', 24*3600)
-        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1984'), '%Y'))
+        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1975'), '%Y'))
 
         class TarTime(object):
             def __init__(self):

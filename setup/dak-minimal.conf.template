@@ -28,8 +28,6 @@ Dinstall
    MyAdminAddress "dak@__DAKFQDN__";
    MyDistribution "TestDakInstance";
 
-   FutureTimeTravelGrace 28800; // 8 hours
-   PastCutoffYear "1984";
    SkipTime 10;
 
    DefaultSuite "unstable";
