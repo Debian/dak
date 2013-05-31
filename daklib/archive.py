@@ -1076,7 +1076,9 @@ class ArchiveUpload(object):
                 remaining.append(f)
                 continue
 
-            if rule['Source'] != self.changes.source_name or rule['Section'] != f.section or rule['Extension'] != ext:
+            if rule['Source'] != self.changes.source_name \
+                    or rule['Section'] != f.section \
+                    or ('Extension' in rule and rule['Extension'] != ext):
                 remaining.append(f)
                 continue
 
