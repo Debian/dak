@@ -195,6 +195,7 @@ function reports() {
     # Send a report on NEW/BYHAND packages
     log "Nagging ftpteam about NEW/BYHAND packages"
     dak queue-report | mail -a "X-Debian: DAK" -e -s "NEW and BYHAND on $(date +%D)" ftpmaster@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+    dak queue-report -d backports-new,backports-policy | mail -a "X-Debian: DAK" -e -s "NEW and POLICY on $(date +%D)" backports-team@debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
     # and one on crufty packages
     log "Sending information about crufty packages"
     dak cruft-report -R > $webdir/cruft-report-daily.txt

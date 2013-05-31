@@ -19,7 +19,6 @@ lintian:
     - dir-or-file-in-var-www
     - wrong-file-owner-uid-or-gid
     - install-info-used-in-maintainer-script
-    - missing-pre-dependency-on-multiarch-support
     - bad-perm-for-file-in-etc-sudoers.d
     - source-contains-waf-binary
     - md5sum-mismatch

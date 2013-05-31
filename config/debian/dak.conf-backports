@@ -1,5 +1,5 @@
 Dinstall {
-  MyAdminAddress "backports-team@debian.org";
+  MyAdminAddress "debian-backports@lists.debian.org";
 };
 
 Dir {

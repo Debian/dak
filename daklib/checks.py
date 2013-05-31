@@ -328,7 +328,7 @@ class BinaryTimestampCheck(Check):
     def check(self, upload):
         cnf = Config()
         future_cutoff = time.time() + cnf.find_i('Dinstall::FutureTimeTravelGrace', 24*3600)
-        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1984'), '%Y'))
+        past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1975'), '%Y'))
 
         class TarTime(object):
             def __init__(self):
@@ -336,9 +336,9 @@ class BinaryTimestampCheck(Check):
                 self.past_files = dict()
             def callback(self, member, data):
                 if member.mtime > future_cutoff:
-                    future_files[member.name] = member.mtime
+                    self.future_files[member.name] = member.mtime
                 elif member.mtime < past_cutoff:
-                    past_files[member.name] = member.mtime
+                    self.past_files[member.name] = member.mtime
 
         def format_reason(filename, direction, files):
             reason = "{0}: has {1} file(s) with a timestamp too far in the {2}:\n".format(filename, len(files), direction)
