@@ -11,7 +11,8 @@ fi
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-WIN32_LOADER_FILE="$1"	# win32-loader_${VERSION}_${ARCH}{.exe,txt}
+WIN32_LOADER_PATH="$1"	# win32-loader_${VERSION}_${ARCH}{.exe,txt}
+WIN32_LOADER_FILE="${WIN32_LOADER_PATH##*/}"
 VERSION="$2"
 ARCH="$3"
 CHANGES="$4"	# Changes file for the upload
@@ -32,6 +33,16 @@ case $SUITE in
 	    ;;
 esac
 
+case "${WIN32_LOADER_FILE}" in
+    win32-loader_*.exe|win32-loader_*.txt)
+        : # okay
+        ;;
+    *)
+        echo "Error: invalid filename for byhand-win32-loader"
+        exit 1
+        ;;
+esac
+
 # This must end with /
 TARGET="${ftpdir}/tools/win32-loader/${SUITE}/"
 
@@ -47,7 +58,7 @@ fi
 # Put said file into the tools directory
 # Use --remove-destination to avoid problems with the fact that the target may
 # be a hardlink and in that case we'd update multiple suites together
-cp --remove-destination "$WIN32_LOADER_FILE" "${TARGET}${TARGET_FILENAME}"
+cp --remove-destination "$WIN32_LOADER_PATH" "${TARGET}${TARGET_FILENAME}"
 
 # Chmod it correctly
 chmod 0644 "${TARGET}${TARGET_FILENAME}"
