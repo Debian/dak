@@ -1,0 +1,64 @@
+#! /bin/bash
+#
+# byhand-debian-faq - automatic BYHAND handling for debian-faq
+#
+# This file is part of dak.
+#
+# Copyright 2013, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+set -e
+set -u
+
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. ${SCRIPTVARS}
+
+scriptname=byhand-debian-faq
+
+if [ $# -lt 4 ]; then
+    echo "usage: ${scriptname} <byhand-file> <version> <arch> <changes-file>" >&2
+    exit 1
+fi
+
+byhand_path="${1}"
+byhand_file="${byhand_path##*/}"
+version="${2}"
+architecture="${3}"
+changes="${4}"
+
+suite="$(awk '/^Distribution:/ { print $2 }' < "${changes}")"
+case "${suite}" in
+    unstable|sid)
+        : # okay
+        ;;
+    *)
+        echo "$0: not targeted at unstable" >&2
+        exit 1
+        ;;
+esac
+
+if [[ ! "${byhand_file}" =~ ^debian-faq\.en\.(html\.tar|txt|ps|pdf)\.gz$ ]]; then
+    echo "$0: unknown file '${byhand_file}'" >&2
+    exit 1
+fi
+
+target="${ftpdir}/doc/FAQ/"
+if [ ! -d "${target}" ]; then
+    mkdir -p "${target}"
+fi
+
+cp --remove-destination "${byhand_path}" "${target}"
+chmod 0644 "${target}/${byhand_file}"
