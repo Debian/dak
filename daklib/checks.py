@@ -709,23 +709,31 @@ class VersionCheck(Check):
         else:
             return db_binary.version
 
-    def _version_checks(self, upload, suite, op):
+    def _version_checks(self, upload, suite, other_suite, op, op_name):
         session = upload.session
 
         if upload.changes.source is not None:
             source_name = upload.changes.source.dsc['Source']
             source_version = upload.changes.source.dsc['Version']
-            v = self._highest_source_version(session, source_name, suite)
+            v = self._highest_source_version(session, source_name, other_suite)
             if v is not None and not op(version_compare(source_version, v)):
-                raise Reject('Version check failed (source={0}, version={1}, other-version={2}, suite={3})'.format(source_name, source_version, v, suite.suite_name))
+                raise Reject("Version check failed:\n"
+                             "Your upload included the source package {0}, version {1},\n"
+                             "however {3} already has the {4} version {2}.\n"
+                             "Uploads to {5} must have a {4} version than present in {3}."
+                             .format(source_name, source_version, v, other_suite.suite_name, op_name, suite.suite_name))
 
         for binary in upload.changes.binaries:
             binary_name = binary.control['Package']
             binary_version = binary.control['Version']
             architecture = binary.control['Architecture']
-            v = self._highest_binary_version(session, binary_name, suite, architecture)
+            v = self._highest_binary_version(session, binary_name, other_suite, architecture)
             if v is not None and not op(version_compare(binary_version, v)):
-                raise Reject('Version check failed (binary={0}, version={1}, other-version={2}, suite={3})'.format(binary_name, binary_version, v, suite.suite_name))
+                raise Reject("Version check failed:\n"
+                             "Your upload included the binary package {0}, version {1}, for {2},\n"
+                             "however {4} already has the {5} version {3}.\n"
+                             "Uploads to {6} must have a {5} version than present in {4}."
+                             .format(binary_name, binary_version, architecture, v, other_suite.suite_name, op_name, suite.suite_name))
 
     def per_suite_check(self, upload, suite):
         session = upload.session
@@ -737,13 +745,13 @@ class VersionCheck(Check):
         must_be_newer_than.append(suite)
 
         for s in must_be_newer_than:
-            self._version_checks(upload, s, lambda result: result > 0)
+            self._version_checks(upload, suite, s, lambda result: result > 0, 'higher')
 
         vc_older = session.query(dbconn.VersionCheck).filter_by(suite=suite, check='MustBeOlderThan')
         must_be_older_than = [ vc.reference for vc in vc_older ]
 
         for s in must_be_older_than:
-            self._version_checks(upload, s, lambda result: result < 0)
+            self._version_checks(upload, suite, s, lambda result: result < 0, 'lower')
 
         return True
 
