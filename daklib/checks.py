@@ -719,7 +719,7 @@ class VersionCheck(Check):
             if v is not None and not op(version_compare(source_version, v)):
                 raise Reject("Version check failed:\n"
                              "Your upload included the source package {0}, version {1},\n"
-                             "however {3} already has the {4} version {2}.\n"
+                             "however {3} already has version {2}.\n"
                              "Uploads to {5} must have a {4} version than present in {3}."
                              .format(source_name, source_version, v, other_suite.suite_name, op_name, suite.suite_name))
 
@@ -731,7 +731,7 @@ class VersionCheck(Check):
             if v is not None and not op(version_compare(binary_version, v)):
                 raise Reject("Version check failed:\n"
                              "Your upload included the binary package {0}, version {1}, for {2},\n"
-                             "however {4} already has the {5} version {3}.\n"
+                             "however {4} already has version {3}.\n"
                              "Uploads to {6} must have a {5} version than present in {4}."
                              .format(binary_name, binary_version, architecture, v, other_suite.suite_name, op_name, suite.suite_name))
 
