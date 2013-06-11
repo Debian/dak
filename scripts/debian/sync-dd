@@ -80,6 +80,7 @@ if lockfile -r3 "${lockfile}"; then
 	--exclude "/lock/" \
 	--exclude "/mirror/" \
 	--exclude "/morgue/" \
+        --exclude "/queue/bts_version_track/"
 	--exclude "/queue/unchecked/" \
 	--exclude "/s3kr1t" \
 	--exclude "/scripts/s3kr1t" \
