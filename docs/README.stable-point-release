@@ -29,6 +29,9 @@ dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/Ch
 cat ${pusuite}.list | dak control-suite --add ${suite}
 dak control-suite --remove ${pusuite} < ${pusuite}.list
 
+- -r0 additions?
+  For example new d-i.
+
 - sync with stable RM if there is any propup needed. do it, if so:
 like, cat /srv/release.debian.org/www/squeeze/6.0/6.0.4/propup.unstable | dak control-suite --add unstable
 Note: unstable first, then testing
@@ -49,6 +52,14 @@ if [ "${dioldver}" != "empty" ]; then
     done
 fi
 cd $ftpdir/dists/${suite}
+
+- Updates for win32-loader?
+cd ${ftpdir}/tools/win32-loader
+if [ -d ${suitename}-proposed-updates ]; then
+    rm -r ${suite}
+    mv ${suitename}-proposed-updates ${suite}
+fi
+cd ${ftpdir}
 
 - Update version number in README, README.html and dists/README,
   Clean up dists/stable/ChangeLog (add header, basically). bash:
@@ -80,6 +91,7 @@ dak generate-filelist -s ${suite}
 - then:
 dak generate-packages-sources -s ${suite} ; dak contents generate -f -s ${suite} -a ftp-master
 
+- For squeeze: merge Contents
 cd $ftpdir/dists/${suite}
 for carch in $(dak admin s-a list-arch ${suite}); do
   echo doing ${carch}
@@ -88,10 +100,11 @@ for carch in $(dak admin s-a list-arch ${suite}); do
   gzip -9v Contents-${carch}.new;
   mv Contents-${carch}.new.gz Contents-${carch}.gz;
 done
-
 rm {main,contrib,non-free}/Contents-*
 
+- Generate Releases:
 dak generate-releases -f -s ${suite}
+rm ${ftpdir}/dists/${suite}/InRelease
 
 - have the SRMs sign it and put the signature in.
 - Check if a mirror push is needed or next dinstall is enough. for a push
