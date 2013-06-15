@@ -325,14 +325,6 @@ GO=(
 )
 stage $GO
 
-GO=(
-    FUNC="buildd_dir"
-    TIME="buildd_dir"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
 state "scripts"
 GO=(
     FUNC="mkmaintainers"
