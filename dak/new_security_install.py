@@ -86,10 +86,6 @@ def sudo(arg, fn, exit):
 
 def do_Approve(): sudo("A", _do_Approve, True)
 def _do_Approve():
-    # 1. use process-policy to go through the COMMENTS dir
-    spawn("dak process-policy embargoed")
-    spawn("dak process-policy unembargoed")
-
     print "Locking unchecked"
     lockfile='/srv/security-master.debian.org/lock/unchecked.lock'
     spawn("lockfile -r42 {0}".format(lockfile))
