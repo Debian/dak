@@ -102,6 +102,8 @@ for carch in $(dak admin s-a list-arch ${suite}); do
 done
 rm {main,contrib,non-free}/Contents-*
 
+- For wheezy: update main/i18n/Index
+
 - Generate Releases:
 dak generate-releases -f -s ${suite}
 rm ${ftpdir}/dists/${suite}/InRelease
