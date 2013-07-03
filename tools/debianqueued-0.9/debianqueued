@@ -2293,6 +2293,7 @@ Subject: $subject
 Date: $date
 X-Debian: DAK
 X-DAK: DAK
+Precedence: bulk
 __MESSAGE__
 
   if ( length $package ) {
