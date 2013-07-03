@@ -2294,6 +2294,7 @@ Date: $date
 X-Debian: DAK
 X-DAK: DAK
 Precedence: bulk
+Auto-Submitted: auto-generated
 __MESSAGE__
 
   if ( length $package ) {
