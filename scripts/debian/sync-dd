@@ -69,6 +69,7 @@ trap cleanup EXIT TERM HUP INT QUIT
 if lockfile -r3 "${lockfile}"; then
     rsync -aH -B8192 \
 	${extra1} \
+        --exclude "/.nobackup" \
         --exclude "/backup/*.xz" \
 	--exclude "/backup/dump*" \
         --exclude "/build-queues/" \
@@ -92,6 +93,7 @@ if lockfile -r3 "${lockfile}"; then
    # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
 
    rsync -aH -B8192 \
+       --exclude "/.nobackup" \
        --exclude mirror \
        --exclude rsync/ \
        --exclude lost+found \
