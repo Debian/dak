@@ -52,10 +52,7 @@ mode="${4}"
 extra1=""
 
 case "${mode}" in
-    sync)
-        extra1="${extra1} --exclude /ftp/"
-	;;
-    pool)
+    pool|sync)
 	;;
     *)
 	echo "Unknown mode ${mode}." >&2
@@ -77,6 +74,7 @@ if lockfile -r3 "${lockfile}"; then
         --exclude "/build-queues/" \
 	--exclude "/database/*.db" \
 	--exclude ".da-backup.trace" \
+        --exclude "/ftp/" \
 	--exclude "lost+found" \
 	--exclude "/lock/" \
 	--exclude "/mirror/" \

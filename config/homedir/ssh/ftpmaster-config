@@ -23,14 +23,19 @@ Host morgue-sync
   IdentityFile /srv/ftp-master.debian.org/s3kr1t/push_morgue
 
 Host ries-sync1
-  Hostname ries.debian.org
+  Hostname coccia.debian.org
   User dak
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_dd1
 
 Host ries-sync2
-  Hostname ries.debian.org
+  Hostname coccia.debian.org
   User dak
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_dd2
+
+Host ries-sync3
+  Hostname coccia.debian.org
+  User dak
+  IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_dd3
 
 Host external-security
   Hostname chopin.debian.org
