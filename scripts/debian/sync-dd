@@ -74,6 +74,7 @@ if lockfile -r3 "${lockfile}"; then
 	${extra1} \
         --exclude "/backup/*.xz" \
 	--exclude "/backup/dump*" \
+        --exclude "/build-queues/" \
 	--exclude "/database/*.db" \
 	--exclude ".da-backup.trace" \
 	--exclude "lost+found" \
