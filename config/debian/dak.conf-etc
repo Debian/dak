@@ -6,7 +6,7 @@ Config
     DatabaseHostname    "ftp-master";
     DakConfig           "/srv/ftp-master.debian.org/dak/config/debian/dak.conf";
   }
-  ries.debian.org
+  coccia.debian.org
   {
     AllowLocalConfig    "false";
     DatabaseHostname    "ftp-master";
