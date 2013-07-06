@@ -501,6 +501,11 @@ function mirrorpush() {
     sudo -H -u archvsync /home/archvsync/runmirrors -a backports > ~dak/runmirrorsbpo.log 2>&1 &
 }
 
+function mirrorpush-backports() {
+    log "Syncing backports mirror"
+    sudo -u backports /home/backports/bin/update-archive
+}
+
 function i18n2() {
     log "Exporting package data foo for i18n project"
     STAMP=$(date "+%Y%m%d%H%M")

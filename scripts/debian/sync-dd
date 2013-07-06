@@ -103,18 +103,6 @@ if lockfile -r3 "${lockfile}"; then
        /srv/ftp.debian.org/ "${host2}:/srv/ftp.debian.org/"
    # command for the remote side:
    # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp.debian.org/"
-
-   if [[ ${mode} == pool ]]; then
-       # Sync backports
-       rsync -aH -B8192 \
-           --delete --delete-after \
-           --timeout 3600 \
-           -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-           /srv/backports-master.debian.org/mirror/ \
-           ries-sync3:/srv/backports.debian.org/htdocs/debian-backports/
-       # And now tell static.debian.org that something changed
-       /usr/local/bin/static-update-component backports.debian.org
-   fi
 else
     echo "Couldn't get the lock, not syncing"
     exit 0

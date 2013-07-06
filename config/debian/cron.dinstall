@@ -445,6 +445,14 @@ GO=(
 stage $GO &
 
 GO=(
+    FUNC="mirrorpush-backports"
+    TIME="mirrorpush-backports"
+    ARGS=""
+    ERR="false"
+)
+stage $GO &
+
+GO=(
     FUNC="i18n2"
     TIME="i18n 2"
     ARGS=""
