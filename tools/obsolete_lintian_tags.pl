@@ -31,8 +31,7 @@ use Getopt::Long;
 use lib "$ENV{'LINTIAN_ROOT'}/lib";
 use Lintian::Profile;
 
-my $profile = Lintian::Profile->new ('debian', $ENV{'LINTIAN_ROOT'},
-                                     ["$ENV{'LINTIAN_ROOT'}/profiles"]);
+my $profile = Lintian::Profile->new ('debian');
 my @lintian_tags = (sort $profile->tags(1));
 my $autoreject_tags = '../config/debian/lintian.tags';
 
