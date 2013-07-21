@@ -1250,8 +1250,19 @@ class Keyring(object):
 
         LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
         LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
+        ca_cert_file = cnf.get('Import-LDAP-Fingerprints::CACertFile')
 
         l = ldap.open(LDAPServer)
+
+        if ca_cert_file:
+            # Request a new TLS context. If there was already one, libldap
+            # would not change the TLS options (like which CAs to trust).
+            l.set_option(ldap.OPT_X_TLS_NEWCTX, True)
+            l.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
+            l.set_option(ldap.OPT_X_TLS_CACERTDIR, None)
+            l.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_file)
+            l.start_tls_s()
+
         l.simple_bind_s("","")
         Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
