@@ -90,10 +90,6 @@ re_spacestrip = re.compile('(\s)')
 # From import_archive.py
 re_arch_from_filename = re.compile(r"binary-[^/]+")
 
-# From import_ldap_fingerprints.py
-re_gpg_fingerprint = re.compile(r"^\s+Key fingerprint = (.*)$", re.MULTILINE)
-re_debian_address = re.compile(r"^.*<(.*)@debian\.org>$", re.MULTILINE)
-
 # From new_security_install.py
 re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$")
 

@@ -123,8 +123,6 @@ def init():
          "Import existing source and binary packages"),
         ("import-keyring",
          "Populate fingerprint/uid table based on a new/updated keyring"),
-        ("import-ldap-fingerprints",
-         "Syncs fingerprint and uid tables with Debian LDAP db"),
         ("import-users-from-passwd",
          "Sync PostgreSQL users with passwd file"),
         ("acl",
