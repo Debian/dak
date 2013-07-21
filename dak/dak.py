@@ -117,8 +117,6 @@ def init():
          "Check for obsolete or duplicated packages"),
         ("examine-package",
          "Show information useful for NEW processing"),
-        ("find-null-maintainers",
-         "Check for users with no packages in the archive"),
         ("import",
          "Import existing source and binary packages"),
         ("import-keyring",
