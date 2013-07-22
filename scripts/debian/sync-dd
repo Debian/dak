@@ -75,10 +75,10 @@ if lockfile -r3 "${lockfile}"; then
         --exclude "/build-queues/" \
 	--exclude "/database/*.db" \
 	--exclude ".da-backup.trace" \
-        --exclude "/ftp/" \
+        --exclude "/ftp" \
 	--exclude "lost+found" \
 	--exclude "/lock/" \
-	--exclude "/mirror/" \
+        --exclude "/mirror" \
 	--exclude "/morgue/" \
         --exclude "/queue/bts_version_track/" \
 	--exclude "/queue/unchecked/" \
