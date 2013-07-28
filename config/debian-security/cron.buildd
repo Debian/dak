@@ -20,8 +20,8 @@ now=$(date +%s)
 check=$(( now - 3*60 ))
 
 for dist in $DISTS; do
-    smodtime=$(stat -c "%Y" $base/buildd/$dist/Sources.gz)
-    pmodtime=$(stat -c "%Y" $base/buildd/$dist/Packages.gz)
+    smodtime=$(stat -c "%Y" $base/build-queues/dists/buildd-$dist/updates/*/source/Sources.gz | sort -n | tail -1)
+    pmodtime=$(stat -c "%Y" $base/build-queues/dists/buildd-$dist/updates/*/binary-*/Packages.gz | sort -n | tail -1)
 
     if [ ${smodtime} -gt ${check} ] || [ ${pmodtime} -gt ${check} ]; then
         # Packages/Sources changed in the last minutes
