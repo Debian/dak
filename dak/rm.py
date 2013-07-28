@@ -257,46 +257,31 @@ def main ():
     if Options["Binary-Only"]:
         # Binary-only
         q = session.execute("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, files_archive_map af, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
-        for i in q.fetchall():
-            to_remove.append(i)
+        to_remove.extend(q)
     else:
         # Source-only
-        source_packages = {}
-        q = session.execute("SELECT archive.path || '/pool/' || c.name || '/', f.filename, s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE sa.source = s.id AND sa.suite = su.id AND archive.id = su.archive_id AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
-        for i in q.fetchall():
-            source_packages[i[2]] = i[:2]
-            to_remove.append(i[2:])
+        q = session.execute("SELECT s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE sa.source = s.id AND sa.suite = su.id AND archive.id = su.archive_id AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
+        to_remove.extend(q)
         if not Options["Source-Only"]:
             # Source + Binary
-            binary_packages = {}
-            # First get a list of binary package names we suspect are linked to the source
             q = session.execute("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND su.archive_id = archive.id AND s.file = f.id AND f.id = af.file_id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
-            for i in q.fetchall():
-                binary_packages[i[0]] = ""
-            # Then parse each .dsc that we found earlier to see what binary packages it thinks it produces
-            for i in source_packages.keys():
-                filename = "/".join(source_packages[i])
-                try:
-                    dsc = utils.parse_changes(filename, dsc_file=1)
-                except CantOpenError:
-                    utils.warn("couldn't open '%s'." % (filename))
-                    continue
-                for package in dsc.get("binary").split(','):
-                    package = package.strip()
-                    binary_packages[package] = ""
             # Then for each binary package: find any version in
             # unstable, check the Source: field in the deb matches our
             # source package and if so add it to the list of packages
             # to be removed.
-            for package in binary_packages.keys():
-                q = session.execute("SELECT archive.path || '/pool/' || c.name || '/', f.filename, b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, archive, files f, files_archive_map af, component c WHERE ba.bin = b.id AND ba.suite = su.id AND archive.id = su.archive_id AND b.architecture = a.id AND b.file = f.id AND f.id = af.file_id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s AND b.package = '%s'" % (con_suites, con_components, con_architectures, package))
-                for i in q.fetchall():
-                    filename = "/".join(i[:2])
-                    control = apt_pkg.TagSection(utils.deb_extract_control(utils.open_file(filename)))
-                    source = control.find("Source", control.find("Package"))
-                    source = re_strip_source_version.sub('', source)
-                    if source_packages.has_key(source):
-                        to_remove.append(i[2:])
+            q = session.execute("""
+                    SELECT b.package, b.version, a.arch_string, b.id, b.maintainer
+                    FROM binaries b
+                         JOIN bin_associations ba ON b.id = ba.bin
+                         JOIN architecture a ON b.architecture = a.id
+                         JOIN suite su ON ba.suite = su.id
+                         JOIN archive ON archive.id = su.archive_id
+                         JOIN files_archive_map af ON b.file = af.file_id AND af.archive_id = archive.id
+                         JOIN component c ON af.component_id = c.id
+                         JOIN source s ON b.source = s.id
+                         JOIN src_associations sa ON s.id = sa.source AND sa.suite = su.id
+                    WHERE TRUE %s %s %s %s""" % (con_packages, con_suites, con_components, con_architectures))
+            to_remove.extend(q)
     print "done."
 
     if not to_remove:
