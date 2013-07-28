@@ -75,6 +75,7 @@ if lockfile -r3 "${lockfile}"; then
         --exclude "/build-queues/" \
 	--exclude "/database/*.db" \
 	--exclude ".da-backup.trace" \
+        --exclude "/export/changelogs/tmp*/" \
         --exclude "/ftp" \
 	--exclude "lost+found" \
 	--exclude "/lock/" \
