@@ -264,11 +264,6 @@ def main ():
         to_remove.extend(q)
         if not Options["Source-Only"]:
             # Source + Binary
-            q = session.execute("SELECT DISTINCT b.package FROM binaries b, source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE b.source = s.id AND sa.source = s.id AND sa.suite = su.id AND su.archive_id = archive.id AND s.file = f.id AND f.id = af.file_id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
-            # Then for each binary package: find any version in
-            # unstable, check the Source: field in the deb matches our
-            # source package and if so add it to the list of packages
-            # to be removed.
             q = session.execute("""
                     SELECT b.package, b.version, a.arch_string, b.id, b.maintainer
                     FROM binaries b
