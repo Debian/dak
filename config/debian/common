@@ -48,47 +48,6 @@ function make_buildd_dir () {
     done
     rm -f ${incoming}/public/*
     dak export-suite -s "accepted" -d "$incoming/public"
-
-    # export to old build queue directories
-    # XXX: Remove once the buildds use the version generated above.
-    for suite in $(ls -1 $incoming/dists/); do
-        # Skip project trace directory
-        if [ "${suite}x" = "projectx" ]; then continue; fi
-        cd ${incoming}/dists/${suite}/buildd
-
-        overridesuite=sid
-        if [ "${suite}" = "squeeze-backports" ]; then
-            overridesuite="${suite}"
-        fi
-
-        apt-ftparchive packages . $overridedir/override.${overridesuite}.all3 >Packages
-        gzip -9c --rsyncable <Packages >Packages.gz
-        apt-ftparchive sources . $overridedir/override.${overridesuite}.all3 >Sources
-        gzip -9c --rsyncable <Sources >Sources.gz
-
-        rm -f buildd/Release
-        cd ..
-        apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite incoming" -o APT::FTPArchive::Release::Architectures="$archs" release buildd >Release
-        if [ "$suite" = "experimental" -o "${suite}" = "squeeze-backports" ]; then
-            echo "NotAutomatic: yes" >>Release
-        fi
-
-        gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o Release.gpg Release
-
-        mv Release Release.gpg buildd/
-    done
-
-    STAMP=${STAMP:-$(date "+%Y%m%d%H%M")}
-
-    for dist in $(ls -1 ${incoming}/dists/); do
-        # Skip project trace directory
-        if [ "${dist}x" = "projectx" ]; then continue; fi
-        cd ${incoming}/dists/${dist}
-        mkdir -p tree/${STAMP}
-        cp -al ${incoming}/dists/${dist}/buildd/. tree/${STAMP}/
-        ln -sfT tree/${STAMP} ${incoming}/dists/${dist}/current
-        find ./tree -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
-    done
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue

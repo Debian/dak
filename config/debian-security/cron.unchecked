@@ -79,36 +79,6 @@ dak generate-packages-sources2 -a build-queues
 dak generate-releases -a build-queues >/dev/null
 ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
 
-# export build queues in old format
-# XXX: This should be removed later.
-for suite in oldstable stable; do
-    overridecodename=$(dak admin suite show ${suite} | awk '$1 == "OverrideCodename:" { print $2 }')
-    rm -rf ${incoming}/${suite}.new
-    mkdir ${incoming}/${suite}.new
-    dak export-suite -s buildd-${suite} -d ${incoming}/${suite}.new
-
-    cd ${incoming}/${suite}.new
-    apt-ftparchive packages . ${overridedir}/override.${overridecodename}.all3 >Packages
-    gzip -9c --rsyncable <Packages >Packages.gz
-    apt-ftparchive sources . ${overridedir}/override.${overridecodename}.all3 >Sources
-    gzip -9c --rsyncable <Sources >Sources.gz
-    rm -f Release
-
-    cd ${incoming}
-    apt-ftparchive -qq -o APT::FTPArchive::Release::Origin="Debian" -o APT::FTPArchive::Release::Label="Debian" -o APT::FTPArchive::Release::Description="buildd $suite security" -o APT::FTPArchive::Release::Architectures="$archs" release ${suite}.new >${suite}.Release
-
-    gpg --secret-keyring /srv/security-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/security-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o ${suite}.Release.gpg ${suite}.Release
-
-    mv ${suite}.Release ${suite}.new/Release
-    mv ${suite}.Release.gpg ${suite}.new/Release.gpg
-
-    if [ -d ${suite} ]; then
-	mv ${suite} ${suite}.old
-    fi
-    mv ${suite}.new ${suite}
-    rm -rf ${suite}.old
-done
-
 if [ "x${dopolicy}x" = "xtruex" ]; then
     # We had something approved from a policy queue, push out new archive
     dak dominate
