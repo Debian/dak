@@ -38,6 +38,7 @@ statements = [
     'DROP FUNCTION IF EXISTS priority_id_max()',
     'DROP FUNCTION IF EXISTS section_id_max()',
     'DROP FUNCTION IF EXISTS source_id_max()',
+    'DROP FUNCTION IF EXISTS space_separated_list(TEXT)',
     'DROP FUNCTION IF EXISTS space_concat(TEXT, TEXT)',
     'DROP FUNCTION IF EXISTS src_associations_id_max()',
 ]
