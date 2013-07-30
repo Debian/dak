@@ -163,7 +163,9 @@ function mpfm() {
 function packages() {
     log "Generating Packages and Sources files"
     for archive in "${public_archives[@]}"; do
+        log "  Generating Packages/Sources for ${archive}"
         dak generate-packages-sources2 -a "${archive}"
+        log "  Generating Contents for ${archive}"
         dak contents generate -a "${archive}"
     done
 }
