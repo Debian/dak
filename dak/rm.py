@@ -244,8 +244,6 @@ def main ():
     if Options["Rdep-Check"] and len(suites) > 1:
         utils.fubar("Reverse dependency check on multiple suites is not implemented.")
 
-    print "Working...",
-    sys.stdout.flush()
     to_remove = []
     maintainers = {}
 
@@ -279,7 +277,6 @@ def main ():
                          JOIN src_associations sa ON s.id = sa.source AND sa.suite = su.id
                     WHERE TRUE %s %s %s %s""" % (con_packages, con_suites, con_components, con_architectures))
             to_remove.extend(q)
-    print "done."
 
     if not to_remove:
         print "Nothing to do."
