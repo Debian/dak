@@ -65,7 +65,8 @@ def usage (exit_code=0):
 Remove PACKAGE(s) from suite(s).
 
   -a, --architecture=ARCH    only act on this architecture
-  -b, --binary               remove binaries only
+  -b, --binary               PACKAGE are binary packages to remove
+  -B, --binary-only          remove binaries only
   -c, --component=COMPONENT  act on this component
   -C, --carbon-copy=EMAIL    send a CC of removal message to EMAIL
   -d, --done=BUG#            send removal message as closure to bug#
@@ -118,6 +119,7 @@ def main ():
     Arguments = [('h',"help","Rm::Options::Help"),
                  ('a',"architecture","Rm::Options::Architecture", "HasArg"),
                  ('b',"binary", "Rm::Options::Binary"),
+                 ('B',"binary-only", "Rm::Options::Binary-Only"),
                  ('c',"component", "Rm::Options::Component", "HasArg"),
                  ('C',"carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d',"done","Rm::Options::Done", "HasArg"), # Bugs fixed
@@ -130,7 +132,7 @@ def main ():
                  ('S',"source-only", "Rm::Options::Source-Only"),
                  ]
 
-    for i in [ "architecture", "binary", "carbon-copy", "component",
+    for i in [ "architecture", "binary", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
                "source-only", "Do-Close" ]:
         if not cnf.has_key("Rm::Options::%s" % (i)):
@@ -151,8 +153,10 @@ def main ():
         utils.fubar("need at least one package name as an argument.")
     if Options["Architecture"] and Options["Source-Only"]:
         utils.fubar("can't use -a/--architecture and -S/--source-only options simultaneously.")
-    if Options["Binary"] and Options["Source-Only"]:
-        utils.fubar("can't use -b/--binary and -S/--source-only options simultaneously.")
+    if ((Options["Binary"] and Options["Source-Only"])
+            or (Options["Binary"] and Options["Binary-Only"])
+            or (Options["Binary-Only"] and Options["Source-Only"])):
+        utils.fubar("Only one of -b/--binary, -B/--binary-only and -S/--source-only can be used.")
     if Options.has_key("Carbon-Copy") and not Options.has_key("Done"):
         utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
     if Options["Architecture"] and not Options["Partial"]:
@@ -160,9 +164,8 @@ def main ():
         Options["Partial"] = "true"
     if Options["Do-Close"] and not Options["Done"]:
         utils.fubar("No.")
-    if Options["Do-Close"] and Options["Binary"]:
-        utils.fubar("No.")
-    if Options["Do-Close"] and Options["Source-Only"]:
+    if (Options["Do-Close"]
+           and (Options["Binary"] or Options["Binary-Only"] or Options["Source-Only"])):
         utils.fubar("No.")
     if Options["Do-Close"] and Options["Suite"] != 'unstable':
         utils.fubar("No.")
@@ -246,7 +249,7 @@ def main ():
     to_remove = []
     maintainers = {}
 
-    # We have 3 modes of package selection: binary, source-only,
+    # We have 3 modes of package selection: binary, source-only, binary-only
     # and source+binary.
 
     # XXX: TODO: This all needs converting to use placeholders or the object
@@ -258,8 +261,9 @@ def main ():
         to_remove.extend(q)
     else:
         # Source-only
-        q = session.execute("SELECT s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE sa.source = s.id AND sa.suite = su.id AND archive.id = su.archive_id AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
-        to_remove.extend(q)
+        if not Options["Binary-Only"]:
+            q = session.execute("SELECT s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE sa.source = s.id AND sa.suite = su.id AND archive.id = su.archive_id AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
+            to_remove.extend(q)
         if not Options["Source-Only"]:
             # Source + Binary
             q = session.execute("""
