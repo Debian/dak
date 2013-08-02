@@ -117,7 +117,7 @@ def main ():
 
     Arguments = [('h',"help","Rm::Options::Help"),
                  ('a',"architecture","Rm::Options::Architecture", "HasArg"),
-                 ('b',"binary", "Rm::Options::Binary-Only"),
+                 ('b',"binary", "Rm::Options::Binary"),
                  ('c',"component", "Rm::Options::Component", "HasArg"),
                  ('C',"carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d',"done","Rm::Options::Done", "HasArg"), # Bugs fixed
@@ -130,7 +130,7 @@ def main ():
                  ('S',"source-only", "Rm::Options::Source-Only"),
                  ]
 
-    for i in [ "architecture", "binary-only", "carbon-copy", "component",
+    for i in [ "architecture", "binary", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
                "source-only", "Do-Close" ]:
         if not cnf.has_key("Rm::Options::%s" % (i)):
@@ -151,8 +151,8 @@ def main ():
         utils.fubar("need at least one package name as an argument.")
     if Options["Architecture"] and Options["Source-Only"]:
         utils.fubar("can't use -a/--architecture and -S/--source-only options simultaneously.")
-    if Options["Binary-Only"] and Options["Source-Only"]:
-        utils.fubar("can't use -b/--binary-only and -S/--source-only options simultaneously.")
+    if Options["Binary"] and Options["Source-Only"]:
+        utils.fubar("can't use -b/--binary and -S/--source-only options simultaneously.")
     if Options.has_key("Carbon-Copy") and not Options.has_key("Done"):
         utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
     if Options["Architecture"] and not Options["Partial"]:
@@ -160,7 +160,7 @@ def main ():
         Options["Partial"] = "true"
     if Options["Do-Close"] and not Options["Done"]:
         utils.fubar("No.")
-    if Options["Do-Close"] and Options["Binary-Only"]:
+    if Options["Do-Close"] and Options["Binary"]:
         utils.fubar("No.")
     if Options["Do-Close"] and Options["Source-Only"]:
         utils.fubar("No.")
@@ -199,7 +199,7 @@ def main ():
         else:
             utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to))
 
-    if Options["Binary-Only"]:
+    if Options["Binary"]:
         field = "b.package"
     else:
         field = "s.source"
@@ -246,16 +246,14 @@ def main ():
     to_remove = []
     maintainers = {}
 
-    # We have 3 modes of package selection: binary-only, source-only
-    # and source+binary.  The first two are trivial and obvious; the
-    # latter is a nasty mess, but very nice from a UI perspective so
-    # we try to support it.
+    # We have 3 modes of package selection: binary, source-only,
+    # and source+binary.
 
     # XXX: TODO: This all needs converting to use placeholders or the object
     #            API. It's an SQL injection dream at the moment
 
-    if Options["Binary-Only"]:
-        # Binary-only
+    if Options["Binary"]:
+        # Removal by binary package name
         q = session.execute("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, files_archive_map af, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
         to_remove.extend(q)
     else:
