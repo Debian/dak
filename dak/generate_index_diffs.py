@@ -39,7 +39,7 @@ import apt_pkg
 import glob
 
 from daklib import utils
-from daklib.dbconn import get_suite, get_suite_architectures
+from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
 #from daklib.regexes import re_includeinpdiff
 import re
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
@@ -57,9 +57,9 @@ def usage (exit_code=0):
 Write out ed-style diffs to Packages/Source lists
 
   -h, --help            show this help and exit
+  -a <archive>          generate diffs for suites in <archive>
   -c                    give the canonical path of the file
   -p                    name for the patch (defaults to current time)
-  -r                    use a different archive root
   -d                    name for the hardlink farm for status
   -m                    how many diffs to generate
   -n                    take no action
@@ -291,9 +291,9 @@ def main():
 
     Cnf = utils.get_conf()
     Arguments = [ ('h', "help", "Generate-Index-Diffs::Options::Help"),
+                  ('a', 'archive', 'Generate-Index-Diffs::Options::Archive', 'hasArg'),
                   ('c', None, "Generate-Index-Diffs::Options::CanonicalPath", "hasArg"),
                   ('p', "patchname", "Generate-Index-Diffs::Options::PatchName", "hasArg"),
-                  ('r', "rootdir", "Generate-Index-Diffs::Options::RootDir", "hasArg"),
                   ('d', "tmpdir", "Generate-Index-Diffs::Options::TempDir", "hasArg"),
                   ('m', "maxdiffs", "Generate-Index-Diffs::Options::MaxDiffs", "hasArg"),
                   ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
@@ -311,17 +311,18 @@ def main():
         format = "%Y-%m-%d-%H%M.%S"
         Options["PatchName"] = time.strftime( format )
 
-    if Options.has_key("RootDir"):
-        Cnf["Dir::Root"] = Options["RootDir"]
+    session = DBConn().session()
 
     if not suites:
-        suites = Cnf.subtree("Suite").list()
+        query = session.query(Suite.suite_name)
+        if Options.get('Archive'):
+            query = query.join(Suite.archive).filter(Archive.archive_name == Options['Archive'])
+        suites = [ s.suite_name for s in query ]
 
     for suitename in suites:
         print "Processing: " + suitename
-        SuiteBlock = Cnf.subtree("Suite::" + suitename)
 
-        suiteobj = get_suite(suitename.lower())
+        suiteobj = get_suite(suitename.lower(), session=session)
 
         # Use the canonical version of the suite name
         suite = suiteobj.suite_name
@@ -330,13 +331,8 @@ def main():
             print "Skipping: " + suite + " (untouchable)"
             continue
 
-        architectures = get_suite_architectures(suite, skipall=True)
-
-        if SuiteBlock.has_key("Components"):
-            components = SuiteBlock.value_list("Components")
-        else:
-            print "ALERT: suite %s does not have components set in dak.conf" % (suite)
-            continue
+        architectures = get_suite_architectures(suite, skipall=True, session=session)
+        components = [ c.component_name for c in session.query(Component.component_name) ]
 
         suite_suffix = Cnf.find("Dinstall::SuiteSuffix")
         if components and suite_suffix:
@@ -344,13 +340,13 @@ def main():
         else:
             longsuite = suite
 
-        tree = SuiteBlock.get("Tree", "dists/%s" % (longsuite))
+        tree = os.path.join(suiteobj.archive.path, 'dists', longsuite)
 
         # See if there are Translations which might need a new pdiff
         cwd = os.getcwd()
         for component in components:
             #print "DEBUG: Working on %s" % (component)
-            workpath=os.path.join(Cnf["Dir::Root"], tree, component, "i18n")
+            workpath=os.path.join(tree, component, "i18n")
             if os.path.isdir(workpath):
                 os.chdir(workpath)
                 for dirpath, dirnames, filenames in os.walk(".", followlinks=True, topdown=True):
@@ -379,17 +375,13 @@ def main():
                     packages = "Packages"
                     maxsuite = maxpackages
                     # Process Contents
-                    file = "%s/%s/Contents-%s" % (Cnf["Dir::Root"] + tree, component,
-                            architecture)
+                    file = "%s/%s/Contents-%s" % (tree, component, architecture)
                     storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
-                    genchanges(Options, file + ".diff", storename, file, \
-                      Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::Contents" % (suite), maxcontents))
+                    genchanges(Options, file + ".diff", storename, file, maxcontents)
 
-                file = "%s/%s/%s/%s" % (Cnf["Dir::Root"] + tree,
-                           component, longarch, packages)
+                file = "%s/%s/%s/%s" % (tree, component, longarch, packages)
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
-                genchanges(Options, file + ".diff", storename, file, \
-                  Cnf.get("Suite::%s::Generate-Index-Diffs::MaxDiffs::%s" % (suite, packages), maxsuite))
+                genchanges(Options, file + ".diff", storename, file, maxsuite)
 
 ################################################################################
 
