@@ -43,6 +43,15 @@ import yaml
 # TODO: replace by subprocess
 import commands
 
+def check_fields_for_valid_utf8(filename, control):
+    """Check all fields of a control file for valid UTF-8"""
+    for field in control.keys():
+        try:
+            field.decode('utf-8')
+            control[field].decode('utf-8')
+        except UnicodeDecodeError:
+            raise Reject('{0}: The {1} field is not valid UTF-8'.format(filename, field))
+
 class Reject(Exception):
     """exception raised by failing checks"""
     pass
@@ -160,6 +169,8 @@ class ChangesCheck(Check):
             if field not in control:
                 raise Reject('{0}: misses mandatory field {1}'.format(fn, field))
 
+        check_fields_for_valid_utf8(fn, control)
+
         source_match = re_field_source.match(control['Source'])
         if not source_match:
             raise Reject('{0}: Invalid Source field'.format(fn))
@@ -263,6 +274,8 @@ class BinaryCheck(Check):
         for field in ('Package', 'Architecture', 'Version', 'Description'):
             if field not in control:
                 raise Reject('{0}: Missing mandatory field {0}.'.format(fn, field))
+
+        check_fields_for_valid_utf8(fn, control)
 
         # check fields
 
@@ -392,6 +405,8 @@ class SourceCheck(Check):
         source = upload.changes.source
         control = source.dsc
         dsc_fn = source._dsc_file.filename
+
+        check_fields_for_valid_utf8(dsc_fn, control)
 
         # check fields
         if not re_field_package.match(control['Source']):
