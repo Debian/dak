@@ -1424,6 +1424,30 @@ def get_logins_from_ldap(fingerprint='*'):
 
 ################################################################################
 
+def get_users_from_ldap():
+    """retrieve login and user names from LDAP"""
+
+    LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
+    LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
+    l = ldap.open(LDAPServer)
+    l.simple_bind_s('','')
+    Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
+                       '(uid=*)', ['uid', 'cn', 'mn', 'sn'])
+    users = {}
+    for elem in Attrs:
+        elem = elem[1]
+        name = []
+        for k in ('cn', 'mn', 'sn'):
+            try:
+                if elem[k][0] != '-':
+                    name.append(elem[k][0])
+            except KeyError:
+                pass
+        users[' '.join(name)] = elem['uid'][0]
+    return users
+
+################################################################################
+
 def clean_symlink (src, dest, root):
     """
     Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
