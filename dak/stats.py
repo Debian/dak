@@ -2,6 +2,7 @@
 
 """ Various statistical pr0nography fun and games """
 # Copyright (C) 2000, 2001, 2002, 2003, 2006  James Troup <james@nocrew.org>
+# Copyright (C) 2013  Luca Falavigna <dktrkranz@debian.org>
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,12 +34,34 @@
 import sys
 import apt_pkg
 
+from datetime import datetime
+from email.utils import mktime_tz, parsedate_tz
+from mailbox import mbox
+from os import listdir, system, unlink
+from os.path import isfile, join, splitext
+from re import findall, DOTALL, MULTILINE
+from sys import stderr
+from yaml import load, safe_dump
+
 from daklib import utils
 from daklib.dbconn import DBConn, get_suite_architectures, Suite, Architecture
 
 ################################################################################
 
 Cnf = None
+
+stats = {}
+users = {}
+buffer = 0
+FORMAT_SWITCH = '2009-08'
+blacklisted = ('dak', 'katie')
+
+NEW = ('^(\d{14})\|(?:jennifer|process-unchecked|.*?\|dak)'
+       '\|(Moving to new|ACCEPT-TO-NEW)')
+new_ACTIONS = '^(\d{14})\|[^\|]*\|(\S+)\|NEW (\S+)[:\|]'
+old_ACTIONS = ('(?:lisa|process-new)\|program start\|(.*?)\|'
+               '(?:lisa|process-new)\|program end')
+old_ACTION = '^(\d{14})\|(?:lisa|process-new)\|(Accepting changes|rejected)\|'
 
 ################################################################################
 
@@ -53,6 +76,7 @@ The following MODEs are available:
   arch-space    - displays space used by each architecture
   pkg-nums      - displays the number of packages by suite/architecture
   daily-install - displays daily install stats suitable for graphing
+  new           - stores stats about the NEW queue
 """
     sys.exit(exit_code)
 
@@ -189,8 +213,179 @@ def number_of_packages():
 
 ################################################################################
 
+def parse_new_uploads(data):
+    global stats
+    latest_timestamp = stats['timestamp']
+    for entry in findall(NEW, data, MULTILINE):
+        timestamp = entry[0]
+        if stats['timestamp'] >= timestamp:
+            continue
+        date = parse_timestamp(timestamp)
+        if date not in stats:
+            stats[date] = {'stats': {'NEW': 0, 'ACCEPT': 0,
+                           'REJECT': 0, 'PROD': 0}, 'members': {}}
+        stats[date]['stats']['NEW'] += 1
+        stats['history']['stats']['NEW'] += 1
+        latest_timestamp = timestamp
+    return latest_timestamp
+
+
+def parse_actions(data, logdate):
+    global stats
+    latest_timestamp = stats['timestamp']
+    if logdate <= FORMAT_SWITCH:
+        for batch in findall(old_ACTIONS, data, DOTALL):
+            who = batch.split()[0]
+            if who in blacklisted:
+                continue
+            for entry in findall(old_ACTION, batch, MULTILINE):
+                action = entry[1]
+                if action.startswith('Accepting'):
+                    action = 'ACCEPT'
+                elif action.startswith('rejected'):
+                    action = 'REJECT'
+                timestamp = entry[0]
+                if stats['timestamp'] >= timestamp:
+                    continue
+                date = parse_timestamp(entry[0])
+                if date not in stats:
+                    stats[date] = {'stats': {'NEW': 0, 'ACCEPT': 0,
+                                   'REJECT': 0, 'PROD': 0}, 'members': {}}
+                stats[date]['stats'][action] += 1
+                stats['history']['stats'][action] += 1
+                if who not in stats[date]['members']:
+                    stats[date]['members'][who] = {'ACCEPT': 0, 'REJECT': 0,
+                                                   'PROD': 0}
+                stats[date]['members'][who][action] += 1
+                if who not in stats['history']['members']:
+                    stats['history']['members'][who] = {'ACCEPT': 0, 'REJECT': 0,
+                                                    'PROD': 0}
+                stats['history']['members'][who][action] += 1
+                latest_timestamp = timestamp
+        parse_prod(logdate)
+    if logdate >= FORMAT_SWITCH:
+        for entry in findall(new_ACTIONS, data, MULTILINE):
+            action = entry[2]
+            timestamp = entry[0]
+            if stats['timestamp'] >= timestamp:
+                continue
+            date = parse_timestamp(timestamp)
+            if date not in stats:
+                stats[date] = {'stats': {'NEW': 0, 'ACCEPT': 0,
+                               'REJECT': 0, 'PROD': 0}, 'members': {}}
+            member = entry[1]
+            if member in blacklisted:
+                continue
+            if date not in stats:
+                stats[date] = {'stats': {'NEW': 0, 'ACCEPT': 0,
+                               'REJECT': 0, 'PROD': 0}, 'members': {}}
+            if member not in stats[date]['members']:
+                stats[date]['members'][member] = {'ACCEPT': 0, 'REJECT': 0,
+                                                  'PROD': 0}
+            if member not in stats['history']['members']:
+                stats['history']['members'][member] = {'ACCEPT': 0,
+                                                       'REJECT': 0, 'PROD': 0}
+            stats[date]['stats'][action] += 1
+            stats[date]['members'][member][action] += 1
+            stats['history']['stats'][action] += 1
+            stats['history']['members'][member][action] += 1
+            latest_timestamp = timestamp
+    return latest_timestamp
+
+
+def parse_prod(logdate):
+    global stats
+    global users
+    maildate = ''.join([x[-2:] for x in logdate.split('-')])
+    mailarchive = join(utils.get_conf()['Dir::Base'], 'mail/archive',
+                       'mail-%s.xz' % maildate)
+    if not isfile(mailarchive):
+        return
+    (fd, tmpfile) = utils.temp_filename(utils.get_conf()['Dir::TempPath'])
+    system('xzcat %s > %s' % (mailarchive, tmpfile))
+    for message in mbox(tmpfile):
+        if (message['subject'] and
+                message['subject'].startswith('Comments regarding')):
+            try:
+                member = users[' '.join(message['From'].split()[:-1])]
+            except KeyError:
+                continue
+            ts = mktime_tz(parsedate_tz(message['date']))
+            timestamp = datetime.fromtimestamp(ts).strftime("%Y%m%d%H%M%S")
+            date = parse_timestamp(timestamp)
+            if date not in stats:
+                stats[date] = {'stats': {'NEW': 0, 'ACCEPT': 0,
+                                 'REJECT': 0, 'PROD': 0}, 'members': {}}
+            if member not in stats[date]['members']:
+                stats[date]['members'][member] = {'ACCEPT': 0, 'REJECT': 0,
+                                                     'PROD': 0}
+            if member not in stats['history']['members']:
+                stats['history']['members'][member] = {'ACCEPT': 0,
+                                                       'REJECT': 0, 'PROD': 0}
+            stats[date]['stats']['PROD'] += 1
+            stats[date]['members'][member]['PROD'] += 1
+            stats['history']['stats']['PROD'] += 1
+            stats['history']['members'][member]['PROD'] += 1
+    unlink(tmpfile)
+
+
+def parse_timestamp(timestamp):
+    y = int(timestamp[:4])
+    m = int(timestamp[4:6])
+    return '%d-%02d' % (y, m)
+
+
+def new_stats(logdir, yaml):
+    global Cnf
+    global stats
+    try:
+        with open(yaml, 'r') as fd:
+            stats = load(fd)
+    except IOError:
+        pass
+    if not stats:
+        stats = {'history': {'stats': {'NEW': 0, 'ACCEPT': 0,
+                 'REJECT': 0, 'PROD': 0}, 'members': {}},
+                 'timestamp': '19700101000000'}
+    latest_timestamp = stats['timestamp']
+    for fn in sorted(listdir(logdir)):
+        if fn == 'current':
+            continue
+        log = splitext(fn)[0]
+        if log < parse_timestamp(stats['timestamp']):
+            continue
+        logfile = join(logdir, fn)
+        if isfile(logfile):
+            if fn.endswith('.bz2'):
+                # This hack is required becaue python2 does not support
+                # multi-stream files (http://bugs.python.org/issue1625)
+                (fd, tmpfile) = utils.temp_filename(Cnf['Dir::TempPath'])
+                system('bzcat %s > %s' % (logfile, tmpfile))
+                with open(tmpfile, 'r') as fd:
+                    data = fd.read()
+                unlink(tmpfile)
+            else:
+                with open(logfile, 'r') as fd:
+                    data = fd.read()
+            ts = parse_new_uploads(data)
+            if ts > latest_timestamp:
+                latest_timestamp = ts
+            ts = parse_actions(data, log)
+            if ts > latest_timestamp:
+                latest_timestamp = ts
+            stderr.write('.')
+            stderr.flush()
+    stderr.write('\n')
+    stderr.flush()
+    stats['timestamp'] = latest_timestamp
+    with open(yaml, 'w') as fd:
+        safe_dump(stats, fd)
+
+################################################################################
+
 def main ():
     global Cnf
+    global users
 
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Stats::Options::Help")]
@@ -208,8 +403,12 @@ def main ():
         utils.warn("dak stats requires a MODE argument")
         usage(1)
     elif len(args) > 1:
-        utils.warn("dak stats accepts only one MODE argument")
-        usage(1)
+        if args[0].lower() != "new":
+            utils.warn("dak stats accepts only one MODE argument")
+            usage(1)
+    elif args[0].lower() == "new":
+            utils.warn("new MODE requires an output file")
+            usage(1)
     mode = args[0].lower()
 
     if mode == "arch-space":
@@ -218,6 +417,9 @@ def main ():
         number_of_packages()
     elif mode == "daily-install":
         daily_install_stats()
+    elif mode == "new":
+        users = utils.get_users_from_ldap()
+        new_stats(Cnf["Dir::Log"], args[1])
     else:
         utils.warn("unknown mode '%s'" % (mode))
         usage(1)
