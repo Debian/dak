@@ -43,6 +43,9 @@ clean_debbugs
 # Generate list of override disparities
 dak override-disparity | gzip -9 > ${webdir}/override-disparity.gz
 
+# Generate stats about the new queue
+dak stats new ${webdir}/NEW-stats.yaml 2> /dev/null
+
 ${scriptsdir}/link_morgue.sh
 
 ################################################################################
