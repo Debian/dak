@@ -80,4 +80,7 @@ lintian:
     - dir-or-file-in-tmp
     - dir-or-file-in-mnt
     - dir-or-file-in-opt
+    - dir-or-file-in-run
     - dir-or-file-in-srv
+    - dir-or-file-in-var-lock
+    - dir-or-file-in-var-run
