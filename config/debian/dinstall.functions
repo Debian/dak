@@ -223,8 +223,8 @@ function mkmaintainers() {
         cd "${indices}"
 
         dak make-maintainers -a "${archive}" ${scriptdir}/masterfiles/pseudo-packages.maintainers
-        gzip -9v --rsyncable Maintainers
-        gzip -9v --rsyncable Uploaders
+        rm {Maintainers,Uploaders}.gz
+        gzip -9v --rsyncable Maintainers Uploaders
     done
 }
 
