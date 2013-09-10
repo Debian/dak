@@ -1220,7 +1220,7 @@ class Keyring(object):
 
         k = os.popen(self.gpg_invocation % keyring, "r")
         key = None
-        signingkey = False
+        need_fingerprint = False
 
         for line in k:
             field = line.split(":")
@@ -1231,18 +1231,16 @@ class Keyring(object):
                 if "@" in addr:
                     self.keys[key]["email"] = addr
                     self.keys[key]["name"] = name
-                self.keys[key]["fingerprints"] = []
-                signingkey = True
-            elif key and field[0] == "sub" and len(field) >= 12:
-                signingkey = ("s" in field[11])
+                need_fingerprint = True
             elif key and field[0] == "uid":
                 (name, addr) = self.parse_address(field[9])
                 if "email" not in self.keys[key] and "@" in addr:
                     self.keys[key]["email"] = addr
                     self.keys[key]["name"] = name
-            elif signingkey and field[0] == "fpr":
-                self.keys[key]["fingerprints"].append(field[9])
+            elif need_fingerprint and field[0] == "fpr":
+                self.keys[key]["fingerprints"] = [field[9]]
                 self.fpr_lookup[field[9]] = key
+                need_fingerprint = False
 
     def import_users_from_ldap(self, session):
         import ldap
