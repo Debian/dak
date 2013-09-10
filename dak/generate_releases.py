@@ -170,7 +170,7 @@ class ReleaseWriter(object):
 
         out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
 
-        components = [ c.component_name for c in session.query(Component) ]
+        components = [ c.component_name for c in suite.components ]
 
         out.write("Components: %s\n" % (" ".join(components)))
 

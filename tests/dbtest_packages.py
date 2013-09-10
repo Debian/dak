@@ -60,13 +60,6 @@ class PackageTestCase(DBDakTestCase):
         architectures = get_suite_architectures('lenny', skipall = True, session = self.session)
         self.assertEqual(3, len(architectures))
         self.assertTrue(self.arch['all'] not in architectures)
-        # check the function get_architecture_suites()
-        suites = get_architecture_suites('i386', self.session)
-        self.assertEqual(3, len(suites))
-        self.assertTrue(self.suite['lenny'] in suites)
-        suites = get_architecture_suites('kfreebsd-i386', self.session)
-        self.assertEqual(2, len(suites))
-        self.assertTrue(self.suite['lenny'] not in suites)
         # check overrides
         self.assertEqual(0, self.suite['lenny'].overrides.count())
 

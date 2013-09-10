@@ -279,13 +279,18 @@ class PolicyQueueUploadHandler(object):
                             ))
             components.add(component)
 
+        source = self.upload.source
         source_component = '(unknown)'
-        for component in ('main', 'contrib', 'non-free'):
+        for component, in self.session.query(Component.component_name).order_by(Component.ordering):
             if component in components:
                 source_component = component
                 break
+            else:
+                if source is not None:
+                    if self._source_override(component) is not None:
+                        source_component = component
+                        break
 
-        source = self.upload.source
         if source is not None:
             override = self._source_override(source_component)
             if override is None:
