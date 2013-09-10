@@ -107,6 +107,17 @@ Perform administrative work on the dak database.
      s-a rm SUITE ARCH      remove ARCH from suite (will only work if
                             no packages remain for the arch in the suite)
 
+  suite-component / s-c:
+     s-c list               show the architectures for all suites
+     s-c list-suite COMPONENT
+                            show the suites a COMPONENT is in
+     s-c list-component SUITE
+                            show the components in a SUITE
+     s-c add SUITE COMPONENT
+                            add COMPONENT to suite
+     s-c rm SUITE COMPONENT remove component from suite (will only work if
+                            no packages remain for the component in the suite)
+
   archive:
      archive list           list all archives
      archive add NAME ROOT DESCRIPTION [primary-mirror=MIRROR] [tainted=1]
@@ -488,6 +499,108 @@ def suite_architecture(command):
 
 dispatch['suite-architecture'] = suite_architecture
 dispatch['s-a'] = suite_architecture
+
+################################################################################
+
+def __suite_component_list(d, args):
+    s = d.session()
+    for j in s.query(Suite).order_by(Suite.suite_name):
+        components = j.components
+        print j.suite_name + ': ' + \
+              ', '.join([c.component_name for c in components])
+
+
+def __suite_component_listcomponent(d, args):
+     die_arglen(args, 3, "E: suite-component list-component requires a suite")
+     suite = get_suite(args[2].lower(), d.session())
+     if suite is None:
+         die('E: suite %s is invalid' % args[2].lower())
+     for c in suite.components:
+         print c.component_name
+
+
+def __suite_component_listsuite(d, args):
+     die_arglen(args, 3, "E: suite-component list-suite requires an component")
+     component = get_component(args[2].lower(), d.session())
+     if component is None:
+         die("E: component %s is invalid" % args[2].lower())
+     for s in component.suites:
+         print s.suite_name
+
+
+def __suite_component_add(d, args):
+     if len(args) < 3:
+         die("E: adding a suite-component entry requires a suite and component")
+
+     s = d.session()
+
+     suite = get_suite(args[2].lower(), s)
+     if suite is None: die("E: Can't find suite %s" % args[2].lower())
+
+     component = get_component(args[3].lower(), s)
+     if component is None: die("E: Can't find component %s" % args[3].lower())
+
+     if not dryrun:
+         try:
+             suite.components.append(component)
+             s.commit()
+         except IntegrityError as e:
+             die("E: Can't add suite-component entry (%s, %s) - probably already exists" % (args[2].lower(), args[3].lower()))
+         except SQLAlchemyError as e:
+             die("E: Can't add suite-component entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
+
+     print "Added suite-component entry for %s, %s" % (args[2].lower(), args[3].lower())
+
+
+def __suite_component_rm(d, args):
+     if len(args) < 3:
+         die("E: removing an suite-component entry requires a suite and component")
+
+     s = d.session()
+     if not dryrun:
+         try:
+             suite_name = args[2].lower()
+             suite = get_suite(suite_name, s)
+             if suite is None:
+                 die('E: no such suite %s' % suite_name)
+             component_string = args[3].lower()
+             component = get_component(arch_string, s)
+             if component not in suite.components:
+                 die("E: component %s not found in suite %s" % (component_string, suite_name))
+             suite.components.remove(component)
+             s.commit()
+         except IntegrityError as e:
+             die("E: Can't remove suite-component entry (%s, %s) - it's probably referenced" % (args[2].lower(), args[3].lower()))
+         except SQLAlchemyError as e:
+             die("E: Can't remove suite-component entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
+
+     print "Removed suite-component entry for %s, %s" % (args[2].lower(), args[3].lower())
+
+
+def suite_component(command):
+    args = [str(x) for x in command]
+    Cnf = utils.get_conf()
+    d = DBConn()
+
+    die_arglen(args, 2, "E: suite-component needs at least a command")
+
+    mode = args[1].lower()
+
+    if mode == 'list':
+        __suite_component_list(d, args)
+    elif mode == 'list-component':
+        __suite_component_listcomponent(d, args)
+    elif mode == 'list-suite':
+        __suite_component_listsuite(d, args)
+    elif mode == 'add':
+        __suite_component_add(d, args)
+    # elif mode == 'rm':
+    #     __suite_architecture_rm(d, args)
+    else:
+        die("E: suite-component command unknown")
+
+dispatch['suite-component'] = suite_component
+dispatch['s-c'] = suite_component
 
 ################################################################################
 
