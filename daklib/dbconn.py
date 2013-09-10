@@ -2667,8 +2667,7 @@ class DBConn(object):
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
-                                 component_name = self.tbl_component.c.name,
-                                 suites = relation(Suite, secondary=self.tbl_component_suite)),
+                                 component_name = self.tbl_component.c.name),
                extension = validator)
 
         mapper(DBConfig, self.tbl_config,
@@ -2817,7 +2816,7 @@ class DBConn(object):
                                  acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
                                  components = relation(Component, secondary=self.tbl_component_suite,
                                                    order_by=self.tbl_component.c.ordering,
-                                                   backref=backref('suite'))),
+                                                   backref=backref('suites'))),
                 extension = validator)
 
         mapper(Uid, self.tbl_uid,
