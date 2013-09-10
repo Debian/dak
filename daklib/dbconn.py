@@ -2669,7 +2669,8 @@ class DBConn(object):
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
-                                 component_name = self.tbl_component.c.name),
+                                 component_name = self.tbl_component.c.name,
+                                 suites = relation(Suite, secondary=self.tbl_component_suite)),
                extension = validator)
 
         mapper(DBConfig, self.tbl_config,
