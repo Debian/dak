@@ -364,7 +364,6 @@ def main():
 
     force = Options.has_key("Force") and Options["Force"]
 
-    component_ids = [ c.component_id for c in session.query(Component).all() ]
 
     def parse_results(message):
         # Split out into (code, msg)
@@ -377,6 +376,7 @@ def main():
             logger.log(['E: ', msg])
 
     for s in suites:
+        component_ids = [ c.component_id for c in s.components ]
         if s.untouchable and not force:
             import utils
             utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)

@@ -311,7 +311,7 @@ class ORMObject(object):
         return object_session(self)
 
     def clone(self, session = None):
-        '''
+        """
         Clones the current object in a new session and returns the new clone. A
         fresh session is created if the optional session parameter is not
         provided. The function will fail if a session is provided and has
@@ -324,8 +324,8 @@ class ORMObject(object):
         WARNING: Only persistent (committed) objects can be cloned. Changes
         made to the original object that are not committed yet will get lost.
         The session of the new object will always be rolled back to avoid
-        ressource leaks.
-        '''
+        resource leaks.
+        """
 
         if self.session() is None:
             raise RuntimeError( \
@@ -432,27 +432,6 @@ def get_architecture(architecture, session=None):
         return None
 
 __all__.append('get_architecture')
-
-# TODO: should be removed because the implementation is too trivial
-@session_wrapper
-def get_architecture_suites(architecture, session=None):
-    """
-    Returns list of Suite objects for given C{architecture} name
-
-    @type architecture: str
-    @param architecture: Architecture name to search for
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: list of Suite objects for the given name (may be empty)
-    """
-
-    return get_architecture(architecture, session).suites
-
-__all__.append('get_architecture_suites')
 
 ################################################################################
 
@@ -2560,6 +2539,7 @@ class DBConn(object):
             'changelogs_text',
             'changes',
             'component',
+            'component_suite',
             'config',
             'dsc_files',
             'external_overrides',
@@ -2689,7 +2669,8 @@ class DBConn(object):
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
-                                 component_name = self.tbl_component.c.name),
+                                 component_name = self.tbl_component.c.name,
+                                 suites = relation(Suite, secondary=self.tbl_component_suite)),
                extension = validator)
 
         mapper(DBConfig, self.tbl_config,
@@ -2835,7 +2816,10 @@ class DBConn(object):
                                  srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
                                      backref=backref('suites', lazy='dynamic')),
                                  archive = relation(Archive, backref='suites'),
-                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set)),
+                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
+                                 components = relation(Component, secondary=self.tbl_component_suite,
+                                                   order_by=self.tbl_component.c.ordering,
+                                                   backref=backref('suite'))),
                 extension = validator)
 
         mapper(Uid, self.tbl_uid,
