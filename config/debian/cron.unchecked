@@ -104,6 +104,7 @@ pg_timestamp preunchecked >/dev/null
 punew stable-new
 opunew oldstable-new
 backports_policy
+dak clean-suites -a backports-policy,policy
 
 # Finally deal with unchecked
 do_unchecked
