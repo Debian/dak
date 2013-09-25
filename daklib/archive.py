@@ -388,14 +388,14 @@ class ArchiveTransaction(object):
         """
         session = self.session
 
-        if session.query(ArchiveFile).filter_by(archive=archive, component=component, file=db_file).first() is None:
-            query = session.query(ArchiveFile).filter_by(file=db_file, component=component)
+        if session.query(ArchiveFile).filter_by(archive=archive, file=db_file).first() is None:
+            query = session.query(ArchiveFile).filter_by(file=db_file)
             if not allow_tainted:
                 query = query.join(Archive).filter(Archive.tainted == False)
 
             source_af = query.first()
             if source_af is None:
-                raise ArchiveException('cp: Could not find {0} in component {1} in any archive.'.format(db_file.filename, component.component_name))
+                raise ArchiveException('cp: Could not find {0} in any archive.'.format(db_file.filename))
             target_af = ArchiveFile(archive, component, db_file)
             session.add(target_af)
             session.flush()
