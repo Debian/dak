@@ -388,7 +388,7 @@ class ArchiveTransaction(object):
         """
         session = self.session
 
-        if session.query(ArchiveFile).filter_by(archive=archive, file=db_file).first() is None:
+        if session.query(ArchiveFile).filter_by(archive=archive, component=component, file=db_file).first() is None:
             query = session.query(ArchiveFile).filter_by(file=db_file)
             if not allow_tainted:
                 query = query.join(Archive).filter(Archive.tainted == False)
