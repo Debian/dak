@@ -41,7 +41,7 @@ from os import listdir, system, unlink
 from os.path import isfile, join, splitext
 from re import findall, DOTALL, MULTILINE
 from sys import stderr
-from yaml import load, safe_dump
+from yaml import safe_load, safe_dump
 
 from daklib import utils
 from daklib.dbconn import DBConn, get_suite_architectures, Suite, Architecture
@@ -340,7 +340,7 @@ def new_stats(logdir, yaml):
     global stats
     try:
         with open(yaml, 'r') as fd:
-            stats = load(fd)
+            stats = safe_load(fd)
     except IOError:
         pass
     if not stats:

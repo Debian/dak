@@ -602,7 +602,7 @@ transition is done.""".format(source, currentlymsg, expected,t["rm"])))
 
         contents = file(path, 'r').read()
         try:
-            transitions = yaml.load(contents)
+            transitions = yaml.safe_load(contents)
             return transitions
         except yaml.YAMLError as msg:
             utils.warn('Not checking transitions, the transitions file is broken: {0}'.format(msg))
@@ -643,7 +643,7 @@ class LintianCheck(Check):
         with open(tagfile, 'r') as sourcefile:
             sourcecontent = sourcefile.read()
         try:
-            lintiantags = yaml.load(sourcecontent)['lintian']
+            lintiantags = yaml.safe_load(sourcecontent)['lintian']
         except yaml.YAMLError as msg:
             raise Exception('Could not read lintian tags file {0}, YAML error: {1}'.format(tagfile, msg))
 

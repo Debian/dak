@@ -134,7 +134,7 @@ def load_transitions(trans_file):
     sourcecontent = sourcefile.read()
     failure = False
     try:
-        trans = yaml.load(sourcecontent)
+        trans = yaml.safe_load(sourcecontent)
     except yaml.YAMLError as exc:
         # Someone fucked it up
         print "ERROR: %s" % (exc)
@@ -262,7 +262,7 @@ def write_transitions(from_trans):
     temp_lock  = lock_file(trans_temp)
 
     destfile = file(trans_temp, 'w')
-    yaml.dump(from_trans, destfile, default_flow_style=False)
+    yaml.safe_dump(from_trans, destfile, default_flow_style=False)
     destfile.close()
 
     os.rename(trans_temp, trans_file)
@@ -321,7 +321,7 @@ def temp_transitions_file(transitions):
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Dir::TempPath"])
     os.chmod(path, 0o644)
     f = open(path, "w")
-    yaml.dump(transitions, f, default_flow_style=False)
+    yaml.safe_dump(transitions, f, default_flow_style=False)
     return path
 
 ################################################################################

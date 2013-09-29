@@ -41,8 +41,6 @@ from types import *
 from sqlalchemy.sql.expression import desc
 from sqlalchemy.orm.exc import NoResultFound
 
-import yaml
-
 from dak_exceptions import *
 from changes import *
 from regexes import *
