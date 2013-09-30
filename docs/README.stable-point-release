@@ -103,6 +103,9 @@ done
 rm {main,contrib,non-free}/Contents-*
 
 - For wheezy: update main/i18n/Index
+if [ "${suitename}" = "wheezy" ]; then
+  ${scriptsdir}/generate-i18n-Index "${ftpdir}/dists/${suite}"
+fi
 
 - Generate Releases:
 dak generate-releases -f -s ${suite}
