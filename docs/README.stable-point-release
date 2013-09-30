@@ -92,15 +92,17 @@ dak generate-filelist -s ${suite}
 dak generate-packages-sources -s ${suite} ; dak contents generate -f -s ${suite} -a ftp-master
 
 - For squeeze: merge Contents
-cd $ftpdir/dists/${suite}
-for carch in $(dak admin s-a list-arch ${suite}); do
-  echo doing ${carch}
-  cp $base/dak/templates/contents Contents-${carch}.new;
-  zcat {main,contrib,non-free}/Contents-${carch}.gz | ~joerg/mergecontents.pl | sort >> Contents-${carch}.new;
-  gzip -9v Contents-${carch}.new;
-  mv Contents-${carch}.new.gz Contents-${carch}.gz;
-done
-rm {main,contrib,non-free}/Contents-*
+if [ "${suitename}" = "squeeze" ]; then
+  cd $ftpdir/dists/${suite}
+  for carch in $(dak admin s-a list-arch ${suite}); do
+    echo doing ${carch}
+    cp $base/dak/templates/contents Contents-${carch}.new;
+    zcat {main,contrib,non-free}/Contents-${carch}.gz | ~joerg/mergecontents.pl | sort >> Contents-${carch}.new;
+    gzip -9v Contents-${carch}.new;
+    mv Contents-${carch}.new.gz Contents-${carch}.gz;
+  done
+  rm {main,contrib,non-free}/Contents-*
+fi
 
 - For wheezy: update main/i18n/Index
 if [ "${suitename}" = "wheezy" ]; then
