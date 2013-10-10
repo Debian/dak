@@ -20,8 +20,9 @@ error() {
 }
 
 # Check validity of version number
-# Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x, YYYYMMDD+<suite>x and the +b[0-9] on the end
-if ! echo "$VERSION" | grep -Eq "^[0-9]{8}(|(\.|\+?[a-z]+)[0-9]+)(\+b[0-9])?$"; then
+# Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x, YYYYMMDD+<suite>x,
+# YYYYMMDD+debXuZ and the +b[0-9] on the end
+if ! echo "$VERSION" | grep -Eq "^[0-9]{8}(|(\.|\+?[a-z]+|\+deb[0-9]+u))[0-9]+(\+b[0-9])?$"; then
 	error "Invalid version: '$VERSION'"
 fi
 
@@ -55,7 +56,7 @@ if [ -d "$TARGET/$VERSION" ]; then
 fi
 
 # We know the VERSION is sane by here, we just need to make sure we escape the + in +b1 (if any)
-# It needs 'g' as well as we may have +$DIST+b[0-9]
+# It needs 'g' as well as we may have +$DIST+b[0-9] or +debXuZ+bY
 VERSIONREGEXP="$(echo $VERSION | sed 's@+@\\\+@g')"
 
 # We know all data to be in ./installer-<arch>/<version>; see if there's
