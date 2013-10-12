@@ -83,7 +83,7 @@ def sign_release_dir(suite, dirname):
         if cnf.has_key("Dinstall::SigningPubKeyring"):
             keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]
 
-        arguments = "--no-options --batch --no-tty --armour"
+        arguments = "--no-options --batch --no-tty --armour --personal-digest-preferences=SHA256"
 
         relname = os.path.join(dirname, 'Release')
 
