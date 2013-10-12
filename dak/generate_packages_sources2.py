@@ -378,8 +378,8 @@ def main():
     for s in suites:
         component_ids = [ c.component_id for c in s.components ]
         if s.untouchable and not force:
-            import utils
-            utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
+            import daklib.utils
+            daklib.utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)
         for c in component_ids:
             pool.apply_async(generate_sources, [s.suite_id, c], callback=parse_results)
             if not s.include_long_description:
