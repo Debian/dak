@@ -4,10 +4,10 @@ Rough Guide to doing Stable Point Releases in Debian
 - sudo to dak
 - bash:
 suite=stable
-suitename=squeeze
+suitename=wheezy
 pusuite=proposed-updates
-oldrev=6.0.5
-newrev=6.0.6
+oldrev=7.1
+newrev=7.2
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -26,8 +26,15 @@ dak control-suite -l ${suite} > ${suite}.list
   edit ${pusuite}.list (and later the Changelog too)
 - bash:
 dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/ChangeLog | sponge ${ftpdir}/dists/${suite}/ChangeLog
-cat ${pusuite}.list | dak control-suite --add ${suite}
+dak control-suite --add ${suite} < ${pusuite}.list
 dak control-suite --remove ${pusuite} < ${pusuite}.list
+
+- clean up *.changes from proposed-updates:
+# Be careful if uploads were not included in the point release.
+pumorguedir="${base}/morgue/queues/$(date +%Y/%m)"
+mkdir -p "${pumorguedir}"
+cd ${ftpdir}/dists/${pusuite}
+mv -t "${pumorguedir}" -n -- *.changes
 
 - -r0 additions?
   For example new d-i.
@@ -36,11 +43,13 @@ dak control-suite --remove ${pusuite} < ${pusuite}.list
 like, cat /srv/release.debian.org/www/squeeze/6.0/6.0.4/propup.unstable | dak control-suite --add unstable
 Note: unstable first, then testing
 - ask rms if they have RMs to do.
+- check output from cruft report:
+dak cruft-report -s ${suite}
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
-diver=20110106+squeeze4+b2
+diver=20130613+deb7u1
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
-dioldver=20110106+squeeze4
+dioldver=20130613
 cd $ftpdir/dists/${suite}/main
 if [ "${dioldver}" != "empty" ]; then
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -89,7 +98,11 @@ dak generate-filelist -s ${suite}
 - Let SRM see if all is ok
 
 - then:
-dak generate-packages-sources -s ${suite} ; dak contents generate -f -s ${suite} -a ftp-master
+if [ "${suitename}" = "squeeze" ]; then
+  dak generate-packages-sources -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
+else
+  dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
+fi
 
 - For squeeze: merge Contents
 if [ "${suitename}" = "squeeze" ]; then
