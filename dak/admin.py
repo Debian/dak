@@ -435,20 +435,24 @@ def __suite_architecture_add(d, args):
     suite = get_suite(args[2].lower(), s)
     if suite is None: die("E: Can't find suite %s" % args[2].lower())
 
-    arch = get_architecture(args[3].lower(), s)
-    if arch is None: die("E: Can't find architecture %s" % args[3].lower())
+    for arch_name in args[3:]:
+        arch = get_architecture(arch_name.lower(), s)
+        if arch is None: die("E: Can't find architecture %s" % args[3].lower())
 
-    if not dryrun:
         try:
             suite.architectures.append(arch)
-            s.commit()
+            s.flush()
         except IntegrityError as e:
-            die("E: Can't add suite-architecture entry (%s, %s) - probably already exists" % (args[2].lower(), args[3].lower()))
+            die("E: Can't add suite-architecture entry (%s, %s) - probably already exists" % (args[2].lower(), arch_name))
         except SQLAlchemyError as e:
-            die("E: Can't add suite-architecture entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
+            die("E: Can't add suite-architecture entry (%s, %s) - %s" % (args[2].lower(), arch_name, e))
 
-    print "Added suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower())
+        print "Added suite-architecture entry for %s, %s" % (args[2].lower(), arch_name)
 
+    if not dryrun:
+        s.commit()
+
+    s.close()
 
 def __suite_architecture_rm(d, args):
     if len(args) < 3:
@@ -537,20 +541,23 @@ def __suite_component_add(d, args):
      suite = get_suite(args[2].lower(), s)
      if suite is None: die("E: Can't find suite %s" % args[2].lower())
 
-     component = get_component(args[3].lower(), s)
-     if component is None: die("E: Can't find component %s" % args[3].lower())
+     for component_name in args[3:]:
+         component = get_component(component_name.lower(), s)
+         if component is None: die("E: Can't find component %s" % args[3].lower())
 
-     if not dryrun:
          try:
              suite.components.append(component)
-             s.commit()
+             s.flush()
          except IntegrityError as e:
-             die("E: Can't add suite-component entry (%s, %s) - probably already exists" % (args[2].lower(), args[3].lower()))
+             die("E: Can't add suite-component entry (%s, %s) - probably already exists" % (args[2].lower(), component_name))
          except SQLAlchemyError as e:
-             die("E: Can't add suite-component entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
+             die("E: Can't add suite-component entry (%s, %s) - %s" % (args[2].lower(), component_name, e))
 
-     print "Added suite-component entry for %s, %s" % (args[2].lower(), args[3].lower())
+         print "Added suite-component entry for %s, %s" % (args[2].lower(), component_name)
 
+     if not dryrun:
+         s.commit()
+     s.close()
 
 def __suite_component_rm(d, args):
      if len(args) < 3:
