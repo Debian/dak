@@ -56,6 +56,7 @@ Logger = None
 
 def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
     session = transaction.session
+    actions = []
     for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
         lines = open(os.path.join(dir, comm)).readlines()
         if len(lines) == 0 or lines[0] != line + "\n": continue
@@ -75,14 +76,19 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
         uploads = session.query(PolicyQueueUpload).filter_by(policy_queue=srcqueue) \
             .join(PolicyQueueUpload.changes).filter(DBChange.changesname.startswith(changes_prefix)) \
             .order_by(PolicyQueueUpload.source_id)
-        for u in uploads:
-            print "Processing changes file: %s" % u.changes.changesname
-            fn(u, srcqueue, "".join(lines[1:]), transaction)
+        reason = "".join(lines[1:])
+        actions.extend((u, reason) for u in uploads)
 
         if opref != npref:
             newcomm = npref + comm[len(opref):]
             newcomm = utils.find_next_free(os.path.join(dir, newcomm))
             transaction.fs.move(os.path.join(dir, comm), newcomm)
+
+    actions.sort()
+
+    for u, reason in actions:
+        print("Processing changes file: {0}".format(u.changes.changesname))
+        fn(u, srcqueue, reason, transaction)
 
 ################################################################################
 
