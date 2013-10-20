@@ -662,7 +662,7 @@ class LintianCheck(Check):
             if user is not None:
                 cmd.extend(['sudo', '-H', '-u', user])
 
-            cmd.extend(['LINTIAN_COLL_UNPACKED_SKIP_SIG=1', '/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
+            cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
             output = daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             result = e.returncode
