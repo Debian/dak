@@ -31,11 +31,10 @@ from daklib.filewriter import BinaryContentsFileWriter, SourceContentsFileWriter
 
 from multiprocessing import Pool
 from shutil import rmtree
-from subprocess import Popen, PIPE, check_call
 from tempfile import mkdtemp
 
+import daklib.daksubprocess
 import os.path
-import signal
 
 class BinaryContentsWriter(object):
     '''
@@ -383,12 +382,6 @@ def binary_scan_helper(binary_id):
     scanner = BinaryContentsScanner(binary_id)
     scanner.scan()
 
-
-def subprocess_setup():
-    # Python installs a SIGPIPE handler by default. This is usually not what
-    # non-Python subprocesses expect.
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
 class UnpackedSource(object):
     '''
     UnpackedSource extracts a source package into a temporary location and
@@ -403,7 +396,7 @@ class UnpackedSource(object):
         self.root_directory = os.path.join(temp_directory, 'root')
         command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
             dscfilename, self.root_directory)
-        check_call(command, preexec_fn = subprocess_setup)
+        daklib.daksubprocess.check_call(command)
 
     def get_root_directory(self):
         '''
@@ -506,4 +499,3 @@ def source_scan_helper(source_id):
         scanner.scan()
     except Exception as e:
         print e
-

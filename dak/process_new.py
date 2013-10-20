@@ -53,7 +53,7 @@ import contextlib
 import pwd
 import apt_pkg, apt_inst
 import examine_package
-import subprocess
+import daklib.daksubprocess
 from sqlalchemy import or_
 
 from daklib.dbconn import *
@@ -449,7 +449,7 @@ def run_user_inspect_command(upload, upload_copy):
             changes=changes,
             )
 
-    subprocess.check_call(shell_command, shell=True)
+    daklib.daksubprocess.check_call(shell_command, shell=True)
 
 ################################################################################
 

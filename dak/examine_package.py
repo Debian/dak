@@ -56,7 +56,7 @@ import md5
 import apt_pkg
 import apt_inst
 import shutil
-import commands
+import subprocess
 import threading
 
 from daklib import utils
@@ -67,6 +67,7 @@ from daklib.regexes import html_escaping, re_html_escaping, re_version, re_space
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory
 from daklib.dak_exceptions import ChangesUnicodeError
+import daklib.daksubprocess
 
 ################################################################################
 
@@ -508,13 +509,14 @@ def get_readme_source (dsc_filename):
     tempdir = utils.temp_dirname()
     os.rmdir(tempdir)
 
-    cmd = "dpkg-source --no-check --no-copy -x %s %s" % (dsc_filename, tempdir)
-    (result, output) = commands.getstatusoutput(cmd)
-    if (result != 0):
+    cmd = ('dpkg-source', '--no-check', '--no-copy', '-x', dsc_filename, tempdir)
+    try:
+        daklib.daksubprocess.check_output(cmd, stderr=1)
+    except subprocess.CalledProcessError as e:
         res = "How is education supposed to make me feel smarter? Besides, every time I learn something new, it pushes some\n old stuff out of my brain. Remember when I took that home winemaking course, and I forgot how to drive?\n"
         res += "Error, couldn't extract source, WTF?\n"
-        res += "'dpkg-source -x' failed. return code: %s.\n\n" % (result)
-        res += output
+        res += "'dpkg-source -x' failed. return code: %s.\n\n" % (e.returncode)
+        res += e.output
         return res
 
     path = os.path.join(tempdir, 'debian/README.source')

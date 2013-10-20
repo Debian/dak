@@ -27,7 +27,7 @@ Helper code for file writing with optional compression.
 
 from daklib.config import Config
 
-from subprocess import check_call
+from daklib.daksubprocess import check_call
 
 import os, os.path
 

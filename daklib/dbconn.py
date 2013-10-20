@@ -34,13 +34,13 @@
 ################################################################################
 
 import apt_pkg
+import daklib.daksubprocess
 import os
 from os.path import normpath
 import re
 import psycopg2
+import subprocess
 import traceback
-import commands
-import signal
 
 try:
     # python >= 2.6
@@ -52,7 +52,6 @@ except:
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
-from subprocess import Popen, PIPE
 from tarfile import TarFile
 
 from inspect import getargspec
@@ -498,11 +497,6 @@ __all__.append('BinContents')
 
 ################################################################################
 
-def subprocess_setup():
-    # Python installs a SIGPIPE handler by default. This is usually not what
-    # non-Python subprocesses expect.
-    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-
 class DBBinary(ORMObject):
     def __init__(self, package = None, source = None, version = None, \
         maintainer = None, architecture = None, poolfile = None, \
@@ -539,8 +533,8 @@ class DBBinary(ORMObject):
         package does not contain any regular file.
         '''
         fullpath = self.poolfile.fullpath
-        dpkg = Popen(['dpkg-deb', '--fsys-tarfile', fullpath], stdout = PIPE,
-            preexec_fn = subprocess_setup)
+        dpkg_cmd = ('dpkg-deb', '--fsys-tarfile', fullpath)
+        dpkg = daklib.daksubprocess.Popen(dpkg_cmd, stdout=subprocess.PIPE)
         tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
         for member in tar.getmembers():
             if not member.isdir():
@@ -2939,5 +2933,3 @@ class DBConn(object):
         return session
 
 __all__.append('DBConn')
-
-
