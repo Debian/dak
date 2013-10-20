@@ -24,6 +24,7 @@ Please read the documentation for the L{Check} class for the interface.
 """
 
 from daklib.config import Config
+import daklib.daksubprocess
 from daklib.dbconn import *
 import daklib.dbconn as dbconn
 from daklib.regexes import *
@@ -37,11 +38,9 @@ import apt_pkg
 from apt_pkg import version_compare
 import errno
 import os
+import subprocess
 import time
 import yaml
-
-# TODO: replace by subprocess
-import commands
 
 def check_fields_for_valid_utf8(filename, control):
     """Check all fields of a control file for valid UTF-8"""
@@ -657,13 +656,17 @@ class LintianCheck(Check):
         changespath = os.path.join(upload.directory, changes.filename)
         try:
             cmd = []
+            result = 0
 
             user = cnf.get('Dinstall::UnprivUser') or None
             if user is not None:
                 cmd.extend(['sudo', '-H', '-u', user])
 
             cmd.extend(['LINTIAN_COLL_UNPACKED_SKIP_SIG=1', '/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
-            result, output = commands.getstatusoutput(" ".join(cmd))
+            output = daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            result = e.returncode
+            output = e.output
         finally:
             os.unlink(temp_filename)
 
