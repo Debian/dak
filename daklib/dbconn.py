@@ -572,7 +572,6 @@ class DBBinary(ORMObject):
         @rtype: dict
         @return: fields of the control section as a dictionary.
         '''
-        import apt_pkg
         stanza = self.read_control()
         return apt_pkg.TagSection(stanza)
 
