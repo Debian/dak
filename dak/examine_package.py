@@ -456,12 +456,16 @@ def output_deb_info(suite, filename, packagename, session = None):
         to_print += " "+format_field(key,field_value)+'\n'
     return to_print
 
-def do_command (command, filename, escaped=False):
-    o = os.popen("%s %s" % (command, filename))
-    if escaped:
-        return escaped_text(o.read())
-    else:
-        return formatted_text(o.read())
+def do_command (command, escaped=False):
+    process = daklib.daksubprocess.Popen(command, stdout=subprocess.PIPE)
+    o = process.stdout
+    try:
+        if escaped:
+            return escaped_text(o.read())
+        else:
+            return formatted_text(o.read())
+    finally:
+        process.wait()
 
 def do_lintian (filename):
     cnf = Config()
@@ -475,9 +479,9 @@ def do_lintian (filename):
     if use_html:
         color = 'html'
 
-    cmd.extend(['lintian', '--show-overrides', '--color', color])
+    cmd.extend(['lintian', '--show-overrides', '--color', color, "--", filename])
 
-    return do_command(' '.join(cmd), filename, escaped=True)
+    return do_command(cmd, escaped=True)
 
 def get_copyright (deb_filename):
     global printed
@@ -522,7 +526,7 @@ def get_readme_source (dsc_filename):
     path = os.path.join(tempdir, 'debian/README.source')
     res = ""
     if os.path.exists(path):
-        res += do_command("cat", path)
+        res += do_command(["cat", "--", path])
     else:
         res += "No README.source in this package\n\n"
 
@@ -565,7 +569,7 @@ def check_deb (suite, deb_filename, session = None):
 	    "binary-%s-lintian"%packagename, do_lintian(deb_filename)) + "\n"
 
     result += foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
-        do_command("dpkg -c", deb_filename)) + "\n"
+                              do_command(["dpkg", "-c", deb_filename])) + "\n"
 
     if is_a_udeb:
         result += foldable_output("skipping copyright for udeb",
@@ -633,7 +637,9 @@ def main ():
         try:
             if not Options["Html-Output"]:
                 # Pipe output for each argument through less
-                less_fd = os.popen("less -R -", 'w', 0)
+                less_cmd = ("less", "-R", "-")
+                less_process = daklib.daksubprocess.Popen(less_cmd, stdin=subprocess.PIPE, bufsize=0)
+                less_fd = less_process.stdin
                 # -R added to display raw control chars for colour
                 sys.stdout = less_fd
             try:
@@ -652,6 +658,7 @@ def main ():
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()
+                    less_process.wait()
                     sys.stdout = stdout_fd
         except IOError as e:
             if errno.errorcode[e.errno] == 'EPIPE':

@@ -53,6 +53,7 @@ import contextlib
 import pwd
 import apt_pkg, apt_inst
 import examine_package
+import subprocess
 import daklib.daksubprocess
 from sqlalchemy import or_
 
@@ -346,8 +347,11 @@ def check_pkg (upload, upload_copy, session):
     suite_name = upload.target_suite.suite_name
     handler = PolicyQueueUploadHandler(upload, session)
     missing = [(m['type'], m["package"]) for m in handler.missing_overrides(hints=missing)]
+
+    less_cmd = ("less", "-R", "-")
+    less_process = daklib.daksubprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
     try:
-        sys.stdout = os.popen("less -R -", 'w', 0)
+        sys.stdout = less_process.stdin
         print examine_package.display_changes(suite_name, changes)
 
         source = upload.source
@@ -364,6 +368,7 @@ def check_pkg (upload, upload_copy, session):
                 print examined
 
         print examine_package.output_package_relations()
+        less_process.stdin.close()
     except IOError as e:
         if e.errno == errno.EPIPE:
             utils.warn("[examine_package] Caught EPIPE; skipping.")
@@ -372,6 +377,7 @@ def check_pkg (upload, upload_copy, session):
     except KeyboardInterrupt:
         utils.warn("[examine_package] Caught C-c; skipping.")
     finally:
+        less_process.wait()
         sys.stdout = save_stdout
 
 ################################################################################
