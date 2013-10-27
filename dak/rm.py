@@ -167,8 +167,6 @@ def main ():
     if (Options["Do-Close"]
            and (Options["Binary"] or Options["Binary-Only"] or Options["Source-Only"])):
         utils.fubar("No.")
-    if Options["Do-Close"] and Options["Suite"] != 'unstable':
-        utils.fubar("No.")
 
     # Force the admin to tell someone if we're not doing a 'dak
     # cruft-report' inspired removal (or closing a bug, which counts
