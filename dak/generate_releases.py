@@ -38,6 +38,7 @@ import time
 import gzip
 import bz2
 import apt_pkg
+import subprocess
 from tempfile import mkstemp, mkdtemp
 import commands
 from sqlalchemy.orm import object_session
@@ -48,6 +49,7 @@ from daklib.dak_exceptions import *
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS
+import daklib.daksubprocess
 
 ################################################################################
 Logger = None                  #: Our logging object
@@ -103,6 +105,16 @@ def sign_release_dir(suite, dirname):
                   (keyring, defkeyid, arguments, relname, dest))
         os.system("gpg %s %s %s --clearsign <%s >>%s" %
                   (keyring, defkeyid, arguments, relname, inlinedest))
+
+class XzFile(object):
+    def __init__(self, filename, mode='r'):
+        self.filename = filename
+    def read(self):
+        cmd = ("xz", "-d")
+        with open(self.filename, 'r') as stdin:
+            process = daklib.daksubprocess.Popen(cmd, stdin=stdin, stdout=subprocess.PIPE)
+            (stdout, stderr) = process.communicate()
+            return stdout
 
 class ReleaseWriter(object):
     def __init__(self, suite):
@@ -242,6 +254,8 @@ class ReleaseWriter(object):
                     uncompnotseen[filename[:-3]] = (gzip.GzipFile, filename)
                 elif entry.endswith(".bz2") and entry[:-4] not in uncompnotseen.keys():
                     uncompnotseen[filename[:-4]] = (bz2.BZ2File, filename)
+                elif entry.endswith(".xz") and entry[:-3] not in uncompnotseen.keys():
+                    uncompnotseen[filename[:-3]] = (XzFile, filename)
 
                 fileinfo[filename]['len'] = len(contents)
 
