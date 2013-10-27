@@ -115,7 +115,14 @@ def generate_sources(suite_id, component_id):
 
     overridesuite_id = suite.get_overridesuite().suite_id
 
-    writer = SourcesFileWriter(archive=suite.archive.path, suite=suite.suite_name, component=component.component_name)
+    writer_args = {
+            'archive': suite.archive.path,
+            'suite': suite.suite_name,
+            'component': component.component_name
+    }
+    if suite.indices_compression is not None:
+        writer_args['compression'] = suite.indices_compression
+    writer = SourcesFileWriter(**writer_args)
     output = writer.open()
 
     # run query and write Sources
@@ -238,9 +245,16 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     if include_long_description:
         metadata_skip.append("Description-md5")
 
-    writer = PackagesFileWriter(archive=suite.archive.path, suite=suite.suite_name,
-            component=component.component_name,
-            architecture=architecture.arch_string, debtype=type_name)
+    writer_args = {
+            'archive': suite.archive.path,
+            'suite': suite.suite_name,
+            'component': component.component_name,
+            'architecture': architecture.arch_string,
+            'debtype': type_name
+    }
+    if suite.indices_compression is not None:
+        writer_args['compression'] = suite.indices_compression
+    writer = PackagesFileWriter(**writer_args)
     output = writer.open()
 
     r = session.execute(_packages_query, {"archive_id": suite.archive.archive_id,
@@ -301,7 +315,15 @@ def generate_translations(suite_id, component_id):
     suite = session.query(Suite).get(suite_id)
     component = session.query(Component).get(component_id)
 
-    writer = TranslationFileWriter(archive=suite.archive.path, suite=suite.suite_name, component=component.component_name, language="en")
+    writer_args = {
+            'archive': suite.archive.path,
+            'suite': suite.suite_name,
+            'component': component.component_name,
+            'language': 'en',
+    }
+    if suite.i18n_compression is not None:
+        writer_args['compression'] = suite.i18n_compression
+    writer = TranslationFileWriter(**writer_args)
     output = writer.open()
 
     r = session.execute(_translations_query, {"suite": suite_id, "component": component_id})

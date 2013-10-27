@@ -47,6 +47,7 @@ class BaseFileWriter(object):
         self.uncompressed = 'none' in compression
         self.gzip = 'gzip' in compression
         self.bzip2 = 'bzip2' in compression
+        self.xz = 'xz' in compression
         self.path = template % keywords
 
     def open(self):
@@ -79,6 +80,9 @@ class BaseFileWriter(object):
         if self.bzip2:
             check_call('bzip2 -9 <%s.new >%s.bz2.new' % (self.path, self.path), shell = True)
             self.rename('%s.bz2' % self.path)
+        if self.xz:
+            check_call('xz -c <{0}.new >{0}.xz.new'.format(self.path), shell=True)
+            self.rename('{0}.xz'.format(self.path))
         if self.uncompressed:
             self.rename(self.path)
         else:
