@@ -68,21 +68,25 @@ class BaseFileWriter(object):
         os.chmod(tempfilename, 0o664)
         os.rename(tempfilename, filename)
 
+    # internal helper function to compress output
+    def compress(self, cmd, suffix, path):
+        in_filename = "{0}.new".format(path)
+        out_filename = "{0}.{1}.new".format(path, suffix)
+        with open(in_filename, 'r') as in_fh, open(out_filename, 'w') as out_fh:
+            check_call(cmd, stdin=in_fh, stdout=out_fh)
+        self.rename("{0}.{1}".format(path, suffix))
+
     def close(self):
         '''
         Closes the file object and does the compression and rename work.
         '''
         self.file.close()
         if self.gzip:
-            check_call('gzip -9cn --rsyncable <%s.new >%s.gz.new' % (self.path, self.path),
-                shell = True)
-            self.rename('%s.gz' % self.path)
+            self.compress(['gzip', '-9cn', '--rsyncable'], 'gz', self.path)
         if self.bzip2:
-            check_call('bzip2 -9 <%s.new >%s.bz2.new' % (self.path, self.path), shell = True)
-            self.rename('%s.bz2' % self.path)
+            self.compress(['bzip2', '-9'], 'bz2', self.path)
         if self.xz:
-            check_call('xz -c <{0}.new >{0}.xz.new'.format(self.path), shell=True)
-            self.rename('{0}.xz'.format(self.path))
+            self.compress(['xz', '-c'], 'xz', self.path)
         if self.uncompressed:
             self.rename(self.path)
         else:
