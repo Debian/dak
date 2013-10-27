@@ -125,7 +125,7 @@ class PackagesFileWriter(BaseFileWriter):
         are strings.  Output files are gzip compressed only.
         '''
         flags = {
-            'compression': ['gzip', 'bzip2'],
+            'compression': ['gzip', 'xz'],
         }
         flags.update(keywords)
         if flags['debtype'] == 'deb':
@@ -141,7 +141,7 @@ class SourcesFileWriter(BaseFileWriter):
         files are gzip compressed only.
         '''
         flags = {
-            'compression': ['gzip', 'bzip2'],
+            'compression': ['gzip', 'xz'],
         }
         flags.update(keywords)
         template = "%(archive)s/dists/%(suite)s/%(component)s/source/Sources"
