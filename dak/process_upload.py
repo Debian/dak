@@ -274,6 +274,10 @@ def accept(directory, upload):
     control = upload.changes.changes
     if sourceful_upload and not Options['No-Action']:
         urgency = control.get('Urgency')
+        # As per policy 5.6.17, the urgency can be followed by a space and a
+        # comment.  Extract only the urgency from the string.
+        if ' ' in urgency:
+          (urgency, comment) = urgency.split(' ', 1)
         if urgency not in cnf.value_list('Urgency::Valid'):
             urgency = cnf['Urgency::Default']
         UrgencyLog().log(control['Source'], control['Version'], urgency)

@@ -256,6 +256,10 @@ def comment_accept(upload, srcqueue, comments, transaction):
 
     if upload.source is not None and not Options['No-Action']:
         urgency = upload.changes.urgency
+        # As per policy 5.6.17, the urgency can be followed by a space and a
+        # comment.  Extract only the urgency from the string.
+        if ' ' in urgency:
+          (urgency, comment) = urgency.split(' ', 1)
         if urgency not in cnf.value_list('Urgency::Valid'):
             urgency = cnf['Urgency::Default']
         UrgencyLog().log(upload.source.source, upload.source.version, urgency)
