@@ -44,7 +44,7 @@ esac
 
 . $SCRIPTVARS
 
-function emacs() {
+function em() {
     export EDITOR=$(which emacs)
 }
 
@@ -58,4 +58,3 @@ export PATH="~/bin/:${PATH}"
 
 alias base='cd ${base}'
 alias config='cd ${configdir}'
-alias psql='LD_PRELOAD=/lib/libreadline.so.5 psql'
