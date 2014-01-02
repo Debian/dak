@@ -720,7 +720,7 @@ def move (src, dest, overwrite = 0, perms = 0o664):
         dest_dir = dest
     else:
         dest_dir = os.path.dirname(dest)
-    if not os.path.exists(dest_dir):
+    if not os.path.lexists(dest_dir):
         umask = os.umask(00000)
         os.makedirs(dest_dir, 0o2775)
         os.umask(umask)
@@ -728,7 +728,7 @@ def move (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest += '/' + os.path.basename(src)
     # Don't overwrite unless forced to
-    if os.path.exists(dest):
+    if os.path.lexists(dest):
         if not overwrite:
             fubar("Can't move %s to %s - file already exists." % (src, dest))
         else:
@@ -751,7 +751,7 @@ def copy (src, dest, overwrite = 0, perms = 0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest += '/' + os.path.basename(src)
     # Don't overwrite unless forced to
-    if os.path.exists(dest):
+    if os.path.lexists(dest):
         if not overwrite:
             raise FileExistsError
         else:
@@ -894,7 +894,7 @@ def changes_compare (a, b):
 def find_next_free (dest, too_many=100):
     extra = 0
     orig_dest = dest
-    while os.path.exists(dest) and extra < too_many:
+    while os.path.lexists(dest) and extra < too_many:
         dest = orig_dest + '.' + repr(extra)
         extra += 1
     if extra >= too_many:

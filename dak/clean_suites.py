@@ -296,7 +296,7 @@ def clean(now_date, archives, max_delete, session):
 
                 dest_filename = dest + '/' + os.path.basename(filename)
                 # If the destination file exists; try to find another filename to use
-                if os.path.exists(dest_filename):
+                if os.path.lexists(dest_filename):
                     dest_filename = utils.find_next_free(dest_filename)
 
                 if not Options["No-Action"]:
