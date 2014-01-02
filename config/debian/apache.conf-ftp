@@ -1,14 +1,18 @@
-  # virtualhost is defined in the file including this file.
+Use common-debian-service-https-redirect * ftp-master.debian.org
 
+<VirtualHost *:443>
   ServerName ftp-master.debian.org
   DocumentRoot /srv/ftp.debian.org/web
+
+  CustomLog               /var/log/apache2/ftp-master-access.log privacy
+  ErrorLog                /var/log/apache2/ftp-master-error.log
+
+  Use common-debian-service-ssl ftp-master.debian.org
+  Use common-ssl-HSTS
+
   Redirect permanent /proposed-updates.html http://release.debian.org/proposed-updates/stable.html
   Redirect permanent /oldstable-proposed-updates.html http://release.debian.org/proposed-updates/oldstable.html
   Redirect permanent /testing/hints/transitions.yaml http://ftp-master.debian.org/transitions.yaml
-
-  CustomLog               /var/log/apache2/ftp-master-access.log combined
-  ErrorLog                /var/log/apache2/ftp-master-error.log
-
   Alias /users/ /srv/ftp.debian.org/web-users/
 
   <Directory /srv/ftp.debian.org/web-users>
@@ -24,3 +28,4 @@
 
   RewriteEngine On
   RewriteRule ^/~(.+) /users/$1 [R=permanent,L]
+</VirtualHost>
