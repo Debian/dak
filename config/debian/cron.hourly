@@ -51,7 +51,7 @@ $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 # Tell ries to sync its tree
 ${scriptsdir}/sync-dd ries-sync ries-sync1 ries-sync2 sync
 
-$scriptsdir/generate-di
+$scriptsdir/generate-d-i
 
 # Push files over to security
 #pg_dump -a -F p -t files | sed -e "s,^COPY files (,DELETE FROM external_files; COPY external_files (," | xz -3 | \

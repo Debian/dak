@@ -25,7 +25,7 @@ dak import-users-from-passwd
 #$base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
 #$base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/removals.rss
 
-#$scriptsdir/generate-di
+#$scriptsdir/generate-d-i
 
 # do the buildd key updates
 BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
