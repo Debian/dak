@@ -42,12 +42,12 @@ class Status:
     def __init__(self):
         self.feed_in = PyRSS2Gen.RSS2(
                        title = "Packages entering NEW",
-                       link = "http://ftp-master.debian.org/new.html",
+                       link = "https://ftp-master.debian.org/new.html",
                        description = "Debian packages entering the NEW queue" )
 
         self.feed_out = PyRSS2Gen.RSS2(
                        title = "Packages leaving NEW",
-                       link = "http://ftp-master.debian.org/new.html",
+                       link = "https://ftp-master.debian.org/new.html",
                        description = "Debian packages leaving the NEW queue" )
 
         self.queue = {}
@@ -138,7 +138,7 @@ def add_rss_item(status, msg, direction):
             (cgi.escape(msg['Description']),
              cgi.escape(msg['Changes']))
 
-    link = "http://ftp-master.debian.org/new/%s_%s.html" % \
+    link = "https://ftp-master.debian.org/new/%s_%s.html" % \
             (msg['Source'], msg['Version'])
 
     feed.items.insert(0,

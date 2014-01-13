@@ -183,7 +183,7 @@ def header():
   <head>
     <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8" />
     <link type="text/css" rel="stylesheet" href="style.css" />
-    <link rel="shortcut icon" href="http://www.debian.org/favicon.ico" />
+    <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />
     <title>
       Debian NEW and BYHAND Packages
     </title>
@@ -209,22 +209,22 @@ def header():
   </head>
   <body id="NEW">
     <div id="logo">
-      <a href="http://www.debian.org/">
-        <img src="http://www.debian.org/logos/openlogo-nd-50.png"
+      <a href="https://www.debian.org/">
+        <img src="https://www.debian.org/logos/openlogo-nd-50.png"
         alt="debian logo" /></a>
-      <a href="http://www.debian.org/">
-        <img src="http://www.debian.org/Pics/debian.png"
+      <a href="https://www.debian.org/">
+        <img src="https://www.debian.org/Pics/debian.png"
         alt="Debian Project" /></a>
     </div>
     <div id="titleblock">
 
-      <img src="http://www.debian.org/Pics/red-upperleft.png"
+      <img src="https://www.debian.org/Pics/red-upperleft.png"
       id="red-upperleft" alt="corner image"/>
-      <img src="http://www.debian.org/Pics/red-lowerleft.png"
+      <img src="https://www.debian.org/Pics/red-lowerleft.png"
       id="red-lowerleft" alt="corner image"/>
-      <img src="http://www.debian.org/Pics/red-upperright.png"
+      <img src="https://www.debian.org/Pics/red-upperright.png"
       id="red-upperright" alt="corner image"/>
-      <img src="http://www.debian.org/Pics/red-lowerright.png"
+      <img src="https://www.debian.org/Pics/red-lowerright.png"
       id="red-lowerright" alt="corner image"/>
       <span class="title">
         Debian NEW and BYHAND Packages
@@ -240,7 +240,7 @@ def footer():
     <div class="footer">
     <p>Hint: Age is the youngest upload of the package, if there is more than
     one version.<br />
-    You may want to look at <a href="http://ftp-master.debian.org/REJECT-FAQ.html">the REJECT-FAQ</a>
+    You may want to look at <a href="https://ftp-master.debian.org/REJECT-FAQ.html">the REJECT-FAQ</a>
       for possible reasons why one of the above packages may get rejected.</p>
       <p>
       <a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10"
@@ -334,7 +334,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
 
     print "<td class=\"closes\">"
     for close in closes:
-        print "<a href=\"http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close))
+        print "<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close))
     print "</td></tr>"
     row_number+=1
 

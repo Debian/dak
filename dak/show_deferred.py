@@ -53,32 +53,32 @@ def header():
         <html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
         <title>Deferred uploads to Debian</title>
         <link type="text/css" rel="stylesheet" href="style.css">
-        <link rel="shortcut icon" href="http://www.debian.org/favicon.ico">
+        <link rel="shortcut icon" href="https://www.debian.org/favicon.ico">
         </head>
         <body>
         <div align="center">
-        <a href="http://www.debian.org/">
-     <img src="http://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0" vspace="0" alt=""></a>
-        <a href="http://www.debian.org/">
-     <img src="http://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
+        <a href="https://www.debian.org/">
+     <img src="https://www.debian.org/logos/openlogo-nd-50.png" border="0" hspace="0" vspace="0" alt=""></a>
+        <a href="https://www.debian.org/">
+     <img src="https://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
         </div>
         <br />
         <table class="reddy" width="100%">
         <tr>
         <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-upperleft.png" align="left" border="0" hspace="0" vspace="0"
+    <img src="https://www.debian.org/Pics/red-upperleft.png" align="left" border="0" hspace="0" vspace="0"
      alt="" width="15" height="16"></td>
         <td rowspan="2" class="reddy">Deferred uploads to Debian</td>
         <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-upperright.png" align="right" border="0" hspace="0" vspace="0"
+    <img src="https://www.debian.org/Pics/red-upperright.png" align="right" border="0" hspace="0" vspace="0"
      alt="" width="16" height="16"></td>
         </tr>
         <tr>
         <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-lowerleft.png" align="left" border="0" hspace="0" vspace="0"
+    <img src="https://www.debian.org/Pics/red-lowerleft.png" align="left" border="0" hspace="0" vspace="0"
      alt="" width="16" height="16"></td>
         <td class="reddy">
-    <img src="http://www.debian.org/Pics/red-lowerright.png" align="right" border="0" hspace="0" vspace="0"
+    <img src="https://www.debian.org/Pics/red-lowerright.png" align="right" border="0" hspace="0" vspace="0"
      alt="" width="15" height="16"></td>
         </tr>
         </table>
@@ -117,7 +117,7 @@ def table_row(changesname, delay, changed_by, closes, fingerprint):
     res += (2*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay)))
     res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html_escape(changed_by), fingerprint)
     res += ('<td valign="top">%s</td>' %
-             ''.join(map(lambda close:  '<a href="http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
+             ''.join(map(lambda close:  '<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
     res += '</tr>\n'
     row_number+=1
     return res

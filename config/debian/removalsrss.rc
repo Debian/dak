@@ -3,7 +3,7 @@ items: 16
 titlelength: 80
 
 title: Removals from Debian
-link: http://ftp-master.debian.org/removals.txt
+link: https://ftp-master.debian.org/removals.txt
 description: List of all the removals from Debian's archives
 subject: Removals from Debian
 creator: tfheen@debian.org

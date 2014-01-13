@@ -62,7 +62,7 @@ def html_header(name, missing):
     />
     <title>%(name)s - Debian NEW package overview</title>
     <link type="text/css" rel="stylesheet" href="/style.css" />
-    <link rel="shortcut icon" href="http://www.debian.org/favicon.ico" />
+    <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />
     <script type="text/javascript">
       //<![CDATA[
       <!--
@@ -89,21 +89,21 @@ def html_header(name, missing):
   </head>
   <body id="NEW-details-page">
     <div id="logo">
-      <a href="http://www.debian.org/">
-        <img src="http://www.debian.org/logos/openlogo-nd-50.png"
+      <a href="https://www.debian.org/">
+        <img src="https://www.debian.org/logos/openlogo-nd-50.png"
         alt="debian logo" /></a>
-      <a href="http://www.debian.org/">
-        <img src="http://www.debian.org/Pics/debian.png"
+      <a href="https://www.debian.org/">
+        <img src="https://www.debian.org/Pics/debian.png"
         alt="Debian Project" /></a>
     </div>
     <div id="titleblock">
-      <img src="http://www.debian.org/Pics/red-upperleft.png"
+      <img src="https://www.debian.org/Pics/red-upperleft.png"
       id="red-upperleft" alt="corner image"/>
-      <img src="http://www.debian.org/Pics/red-lowerleft.png"
+      <img src="https://www.debian.org/Pics/red-lowerleft.png"
       id="red-lowerleft" alt="corner image"/>
-      <img src="http://www.debian.org/Pics/red-upperright.png"
+      <img src="https://www.debian.org/Pics/red-upperright.png"
       id="red-upperright" alt="corner image"/>
-      <img src="http://www.debian.org/Pics/red-lowerright.png"
+      <img src="https://www.debian.org/Pics/red-lowerright.png"
       id="red-lowerright" alt="corner image"/>
       <span class="title">
         Debian NEW package overview for %(name)s
