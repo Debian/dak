@@ -137,16 +137,7 @@ def html_header(name, missing):
 def html_footer():
     result = """    <p class="validate">Timestamp: %s (UTC)</p>
 """% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
-    result += """    <p><a href="http://validator.w3.org/check?uri=referer">
-      <img src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!"
-      style="border: none; height: 31px; width: 88px" /></a>
-    <a href="http://jigsaw.w3.org/css-validator/check/referer">
-      <img src="http://jigsaw.w3.org/css-validator/images/vcss"
-      alt="Valid CSS!" style="border: none; height: 31px; width: 88px" /></a>
-    </p>
-  </body>
-</html>
-"""
+    result += "</body></html>"
     return result
 
 ################################################################################

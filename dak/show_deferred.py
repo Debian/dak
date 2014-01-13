@@ -87,12 +87,6 @@ def header():
 def footer():
     res = "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     res += "<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>"
-    res += """<a href="http://validator.w3.org/check?uri=referer">
-    <img border="0" src="http://www.w3.org/Icons/valid-html401" alt="Valid HTML 4.01!" height="31" width="88"></a>
-        <a href="http://jigsaw.w3.org/css-validator/check/referer">
-    <img border="0" src="http://jigsaw.w3.org/css-validator/images/vcss" alt="Valid CSS!"
-     height="31" width="88"></a>
-    """
     res += "</body></html>"
     return res.encode('utf-8')
 
