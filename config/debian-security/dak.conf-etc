@@ -2,7 +2,6 @@ Config
 {
   chopin.debian.org
   {
-    DatabaseHostname    "security";
     DakConfig           "/org/security-master.debian.org/dak/config/debian-security/dak.conf";
   }
 }

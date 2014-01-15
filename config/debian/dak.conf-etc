@@ -3,13 +3,11 @@ Config
   franck.debian.org
   {
     AllowLocalConfig    "false";
-    DatabaseHostname    "ftp-master";
     DakConfig           "/srv/ftp-master.debian.org/dak/config/debian/dak.conf";
   }
   coccia.debian.org
   {
     AllowLocalConfig    "false";
-    DatabaseHostname    "ftp-master";
     DakConfig           "/srv/ftp-master.debian.org/dak/config/debian/dak.conf";
   }
 }

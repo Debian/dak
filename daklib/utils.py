@@ -762,14 +762,6 @@ def copy (src, dest, overwrite = 0, perms = 0o664):
 
 ################################################################################
 
-def where_am_i ():
-    res = socket.getfqdn()
-    database_hostname = Cnf.get("Config::" + res + "::DatabaseHostname")
-    if database_hostname:
-        return database_hostname
-    else:
-        return res
-
 def which_conf_file ():
     if os.getenv('DAK_CONFIG'):
         return os.getenv('DAK_CONFIG')
