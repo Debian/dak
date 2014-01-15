@@ -611,7 +611,7 @@ function changelogs() {
         mkdir -p ${exportpublic}/changelogs
         cd ${exportpublic}/changelogs
         rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
-        sudo -H -u staticsync /usr/local/bin/static-update-component ftp-master.metadata.debian.org >/dev/null 2>&1 &
+        sudo -H -u staticsync /usr/local/bin/static-update-component metadata.ftp-master.debian.org >/dev/null 2>&1 &
 
         dak make-changelog -e -a backports
         [ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml ] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
