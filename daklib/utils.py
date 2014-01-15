@@ -781,14 +781,6 @@ def which_conf_file ():
 
     return default_config
 
-def which_alias_file():
-    hostname = socket.getfqdn()
-    aliasfn = '/var/lib/misc/'+hostname+'/forward-alias'
-    if os.path.exists(aliasfn):
-        return aliasfn
-    else:
-        return None
-
 ################################################################################
 
 def TemplateSubst(subst_map, filename):
