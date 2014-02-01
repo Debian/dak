@@ -46,6 +46,9 @@ dak override-disparity | gzip -9 > ${webdir}/override-disparity.gz
 # Generate stats about the new queue
 dak stats new ${webdir}/NEW-stats.yaml 2> /dev/null
 
+# Generate the contributor data
+dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/contributor.auth" --post
+
 ${scriptsdir}/link_morgue.sh
 
 ################################################################################

@@ -1,0 +1,22 @@
+contribution: upload
+method: postgres
+db: service=projectb
+query:
+        SELECT s.install_date as date,
+               u.uid as id,
+               u.name as desc
+          FROM source s
+          JOIN fingerprint f ON s.sig_fpr = f.id
+          JOIN uid u ON f.uid = u.id
+url: http://qa.debian.org/developer.php?login={id}&comaint=yes
+
+contribution: maint
+method: postgres
+db: service=projectb
+query:
+        SELECT s.install_date as date,
+               c.name as id
+          FROM source s
+          JOIN maintainer c ON s.changedby = c.id
+url: http://qa.debian.org/developer.php?login={id}&comaint=yes
+
