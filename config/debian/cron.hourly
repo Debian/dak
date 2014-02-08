@@ -53,13 +53,6 @@ ${scriptsdir}/sync-dd ries-sync ries-sync1 ries-sync2 sync
 
 $scriptsdir/generate-d-i
 
-# Push files over to security
-#pg_dump -a -F p -t files | sed -e "s,^COPY files (,DELETE FROM external_files; COPY external_files (," | xz -3 | \
-#        ssh -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 -i ${base}/s3kr1t/push-external_files dak@wherever sync
-#
-# The key should run the following command:
-#        'xzcat | pg_restore -1 -a'
-
 # Update backports ACL
 sudo -u dak-unpriv cat /srv/backports-master.debian.org/etc/acl \
   | dak acl set-fingerprints backports \
