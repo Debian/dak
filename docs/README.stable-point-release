@@ -6,8 +6,8 @@ Rough Guide to doing Stable Point Releases in Debian
 suite=stable
 suitename=wheezy
 pusuite=proposed-updates
-oldrev=7.2
-newrev=7.3
+oldrev=7.3
+newrev=7.4
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -37,7 +37,10 @@ cd ${ftpdir}/dists/${pusuite}
 mv -t "${pumorguedir}" -n -- *.changes
 
 - -r0 additions?
-  For example new d-i.
+  For example new d-i. If so:
+cd ~/${suite}_${newrev}
+cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs .
+dak control-suite --add ${suitename}-r0 < ${suitename}-r0-additions.cs
 
 - sync with stable RM if there is any propup needed. do it, if so:
 like, cat /srv/release.debian.org/www/squeeze/6.0/6.0.4/propup.unstable | dak control-suite --add unstable
@@ -47,9 +50,9 @@ Note: unstable first, then testing
 dak cruft-report -s ${suite}
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
-diver=20130613+deb7u1+b1
+diver=20130613+deb7u1+b2
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
-dioldver=20130613+deb7u1
+dioldver=20130613+deb7u1+b1
 cd $ftpdir/dists/${suite}/main
 if [ "${dioldver}" != "empty" ]; then
     for iarch in $(dak admin s-a list-arch ${suite}); do
