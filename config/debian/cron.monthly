@@ -27,18 +27,19 @@ for m in mail bxamail; do
 done
 
 DATE=$(date +%Y-%m)
+OLDDATE=$(date -d yesterday +%Y-%m)
 cd ${base}/log
 touch $DATE
 ln -sf $DATE current
 chmod g+w $DATE
 chown dak:ftpteam $DATE
+xz -9 ${OLDDATE}
 
-DATE=$(date -d yesterday +%Y-%m)
 cd /srv/upload.debian.org/queued
 sudo -u dak-unpriv /srv/upload.debian.org/queued/debianqueued -k || true
-mv run/log log.${DATE}
+mv run/log log.${OLDDATE}
 sudo -u dak-unpriv touch run/log
-xz -9 log.${DATE}
+xz -9 log.${OLDDATE}
 sudo -u dak-unpriv /srv/upload.debian.org/queued/debianqueued 2>/dev/null
 
 ################################################################################
