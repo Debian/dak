@@ -23,6 +23,8 @@ lintian:
     - source-contains-waf-binary
     - md5sum-mismatch
     - non-standard-toplevel-dir
+    - license-problem-json-evil
+    - gzip-file-is-not-multi-arch-same-safe
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
@@ -84,3 +86,7 @@ lintian:
     - dir-or-file-in-srv
     - dir-or-file-in-var-lock
     - dir-or-file-in-var-run
+    - dir-or-file-in-build-tree
+    - dir-or-file-in-etc-opt
+    - dir-or-file-in-home
+    - conflicting-negation-in-source-relation
