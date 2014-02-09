@@ -90,3 +90,5 @@ lintian:
     - dir-or-file-in-etc-opt
     - dir-or-file-in-home
     - conflicting-negation-in-source-relation
+    - license-problem-md5sum-non-distributable-file
+    - license-problem-md5sum-non-free-file
