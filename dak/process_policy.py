@@ -419,9 +419,9 @@ def main():
         # The comments stuff relies on being in the right directory
         os.chdir(pq.path)
 
+        do_comments(commentsdir, pq, "REJECT.", "REJECTED.", "NOTOK", comment_reject, transaction)
         do_comments(commentsdir, pq, "ACCEPT.", "ACCEPTED.", "OK", comment_accept, transaction)
         do_comments(commentsdir, pq, "ACCEPTED.", "ACCEPTED.", "OK", comment_accept, transaction)
-        do_comments(commentsdir, pq, "REJECT.", "REJECTED.", "NOTOK", comment_reject, transaction)
 
         remove_unreferenced_binaries(pq, transaction)
         remove_unreferenced_sources(pq, transaction)
