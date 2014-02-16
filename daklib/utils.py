@@ -1834,9 +1834,10 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                     .filter(Override.package == re.sub('/(contrib|non-free)$', '', source)) \
                     .join(Override.overridetype).filter(OverrideType.overridetype == 'dsc') \
                     .first()
+                key = source
                 if component != "main":
-                    source = "%s/%s" % (source, component)
-                all_broken.setdefault(source, set()).add(pp_deps(dep))
+                    key = "%s/%s" % (source, component)
+                all_broken.setdefault(key, set()).add(pp_deps(dep))
                 dep_problem = 1
 
     if all_broken:
