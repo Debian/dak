@@ -47,6 +47,8 @@ def newer_version(lowersuite_name, highersuite_name, session):
             with_parent(lowersuite).group_by(DBSource.source).scalar()
         if lowerversion is not None:
             list.append((source, higherversion, lowerversion))
+
+    list.sort()
     return list
 
 def get_package_names(suite):
