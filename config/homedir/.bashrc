@@ -58,3 +58,4 @@ export PATH="~/bin/:${PATH}"
 
 alias base='cd ${base}'
 alias config='cd ${configdir}'
+alias ls='ls --color=auto'
