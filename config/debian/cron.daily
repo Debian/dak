@@ -24,7 +24,9 @@ trap cleanup SIGHUP SIGINT SIGPIPE SIGTERM EXIT ERR
 
 # log to dinstall's logfile instead of sending email
 PROGRAM="cron.daily"
-LOGFILE="$logdir/dinstall.log"
+# Start logging
+NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+LOGFILE="$logdir/daily_${NOW}.log"
 exec >> "$LOGFILE" 2>&1
 
 # get the latest list of wnpp bugs and their source packages
@@ -64,3 +66,8 @@ dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/c
 ${scriptsdir}/link_morgue.sh
 
 ################################################################################
+
+echo "Finally, all is done, compressing logfile"
+exec > /dev/null 2>&1
+
+bzip2 -9 "$LOGFILE"
