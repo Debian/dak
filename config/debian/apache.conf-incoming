@@ -140,7 +140,7 @@
     satisfy any
   </DirectoryMatch>
 
-  CustomLog               /var/log/apache2/incoming-access.log combined
+  CustomLog               /var/log/apache2/incoming-access.log privacy
   ErrorLog                /var/log/apache2/incoming-error.log
 
 </VirtualHost>
