@@ -89,10 +89,10 @@ trap - EXIT
 
 symlinks -d -r $ftpdir
 
-pg_dump obscurity > /org/security-master.debian.org/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)
-find -maxdepth 1 -mindepth 1 -type f -name 'dump_*' \! -name '*.bz2' \! -name '*.gz' -mmin +720 |
-while read dumpname; do
-    bzip2 -9fv "$dumpname"
-done
+pg_file="${base}/dak-backup/dump_$(date +%Y.%m.%d-%H:%M:%S)"
+pg_dump obscurity > "${pg_file}"
+nice xz -9 "${pg_file}"
+
+find "${base}/dak-backup" -mtime +30 \! -name '.nobackup' -delete
 
 ################################################################################
