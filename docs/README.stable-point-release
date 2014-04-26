@@ -6,8 +6,8 @@ Rough Guide to doing Stable Point Releases in Debian
 suite=stable
 suitename=wheezy
 pusuite=proposed-updates
-oldrev=7.3
-newrev=7.4
+oldrev=7.4
+newrev=7.5
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -46,13 +46,11 @@ dak control-suite --add ${suitename}-r0 < ${suitename}-r0-additions.cs
 like, cat /srv/release.debian.org/www/squeeze/6.0/6.0.4/propup.unstable | dak control-suite --add unstable
 Note: unstable first, then testing
 - ask rms if they have RMs to do.
-- check output from cruft report:
-dak cruft-report -s ${suite}
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
-diver=20130613+deb7u1+b2
+diver=20130613+deb7u2+b1
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
-dioldver=20130613+deb7u1+b1
+dioldver=20130613+deb7u1+b2
 cd $ftpdir/dists/${suite}/main
 if [ "${dioldver}" != "empty" ]; then
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -96,6 +94,9 @@ EOF
 
 - prepare for gps. bash:
 dak dominate --force -s ${suite}
+- check output from cruft report:
+dak cruft-report -s ${suite}
+
 dak generate-filelist -s ${suite}
 
 - Let SRM see if all is ok
