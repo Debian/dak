@@ -559,11 +559,11 @@ class TransitionCheck(Check):
 
         for trans in transitions:
             t = transitions[trans]
-            source = t["source"]
+            transition_source = t["source"]
             expected = t["new"]
 
             # Will be None if nothing is in testing.
-            current = get_source_in_suite(source, "testing", session)
+            current = get_source_in_suite(transition_source, "testing", session)
             if current is not None:
                 compare = apt_pkg.version_compare(current.version, expected)
 
@@ -590,7 +590,7 @@ currently {1}, we need version {2}).  This transition is managed by the
 Release Team, and {3} is the Release-Team member responsible for it.
 Please mail debian-release@lists.debian.org or contact {3} directly if you
 need further assistance.  You might want to upload to experimental until this
-transition is done.""".format(source, currentlymsg, expected,t["rm"])))
+transition is done.""".format(transition_source, currentlymsg, expected,t["rm"])))
 
                     raise Reject(rejectmsg)
 
