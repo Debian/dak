@@ -39,6 +39,7 @@ from apt_pkg import version_compare
 import errno
 import os
 import subprocess
+import textwrap
 import time
 import yaml
 
