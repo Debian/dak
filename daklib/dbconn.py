@@ -2089,27 +2089,28 @@ __all__.append('get_sources_from_name')
 # FIXME: This function fails badly if it finds more than 1 source package and
 # its implementation is trivial enough to be inlined.
 @session_wrapper
-def get_source_in_suite(source, suite, session=None):
+def get_source_in_suite(source, suite_name, session=None):
     """
-    Returns a DBSource object for a combination of C{source} and C{suite}.
+    Returns a DBSource object for a combination of C{source} and C{suite_name}.
 
       - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
-      - B{suite} - a suite name, eg. I{unstable}
+      - B{suite_name} - a suite name, eg. I{unstable}
 
     @type source: string
     @param source: source package name
 
-    @type suite: string
+    @type suite_name: string
     @param suite: the suite name
 
     @rtype: string
     @return: the version for I{source} in I{suite}
 
     """
-
-    q = get_suite(suite, session).get_sources(source)
+    suite = get_suite(suite_name, session)
+    if suite is None:
+        return None
     try:
-        return q.one()
+        return suite.get_sources(source).one()
     except NoResultFound:
         return None
 
