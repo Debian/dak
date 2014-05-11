@@ -12,6 +12,16 @@ Subject: __CHANGES_FILENAME__ is NEW
 
 __WARNINGS__
 
-Your package contains new components which requires manual editing of
-the override file.  It is ok otherwise, so please be patient.  New
-packages are usually added to the override file about once a week.
+Your package has been put into the NEW queue, which requires manual action
+from the ftpteam to process. The upload was otherwise valid (it had a good
+OpenPGP signature and file hashes are valid), so please be patient.
+
+Packages are routinely processed through to the archive, and do feel
+free to browse the NEW queue[1].
+
+If there is an issue with the upload, you will recieve an email from a
+member of the ftpteam.
+
+If you have any questions, you may reply to this email.
+
+[1]: https://ftp-master.debian.org/new.html
