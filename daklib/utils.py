@@ -259,9 +259,8 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
         "-----BEGIN PGP SIGNATURE-----".
     """
 
-    changes_in = open_file(filename)
-    content = changes_in.read()
-    changes_in.close()
+    with open_file(filename) as changes_in:
+        content = changes_in.read()
     try:
         unicode(content, 'utf-8')
     except UnicodeError:
@@ -322,11 +321,8 @@ def check_hash(where, files, hashname, hashfunc):
 
     rejmsg = []
     for f in files.keys():
-        file_handle = None
         try:
-            try:
-                file_handle = open_file(f)
-
+            with open_file(f) as file_handle:
                 # Check for the hash entry, to not trigger a KeyError.
                 if not files[f].has_key(hash_key(hashname)):
                     rejmsg.append("%s: misses %s checksum in %s" % (f, hashname,
@@ -337,13 +333,10 @@ def check_hash(where, files, hashname, hashfunc):
                 if hashfunc(file_handle) != files[f][hash_key(hashname)]:
                     rejmsg.append("%s: %s check failed in %s" % (f, hashname,
                         where))
-            except CantOpenError:
-                # TODO: This happens when the file is in the pool.
-                # warn("Cannot open file %s" % f)
-                continue
-        finally:
-            if file_handle:
-                file_handle.close()
+        except CantOpenError:
+            # TODO: This happens when the file is in the pool.
+            # warn("Cannot open file %s" % f)
+            continue
     return rejmsg
 
 ################################################################################
@@ -620,9 +613,8 @@ def send_mail (message, filename="", whitelists=None):
     if maildir:
         path = os.path.join(maildir, datetime.datetime.now().isoformat())
         path = find_next_free(path)
-        fh = open(path, 'w')
-        print >>fh, message,
-        fh.close()
+        with open(path, 'w') as fh:
+            print >>fh, message,
 
     # Check whether we're supposed to be sending mail
     if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
@@ -639,9 +631,8 @@ def send_mail (message, filename="", whitelists=None):
     if Cnf.get('Dinstall::MailWhiteList', ''):
         whitelists.append(Cnf['Dinstall::MailWhiteList'])
     if len(whitelists) != 0:
-        message_in = open_file(filename)
-        message_raw = modemail.message_from_file(message_in)
-        message_in.close();
+        with open_file(filename) as message_in:
+            message_raw = modemail.message_from_file(message_in)
 
         whitelist = [];
         for path in whitelists:
@@ -786,11 +777,10 @@ def which_conf_file ():
 
 def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
-    templatefile = open_file(filename)
-    template = templatefile.read()
+    with open_file(filename) as templatefile:
+        template = templatefile.read()
     for k, v in subst_map.iteritems():
         template = template.replace(k, str(v))
-    templatefile.close()
     return template
 
 ################################################################################

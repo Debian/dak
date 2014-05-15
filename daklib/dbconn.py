@@ -558,11 +558,8 @@ class DBBinary(ORMObject):
         '''
         import utils
         fullpath = self.poolfile.fullpath
-        deb_file = open(fullpath, 'r')
-        stanza = utils.deb_extract_control(deb_file)
-        deb_file.close()
-
-        return stanza
+        with open(fullpath, 'r') as deb_file:
+            return utils.deb_extract_control(deb_file)
 
     def read_control_fields(self):
         '''
