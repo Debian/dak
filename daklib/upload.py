@@ -136,25 +136,22 @@ class HashedFile(object):
         @raise InvalidHashException: hash mismatch
         """
         path = os.path.join(directory, self.filename)
-        fh = open(path, 'r')
 
         size = os.stat(path).st_size
         if size != self.size:
             raise InvalidHashException(self.filename, 'size', self.size, size)
 
-        md5sum = apt_pkg.md5sum(fh)
-        if md5sum != self.md5sum:
-            raise InvalidHashException(self.filename, 'md5sum', self.md5sum, md5sum)
+        with open(path) as fh:
+            hashes = apt_pkg.Hashes(fh)
 
-        fh.seek(0)
-        sha1sum = apt_pkg.sha1sum(fh)
-        if sha1sum != self.sha1sum:
-            raise InvalidHashException(self.filename, 'sha1sum', self.sha1sum, sha1sum)
+        if hashes.md5 != self.md5sum:
+            raise InvalidHashException(self.filename, 'md5sum', self.md5sum, hashes.md5)
 
-        fh.seek(0)
-        sha256sum = apt_pkg.sha256sum(fh)
-        if sha256sum != self.sha256sum:
-            raise InvalidHashException(self.filename, 'sha256sum', self.sha256sum, sha256sum)
+        if hashes.sha1 != self.sha1sum:
+            raise InvalidHashException(self.filename, 'sha1sum', self.sha1sum, hashes.sha1)
+
+        if hashes.sha256 != self.sha256sum:
+            raise InvalidHashException(self.filename, 'sha256sum', self.sha256sum, hashes.sha256)
 
 def parse_file_list(control, has_priority_and_section):
     """Parse Files and Checksums-* fields
