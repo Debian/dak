@@ -42,6 +42,7 @@ import re
 import email as modemail
 import subprocess
 import ldap
+import errno
 
 import daklib.config as config
 import daklib.daksubprocess
@@ -358,7 +359,7 @@ def check_size(where, files):
         try:
             entry = os.stat(f)
         except OSError as exc:
-            if exc.errno == 2:
+            if exc.errno == errno.ENOENT:
                 # TODO: This happens when the file is in the pool.
                 continue
             raise
