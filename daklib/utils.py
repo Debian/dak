@@ -1567,7 +1567,7 @@ def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/w
         lines = f.readlines()
     except IOError as e:
         print "Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file
-	lines = []
+        lines = []
     wnpp = {}
 
     for line in lines:
