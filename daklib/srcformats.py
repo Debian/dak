@@ -76,7 +76,7 @@ class FormatOne(SourceFormat):
     __metaclass__ = SourceFormat
 
     name = '1.0'
-    format = r'1.0'
+    format = r'1\.0'
 
     requires = ()
     disallowed = ('debian_tar', 'more_orig_tar')
