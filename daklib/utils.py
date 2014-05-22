@@ -23,6 +23,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import commands
+import codecs
 import datetime
 import email.Header
 import os
@@ -57,8 +58,8 @@ from gpg import SignedFile
 from textutils import fix_maintainer
 from regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
-                    re_gpg_uid, re_re_mark, re_whitespace_comment, re_issource, \
-                    re_is_orig_source, re_build_dep_arch
+                    re_re_mark, re_whitespace_comment, re_issource, \
+                    re_is_orig_source, re_build_dep_arch, re_parse_maintainer
 
 from formats import parse_format, validate_changes_format
 from srcformats import get_format_from_string
@@ -1363,21 +1364,37 @@ def gpg_get_key_addresses(fingerprint):
     if addresses != None:
         return addresses
     addresses = list()
-    cmd = "gpg --no-default-keyring %s --fingerprint %s" \
-                % (gpg_keyring_args(), fingerprint)
-    (result, output) = commands.getstatusoutput(cmd)
-    if result == 0:
+    try:
+        with open(os.devnull, "wb") as devnull:
+            output = daklib.daksubprocess.check_output(
+                ["gpg", "--no-default-keyring"] + gpg_keyring_args().split() +
+                ["--with-colons", "--list-keys", fingerprint], stderr=devnull)
+    except subprocess.CalledProcessError:
+        pass
+    else:
         for l in output.split('\n'):
-            m = re_gpg_uid.match(l)
+            parts = l.split(':')
+            if parts[0] not in ("uid", "pub"):
+                continue
+            try:
+                uid = parts[9]
+            except IndexError:
+                continue
+            try:
+                uid = codecs.decode(uid.decode("utf-8"), "unicode_escape")
+            except UnicodeDecodeError:
+                uid = uid.decode("latin1") # does not fail
+            m = re_parse_maintainer.match(uid)
             if not m:
                 continue
-            address = m.group(1)
+            address = m.group(2)
+            address = address.encode("utf8") # dak still uses bytes
             if address.endswith('@debian.org'):
                 # prefer @debian.org addresses
                 # TODO: maybe not hardcode the domain
                 addresses.insert(0, address)
             else:
-                addresses.append(m.group(1))
+                addresses.append(address)
     key_uid_email_cache[fingerprint] = addresses
     return addresses
 
