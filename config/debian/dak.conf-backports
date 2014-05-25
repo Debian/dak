@@ -21,4 +21,8 @@ Process-New
 
 Queue-Report {
   Options::Directories "backports-new";
+  ReportLocations
+  {
+    822Location "/srv/ftp.debian.org/web/backports-new.822";
+  };
 };
