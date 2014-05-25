@@ -134,14 +134,9 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         '''
         Returns the header for the Contents files as a string.
         '''
-        header_file = None
-        try:
-            filename = os.path.join(Config()['Dir::Templates'], 'contents')
-            header_file = open(filename)
+        filename = os.path.join(Config()['Dir::Templates'], 'contents')
+        with open(filename) as header_file:
             return header_file.read()
-        finally:
-            if header_file:
-                header_file.close()
 
     def write_file(self):
         '''

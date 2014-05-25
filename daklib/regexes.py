@@ -61,7 +61,6 @@ re_multi_line_field = re.compile(r"^\s(.*)")
 re_taint_free = re.compile(r"^[-+~/\.\w]+$")
 
 re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
-re_gpg_uid = re.compile('^uid.*<([^>]*)>')
 
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
 re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")

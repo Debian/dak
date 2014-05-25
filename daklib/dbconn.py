@@ -558,11 +558,8 @@ class DBBinary(ORMObject):
         '''
         import utils
         fullpath = self.poolfile.fullpath
-        deb_file = open(fullpath, 'r')
-        stanza = utils.deb_extract_control(deb_file)
-        deb_file.close()
-
-        return stanza
+        with open(fullpath, 'r') as deb_file:
+            return utils.deb_extract_control(deb_file)
 
     def read_control_fields(self):
         '''
@@ -1158,9 +1155,6 @@ def get_ldap_name(entry):
 ################################################################################
 
 class Keyring(object):
-    gpg_invocation = "gpg --no-default-keyring --keyring %s" +\
-                     " --with-colons --fingerprint --fingerprint"
-
     keys = {}
     fpr_lookup = {}
 
@@ -1190,11 +1184,14 @@ class Keyring(object):
         if not self.keyring_id:
             raise Exception('Must be initialized with database information')
 
-        k = os.popen(self.gpg_invocation % keyring, "r")
+        cmd = ["gpg", "--no-default-keyring", "--keyring", keyring,
+               "--with-colons", "--fingerprint", "--fingerprint"]
+        p = daklib.daksubprocess.Popen(cmd, stdout=subprocess.PIPE)
+
         key = None
         need_fingerprint = False
 
-        for line in k:
+        for line in p.stdout:
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
@@ -1213,6 +1210,10 @@ class Keyring(object):
                 self.keys[key]["fingerprints"] = [field[9]]
                 self.fpr_lookup[field[9]] = key
                 need_fingerprint = False
+
+        r = p.wait()
+        if r != 0:
+            raise subprocess.CalledProcessError(r, cmd)
 
     def import_users_from_ldap(self, session):
         import ldap
