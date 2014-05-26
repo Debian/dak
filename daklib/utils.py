@@ -1381,7 +1381,8 @@ def gpg_get_key_addresses(fingerprint):
             except IndexError:
                 continue
             try:
-                uid = codecs.decode(uid.decode("utf-8"), "unicode_escape")
+                # Do not use unicode_escape, because it is locale-specific
+                uid = codecs.decode(uid, "string_escape").decode("utf-8")
             except UnicodeDecodeError:
                 uid = uid.decode("latin1") # does not fail
             m = re_parse_maintainer.match(uid)
