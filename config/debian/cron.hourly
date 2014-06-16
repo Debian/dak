@@ -34,7 +34,7 @@ fi
 
 dak queue-report -n > $webdir/new.html
 dak queue-report -n -d backports-new > ${webdir}/backports-new.html
-dak queue-report -8 -d new,byhand,stable-new,oldstable-new -r $webdir/stat
+dak queue-report -8 -d new,byhand,stable-new,oldstable-new,backports-new -r $webdir/stat
 sudo -u dak-unpriv dak show-deferred -r $webdir/stat > ${webdir}/deferred.html
 dak graph -n new,byhand,stable-new,oldstable-new,deferred -r $webdir/stat -i $webdir/stat -x $scriptsdir/rrd-release-freeze-dates
 
