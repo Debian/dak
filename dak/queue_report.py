@@ -654,7 +654,10 @@ def main():
     f = None
     if Cnf.has_key("Queue-Report::Options::822"):
         # Open the report file
-        f = open(Cnf["Queue-Report::ReportLocations::822Location"], "w")
+        f = sys.stdout
+        filename822 = Cnf.get("Queue-Report::ReportLocations::822Location")
+        if filename822:
+            f = open(filename822, "w")
 
     session = DBConn().session()
 
