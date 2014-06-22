@@ -1,0 +1,177 @@
+#! /usr/bin/python
+#
+# Copyright (C) 2014, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+from base_test import DakTestCase
+import unittest
+from daklib.packagelist import PackageList, InvalidSource
+
+class FakeArchitecture(object):
+    def __init__(self, name):
+        self.arch_string = name
+
+class FakeSuite(object):
+    def __init__(self, *architectures):
+        self.architectures = [ FakeArchitecture(a) for a in architectures ]
+
+source_all = {
+    'Package-List': '\n libdune-common-doc deb doc optional arch=all\n',
+    'Binary': 'libdune-common-doc\n',
+    }
+
+source_any = {
+    'Package-List': '\n libdune-common-dev deb libdevel optional arch=any\n',
+    'Binary': 'libdune-common-dev\n',
+    }
+
+source_all_any = {
+    'Package-List': '\n libdune-common-dev deb libdevel optional arch=any\nlibdune-common-doc deb doc optional arch=all\n',
+    'Binary': 'libdune-common-dev libdune-common-doc\n',
+    }
+
+source_amd64 = {
+    'Package-List': '\n libdune-common-dev deb libdevel optional arch=amd64\n',
+    'Binary': 'libdune-common-dev\n',
+    }
+
+source_linuxany = {
+    'Package-List': '\n libdune-common-dev deb libdevel optional arch=linux-any\n',
+    'Binary': 'libdune-common-dev\n',
+    }
+
+source_noarch = {
+    'Package-List': '\n libdune-common-dev deb libdevel optional\n',
+    'Binary': 'libdune-common-dev\n',
+}
+
+source_fallback = {
+    'Binary': 'libdune-common-dev\n',
+}
+
+class TestPackageList(DakTestCase):
+    def testArchAll(self):
+        pl = PackageList(source_all)
+
+        self.assertTrue(pl.has_arch_indep_packages())
+        self.assertFalse(pl.has_arch_dep_packages())
+
+        suite_amd64 = FakeSuite('amd64')
+        p_amd64 = pl.packages_for_suite(suite_amd64)
+        self.assertEqual(len(p_amd64), 0)
+
+        suite_all = FakeSuite('all')
+        p_all = pl.packages_for_suite(suite_all)
+        self.assertEqual(len(p_all), 1)
+
+        suite_all_amd64 = FakeSuite('amd64', 'all')
+        p_all_amd64 = pl.packages_for_suite(suite_all_amd64)
+        self.assertEqual(len(p_all_amd64), 1)
+
+    def testArchAny(self):
+        pl = PackageList(source_any)
+
+        self.assertFalse(pl.has_arch_indep_packages())
+        self.assertTrue(pl.has_arch_dep_packages())
+
+        suite_amd64 = FakeSuite('amd64')
+        p_amd64 = pl.packages_for_suite(suite_amd64)
+        self.assertEqual(len(p_amd64), 1)
+
+        suite_all = FakeSuite('all')
+        p_all = pl.packages_for_suite(suite_all)
+        self.assertEqual(len(p_all), 0)
+
+        suite_all_amd64 = FakeSuite('amd64', 'all')
+        p_all_amd64 = pl.packages_for_suite(suite_all_amd64)
+        self.assertEqual(len(p_all_amd64), 1)
+
+    def testArchAnyAll(self):
+        pl = PackageList(source_all_any)
+
+        self.assertTrue(pl.has_arch_indep_packages())
+        self.assertTrue(pl.has_arch_dep_packages())
+
+        suite_amd64 = FakeSuite('amd64')
+        p_amd64 = pl.packages_for_suite(suite_amd64)
+        self.assertEqual(len(p_amd64), 1)
+
+        suite_amd64_i386 = FakeSuite('amd64', 'i386')
+        p_amd64_i386 = pl.packages_for_suite(suite_amd64_i386)
+        self.assertEqual(len(p_amd64_i386), 1)
+
+        suite_all = FakeSuite('all')
+        p_all = pl.packages_for_suite(suite_all)
+        self.assertEqual(len(p_all), 1)
+
+        suite_all_amd64 = FakeSuite('amd64', 'all')
+        p_all_amd64 = pl.packages_for_suite(suite_all_amd64)
+        self.assertEqual(len(p_all_amd64), 2)
+
+    def testArchAmd64(self):
+        pl = PackageList(source_amd64)
+
+        self.assertFalse(pl.has_arch_indep_packages())
+        self.assertTrue(pl.has_arch_dep_packages())
+
+        suite_amd64 = FakeSuite('amd64')
+        p_amd64 = pl.packages_for_suite(suite_amd64)
+        self.assertEqual(len(p_amd64), 1)
+
+        suite_i386 = FakeSuite('i386')
+        p_i386 = pl.packages_for_suite(suite_i386)
+        self.assertEqual(len(p_i386), 0)
+
+    def testArchLinuxAny(self):
+        pl = PackageList(source_linuxany)
+
+        self.assertFalse(pl.has_arch_indep_packages())
+        self.assertTrue(pl.has_arch_dep_packages())
+
+        suite_amd64 = FakeSuite('amd64')
+        p_amd64 = pl.packages_for_suite(suite_amd64)
+        self.assertEqual(len(p_amd64), 1)
+
+        suite_i386 = FakeSuite('i386')
+        p_i386 = pl.packages_for_suite(suite_i386)
+        self.assertEqual(len(p_i386), 1)
+
+        suite_kfreebsdi386 = FakeSuite('kfreebsd-i386')
+        p_kfreebsdi386 = pl.packages_for_suite(suite_kfreebsdi386)
+        self.assertEqual(len(p_kfreebsdi386), 0)
+
+    def testNoArch(self):
+        pl = PackageList(source_noarch)
+
+        self.assertIsNone(pl.has_arch_indep_packages())
+        self.assertIsNone(pl.has_arch_dep_packages())
+
+        suite_amd64 = FakeSuite('amd64')
+        p_amd64 = pl.packages_for_suite(suite_amd64)
+        self.assertEqual(len(p_amd64), 1)
+
+    def testFallback(self):
+        pl = PackageList(source_fallback)
+
+        self.assertIsNone(pl.has_arch_indep_packages())
+        self.assertIsNone(pl.has_arch_dep_packages())
+
+        suite_amd64 = FakeSuite('amd64')
+        p_amd64 = pl.packages_for_suite(suite_amd64)
+        self.assertEqual(len(p_amd64), 1)
+
+if __name__ == '__main__':
+    unittest.main()
