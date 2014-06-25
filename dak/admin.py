@@ -23,6 +23,8 @@ import sys
 
 import apt_pkg
 
+import daklib.archive
+
 from daklib import utils
 from daklib.dbconn import *
 from sqlalchemy.orm.exc import NoResultFound
@@ -135,6 +137,12 @@ Perform administrative work on the dak database.
        where
          CHECK     is one of Enhances, MustBeNewerThan, MustBeOlderThan
 	 REFERENCE is another suite name
+
+  change-component:
+     change-component SUITE COMPONENT source SOURCE...
+     change-component SUITE COMPONENT binary BINARY...
+         Move source or binary packages to a different component by copying
+         associated files and changing the overrides.
 """
     sys.exit(exit_code)
 
@@ -867,6 +875,55 @@ def keyring(command):
 
 dispatch['keyring'] = keyring
 dispatch['k'] = keyring
+
+################################################################################
+
+def change_component_source(transaction, suite, component, source_names):
+    session = transaction.session
+
+    overrides = session.query(Override).filter(Override.package.in_(source_names)).filter_by(suite=suite).join(OverrideType).filter_by(overridetype='dsc')
+    for override in overrides:
+        print "Changing override for {0}".format(override.package)
+        override.component = component
+    session.flush()
+
+    sources = session.query(DBSource).filter(DBSource.source.in_(source_names)).filter(DBSource.suites.contains(suite))
+    for source in sources:
+        print "Copying {0}={1}".format(source.source, source.version)
+        transaction.copy_source(source, suite, component)
+
+def change_component_binary(transaction, suite, component, binary_names):
+    session = transaction.session
+
+    overrides = session.query(Override).filter(Override.package.in_(binary_names)).filter_by(suite=suite).join(OverrideType).filter(OverrideType.overridetype.in_(['deb', 'udeb']))
+    for override in overrides:
+        print "Changing override for {0}".format(override.package)
+        override.component = component
+    session.flush()
+
+    binaries = session.query(DBBinary).filter(DBBinary.package.in_(binary_names)).filter(DBBinary.suites.contains(suite))
+    for binary in binaries:
+        print "Copying {0}={1} [{2}]".format(binary.package, binary.version, binary.architecture.arch_string)
+        transaction.copy_binary(binary, suite, component)
+    pass
+
+def change_component(args):
+    with daklib.archive.ArchiveTransaction() as transaction:
+        session = transaction.session
+
+        suite = session.query(Suite).filter_by(suite_name=args[1]).one()
+        component = session.query(Component).filter_by(component_name=args[2]).one()
+
+        if args[3] == 'source':
+            change_component_source(transaction, suite, component, args[4:])
+        elif args[3] == 'binary':
+            change_component_binary(transaction, suite, component, args[4:])
+        else:
+            raise Exception("Can only move source or binary, not {0}".format(args[3]))
+
+        transaction.commit()
+
+dispatch['change-component'] = change_component
 
 ################################################################################
 
