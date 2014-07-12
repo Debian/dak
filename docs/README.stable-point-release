@@ -6,8 +6,8 @@ Rough Guide to doing Stable Point Releases in Debian
 suite=stable
 suitename=wheezy
 pusuite=proposed-updates
-oldrev=7.4
-newrev=7.5
+oldrev=7.5
+newrev=7.6
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -65,9 +65,9 @@ cd $ftpdir/dists/${suite}
 
 - Updates for win32-loader?
 cd ${ftpdir}/tools/win32-loader
-if [ -d ${suitename}-proposed-updates ]; then
+if [ -d ${suite}-proposed-updates ]; then
     rm -r ${suite}
-    mv ${suitename}-proposed-updates ${suite}
+    mv ${suite}-proposed-updates ${suite}
 fi
 cd ${ftpdir}
 
@@ -131,6 +131,10 @@ dak generate-releases -f -s ${suite}
 rm ${ftpdir}/dists/${suite}/InRelease
 
 - have the SRMs sign it and put the signature in.
+cd ${ftpdir}/dists/${suite}
+cat /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release.gpg >> Release.gpg
+gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
+
 - Check if a mirror push is needed or next dinstall is enough. for a push
 o if so, bash:
 
