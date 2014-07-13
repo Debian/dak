@@ -54,6 +54,7 @@ Display information about PACKAGE(s).
   -r, --regex                treat PACKAGE as a regex
   -s, --suite=SUITE          only show info for this suite
   -S, --source-and-binary    show info for the binary children of source pkgs
+  -f, --format=control-suite use same format as control-suite for output
 
 ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
     --architecture=amd64,i386"""
