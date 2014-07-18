@@ -6,6 +6,6 @@ X-Debian-Package: __SOURCE__
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
-Subject: Accepted __SOURCE__ __VERSION__ (__ARCHITECTURE__)
+Subject: Accepted __SOURCE__ __VERSION__ (__ARCHITECTURE__) into __SUITE__
 
 __FILE_CONTENTS__
