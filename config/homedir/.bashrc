@@ -28,11 +28,8 @@ xterm*|rxvt*)
 esac
 
 case "$HOSTNAME" in
-    franck)
+    franck|coccia)
         export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
-        ;;
-    morricone)
-        export SCRIPTVARS=/srv/backports-master.debian.org/dak/config/backports/vars
         ;;
     chopin)
         export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
@@ -42,7 +39,9 @@ case "$HOSTNAME" in
         ;;
 esac
 
-. $SCRIPTVARS
+if [[ -n ${SCRIPTVARS} ]]; then
+    . $SCRIPTVARS
+fi
 
 function em() {
     export EDITOR=$(which emacs)
