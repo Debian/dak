@@ -195,7 +195,12 @@ class SignedFile(object):
                 fcntl.fcntl(fd, fcntl.F_SETFD, old & ~fcntl.FD_CLOEXEC)
             os.closerange(4, _MAXFD)
 
-            args = [self.gpg, "--status-fd=3", "--no-default-keyring"]
+            args = [self.gpg,
+                    "--status-fd=3",
+                    "--no-default-keyring",
+                    "--batch",
+                    "--no-tty",
+                    "--trust-model", "always"]
             for k in self.keyrings:
                 args.append("--keyring=%s" % k)
             args.extend(["--decrypt", "-"])
