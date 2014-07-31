@@ -27,7 +27,7 @@ class InvalidSource(Exception):
 class PackageListEntry(object):
     def __init__(self, name, package_type, section, component, priority, **other):
         self.name = name
-        self.package_type = package_type
+        self.type = package_type
         self.section = section
         self.component = component
         self.priority = priority
