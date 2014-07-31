@@ -32,12 +32,15 @@ class PackageListEntry(object):
         self.component = component
         self.priority = priority
         self.other = other
-    @property
-    def architectures(self):
+
+        self.architectures = self._architectures()
+
+    def _architectures(self):
         archs = self.other.get("arch", None)
         if archs is None:
             return None
         return archs.split(',')
+
     def built_on_architecture(self, architecture):
         archs = self.architectures
         if archs is None:
@@ -46,6 +49,7 @@ class PackageListEntry(object):
             if match_architecture(architecture, arch):
                 return True
         return False
+
     def built_in_suite(self, suite):
         built = False
         for arch in suite.architectures:
@@ -65,8 +69,14 @@ class PackageList(object):
             self._parse_fallback()
         else:
             raise InvalidSource('Source package has neither Package-List nor Binary field.')
+
+        self.fallback = any(entry.architectures is None for entry in self.package_list)
+
     def _parse(self):
-        self.package_list = {}
+        self.package_list = []
+
+        binaries_binary = set(self._source['Binary'].split())
+        binaries_package_list = set()
 
         for line in self._source['Package-List'].split("\n"):
             if not line:
@@ -82,11 +92,20 @@ class PackageList(object):
             priority = fields[3]
             other = dict(kv.split('=', 1) for kv in fields[4:])
 
+            if name in binaries_package_list:
+                raise InvalidSource("Package-List has two entries for '{0}'.".format(name))
+            if name not in binaries_binary:
+                raise InvalidSource("Package-List lists {0} which is not listed in Binaries.".format(name))
+            binaries_package_list.add(name)
+
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
-            self.package_list[name] = entry
+            self.package_list.append(entry)
+
+        if len(binaries_binary) != len(binaries_package_list):
+            raise InvalidSource("Package-List and Binaries fields have a different number of entries.")
 
     def _parse_fallback(self):
-        self.package_list = {}
+        self.package_list = []
 
         for binary in self._source['Binary'].split():
             name = binary
@@ -97,11 +116,11 @@ class PackageList(object):
             other = dict()
 
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
-            self.package_list[name] = entry
+            self.package_list.append(entry)
 
     def packages_for_suite(self, suite):
         packages = []
-        for entry in self.package_list.values():
+        for entry in self.package_list:
             built = entry.built_in_suite(suite)
             if built or built is None:
                 packages.append(entry)
@@ -109,7 +128,7 @@ class PackageList(object):
 
     def has_arch_indep_packages(self):
         has_arch_indep = False
-        for entry in self.package_list.values():
+        for entry in self.package_list:
             built = entry.built_on_architecture('all')
             if built:
                 return True
@@ -119,7 +138,7 @@ class PackageList(object):
 
     def has_arch_dep_packages(self):
         has_arch_dep = False
-        for entry in self.package_list.values():
+        for entry in self.package_list:
             built_on_all = entry.built_on_architecture('all')
             if built_on_all == False:
                 return True
