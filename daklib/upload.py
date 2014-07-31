@@ -28,6 +28,7 @@ import re
 
 from daklib.gpg import SignedFile
 from daklib.regexes import *
+import daklib.packagelist
 
 class InvalidChangesException(Exception):
     pass
@@ -497,6 +498,11 @@ class Source(object):
         self.dsc = apt_pkg.TagSection(self._signed_file.contents)
         """dict to access fields in the .dsc file
         @type: dict-like
+        """
+
+        self.package_list = daklib.packagelist.PackageList(self.dsc)
+        """Information about packages built by the source.
+        @type: daklib.packagelist.PackageList
         """
 
         self._files = None
