@@ -155,11 +155,7 @@ def extract_component_from_section(section, session=None):
 
     # Expand default component
     if component == "":
-        comp = get_component(section, session)
-        if comp is None:
-            component = "main"
-        else:
-            component = comp.component_name
+        component = "main"
 
     return (section, component)
 
