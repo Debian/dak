@@ -612,17 +612,52 @@ transition is done.""".format(transition_source, currentlymsg, expected,t["rm"])
         return None
 
 class NoSourceOnlyCheck(Check):
+    def is_source_only_upload(self, upload):
+        changes = upload.changes
+        if changes.source is not None and len(changes.binaries) == 0:
+            return True
+        return False
+
     """Check for source-only upload
 
     Source-only uploads are only allowed if Dinstall::AllowSourceOnlyUploads is
     set. Otherwise they are rejected.
+
+    Source-only uploads are only accepted for source packages having a
+    Package-List field that also lists architectures per package. This
+    check can be disabled via
+    Dinstall::AllowSourceOnlyUploadsWithoutPackageList.
+
+    Source-only uploads to NEW are only allowed if
+    Dinstall::AllowSourceOnlyNew is set.
+
+    Uploads not including architecture-independent packages are only
+    allowed if Dinstall::AllowNoArchIndepUploads is set.
+
     """
     def check(self, upload):
-        if Config().find_b("Dinstall::AllowSourceOnlyUploads"):
+        if not self.is_source_only_upload(upload):
             return True
+
+        allow_source_only_uploads = Config().find_b('Dinstall::AllowSourceOnlyUploads')
+        allow_source_only_uploads_without_package_list = Config().find_b('Dinstall::AllowSourceOnlyUploadsWithoutPackageList')
+        allow_source_only_new = Config().find_b('Dinstall::AllowSourceOnlyNew')
+        allow_no_arch_indep_uploads = Config().find_b('Dinstall::AllowNoArchIndepUploads')
         changes = upload.changes
-        if changes.source is not None and len(changes.binaries) == 0:
+
+        if not allow_source_only_uploads:
             raise Reject('Source-only uploads are not allowed.')
+        if not allow_source_only_uploads_without_package_list \
+           and changes.source.package_list.fallback:
+            raise Reject('Source-only uploads are only allowed if a Package-List field that also list architectures is included in the source package. dpkg (>= 1.17.7) includes this information.')
+        if not allow_source_only_new and upload.new:
+            raise Reject('Source-only uploads to NEW are not allowed.')
+
+        if not allow_no_arch_indep_uploads \
+           and 'all' not in changes.architectures \
+           and changes.source.package_list.has_arch_indep_packages():
+            raise Reject('Uploads not including architecture-independent packages are not allowed.')
+
         return True
 
 class LintianCheck(Check):
