@@ -62,23 +62,25 @@ class PackageListEntry(object):
 
 class PackageList(object):
     def __init__(self, source):
-        self._source = source
-        if 'Package-List' in self._source:
-            self._parse()
-        elif 'Binary' in self._source:
-            self._parse_fallback()
+        if 'Package-List' in source:
+            self._parse(source)
+        elif 'Binary' in source:
+            self._parse_fallback(source)
         else:
             raise InvalidSource('Source package has neither Package-List nor Binary field.')
 
         self.fallback = any(entry.architectures is None for entry in self.package_list)
 
-    def _parse(self):
+    def _binaries(self, source):
+        return set(name.strip() for name in source['Binary'].split(","))
+
+    def _parse(self, source):
         self.package_list = []
 
-        binaries_binary = set(self._source['Binary'].split())
+        binaries_binary = self._binaries(source)
         binaries_package_list = set()
 
-        for line in self._source['Package-List'].split("\n"):
+        for line in source['Package-List'].split("\n"):
             if not line:
                 continue
             fields = line.split()
@@ -95,7 +97,7 @@ class PackageList(object):
             if name in binaries_package_list:
                 raise InvalidSource("Package-List has two entries for '{0}'.".format(name))
             if name not in binaries_binary:
-                raise InvalidSource("Package-List lists {0} which is not listed in Binaries.".format(name))
+                raise InvalidSource("Package-List lists {0} which is not listed in Binary.".format(name))
             binaries_package_list.add(name)
 
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
@@ -104,10 +106,10 @@ class PackageList(object):
         if len(binaries_binary) != len(binaries_package_list):
             raise InvalidSource("Package-List and Binaries fields have a different number of entries.")
 
-    def _parse_fallback(self):
+    def _parse_fallback(self, source):
         self.package_list = []
 
-        for binary in self._source['Binary'].split():
+        for binary in self._binaries(source):
             name = binary
             package_type = None
             component = None

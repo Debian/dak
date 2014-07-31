@@ -40,7 +40,7 @@ source_any = {
 
 source_all_any = {
     'Package-List': '\n libdune-common-dev deb libdevel optional arch=any\nlibdune-common-doc deb doc optional arch=all\n',
-    'Binary': 'libdune-common-dev libdune-common-doc\n',
+    'Binary': 'libdune-common-dev, libdune-common-doc\n',
     }
 
 source_amd64 = {
