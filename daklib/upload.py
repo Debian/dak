@@ -448,6 +448,10 @@ class Binary(object):
         return (match.group('package'), version)
 
     @property
+    def name(self):
+        return self.control['Package']
+
+    @property
     def type(self):
         """package type ('deb' or 'udeb')
         @type: str
