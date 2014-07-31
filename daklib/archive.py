@@ -739,6 +739,23 @@ class ArchiveUpload(object):
         suites = session.query(Suite).filter(Suite.suite_name.in_(suite_names))
         return suites
 
+    def _check_new_binary_overrides(self, suite):
+        new = False
+
+        binaries = self.changes.binaries
+        source = self.changes.source
+        if source is not None and not source.package_list.fallback:
+            packages = source.package_list.packages_for_suite(suite)
+            binaries = [ entry for entry in packages ]
+
+        for b in binaries:
+            override = self._binary_override(suite, b)
+            if override is None:
+                self.warnings.append('binary:{0} is NEW.'.format(b.name))
+                new = True
+
+        return new
+
     def _check_new(self, suite):
         """Check if upload is NEW
 
@@ -753,12 +770,8 @@ class ArchiveUpload(object):
         new = False
 
         # Check for missing overrides
-        for b in self.changes.binaries:
-            override = self._binary_override(suite, b)
-            if override is None:
-                self.warnings.append('binary:{0} is NEW.'.format(b.control['Package']))
-                new = True
-
+        if self._check_new_binary_overrides(suite):
+            new = True
         if self.changes.source is not None:
             override = self._source_override(suite, self.changes.source)
             if override is None:
@@ -804,7 +817,7 @@ class ArchiveUpload(object):
         @type  suite: L{daklib.dbconn.Suite}
         @param suite: suite to get override for
 
-        @type  binary: L{daklib.upload.Binary}
+        @type  binary: L{daklib.upload.Binary} or L{daklib.packagelist.PackageListEntry}
         @param binary: binary to get override for
 
         @rtype:  L{daklib.dbconn.Override} or C{None}
@@ -817,7 +830,7 @@ class ArchiveUpload(object):
         if mapped_component is None:
             return None
 
-        query = self.session.query(Override).filter_by(suite=suite, package=binary.control['Package']) \
+        query = self.session.query(Override).filter_by(suite=suite, package=binary.name) \
                 .join(Component).filter(Component.component_name == mapped_component.component_name) \
                 .join(OverrideType).filter(OverrideType.overridetype == binary.type)
 
