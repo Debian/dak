@@ -90,7 +90,7 @@ class PackageList(object):
             # <name> <type> <component/section> <priority> [arch=<arch>[,<arch>]...]
             name = fields[0]
             package_type = fields[1]
-            component, section = extract_component_from_section(fields[2])
+            section, component = extract_component_from_section(fields[2])
             priority = fields[3]
             other = dict(kv.split('=', 1) for kv in fields[4:])
 

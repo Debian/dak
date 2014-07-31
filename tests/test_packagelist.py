@@ -81,6 +81,14 @@ class TestPackageList(DakTestCase):
         p_all_amd64 = pl.packages_for_suite(suite_all_amd64)
         self.assertEqual(len(p_all_amd64), 1)
 
+        p = p_all[0]
+        self.assertEqual(p.name, 'libdune-common-doc')
+        self.assertEqual(p.type, 'deb')
+        self.assertEqual(p.section, 'doc')
+        self.assertEqual(p.component, 'main')
+        self.assertEqual(p.priority, 'optional')
+        self.assertEqual(p.architectures, ['all'])
+
     def testArchAny(self):
         pl = PackageList(source_any)
 
