@@ -572,6 +572,12 @@ class DBBinary(ORMObject):
         stanza = self.read_control()
         return apt_pkg.TagSection(stanza)
 
+    @property
+    def proxy(self):
+        session = object_session(self)
+        query = session.query(BinaryMetadata).filter_by(binary=self)
+        return MetadataProxy(session, query)
+
 __all__.append('DBBinary')
 
 @session_wrapper
@@ -1979,6 +1985,12 @@ class DBSource(ORMObject):
             fileset.add(name)
         return fileset
 
+    @property
+    def proxy(self):
+        session = object_session(self)
+        query = session.query(SourceMetadata).filter_by(source=self)
+        return MetadataProxy(session, query)
+
 __all__.append('DBSource')
 
 @session_wrapper
@@ -2470,6 +2482,37 @@ class SourceMetadata(ORMObject):
         return ['value']
 
 __all__.append('SourceMetadata')
+
+################################################################################
+
+class MetadataProxy(object):
+    def __init__(self, session, query):
+        self.session = session
+        self.query = query
+
+    def _get(self, key):
+        metadata_key = self.session.query(MetadataKey).filter_by(key=key).first()
+        if metadata_key is None:
+            return None
+        metadata = self.query.filter_by(key=metadata_key).first()
+        return metadata
+
+    def __contains__(self, key):
+        if self._get(key) is not None:
+            return True
+        return False
+
+    def __getitem__(self, key):
+        metadata = self._get(key)
+        if metadata is None:
+            raise KeyError
+        return metadata.value
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
 ################################################################################
 
