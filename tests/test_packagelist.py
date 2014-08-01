@@ -161,6 +161,10 @@ class TestPackageList(DakTestCase):
         p_kfreebsdi386 = pl.packages_for_suite(suite_kfreebsdi386)
         self.assertEqual(len(p_kfreebsdi386), 0)
 
+        suite_source = FakeSuite('source')
+        p_source = pl.packages_for_suite(suite_source)
+        self.assertEqual(len(p_source), 0)
+
     def testNoArch(self):
         pl = PackageList(source_noarch)
 

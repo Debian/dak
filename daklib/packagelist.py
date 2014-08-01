@@ -53,6 +53,8 @@ class PackageListEntry(object):
     def built_in_suite(self, suite):
         built = False
         for arch in suite.architectures:
+            if arch.arch_string == 'source':
+                continue
             built_on_arch = self.built_on_architecture(arch.arch_string)
             if built_on_arch:
                 return True
