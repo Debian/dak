@@ -125,7 +125,7 @@ def takenover_binaries(upload, missing, session):
     binaries = set([x.package for x in upload.binaries])
     for m in missing:
         if m['type'] != 'dsc':
-            binaries.remove(m['package'])
+            binaries.discard(m['package'])
     if binaries:
         source = upload.binaries[0].source.source
         suite = upload.target_suite.overridesuite or \

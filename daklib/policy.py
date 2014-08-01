@@ -20,6 +20,7 @@ from .config import Config
 from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, Suite, get_mapped_component
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
+from .packagelist import PackageList
 import daklib.utils as utils
 
 import errno
@@ -150,24 +151,13 @@ class PolicyQueueUploadHandler(object):
             .filter(Override.component == component)
         return query.first()
 
-    def _binary_override(self, binary, component_name):
-        package = binary.package
+    def _binary_override(self, name, binarytype, component_name):
         suite = self._overridesuite
-        overridetype = binary.binarytype
         component = get_mapped_component(component_name, self.session)
-        query = self.session.query(Override).filter_by(package=package, suite=suite) \
-            .join(OverrideType).filter(OverrideType.overridetype == overridetype) \
+        query = self.session.query(Override).filter_by(package=name, suite=suite) \
+            .join(OverrideType).filter(OverrideType.overridetype == binarytype) \
             .filter(Override.component == component)
         return query.first()
-
-    def _binary_metadata(self, binary, key):
-        metadata_key = self.session.query(MetadataKey).filter_by(key=key).first()
-        if metadata_key is None:
-            return None
-        metadata = self.session.query(BinaryMetadata).filter_by(binary=binary, key=metadata_key).first()
-        if metadata is None:
-            return None
-        return metadata.value
 
     @property
     def _changes_prefix(self):
@@ -253,33 +243,46 @@ class PolicyQueueUploadHandler(object):
         missing = []
         components = set()
 
+        source = self.upload.source
+
         if hints is None:
             hints = []
         hints_map = dict([ ((o['type'], o['package']), o) for o in hints ])
 
-        for binary in self.upload.binaries:
-            priority = self._binary_metadata(binary, 'Priority')
-            section = self._binary_metadata(binary, 'Section')
+        def check_override(name, type, priority, section):
             component = 'main'
             if section.find('/') != -1:
                 component = section.split('/', 1)[0]
-            override = self._binary_override(binary, component)
-            if override is None and not any(o['package'] == binary.package and o['type'] == binary.binarytype for o in missing):
-                hint = hints_map.get((binary.binarytype, binary.package))
+            override = self._binary_override(name, type, component)
+            if override is None and not any(o['package'] == name and o['type'] == type for o in missing):
+                hint = hints_map.get((type, name))
                 if hint is not None:
                     missing.append(hint)
                     component = hint['component']
                 else:
                     missing.append(dict(
-                            package = binary.package,
+                            package = name,
                             priority = priority,
                             section = section,
                             component = component,
-                            type = binary.binarytype,
+                            type = type,
                             ))
             components.add(component)
 
-        source = self.upload.source
+        for binary in self.upload.binaries:
+            binary_proxy = binary.proxy
+            priority = binary_proxy['Priority']
+            section = binary_proxy['Section']
+            check_override(binary.package, binary.binarytype, priority, section)
+
+        if source is not None:
+            source_proxy = source.proxy
+            package_list = PackageList(source_proxy)
+            if not package_list.fallback:
+                packages = package_list.packages_for_suite(self.upload.target_suite)
+                for p in packages:
+                    check_override(p.name, p.type, p.priority, p.section)
+
         source_component = '(unknown)'
         for component, in self.session.query(Component.component_name).order_by(Component.ordering):
             if component in components:
