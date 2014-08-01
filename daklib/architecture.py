@@ -85,9 +85,9 @@ def match_architecture(arch, wildcard):
     triplet_arch = Debian_arch_to_Debian_triplet(arch)
     triplet_wildcard = Debian_arch_to_Debian_triplet(wildcard)
 
-    if len(triplet_arch) != 3:
+    if triplet_arch is None or len(triplet_arch) != 3:
         raise InvalidArchitecture('{0} is not a valid architecture name'.format(arch))
-    if len(triplet_wildcard) != 3:
+    if triplet_wildcard is None or len(triplet_wildcard) != 3:
         raise InvalidArchitecture('{0} is not a valid architecture name or wildcard'.format(wildcard))
 
     for i in range(0,3):
