@@ -7,7 +7,7 @@ use IO::Uncompress::AnyUncompress ":all";
 
 my %data;
 my %data2;
-my @archs = ("source", "all", "amd64", "i386", "alpha", "arm", "armel", "armhf", "hppa",
+my @archs = ("source", "all", "amd64", "arm64", "i386", "alpha", "arm", "armel", "armhf", "hppa",
              "hurd-i386", "ia64", "kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "s390",
              "s390x", "sparc");
 
