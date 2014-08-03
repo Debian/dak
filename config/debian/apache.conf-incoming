@@ -89,6 +89,8 @@
     allow from 80.87.129.151
     # ironforge.sceen.net.
     allow from 46.105.42.111
+    # mahler.debian.net
+    allow from 178.78.231.178
 
     # ia64
     ## mundi
