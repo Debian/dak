@@ -275,6 +275,14 @@ class Changes(object):
         return self._signed_file.valid
 
     @property
+    def signature_timestamp(self):
+        return self._signed_file.signature_timestamp
+
+    @property
+    def contents_sha1(self):
+        return self._signed_file.contents_sha1
+
+    @property
     def architectures(self):
         """list of architectures included in the upload
         @type: list of str

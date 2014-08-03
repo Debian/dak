@@ -109,6 +109,18 @@ class Check(object):
         return False
 
 class SignatureAndHashesCheck(Check):
+    def check_replay(self, upload):
+        # Use private session as we want to remember having seen the .changes
+        # in all cases.
+        session = DBConn().session()
+        history = SignatureHistory.from_signed_file(upload.changes)
+        r = history.query(session)
+        if r is not None:
+            raise Reject('Signature for changes file was already seen at {0}'.format(r.seen))
+        session.add(history)
+        session.commit()
+        return True
+
     """Check signature of changes and dsc file (if included in upload)
 
     Make sure the signature is valid and done by a known user.
@@ -117,6 +129,7 @@ class SignatureAndHashesCheck(Check):
         changes = upload.changes
         if not changes.valid_signature:
             raise Reject("Signature for .changes not valid.")
+        self.check_replay(upload)
         self._check_hashes(upload, changes.filename, changes.files.itervalues())
 
         source = None

@@ -1859,6 +1859,9 @@ class SignatureHistory(ORMObject):
         self.contents_sha1 = signed_file.contents_sha1()
         return self
 
+    def query(self, session):
+        return session.query(SignatureHistory).filter_by(fingerprint=self.fingerprint, signature_timestamp=self.signature_timestamp, contents_sha1=self.contents_sha1).first()
+
 __all__.append('SignatureHistory')
 
 ################################################################################
