@@ -24,6 +24,7 @@ import sys
 import apt_pkg
 
 import daklib.archive
+import daklib.gpg
 
 from daklib import utils
 from daklib.dbconn import *
@@ -143,6 +144,8 @@ Perform administrative work on the dak database.
      change-component SUITE COMPONENT binary BINARY...
          Move source or binary packages to a different component by copying
          associated files and changing the overrides.
+
+  forget-signature FILE:    forget that we saw FILE
 """
     sys.exit(exit_code)
 
@@ -924,6 +927,26 @@ def change_component(args):
         transaction.commit()
 
 dispatch['change-component'] = change_component
+
+################################################################################
+
+def forget_signature(args):
+    filename = args[1]
+    with open(filename, 'r') as fh:
+        data = fh.read()
+
+    session = DBConn().session()
+    keyrings = [ k.keyring_name for k in session.query(Keyring).filter_by(active=True).order_by(Keyring.priority) ]
+    signed_file = daklib.gpg.SignedFile(data, keyrings)
+    history = SignatureHistory.from_signed_file(signed_file).query(session)
+    if history is not None:
+        session.delete(history)
+        session.commit()
+    else:
+        print "Signature was not known to dak."
+    session.rollback()
+
+dispatch['forget-signature'] = forget_signature
 
 ################################################################################
 
