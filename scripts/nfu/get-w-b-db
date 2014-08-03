@@ -34,5 +34,5 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 WB_DB_DIR=${WB_DB_DIR:-${scriptdir}/nfu}
 
 for arch in $(dak admin s-a list-arch unstable); do
-    wget -q http://buildd.debian.org/stats/$arch-all.txt -O ${WB_DB_DIR}/${arch}-all.txt
+    wget -q http://buildd.debian.org/stats/$arch-all.txt -O ${WB_DB_DIR}/${arch}-all.txt || echo "No w-b dump for ${arch}"
 done
