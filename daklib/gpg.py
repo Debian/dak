@@ -78,8 +78,11 @@ class SignedFile(object):
         self.keyrings = keyrings
 
         self.valid = False
+        self.expired = False
+        self.invalid = False
         self.fingerprint = None
         self.primary_fingerprint = None
+        self.signature_id = None
 
         self._verify(data, require_signature)
 
@@ -111,6 +114,9 @@ class SignedFile(object):
 
                 for line in self.status.splitlines():
                     self._parse_status(line)
+
+                if self.invalid:
+                    self.valid = False
 
                 if require_signature and not self.valid:
                     raise GpgException("No valid signature found. (GPG exited with status code %s)\n%s" % (exit_code, self.stderr))
@@ -163,22 +169,42 @@ class SignedFile(object):
         #             <expire-timestamp> <sig-version> <reserved> <pubkey-algo>
         #             <hash-algo> <sig-class> <primary-key-fpr>
         if fields[1] == "VALIDSIG":
+            if self.fingerprint is not None:
+                raise GpgException("More than one signature is not (yet) supported.")
             self.valid = True
             self.fingerprint = fields[2]
             self.primary_fingerprint = fields[11]
             self.signature_timestamp = self._parse_date(fields[3])
 
-        if fields[1] == "BADARMOR":
+        elif fields[1] == "BADARMOR":
             raise GpgException("Bad armor.")
 
-        if fields[1] == "NODATA":
+        elif fields[1] == "NODATA":
             raise GpgException("No data.")
 
-        if fields[1] == "DECRYPTION_FAILED":
+        elif fields[1] == "DECRYPTION_FAILED":
             raise GpgException("Decryption failed.")
 
-        if fields[1] == "ERROR":
+        elif fields[1] == "ERROR":
             raise GpgException("Other error: %s %s" % (fields[2], fields[3]))
+
+        elif fields[1] == "SIG_ID":
+            if self.signature_id is not None:
+                raise GpgException("More than one signature id.")
+            self.signature_id = fields[2]
+
+        elif fields[1] in ('PLAINTEXT', 'GOODSIG'):
+            pass
+
+        elif fields[1] in ('EXPSIG', 'EXPKEYSIG'):
+            self.expired = True
+            self.invalid = True
+
+        elif fields[1] in ('REVKEYSIG', 'BADSIG', 'ERRSIG'):
+            self.invalid = True
+
+        else:
+            raise GpgException("Keyword '{0}' from GnuPG was not expected.".format(fields[1]))
 
     def _exec_gpg(self, stdin, stdout, stderr, statusfd):
         try:
