@@ -205,11 +205,11 @@ class SignedFile(object):
         elif fields[1] in ('PLAINTEXT', 'GOODSIG'):
             pass
 
-        elif fields[1] in ('EXPSIG', 'EXPKEYSIG'):
+        elif fields[1] in ('EXPSIG', 'EXPKEYSIG', 'KEYEXPIRED'):
             self.expired = True
             self.invalid = True
 
-        elif fields[1] in ('REVKEYSIG', 'BADSIG', 'ERRSIG'):
+        elif fields[1] in ('REVKEYSIG', 'BADSIG', 'ERRSIG', 'KEYREVOKED', 'NO_PUBKEY'):
             self.invalid = True
 
         else:
