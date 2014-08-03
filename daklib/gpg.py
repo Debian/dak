@@ -149,16 +149,25 @@ class SignedFile(object):
 
         return dict( (fd, "".join(read_lines[fd])) for fd in read_lines.keys() )
 
-    def _parse_date(self, value):
-        """parse date string in YYYY-MM-DD format
+    def _parse_timestamp(self, timestamp, datestring=None):
+        """parse timestamp in GnuPG's format
 
         @rtype:   L{datetime.datetime}
-        @returns: datetime objects for 0:00 on the given day
+        @returns: datetime object for the given timestamp
         """
-        year, month, day = value.split('-')
-        date = datetime.date(int(year), int(month), int(day))
-        time = datetime.time(0, 0)
-        return datetime.datetime.combine(date, time)
+        # The old implementation did only return the date. As we already
+        # used this for replay production, return the legacy value for
+        # old signatures.
+        if datestring is not None:
+            year, month, day = datestring.split('-')
+            date = datetime.date(int(year), int(month), int(day))
+            time = datetime.time(0, 0)
+            if date < datetime.date(2014, 8, 4):
+                return datetime.datetime.combine(date, time)
+
+        if 'T' in timestamp:
+            raise Exception('No support for ISO 8601 timestamps.')
+        return datetime.datetime.utcfromtimestamp(long(timestamp))
 
     def _parse_status(self, line):
         fields = line.split()
@@ -174,7 +183,7 @@ class SignedFile(object):
             self.valid = True
             self.fingerprint = fields[2]
             self.primary_fingerprint = fields[11]
-            self.signature_timestamp = self._parse_date(fields[3])
+            self.signature_timestamp = self._parse_timestamp(fields[4], fields[3])
 
         elif fields[1] == "BADARMOR":
             raise GpgException("Bad armor.")
@@ -226,7 +235,8 @@ class SignedFile(object):
                     "--no-default-keyring",
                     "--batch",
                     "--no-tty",
-                    "--trust-model", "always"]
+                    "--trust-model", "always",
+                    "--fixed-list-mode"]
             for k in self.keyrings:
                 args.append("--keyring=%s" % k)
             args.extend(["--decrypt", "-"])
