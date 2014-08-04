@@ -202,10 +202,10 @@ class SignedFile(object):
                 raise GpgException("More than one signature id.")
             self.signature_id = fields[2]
 
-        elif fields[1] in ('PLAINTEXT', 'GOODSIG', 'NOTATION_NAME', 'NOTATION_DATA'):
+        elif fields[1] in ('PLAINTEXT', 'GOODSIG', 'NOTATION_NAME', 'NOTATION_DATA', 'SIGEXPIRED', 'KEYEXPIRED'):
             pass
 
-        elif fields[1] in ('EXPSIG', 'EXPKEYSIG', 'SIGEXPIRED', 'KEYEXPIRED'):
+        elif fields[1] in ('EXPSIG', 'EXPKEYSIG'):
             self.expired = True
             self.invalid = True
 
