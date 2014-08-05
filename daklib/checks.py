@@ -116,7 +116,7 @@ class SignatureAndHashesCheck(Check):
         history = SignatureHistory.from_signed_file(upload.changes)
         r = history.query(session)
         if r is not None:
-            raise Reject('Signature for changes file was already seen at {0}'.format(r.seen))
+            raise Reject('Signature for changes file was already seen at {0}.\nPlease refresh the signature of the changes file if you want to upload it again.'.format(r.seen))
         session.add(history)
         session.commit()
         return True
