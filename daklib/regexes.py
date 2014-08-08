@@ -133,10 +133,10 @@ re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
 ######################################################################
 
 # Match safe filenames
-re_file_safe = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.:~+-]*$')
+re_file_safe = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9_.~+-]*$')
 
 # Prefix of binary and source filenames
-_re_file_prefix = r'^(?P<package>[a-z0-9][a-z0-9.+-]+)_(?P<version>[A-Za-z0-9.:~+-]+?)'
+_re_file_prefix = r'^(?P<package>[a-z0-9][a-z0-9.+-]+)_(?P<version>[A-Za-z0-9.~+-]+?)'
 
 # Match binary packages
 # Groups: package, version, architecture, type
