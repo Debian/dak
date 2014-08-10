@@ -44,6 +44,10 @@
     allow from 80.68.93.164
     allow from 2001:41c8:1:5750::2
 
+    # for d-i; kibi@d.o
+    # home.mraw.org
+    allow from 82.236.137.215
+
     # Should be in DSA list
     # amd64
     # vitry (archive rebuild)
