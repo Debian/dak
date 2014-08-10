@@ -155,10 +155,11 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
             package = m['package']
         section = m['section']
         priority = m['priority']
+        included = "" if m['included'] else "NOT UPLOADED"
         if indexed:
-            line = "(%s): %-20s %-20s %-20s" % (index, package, priority, section)
+            line = "(%s): %-20s %-20s %-20s %s" % (index, package, priority, section, included)
         else:
-            line = "%-20s %-20s %-20s" % (package, priority, section)
+            line = "%-20s %-20s %-20s %s" % (package, priority, section, included)
         line = line.strip()
         if not m['valid']:
             line = line + ' [!]'
@@ -218,7 +219,8 @@ def edit_new (overrides, upload, session):
             type, pkg = pkg.split(':', 1)
         else:
             type = 'deb'
-        if (type, pkg) not in overrides_map:
+        o = overrides_map.get((type, pkg), None)
+        if o is None:
             utils.warn("Ignoring unknown package '%s'" % (pkg))
         else:
             if section.find('/') != -1:
@@ -231,6 +233,7 @@ def edit_new (overrides, upload, session):
                     section=section,
                     component=component,
                     priority=priority,
+                    included=o['included'],
                     ))
     return new_overrides
 

@@ -249,7 +249,7 @@ class PolicyQueueUploadHandler(object):
             hints = []
         hints_map = dict([ ((o['type'], o['package']), o) for o in hints ])
 
-        def check_override(name, type, priority, section):
+        def check_override(name, type, priority, section, included):
             component = 'main'
             if section.find('/') != -1:
                 component = section.split('/', 1)[0]
@@ -266,6 +266,7 @@ class PolicyQueueUploadHandler(object):
                             section = section,
                             component = component,
                             type = type,
+                            included = included
                             ))
             components.add(component)
 
@@ -273,7 +274,7 @@ class PolicyQueueUploadHandler(object):
             binary_proxy = binary.proxy
             priority = binary_proxy['Priority']
             section = binary_proxy['Section']
-            check_override(binary.package, binary.binarytype, priority, section)
+            check_override(binary.package, binary.binarytype, priority, section, included=True)
 
         if source is not None:
             source_proxy = source.proxy
@@ -281,7 +282,7 @@ class PolicyQueueUploadHandler(object):
             if not package_list.fallback:
                 packages = package_list.packages_for_suite(self.upload.target_suite)
                 for p in packages:
-                    check_override(p.name, p.type, p.priority, p.section)
+                    check_override(p.name, p.type, p.priority, p.section, included=False)
 
         source_component = '(unknown)'
         for component, in self.session.query(Component.component_name).order_by(Component.ordering):
@@ -310,6 +311,7 @@ class PolicyQueueUploadHandler(object):
                             section = section,
                             component = source_component,
                             type = 'dsc',
+                            included = True,
                             ))
 
         return missing
