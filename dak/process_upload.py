@@ -463,6 +463,13 @@ def process_it(directory, changes, keyrings, session):
     with daklib.archive.ArchiveUpload(directory, changes, keyrings) as upload:
         processed = action(directory, upload)
         if processed and not Options['No-Action']:
+            session = DBConn().session()
+            history = SignatureHistory.from_signed_file(upload.changes)
+            if history.query(session) is None:
+                session.add(history)
+                session.commit()
+            session.close()
+
             unlink_if_exists(os.path.join(directory, changes.filename))
             for fn in changes.files:
                 unlink_if_exists(os.path.join(directory, fn))

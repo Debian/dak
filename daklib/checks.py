@@ -112,13 +112,11 @@ class SignatureAndHashesCheck(Check):
     def check_replay(self, upload):
         # Use private session as we want to remember having seen the .changes
         # in all cases.
-        session = DBConn().session()
+        session = upload.session
         history = SignatureHistory.from_signed_file(upload.changes)
         r = history.query(session)
         if r is not None:
             raise Reject('Signature for changes file was already seen at {0}.\nPlease refresh the signature of the changes file if you want to upload it again.'.format(r.seen))
-        session.add(history)
-        session.commit()
         return True
 
     """Check signature of changes and dsc file (if included in upload)
