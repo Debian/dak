@@ -32,6 +32,7 @@ Export binaries and sources from a suite to a flat directory structure.
  -c --copy         copy files instead of symlinking them
  -d <directory>    target directory to export packages to
                    default: current directory
+ -r --relative     use symlinks relative to target directory
  -s <suite>        suite to grab uploads from
 """
 
@@ -42,6 +43,7 @@ def main(argv=None):
     arguments = [('h', 'help', 'Export::Options::Help'),
                  ('c', 'copy', 'Export::Options::Copy'),
                  ('d', 'directory', 'Export::Options::Directory', 'HasArg'),
+                 ('r', 'relative', 'Export::Options::Relative'),
                  ('s', 'suite', 'Export::Options::Suite', 'HasArg')]
 
     cnf = Config()
@@ -65,6 +67,11 @@ def main(argv=None):
         sys.exit(1)
 
     symlink = 'Copy' not in options
+    relative = 'Relative' in options
+
+    if relative and not symlink:
+        print "E: --relative and --copy cannot be used together."
+        sys.exit(1)
 
     binaries = suite.binaries
     sources = suite.sources
@@ -88,9 +95,12 @@ def main(argv=None):
                 af = session.query(ArchiveFile) \
                             .join(ArchiveFile.component).join(ArchiveFile.file) \
                             .filter(ArchiveFile.file == f).first()
+            src = af.path
+            if relative:
+                src = os.path.relpath(src, directory)
             dst = os.path.join(directory, f.basename)
             if not os.path.exists(dst):
-                fs.copy(af.path, dst, symlink=symlink)
+                fs.copy(src, dst, symlink=symlink)
         fs.commit()
 
 if __name__ == '__main__':
