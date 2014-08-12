@@ -86,6 +86,7 @@ if lockfile -r3 "${lockfile}"; then
 	--exclude "/s3kr1t" \
 	--exclude "/scripts/s3kr1t" \
 	--exclude "/tmp/" \
+    --exclude "/public/incoming.debian.org" \
 	--delete --delete-after \
 	--timeout 3600 \
 	-e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
