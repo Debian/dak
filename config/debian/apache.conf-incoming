@@ -1,6 +1,6 @@
 <VirtualHost *:80>
   ServerName incoming.debian.org
-  DocumentRoot /srv/incoming.debian.org/public
+  DocumentRoot /srv/ftp-master.debian.org/public/incoming.debian.org/public
 
   # deny by default
   <Directory />
@@ -8,24 +8,24 @@
   </Directory>
 
   # incoming dir, no subdir.  allow everyone except abusers.
-  <Directory /srv/incoming.debian.org/public>
+  <Directory /srv/ftp-master.debian.org/public/incoming.debian.org/public>
     IndexIgnore robots.txt
     Order deny,allow
   </Directory>
 
-  <Directory /srv/incoming.debian.org>
+  <Directory /srv/ftp-master.debian.org/public/incoming.debian.org>
     <Files robots.txt>
       Order deny,allow
     </Files>
   </Directory>
-  Alias /robots.txt /srv/incoming.debian.org/robots.txt
+  Alias /robots.txt /srv/ftp-master.debian.org/public/incoming.debian.org/robots.txt
 
   # buildd direct access -- buildds only
   Alias /debian /srv/ftp.debian.org/mirror
   Alias /debian-backports /srv/backports-master.debian.org/mirror
-  Alias /debian-buildd /srv/incoming.debian.org/debian-buildd
+  Alias /debian-buildd /srv/ftp-master.debian.org/public/incoming.debian.org/debian-buildd
 
-  <DirectoryMatch ~ "^/srv/(incoming\.debian\.org/(builddweb|debian-buildd/)|ftp\.debian\.org/mirror|backports-master\.debian\.org/mirror)">
+  <DirectoryMatch ~ "^/srv/ftp-master.debian.org/public/(incoming\.debian\.org/(builddweb|debian-buildd/)|ftp\.debian\.org/mirror|backports-master\.debian\.org/mirror)">
     Order allow,deny
 
     Use DebianBuilddHostList
@@ -141,7 +141,7 @@
 
     AuthType Basic
     AuthName "incoming.debian.org"
-    AuthUserFile /srv/incoming.debian.org/htpasswd
+    AuthUserFile /srv/ftp-master.debian.org/public/incoming.debian.org/htpasswd
     require valid-user
     satisfy any
   </DirectoryMatch>
