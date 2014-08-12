@@ -25,7 +25,8 @@
   Alias /debian-backports /srv/backports-master.debian.org/mirror
   Alias /debian-buildd /srv/ftp-master.debian.org/public/incoming.debian.org/debian-buildd
 
-  <DirectoryMatch ~ "^/srv/ftp-master.debian.org/public/(incoming\.debian\.org/(builddweb|debian-buildd/)|ftp\.debian\.org/mirror|backports-master\.debian\.org/mirror)">
+  <DirectoryMatch ~ "^/srv/(ftp-master.debian.org/public/incoming\.debian\.org/(builddweb|debian-buildd/)|ftp\.debian\.org/mirror|backports-master\.debian\.org/mirror)">
+
     Order allow,deny
 
     Use DebianBuilddHostList
