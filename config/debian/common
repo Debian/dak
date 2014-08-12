@@ -36,13 +36,22 @@ function make_buildd_dir () {
     local overridesuite
     local suite
 
+    # We generate straight into the static mirror location for incoming
     dak manage-build-queues -a
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
-    ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-buildd
 
+    # And set up all of the top level symlinks people seem to like
+    find ${incoming}/web -depth 0 -type l -delete
+    dak export-suite -r -s "accepted" -d "$incoming/web"
+
+    # For now, we still create the local incoming.d.o setup
+    ${scriptsdir}/update-buildd-archive ${incoming}/web/debian-buildd ${incoming}/debian-buildd
     rm -f ${incoming}/public/*
     dak export-suite -s "accepted" -d "$incoming/public"
+
+    # Tell the mirrors that we've updated
+    /usr/local/bin/static-update-component incoming.debian.org
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue
