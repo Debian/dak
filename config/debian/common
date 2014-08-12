@@ -42,7 +42,7 @@ function make_buildd_dir () {
     dak generate-releases -a build-queues >/dev/null
 
     # And set up all of the top level symlinks people seem to like
-    find ${incoming}/web -depth 0 -type l -delete
+    find ${incoming}/web -maxdepth 1 -type l -delete
     dak export-suite -r -s "accepted" -d "$incoming/web"
 
     # For now, we still create the local incoming.d.o setup
