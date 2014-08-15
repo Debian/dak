@@ -70,6 +70,9 @@ def Debian_arch_to_Debian_triplet(arch):
         else:
             return 'any', 'any', 'any'
 
+    if len(parts) == 2 and parts[0] == 'linux':
+        arch = parts[1]
+
     triplet = _triplettable()[1].get(arch, None)
     if triplet is None:
         return None

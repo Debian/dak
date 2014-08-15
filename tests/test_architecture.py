@@ -25,6 +25,9 @@ from daklib.architecture import match_architecture
 class MatchArchitecture(DakTestCase):
     def testEqual(self):
         self.assert_(match_architecture('amd64', 'amd64'))
+        self.assert_(match_architecture('linux-amd64', 'linux-amd64'))
+        self.assert_(match_architecture('linux-amd64', 'amd64'))
+        self.assert_(match_architecture('amd64', 'linux-amd64'))
         self.assert_(not match_architecture('amd64', 'i386'))
         self.assert_(match_architecture('kfreebsd-amd64', 'kfreebsd-amd64'))
         self.assert_(not match_architecture('kfreebsd-amd64', 'amd64'))
