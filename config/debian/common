@@ -33,9 +33,6 @@ function wbtrigger() {
 
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
-    local overridesuite
-    local suite
-
     # We generate straight into the static mirror location for incoming
     dak manage-build-queues -a
     dak generate-packages-sources2 -a build-queues
