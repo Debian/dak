@@ -51,7 +51,7 @@ function make_buildd_dir () {
     dak export-suite -s "accepted" -d "$incoming/public"
 
     # Tell the mirrors that we've updated
-    /usr/local/bin/static-update-component incoming.debian.org >/dev/null
+    chronic /usr/local/bin/static-update-component incoming.debian.org
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue
