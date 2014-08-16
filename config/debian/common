@@ -43,9 +43,9 @@ function make_buildd_dir () {
     dak export-suite -r -s "accepted" -d "$incoming/web"
 
     # For now, we still create the local incoming.d.o setup
-    ${scriptsdir}/update-buildd-archive ${incoming}/web/debian-buildd ${incoming}/debian-buildd
-    find ${incoming}/public -type l -delete
-    dak export-suite -s "accepted" -d "$incoming/public"
+    #${scriptsdir}/update-buildd-archive ${incoming}/web/debian-buildd ${incoming}/debian-buildd
+    #find ${incoming}/public -type l -delete
+    #dak export-suite -s "accepted" -d "$incoming/public"
 
     # Tell the mirrors that we've updated
     chronic /usr/local/bin/static-update-component incoming.debian.org
