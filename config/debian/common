@@ -38,6 +38,9 @@ function make_buildd_dir () {
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
 
+    # Stick a last modified date in the page footer
+    echo "<p>Last updated: `date -u`</p>" > ${incoming}/web/README.html
+
     # Tell the mirrors that we've updated
     chronic /usr/local/bin/static-update-component incoming.debian.org
 }
