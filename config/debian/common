@@ -38,15 +38,6 @@ function make_buildd_dir () {
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
 
-    # And set up all of the top level symlinks people seem to like
-    find ${incoming}/web -maxdepth 1 -type l -delete
-    dak export-suite -r -s "accepted" -d "$incoming/web"
-
-    # For now, we still create the local incoming.d.o setup
-    #${scriptsdir}/update-buildd-archive ${incoming}/web/debian-buildd ${incoming}/debian-buildd
-    #find ${incoming}/public -type l -delete
-    #dak export-suite -s "accepted" -d "$incoming/public"
-
     # Tell the mirrors that we've updated
     chronic /usr/local/bin/static-update-component incoming.debian.org
 }
