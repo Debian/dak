@@ -44,7 +44,7 @@ function make_buildd_dir () {
 
     # For now, we still create the local incoming.d.o setup
     ${scriptsdir}/update-buildd-archive ${incoming}/web/debian-buildd ${incoming}/debian-buildd
-    rm -f ${incoming}/public/*
+    find ${incoming}/public -type l -delete
     dak export-suite -s "accepted" -d "$incoming/public"
 
     # Tell the mirrors that we've updated
