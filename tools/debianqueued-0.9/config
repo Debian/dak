@@ -78,6 +78,7 @@ $statusdelay = 30;
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-mipsel-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-mips-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-powerpc-keyring.gpg",
+              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-ppc64el-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-s390-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-s390x-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-sparc-keyring.gpg");

@@ -1,5 +1,5 @@
 arch <- c("source", "all", "amd64", "arm64", "i386", "alpha", "arm", "armel", "armhf", "hppa", "hurd-i386", "ia64",
-	"kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "s390", "s390x", "sparc")
+	"kfreebsd-amd64", "kfreebsd-i386", "mips", "mipsel", "powerpc", "ppc64el", "s390", "s390x", "sparc")
 palette(c("midnightblue", "gold", "turquoise", "pink", "cyan", "black", "red", "OrangeRed", "green3", "blue", "magenta",
 	"cornsilk3", "darkolivegreen3", "tomato4", "violetred2","thistle4", "steelblue2", "springgreen4",
 	"salmon","gray"))
