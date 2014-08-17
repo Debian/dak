@@ -36,9 +36,8 @@ mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
 
 # Push files over to security
 # The key over there should have the following set for the ssh key:
-#  command="/usr/bin/xzcat | /usr/bin/psql -f - -1 obscurity"
-pg_dump -a -F p -t files | \
-            sed -e "s,^COPY files (,DELETE FROM external_files; COPY external_files (," | \
+#  command="/usr/bin/xzcat | /usr/bin/psql -1 -c 'DELETE FROM external_files; COPY external_files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) FROM STDIN' obscurity"
+psql -c 'COPY files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) TO STDOUT' projectb | \
             xz -3 | \
             ssh -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 \
                 -i ${base}/s3kr1t/push_external_files dak@security-master.debian.org sync
