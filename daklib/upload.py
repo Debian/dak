@@ -30,16 +30,19 @@ from daklib.gpg import SignedFile
 from daklib.regexes import *
 import daklib.packagelist
 
-class InvalidChangesException(Exception):
+class UploadException(Exception):
     pass
 
-class InvalidBinaryException(Exception):
+class InvalidChangesException(UploadException):
     pass
 
-class InvalidSourceException(Exception):
+class InvalidBinaryException(UploadException):
     pass
 
-class InvalidHashException(Exception):
+class InvalidSourceException(UploadException):
+    pass
+
+class InvalidHashException(UploadException):
     def __init__(self, filename, hash_name, expected, actual):
         self.filename = filename
         self.hash_name = hash_name
@@ -54,7 +57,7 @@ class InvalidHashException(Exception):
                 "might already be known to the archive software.") \
                 .format(self.hash_name, self.filename, self.expected, self.actual)
 
-class InvalidFilenameException(Exception):
+class InvalidFilenameException(UploadException):
     def __init__(self, filename):
         self.filename = filename
     def __str__(self):
