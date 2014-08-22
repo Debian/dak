@@ -63,6 +63,12 @@ class InvalidFilenameException(UploadException):
     def __str__(self):
         return "Invalid filename '{0}'.".format(self.filename)
 
+class FileDoesNotExist(UploadException):
+    def __init__(self, filename):
+        self.filename = filename
+    def __str__(self):
+        return "Refers to non-existing file '{0}'".format(self.filename)
+
 class HashedFile(object):
     """file with checksums
     """
@@ -124,8 +130,8 @@ class HashedFile(object):
         @return: C{HashedFile} object for the given file
         """
         path = os.path.join(directory, filename)
-        size = os.stat(path).st_size
         with open(path, 'r') as fh:
+            size = os.fstat(fh.fileno()).st_size
             hashes = apt_pkg.Hashes(fh)
         return cls(filename, size, hashes.md5, hashes.sha1, hashes.sha256, section, priority)
 
@@ -141,12 +147,17 @@ class HashedFile(object):
         """
         path = os.path.join(directory, self.filename)
 
-        size = os.stat(path).st_size
+        try:
+            with open(path) as fh:
+                size = os.fstat(fh.fileno()).st_size
+                hashes = apt_pkg.Hashes(fh)
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                raise FileDoesNotExist(self.filename)
+            raise
+
         if size != self.size:
             raise InvalidHashException(self.filename, 'size', self.size, size)
-
-        with open(path) as fh:
-            hashes = apt_pkg.Hashes(fh)
 
         if hashes.md5 != self.md5sum:
             raise InvalidHashException(self.filename, 'md5sum', self.md5sum, hashes.md5)

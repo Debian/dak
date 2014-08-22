@@ -31,7 +31,7 @@ from daklib.regexes import *
 from daklib.textutils import fix_maintainer, ParseMaintError
 import daklib.lintian as lintian
 import daklib.utils as utils
-from daklib.upload import InvalidHashException
+import daklib.upload
 
 import apt_inst
 import apt_pkg
@@ -160,13 +160,11 @@ class SignatureAndHashesCheck(Check):
         try:
             for f in files:
                 f.check(upload.directory)
-        except IOError as e:
-            if e.errno == errno.ENOENT:
-                raise Reject('{0} refers to non-existing file: {1}\n'
-                             'Perhaps you need to include it in your upload?'
-                             .format(filename, os.path.basename(e.filename)))
-            raise
-        except InvalidHashException as e:
+        except daklib.upload.FileDoesNotExist as e:
+            raise Reject('{0}: {1}\n'
+                         'Perhaps you need to include the file in your upload?'
+                         .format(filename, unicode(e)))
+        except daklib.upload.UploadException as e:
             raise Reject('{0}: {1}'.format(filename, unicode(e)))
 
 class ChangesCheck(Check):
