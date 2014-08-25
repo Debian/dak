@@ -23,6 +23,7 @@ It provides methods to access the included binary and source packages.
 
 import apt_inst
 import apt_pkg
+import errno
 import os
 import re
 
