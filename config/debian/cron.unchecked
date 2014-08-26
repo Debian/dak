@@ -65,12 +65,6 @@ function do_buildd () {
     fi
 }
 
-function do_dists () {
-    #cd $configdir
-    #dak generate-filelist -s unstable,experimental -i
-    dak generate-packages-sources2 -s unstable experimental >/dev/null
-}
-
 ########################################################################
 # the actual unchecked functions follow                                #
 ########################################################################
@@ -101,7 +95,6 @@ do_unchecked
 if [ ! -z "$changes" ]; then
     sync_debbugs
     do_buildd
-    #do_dists
 fi
 
 dak contents -l 10000 scan-binary
