@@ -306,13 +306,13 @@ class CommandFile(object):
 
         self.log.log(['dm-migrate', 'from={0}'.format(fpr_hash_from), 'to={0}'.format(fpr_hash_to)])
 
-        count = 0
+        sources = []
         for entry in session.query(ACLPerSource).filter_by(acl=acl, fingerprint=fpr_from):
             self.log.log(['dm-migrate', 'from={0}'.format(fpr_hash_from), 'to={0}'.format(fpr_hash_to), 'source={0}'.format(entry.source)])
             entry.fingerprint = fpr_to
-            count += 1
+            sources.append(entry.source)
 
-        self.result.append('Migrated {0} to {1}.\n{2} acl entries changed.'.format(fpr_hash_from, fpr_hash_to, count))
+        self.result.append('Migrated {0} to {1}.\n{2} acl entries changed: {3}'.format(fpr_hash_from, fpr_hash_to, len(sources), ", ".join(sources)))
 
         session.commit()
 
