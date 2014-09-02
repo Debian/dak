@@ -61,5 +61,13 @@ class GpgTest(DakTestCase):
         with self.assertRaises(GpgException):
             verify('gpg/expired-subkey.asc')
 
+    def test_message_assertion(self):
+        with self.assertRaises(GpgException):
+            verify('gpg/message.asc')
+
+    def test_plain_assertion(self):
+        with self.assertRaises(GpgException):
+            verify('gpg/plaintext.txt')
+
 if __name__ == '__main__':
     unittest.main()
