@@ -16,6 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import datetime
 import unittest
 from base_test import DakTestCase, fixture
 from daklib.gpg import GpgException, SignedFile
@@ -36,12 +37,14 @@ class GpgTest(DakTestCase):
         self.assertTrue(result.valid)
         self.assertEqual(result.primary_fingerprint, fpr_valid)
         self.assertEqual(result.contents, "Valid: yes\n")
+        self.assertEqual(result.signature_timestamp, datetime.datetime(2014, 9, 2, 21, 24, 10))
 
     def test_expired(self):
         result = verify('gpg/expired.asc', False)
         self.assertFalse(result.valid)
         self.assertEqual(result.primary_fingerprint, fpr_expired)
         self.assertEqual(result.contents, "Valid: expired\n")
+        self.assertEqual(result.signature_timestamp, datetime.datetime(2001, 2, 1, 0, 0, 0))
 
     def test_expired_assertion(self):
         with self.assertRaises(GpgException):
@@ -52,6 +55,11 @@ class GpgTest(DakTestCase):
         self.assertFalse(result.valid)
         self.assertEqual(result.primary_fingerprint, fpr_expired_subkey)
         self.assertEqual(result.contents, "Valid: expired-subkey\n")
+        self.assertEqual(result.signature_timestamp, datetime.datetime(2014, 2, 1, 0, 0, 0))
+
+    def test_expires_subkey_assertion(self):
+        with self.assertRaises(GpgException):
+            verify('gpg/expired-subkey.asc')
 
 if __name__ == '__main__':
     unittest.main()
