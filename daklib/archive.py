@@ -902,6 +902,7 @@ class ArchiveUpload(object):
             # Validate signatures and hashes before we do any real work:
             for chk in (
                     checks.SignatureAndHashesCheck,
+                    checks.SignatureTimestampCheck,
                     checks.ChangesCheck,
                     checks.ExternalHashesCheck,
                     checks.SourceCheck,
