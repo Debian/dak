@@ -53,7 +53,7 @@ def build_mapping(archive, session):
       JOIN files_archive_map ON files.id = files_archive_map.file_id
       JOIN component ON files_archive_map.component_id = component.id
     WHERE files_archive_map.archive_id = :archive_id
-    ORDER BY source, version
+    ORDER BY source, version, component.id, files.filename
     """
 
     query_binaries = """
