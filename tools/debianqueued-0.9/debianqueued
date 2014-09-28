@@ -1097,7 +1097,7 @@ sub process_commands($) {
   my $commands = shift;
   my ( @cmds, $cmd, $pgplines, $signator );
   local (*COMMANDS);
-  my ( @files, $file, @removed, $target_delay );
+  my ($file, @removed, $target_delay );
 
   format_status_str( $main::current_changes, $commands );
   $main::dstat = "c";
@@ -1190,6 +1190,7 @@ outer_loop: while (<COMMANDS>) {
     next if @word < 1;
 
     if ( $word[0] eq "rm" ) {
+      my @files = ();
       foreach ( @word[ 1 .. $#word ] ) {
         my $origword = $_;
         if (m,^DELAYED/([0-9]+)-day/,) {
