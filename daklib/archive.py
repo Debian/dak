@@ -33,6 +33,7 @@ from datetime import datetime
 import os
 import shutil
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm import object_session
 import sqlalchemy.exc
 import tempfile
 import traceback
@@ -540,6 +541,34 @@ class ArchiveTransaction(object):
             self.rollback()
         return None
 
+def source_component_from_package_list(package_list, suite):
+    """Get component for a source package
+
+    This function will look at the Package-List field to determine the
+    component the source package belongs to. This is the first component
+    the source package provides binaries for (first with respect to the
+    ordering of components).
+
+    It the source package has no Package-List field, None is returned.
+
+    @type  package_list: L{daklib.packagelist.PackageList}
+    @param package_list: package list of the source to get the override for
+
+    @type  suite: L{daklib.dbconn.Suite}
+    @param suite: suite to consider for binaries produced
+
+    @rtype:  L{daklib.dbconn.Component} or C{None}
+    @return: component for the given source or C{None}
+    """
+    if package_list.fallback:
+        return None
+    session = object_session(suite)
+    packages = package_list.packages_for_suite(suite)
+    components = set(p.component for p in packages)
+    query = session.query(Component).order_by(Component.ordering) \
+            .filter(Component.component_name.in_(components))
+    return query.first()
+
 class ArchiveUpload(object):
     """handle an upload
 
@@ -854,9 +883,12 @@ class ArchiveUpload(object):
         if suite.overridesuite is not None:
             suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
-        # XXX: component for source?
         query = self.session.query(Override).filter_by(suite=suite, package=source.dsc['Source']) \
                 .join(OverrideType).filter(OverrideType.overridetype == 'dsc')
+
+        component = source_component_from_package_list(source.package_list, suite)
+        if component is not None:
+            query = query.filter(Override.component == component)
 
         try:
             return query.one()

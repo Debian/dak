@@ -284,18 +284,13 @@ class PolicyQueueUploadHandler(object):
                 for p in packages:
                     check_override(p.name, p.type, p.priority, p.section, included=False)
 
-        source_component = '(unknown)'
-        for component, in self.session.query(Component.component_name).order_by(Component.ordering):
-            if component in components:
-                source_component = component
-                break
-            else:
-                if source is not None:
-                    if self._source_override(component) is not None:
-                        source_component = component
-                        break
+            # see daklib.archive.source_component_from_package_list
+            # which we cannot use here as we might not have a Package-List
+            # field for old packages
+            query = self.session.query(Component).order_by(Component.ordering) \
+                    .filter(Component.component_name.in_(components))
+            source_component = query.first().component_name
 
-        if source is not None:
             override = self._source_override(source_component)
             if override is None:
                 hint = hints_map.get(('dsc', source.source))
@@ -303,8 +298,8 @@ class PolicyQueueUploadHandler(object):
                     missing.append(hint)
                 else:
                     section = 'misc'
-                    if component != 'main':
-                        section = "{0}/{1}".format(component, section)
+                    if source_component != 'main':
+                        section = "{0}/{1}".format(source_component, section)
                     missing.append(dict(
                             package = source.source,
                             priority = 'extra',

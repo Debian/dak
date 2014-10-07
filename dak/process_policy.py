@@ -43,8 +43,9 @@ from daklib import daklog
 from daklib import utils
 from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
 from daklib.config import Config
-from daklib.archive import ArchiveTransaction
+from daklib.archive import ArchiveTransaction, source_component_from_package_list
 from daklib.urgencylog import UrgencyLog
+from daklib.packagelist import PackageList
 
 import daklib.announce
 
@@ -131,16 +132,23 @@ def comment_accept(upload, srcqueue, comments, transaction):
         overridesuite = session.query(Suite).filter_by(suite_name=overridesuite.overridesuite).one()
 
     def binary_component_func(db_binary):
-        override = session.query(Override).filter_by(suite=overridesuite, package=db_binary.package) \
-            .join(OverrideType).filter(OverrideType.overridetype == db_binary.binarytype) \
-            .join(Component).one()
-        return override.component
+        section = db_binary.proxy['Section']
+        component_name = 'main'
+        if section.find('/') != -1:
+            component_name = section.split('/', 1)[0]
+        return session.query(Component).filter_by(component_name=component_name).one()
 
     def source_component_func(db_source):
-        override = session.query(Override).filter_by(suite=overridesuite, package=db_source.source) \
+        package_list = PackageList(db_source.proxy)
+        component = source_component_from_package_list(package_list, upload.target_suite)
+        if component is not None:
+            return component
+
+        # Fallback for packages without Package-List field
+        query = session.query(Override).filter_by(suite=overridesuite, package=db_source.source) \
             .join(OverrideType).filter(OverrideType.overridetype == 'dsc') \
-            .join(Component).one()
-        return override.component
+            .join(Component)
+        return query.one().component
 
     all_target_suites = [upload.target_suite]
     all_target_suites.extend([q.suite for q in upload.target_suite.copy_queues])
