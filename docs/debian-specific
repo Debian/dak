@@ -8,6 +8,7 @@ DEBIAN-SPECIFIC NOTES                                  -*- mode: Org -*-
 - Change first line to NOTOK, add comment "Moving back to unchecked."
 - dak process-policy new; dak clean-suites
 - cd /srv/security-master.debian.org/queue/reject
+- dak admin forget-signature bla.changes
 - dcmd mv -n bla.changes ../unchecked
 - /srv/security-master.debian.org/dak/config/debian-security/cron.unchecked
 - cronon
