@@ -158,6 +158,8 @@ class CommandFile(object):
             section = sections.section
             if 'Uploader' in section:
                 self.uploader = section['Uploader']
+            if 'Cc' in section:
+                self.cc.append(section['Cc'])
             # TODO: Verify first section has valid Archive field
             if 'Archive' not in section:
                 raise CommandError('No Archive field in first section.')
