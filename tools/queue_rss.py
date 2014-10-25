@@ -14,6 +14,7 @@ import sys
 import time
 from optparse import OptionParser
 from datetime import datetime
+from email.utils import parseaddr
 
 import PyRSS2Gen
 
@@ -141,12 +142,15 @@ def add_rss_item(status, msg, direction):
     link = "https://ftp-master.debian.org/new/%s_%s.html" % \
             (msg['Source'], msg['Version'])
 
+    maintainer = parseaddr(msg['Maintainer'])
+    author = "%s (%s)" % (maintainer[1], maintainer[0])
+
     feed.items.insert(0,
         PyRSS2Gen.RSSItem(
             title,
             pubDate = pubdate,
             description = description,
-            author = cgi.escape(msg['Maintainer']),
+            author = cgi.escape(author),
             link = link,
             guid = link
         )
