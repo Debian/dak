@@ -300,7 +300,7 @@ class BinaryCheck(Check):
         fn = binary.hashed_file.filename
         control = binary.control
 
-        for field in ('Package', 'Architecture', 'Version', 'Description'):
+        for field in ('Package', 'Architecture', 'Version', 'Description', 'Section'):
             if field not in control:
                 raise Reject('{0}: Missing mandatory field {0}.'.format(fn, field))
 
