@@ -32,7 +32,9 @@ def path_help(path=None):
 QueryRegister().register_path('/path_help', list_paths)
 
 # Import our other methods
+from queries.archive import *
 from queries.source import *
+from queries.suite import *
 
 # Set up our initial database connection
 d = DBConn()
