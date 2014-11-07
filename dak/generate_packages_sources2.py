@@ -397,6 +397,10 @@ def main():
         else:
             logger.log(['E: ', msg])
 
+    # Lock tables so that nobody can change things underneath us
+    session.execute("LOCK TABLE src_associations IN SHARE MODE")
+    session.execute("LOCK TABLE bin_associations IN SHARE MODE")
+
     for s in suites:
         component_ids = [ c.component_id for c in s.components ]
         if s.untouchable and not force:
