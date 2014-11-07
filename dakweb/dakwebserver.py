@@ -37,5 +37,6 @@ from queries.source import *
 # Set up our initial database connection
 d = DBConn()
 
-# Run the bottle
-bottle.run()
+# Run the bottle if we're called directly
+if __name__ == '__main__':
+    bottle.run()
