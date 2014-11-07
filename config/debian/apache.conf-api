@@ -1,0 +1,19 @@
+<Macro api.ftp-master.d.o-common>
+  ServerAdmin debian-admin@lists.debian.org
+  ServerName api.ftp-master.debian.org
+
+  CustomLog /var/log/apache2/api.ftp-master.debian.org-access.log privacy
+  ErrorLog  /var/log/apache2/api.ftp-master.debian.org-error.log
+
+  <IfModule mod_userdir.c>
+    UserDir disabled
+  </IfModule>
+  DocumentRoot /srv/ftp-master.debian.org/export
+</Macro>
+
+Use common-debian-service-https-redirect * api.ftp-master.debian.org
+<VirtualHost *:443>
+  Use common-debian-service-ssl api.ftp-master.debian.org
+  Use common-ssl-HSTS
+  Use api.ftp-master.d.o-common
+</VirtualHost>
