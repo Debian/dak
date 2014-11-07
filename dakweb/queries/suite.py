@@ -31,3 +31,51 @@ def suites():
 
 QueryRegister().register_path('/suites', suites)
 
+@bottle.route('/suite/<suite>')
+def suite(suite=None):
+    """
+    suite(suite)
+
+    returns: dictionary
+
+    Gives information about a single suite.  Note that this routine will look
+    up a suite first by the main suite_name, but then also by codename if no
+    suite is initially found.  It can therefore be used to canonicalise suite
+    names
+    """
+
+    if suite is None:
+        return bottle.HTTPError(503, 'Suite not specified.')
+
+    # TODO: We should probably stick this logic into daklib/dbconn.py
+    so = None
+
+    s = DBConn().session()
+    q = s.query(Suite)
+    q = q.filter(Suite.suite_name == suite)
+
+    if q.count() > 1:
+        # This would mean dak is misconfigured
+        return bottle.HTTPError(503, 'Multiple suites found: configuration error')
+    elif q.count() == 1:
+        so = q[0]
+    else:
+        # Look it up by suite_name
+        q = s.query(Suite).filter(Suite.codename == suite)
+        if q.count() > 1:
+            # This would mean dak is misconfigured
+            return bottle.HTTPError(503, 'Multiple suites found: configuration error')
+        elif q.count() == 1:
+            so = q[0]
+
+    if so is not None:
+        so = {'name':       so.suite_name,
+              'codename':   so.codename,
+              'archive':    so.archive.archive_name,
+              'architectures': [x.arch_string for x in so.architectures],
+              'components': [x.component_name for x in so.components]}
+
+    return json.dumps(so)
+
+QueryRegister().register_path('/suite', suite)
+
