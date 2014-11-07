@@ -9,7 +9,11 @@ from dakweb.webregister import QueryRegister
 @bottle.route('/archives')
 def archives():
     """
-    Returns a list of supported archives
+    archives()
+
+    returns: list of dictionaries
+
+    Give information about all known archives (sets of suites)
     """
 
     s = DBConn().session()
