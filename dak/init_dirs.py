@@ -110,9 +110,16 @@ def create_directories():
     # Process directories from dak.conf
     process_tree(Cnf, "Dir")
 
+    # Hardcode creation of the unchecked directory
+    if Cnf.has_key("Dir::Base"):
+        do_dir(os.path.join(Cnf["Dir::Base"], "queue", "unchecked"), 'unchecked directory')
+
     # Process queue directories
     for queue in session.query(PolicyQueue):
         do_dir(queue.path, '%s queue' % queue.queue_name)
+        # If we're doing the NEW queue, make sure it has a COMMENTS directory
+        if queue.queue_name == 'new':
+            do_dir(os.path.join(queue.path, "COMMENTS"), '%s queue comments' % queue.queue_name)
 
     for config_name in [ "Rm::LogFile",
                          "Import-Archive::ExportDir" ]:
