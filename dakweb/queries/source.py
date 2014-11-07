@@ -10,9 +10,11 @@ from dakweb.webregister import QueryRegister
 @bottle.route('/dsc_in_suite/<suite>/<source>')
 def dsc_in_suite(suite=None, source=None):
     """
-    Find all dsc files for a given source package name in a given suite.
+    dsc_in_suite(suite, source)
 
-    suite and source must be supplied
+    returns: list of dictionaries
+
+    Find all dsc files for a given source package name in a given suite.
     """
     if suite is None:
         return bottle.HTTPError(503, 'Suite not specified.')
