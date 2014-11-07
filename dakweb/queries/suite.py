@@ -9,7 +9,11 @@ from dakweb.webregister import QueryRegister
 @bottle.route('/suites')
 def suites():
     """
-    Returns a list of all suites
+    suites()
+
+    returns: list of dictionaries
+
+    Give information about all known suites
     """
 
     s = DBConn().session()
