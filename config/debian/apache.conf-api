@@ -9,6 +9,9 @@
     UserDir disabled
   </IfModule>
   DocumentRoot /srv/ftp-master.debian.org/export
+
+  WSGIDaemonProcess api.ftp-master.debian.org user=dak-web group=dak-web processes=1 threads=5
+  WSGIScriptAlias / /srv/ftp-master.debian.org/dak/dakweb/dakweb.wsgi
 </Macro>
 
 Use common-debian-service-https-redirect * api.ftp-master.debian.org
