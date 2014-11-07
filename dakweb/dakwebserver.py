@@ -34,8 +34,8 @@ QueryRegister().register_path('/path_help', list_paths)
 # Import our other methods
 from queries.source import *
 
-print "Connecting"
 # Set up our initial database connection
 d = DBConn()
-#bottle.run(host='localhost', port=8765)
+
+# Run the bottle
 bottle.run()
