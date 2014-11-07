@@ -27,9 +27,11 @@ def dsc_in_suite(suite=None, source=None):
     q = q.filter(PoolFile.filename.endswith('.dsc'))
     ret = []
     for p in q:
-        ret.append({'version': p.source.version,
+        ret.append({'version':   p.source.version,
                     'component': p.poolfile.component.component_name,
-                    'filename': p.poolfile.filename})
+                    'filename':  p.poolfile.filename,
+                    'filesize':  p.poolfile.filesize,
+                    'sha256sum': p.poolfile.sha256sum})
 
     return json.dumps(ret)
 
