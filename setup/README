@@ -100,6 +100,9 @@ Add a suite (origin=, label= and codename= are optional)
 signingkey= will ensure that Release files are signed
 # dak admin suite add-all-arches unstable x.y.z origin=MyDistro label=Master codename=sid signingkey=DDDDDDDD
 
+Add the components to the suite
+# dak admin s-c add unstable main contrib non-free
+
 Re-run dak init-dirs to add new suite directories to /srv/dak
 # dak init-dirs
 
