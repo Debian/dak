@@ -2274,6 +2274,12 @@ class Suite(ORMObject):
     def path(self):
         return os.path.join(self.archive.path, 'dists', self.suite_name)
 
+    @property
+    def release_suite_output(self):
+        if self.release_suite is not None:
+            return self.release_suite
+        return self.suite_name
+
 __all__.append('Suite')
 
 @session_wrapper

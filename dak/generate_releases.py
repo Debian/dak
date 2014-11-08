@@ -137,7 +137,7 @@ class ReleaseWriter(object):
         # fill them in
         attribs = ( ('Origin',      'origin'),
                     ('Label',       'label'),
-                    ('Suite',       'suite_name'),
+                    ('Suite',       'release_suite_output'),
                     ('Version',     'version'),
                     ('Codename',    'codename') )
 
@@ -159,16 +159,7 @@ class ReleaseWriter(object):
         out = open(outfile + ".new", "w")
 
         for key, dbfield in attribs:
-            if getattr(suite, dbfield) is not None:
-                # TEMPORARY HACK HACK HACK until we change the way we store the suite names etc
-                if key == 'Suite' and getattr(suite, dbfield) == 'squeeze-updates':
-                    out.write("Suite: oldstable-updates\n")
-                elif key == 'Suite' and getattr(suite, dbfield) == 'wheezy-updates':
-                    out.write("Suite: stable-updates\n")
-                elif key == 'Suite' and getattr(suite, dbfield) == 'jessie-updates':
-                    out.write("Suite: testing-updates\n")
-                else:
-                    out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
+            out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
 
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
 
