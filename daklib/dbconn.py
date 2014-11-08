@@ -2298,8 +2298,22 @@ def get_suite(suite, session=None):
     @return: Suite object for the requested suite name (None if not present)
     """
 
+    # Start by looking for the dak internal name
     q = session.query(Suite).filter_by(suite_name=suite)
+    try:
+        return q.one()
+    except NoResultFound:
+        pass
 
+    # Now try codename
+    q = session.query(Suite).filter_by(codename=suite)
+    try:
+        return q.one()
+    except NoResultFound:
+        pass
+
+    # Finally give release_suite a try
+    q = session.query(Suite).filter_by(release_suite=suite)
     try:
         return q.one()
     except NoResultFound:
