@@ -32,6 +32,8 @@ def suites():
                     'architectures': [x.arch_string for x in p.architectures],
                     'components': [x.component_name for x in p.components]})
 
+    s.close()
+
     return json.dumps(ret)
 
 QueryRegister().register_path('/suites', suites)
@@ -61,6 +63,7 @@ def suite(suite=None):
 
     if q.count() > 1:
         # This would mean dak is misconfigured
+        s.close()
         return bottle.HTTPError(503, 'Multiple suites found: configuration error')
     elif q.count() == 1:
         so = q[0]
@@ -69,6 +72,7 @@ def suite(suite=None):
         q = s.query(Suite).filter(Suite.codename == suite)
         if q.count() > 1:
             # This would mean dak is misconfigured
+            s.close()
             return bottle.HTTPError(503, 'Multiple suites found: configuration error')
         elif q.count() == 1:
             so = q[0]
@@ -80,6 +84,8 @@ def suite(suite=None):
               'archive':    so.archive.archive_name,
               'architectures': [x.arch_string for x in so.architectures],
               'components': [x.component_name for x in so.components]}
+
+    s.close()
 
     return json.dumps(so)
 

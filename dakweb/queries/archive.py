@@ -24,6 +24,8 @@ def archives():
         ret.append({'name':      a.archive_name,
                     'suites':    [x.suite_name for x in a.suites]})
 
+    s.close()
+
     return json.dumps(ret)
 
 QueryRegister().register_path('/archives', archives)

@@ -35,6 +35,8 @@ def dsc_in_suite(suite=None, source=None):
                     'filesize':  p.poolfile.filesize,
                     'sha256sum': p.poolfile.sha256sum})
 
+    s.close()
+
     return json.dumps(ret)
 
 QueryRegister().register_path('/dsc_in_suite', dsc_in_suite)
