@@ -159,6 +159,11 @@ class ReleaseWriter(object):
         out = open(outfile + ".new", "w")
 
         for key, dbfield in attribs:
+            # Hack to skip NULL Version fields as we used to do this
+            # We should probably just always ignore anything which is None
+            if key == "Version" and getattr(suite, dbfield) is None:
+                continue
+
             out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
 
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
