@@ -13,7 +13,11 @@ def suites():
 
     returns: list of dictionaries
 
-    Give information about all known suites
+    Give information about all known suites.
+
+    name maps to Suite: in the release file
+    codename maps to Codename: in the release file.
+    dakname is an internal name and should not be relied upon.
     """
 
     s = DBConn().session()
@@ -21,8 +25,9 @@ def suites():
     q = q.order_by(Suite.suite_name)
     ret = []
     for p in q:
-        ret.append({'name':       p.suite_name,
+        ret.append({'name':       p.release_suite_output,
                     'codename':   p.codename,
+                    'dakname':    p.suite_name,
                     'archive':    p.archive.archive_name,
                     'architectures': [x.arch_string for x in p.architectures],
                     'components': [x.component_name for x in p.components]})
@@ -69,8 +74,9 @@ def suite(suite=None):
             so = q[0]
 
     if so is not None:
-        so = {'name':       so.suite_name,
+        so = {'name':       so.release_suite_output,
               'codename':   so.codename,
+              'dakname':    so.suite_name,
               'archive':    so.archive.archive_name,
               'architectures': [x.arch_string for x in so.architectures],
               'components': [x.component_name for x in so.components]}
