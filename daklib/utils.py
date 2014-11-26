@@ -1054,7 +1054,7 @@ def arch_compare_sw (a, b):
 
 ################################################################################
 
-def split_args (s, dwim=1):
+def split_args (s, dwim=True):
     """
     Split command line arguments which can be separated by either commas
     or whitespace.  If dwim is set, it will complain about string ending
