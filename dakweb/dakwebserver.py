@@ -33,6 +33,7 @@ QueryRegister().register_path('/path_help', list_paths)
 
 # Import our other methods
 from queries.archive import *
+from queries.madison import *
 from queries.source import *
 from queries.suite import *
 
