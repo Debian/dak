@@ -2651,6 +2651,7 @@ class DBConn(object):
             'obsolete_any_associations',
             'obsolete_any_by_all_associations',
             'obsolete_src_associations',
+            'package_list',
             'source_suite',
             'src_associations_bin',
             'src_associations_src',
