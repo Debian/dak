@@ -26,6 +26,10 @@ def madison():
     #    kwargs['regex'] = True
 
     result = list_packages(packages, **kwargs)
-    return "\n".join(result) + "\n"
+
+    bottle.response.content_type = 'text/plain'
+    for row in result:
+        yield row
+        yield "\n"
 
 QueryRegister().register_path('/madison', madison)
