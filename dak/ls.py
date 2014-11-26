@@ -36,7 +36,7 @@ import sys
 import apt_pkg
 
 from daklib.config import Config
-from daklib.dbconn import *
+from daklib.ls import list_packages
 from daklib import utils
 
 ################################################################################
@@ -89,8 +89,6 @@ def main ():
     if not packages:
         utils.fubar("need at least one package name as an argument.")
 
-    session = DBConn().session()
-
     # If cron.daily is running; warn the user that our output might seem strange
     if os.path.exists(os.path.join(cnf["Dir::Lock"], "daily.lock")):
         utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
@@ -102,117 +100,32 @@ def main ():
         if not Options["Suite"]:
             Options["Suite"] = "unstable"
 
-    # Parse -a/--architecture, -c/--component and -s/--suite
-    (con_suites, con_architectures, con_components, check_source) = \
-                 utils.parse_args(Options)
-
-    if Options["BinaryType"]:
-        if Options["BinaryType"] != "udeb" and Options["BinaryType"] != "deb":
-            utils.fubar("Invalid binary type.  'udeb' and 'deb' recognised.")
-        con_bintype = "AND b.type = '%s'" % (Options["BinaryType"])
-        # REMOVE ME TRAMP
-        if Options["BinaryType"] == "udeb":
-            check_source = 0
-    else:
-        con_bintype = ""
+    kwargs = dict()
 
     if Options["Regex"]:
-        comparison_operator = "~"
-    else:
-        comparison_operator = "="
-
+        kwargs['regex'] = True
     if Options["Source-And-Binary"]:
-        new_packages = []
-        for package in packages:
-            q = session.execute("SELECT DISTINCT b.package FROM binaries b, bin_associations ba, suite su, source s WHERE b.source = s.id AND su.id = ba.suite AND b.id = ba.bin AND s.source %s :package %s" % (comparison_operator, con_suites),
-                                {'package': package})
-            new_packages.extend([ i[0] for i in q.fetchall() ])
-            if package not in new_packages:
-                new_packages.append(package)
-        packages = new_packages
+        kwargs['source_and_binary'] = True
+    if Options["Suite"]:
+        kwargs['suites'] = utils.split_args(Options['Suite'])
+    if Options["Architecture"]:
+        kwargs['architectures'] = utils.split_args(Options['Architecture'])
+    if Options['BinaryType']:
+        kwargs['binary_types'] = utils.split_args(Options['BinaryType'])
+    if Options['Component']:
+        kwargs['components'] = utils.split_args(Options['Component'])
 
-    results = 0
-    for package in packages:
-        q = session.execute("""
-SELECT b.package, b.version, a.arch_string, su.suite_name, c.name, m.name
-  FROM binaries b, architecture a, suite su, bin_associations ba,
-       files f, files_archive_map af, component c, maintainer m
- WHERE b.package %s :package AND a.id = b.architecture AND su.id = ba.suite
-   AND b.id = ba.bin AND b.file = f.id AND af.file_id = f.id AND su.archive_id = af.archive_id
-   AND af.component_id = c.id AND b.maintainer = m.id %s %s %s
-""" % (comparison_operator, con_suites, con_architectures, con_bintype), {'package': package})
-        ql = q.fetchall()
-        if check_source:
-            q = session.execute("""
-SELECT s.source, s.version, 'source', su.suite_name, c.name, m.name
-  FROM source s, suite su, src_associations sa, files f, files_archive_map af,
-       component c, maintainer m
- WHERE s.source %s :package AND su.id = sa.suite AND s.id = sa.source
-   AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id
-   AND s.maintainer = m.id %s
-""" % (comparison_operator, con_suites), {'package': package})
-            if not Options["Architecture"] or con_architectures:
-                ql.extend(q.fetchall())
-            else:
-                ql = q.fetchall()
-        d = {}
-        highver = {}
-        for i in ql:
-            results += 1
-            (pkg, version, architecture, suite, component, maintainer) = i
-            if component != "main":
-                suite = "%s/%s" % (suite, component)
-            if not d.has_key(pkg):
-                d[pkg] = {}
-            highver.setdefault(pkg,"")
-            if not d[pkg].has_key(version):
-                d[pkg][version] = {}
-                if apt_pkg.version_compare(version, highver[pkg]) > 0:
-                    highver[pkg] = version
-            if not d[pkg][version].has_key(suite):
-                d[pkg][version][suite] = []
-            d[pkg][version][suite].append(architecture)
+    if Options['Format']:
+        kwargs['format'] = Options['Format']
+    if Options['GreaterOrEqual']:
+        kwargs['highest'] = '>='
+    elif Options['GreaterThan']:
+        kwargs['highest'] = '>>'
 
-        packages = d.keys()
-        packages.sort()
+    for line in list_packages(packages, **kwargs):
+        print line
 
-        # Calculate optimal column sizes
-        sizes = [10, 13, 10]
-        for pkg in packages:
-            versions = d[pkg].keys()
-            for version in versions:
-                suites = d[pkg][version].keys()
-                for suite in suites:
-                       sizes[0] = max(sizes[0], len(pkg))
-                       sizes[1] = max(sizes[1], len(version))
-                       sizes[2] = max(sizes[2], len(suite))
-        fmt = "%%%is | %%%is | %%%is | "  % tuple(sizes)
-
-        for pkg in packages:
-            versions = d[pkg].keys()
-            versions.sort(apt_pkg.version_compare)
-            for version in versions:
-                suites = d[pkg][version].keys()
-                suites.sort()
-                for suite in suites:
-                    arches = d[pkg][version][suite]
-                    arches.sort(utils.arch_compare_sw)
-                    if Options["Format"] == "": #normal
-                        sys.stdout.write(fmt % (pkg, version, suite))
-                        sys.stdout.write(", ".join(arches))
-                        sys.stdout.write('\n')
-                    elif Options["Format"] in [ "control-suite", "heidi" ]:
-                        for arch in arches:
-                            sys.stdout.write("%s %s %s\n" % (pkg, version, arch))
-            if Options["GreaterOrEqual"]:
-                print "\n%s (>= %s)" % (pkg, highver[pkg])
-            if Options["GreaterThan"]:
-                print "\n%s (>> %s)" % (pkg, highver[pkg])
-
-    if not results:
-        sys.exit(1)
-
-#######################################################################################
+######################################################################################
 
 if __name__ == '__main__':
     main()
