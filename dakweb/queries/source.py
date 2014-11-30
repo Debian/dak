@@ -41,3 +41,30 @@ def dsc_in_suite(suite=None, source=None):
 
 QueryRegister().register_path('/dsc_in_suite', dsc_in_suite)
 
+
+@bottle.route('/sources_in_suite/<suite>')
+def sources_in_suite(suite=None):
+    """
+    sources_in_suite(suite)
+
+    returns: list of dictionaries
+
+    Returns all source packages and their versions in a given suite.
+    """
+
+    if suite is None:
+        return bottle.HTTPError(503, 'Suite not specified.')
+
+    s = DBConn().session()
+    q = s.query(DBSource).join(Suite, DBSource.suites)
+    q = q.filter(or_(Suite.suite_name == suite, Suite.codename == suite))
+    ret = []
+    for p in q:
+        ret.append({'source':    p.source,
+                    'version':   p.version})
+
+    s.close()
+
+    return json.dumps(ret)
+
+QueryRegister().register_path('/sources_in_suite', sources_in_suite)
