@@ -68,3 +68,28 @@ def sources_in_suite(suite=None):
     return json.dumps(ret)
 
 QueryRegister().register_path('/sources_in_suite', sources_in_suite)
+
+
+@bottle.route('/all_sources')
+def sources_in_suite():
+    """
+    all_sources()
+
+    returns: list of dictionaries
+
+    Returns all source packages and their versions known to the archive
+    (this includes NEW).
+    """
+
+    s = DBConn().session()
+    q = s.query(DBSource)
+    ret = []
+    for p in q:
+        ret.append({'source':    p.source,
+                    'version':   p.version})
+
+    s.close()
+
+    return json.dumps(ret)
+
+QueryRegister().register_path('/all_sources', all_sources)
