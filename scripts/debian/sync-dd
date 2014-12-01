@@ -27,16 +27,17 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 usage() {
-  echo "usage: $0 <lock> <host1> <host2> sync|pool"
-  echo
-  echo "sync dd-accessible copy of the archive"
-  echo
-  echo "arguments:"
-  echo "  lock:      file used for locking"
-  echo "  host1:     hostname for syncing /srv/ftp-master.debian.org"
-  echo "  host2:     hostname for syncing /srv/ftp.debian.org"
-  echo "  sync|pool: sync excludes ftp/, pool syncs ftp/ too"
-  exit ${1:-0}
+    echo "usage: $0 <lock> <host1> <host2> sync|code"
+    echo
+    echo "sync dd-accessible copy of the archive"
+    echo
+    echo "arguments:"
+    echo "  lock:      file used for locking"
+    echo "  host1:     hostname for syncing /srv/ftp-master.debian.org"
+    echo "  host2:     hostname for syncing /srv/ftp.debian.org"
+    echo "  sync|code: sync syncs everything"
+    echo "             code only syncs the dak/ directory (uses host1 value as target)"
+    exit ${1:-0}
 }
 
 if [ $# -ne 4 ]; then
@@ -51,62 +52,71 @@ mode="${4}"
 # extra options for rsync of /srv/ftp-master.debian.org
 extra1=""
 
-case "${mode}" in
-    pool|sync)
-	;;
-    *)
-	echo "Unknown mode ${mode}." >&2
-	exit 1
-	;;
-esac
-
 cleanup() {
-  rm -f "${lockfile}"
+    rm -f "${lockfile}"
 }
 trap cleanup EXIT TERM HUP INT QUIT
 
 # Also, NEVER use --delete-excluded!
 if lockfile -r3 "${lockfile}"; then
-    rsync -aH -B8192 \
-	${extra1} \
-        --exclude "/.nobackup" \
-        --exclude "/backup/*.xz" \
-	--exclude "/backup/dump*" \
-        --exclude "/build-queues/" \
-	--exclude "/database/*.db" \
-	--exclude ".da-backup.trace" \
-        --exclude "/export/changelogs/tmp*/" \
-        --exclude "/ftp" \
-	--exclude "lost+found" \
-	--exclude "/lock/" \
-        --exclude "/mirror" \
-	--exclude "/morgue/" \
-        --exclude "/queue/bts_version_track/" \
-	--exclude "/queue/unchecked/" \
-	--exclude "/s3kr1t" \
-	--exclude "/scripts/s3kr1t" \
-	--exclude "/tmp/" \
-    --exclude "/public/incoming.debian.org" \
-	--delete --delete-after \
-	--timeout 3600 \
-	-e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-	/srv/ftp-master.debian.org/ "${host1}:/srv/ftp-master.debian.org/"
-   # command for the remote side:
-   # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
+    case "${mode}" in
+        sync)
+            rsync -aH -B8192 \
+                  ${extra1} \
+                  --exclude "/.nobackup" \
+                  --exclude "/backup/*.xz" \
+                  --exclude "/backup/dump*" \
+                  --exclude "/build-queues/" \
+                  --exclude "/database/*.db" \
+                  --exclude ".da-backup.trace" \
+                  --exclude "/export/changelogs/tmp*/" \
+                  --exclude "/ftp" \
+                  --exclude "lost+found" \
+                  --exclude "/lock/" \
+                  --exclude "/mirror" \
+                  --exclude "/morgue/" \
+                  --exclude "/queue/bts_version_track/" \
+                  --exclude "/queue/unchecked/" \
+                  --exclude "/s3kr1t" \
+                  --exclude "/scripts/s3kr1t" \
+                  --exclude "/tmp/" \
+                  --exclude "/public/incoming.debian.org" \
+                  --delete --delete-after \
+                  --timeout 3600 \
+                  -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+                  /srv/ftp-master.debian.org/ "${host1}:/srv/ftp-master.debian.org/"
+            # command for the remote side:
+            # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
 
-   rsync -aH -B8192 \
-       --exclude "/.nobackup" \
-       --exclude mirror \
-       --exclude rsync/ \
-       --exclude lost+found \
-       --exclude .da-backup.trace \
-       --exclude web-users/ \
-       --delete --delete-after \
-       --timeout 3600 \
-       -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-       /srv/ftp.debian.org/ "${host2}:/srv/ftp.debian.org/"
-   # command for the remote side:
-   # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp.debian.org/"
+            rsync -aH -B8192 \
+                  --exclude "/.nobackup" \
+                  --exclude mirror \
+                  --exclude rsync/ \
+                  --exclude lost+found \
+                  --exclude .da-backup.trace \
+                  --exclude web-users/ \
+                  --delete --delete-after \
+                  --timeout 3600 \
+                  -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+                  /srv/ftp.debian.org/ "${host2}:/srv/ftp.debian.org/"
+            # command for the remote side:
+            # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp.debian.org/"
+            ;;
+        code)
+            rsync -aH -B8192 \
+                  --exclude "/.nobackup" \
+                  --delete --delete-after \
+                  --timeout 3600 \
+                  -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+                  /srv/ftp-master.debian.org/dak/ "${host1}:/srv/ftp-master.debian.org/dak/"
+            # command for the remote side:
+            # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/dak/"
+            ;;
+        *)
+            echo "Unknown mode ${mode}." >&2
+            exit 1
+            ;;
+    esac
 else
     echo "Couldn't get the lock, not syncing"
     exit 0

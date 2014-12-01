@@ -444,7 +444,7 @@ function bts() {
 function ddaccess() {
     # Tell our dd accessible mirror to sync itself up. Including ftp dir.
     log "Trigger dd accessible parts sync including ftp dir"
-    ${scriptsdir}/sync-dd ries-sync ries-sync1 ries-sync2 pool
+    ${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 pool
 }
 
 function mirrorpush() {

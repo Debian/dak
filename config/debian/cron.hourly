@@ -49,7 +49,7 @@ $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 
 
 # Tell ries to sync its tree
-${scriptsdir}/sync-dd ries-sync ries-sync1 ries-sync2 sync
+${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 sync
 
 $scriptsdir/generate-d-i
 
