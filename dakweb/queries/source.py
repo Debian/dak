@@ -71,7 +71,7 @@ QueryRegister().register_path('/sources_in_suite', sources_in_suite)
 
 
 @bottle.route('/all_sources')
-def sources_in_suite():
+def all_sources():
     """
     all_sources()
 
