@@ -22,6 +22,8 @@ import sqlalchemy.sql as sql
 import daklib.daksql as daksql
 
 from daklib.dbconn import DBConn, session_wrapper
+from collections import defaultdict
+
 
 @session_wrapper
 def list_packages(packages, suites=None, components=None, architectures=None, binary_types=None,
@@ -72,6 +74,40 @@ def list_packages(packages, suites=None, components=None, architectures=None, bi
         result = session.execute(query)
         for row in result:
             yield "{0} {1} {2}".format(row[t.c.package], row[t.c.version], row[t.c.architecture])
+    elif format == "python":
+        c_architectures = daksql.string_agg(t.c.architecture, ',', order_by=[t.c.architecture_is_source.desc(), t.c.architecture])
+        query = sql.select([t.c.package,
+                            t.c.version,
+                            t.c.display_suite,
+                            c_architectures,
+                            t.c.source,
+                            t.c.source_version,
+                            t.c.component]) \
+            .where(where) \
+            .group_by(t.c.package,
+                      t.c.version,
+                      t.c.display_suite,
+                      t.c.source,
+                      t.c.component,
+                      t.c.source_version)
+        result = session.execute(query).fetchall()
+
+        if len(result) == 0:
+            raise StopIteration
+
+        val = lambda: defaultdict(val)
+        ret = val()
+        for row in result:
+            ret[row[t.c.package]] \
+               [row[t.c.display_suite]] \
+               [row[t.c.version]]={'component':      row[t.c.component],
+                                   'architectures':  row[c_architectures].split(','),
+                                   'source':         row[t.c.source],
+                                   'source_version': row[t.c.source_version]
+                               }
+
+        yield ret
+        return
     else:
         raise ValueError("Unknown output format requested.")
 

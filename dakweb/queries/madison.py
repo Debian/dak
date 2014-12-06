@@ -24,12 +24,19 @@ def madison():
         kwargs['source_and_binary'] = True
     #if 'r' in r.query:
     #    kwargs['regex'] = True
+    format = r.query.get('f', None)
+    if format is not None:
+        kwargs['format'] = 'python'
 
     result = list_packages(packages, **kwargs)
 
-    bottle.response.content_type = 'text/plain'
-    for row in result:
-        yield row
-        yield "\n"
+    if format is None:
+        bottle.response.content_type = 'text/plain'
+        for row in result:
+            yield row
+            yield "\n"
+    else:
+        yield json.dumps(list(result))
+
 
 QueryRegister().register_path('/madison', madison)
