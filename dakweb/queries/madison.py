@@ -6,6 +6,16 @@ from dakweb.webregister import QueryRegister
 
 @bottle.route('/madison')
 def madison():
+    """
+    Display information about packages.
+
+    b=TYPE      only show info for binary TYPE
+    c=COMPONENT only show info for COMPONENT(s)
+    s=SUITE     only show info for this suite
+    S=true      show info for the binary children of source pkgs
+    f=json      output json format
+    """
+
     r = bottle.request
 
     packages = r.query.get('package', '').split()
