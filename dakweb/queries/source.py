@@ -1,4 +1,10 @@
-#!/usr/bin/python
+""" Queries related to source packages
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2014  Mark Hymers <mhy@debian.org>
+@copyright: 2014  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
 
 from sqlalchemy import or_
 import bottle
@@ -7,14 +13,28 @@ import json
 from daklib.dbconn import DBConn, DBSource, Suite, DSCFile, PoolFile
 from dakweb.webregister import QueryRegister
 
+
 @bottle.route('/dsc_in_suite/<suite>/<source>')
 def dsc_in_suite(suite=None, source=None):
     """
-    dsc_in_suite(suite, source)
-
-    returns: list of dictionaries
-
     Find all dsc files for a given source package name in a given suite.
+
+    @since: December 2014
+
+    @type suite: string
+    @param suite: Name of the suite.
+    @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
+
+    @type source: string
+    @param source: Source package to query for.
+
+    @rtype: list of dictionaries
+    @return: Dictionaries made out of
+             - version
+             - component
+             - filename
+             - filesize
+             - sha256sum
     """
     if suite is None:
         return bottle.HTTPError(503, 'Suite not specified.')
@@ -45,13 +65,19 @@ QueryRegister().register_path('/dsc_in_suite', dsc_in_suite)
 @bottle.route('/sources_in_suite/<suite>')
 def sources_in_suite(suite=None):
     """
-    sources_in_suite(suite)
-
-    returns: list of dictionaries
-
     Returns all source packages and their versions in a given suite.
-    """
 
+    @since: December 2014
+
+    @type suite: string
+    @param suite: Name of the suite.
+    @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
+
+    @rtype: list of dictionaries
+    @return: Dictionaries made out of
+             - source
+             - version
+    """
     if suite is None:
         return bottle.HTTPError(503, 'Suite not specified.')
 
@@ -73,12 +99,13 @@ QueryRegister().register_path('/sources_in_suite', sources_in_suite)
 @bottle.route('/all_sources')
 def all_sources():
     """
-    all_sources()
-
-    returns: list of dictionaries
-
     Returns all source packages and their versions known to the archive
     (this includes NEW).
+
+    @rtype: list of dictionaries
+    @return: Dictionaries made out of
+             - source
+             - version
     """
 
     s = DBConn().session()

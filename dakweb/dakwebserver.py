@@ -1,14 +1,20 @@
 #!/usr/bin/python
 
-# Main script to run the dakweb server and also
-# to provide the list_paths and path_help functions
+""" Main script to run the dakweb server and also
+to provide the list_paths and path_help functions
 
-from sqlalchemy import or_
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2014  Mark Hymers <mhy@debian.org>
+@license: GNU General Public License version 2 or later
+"""
+
 import bottle
-from daklib.dbconn import DBConn, DBSource, Suite, DSCFile, PoolFile
+from bottle import redirect
+from daklib.dbconn import DBConn
 import json
 
 from dakweb.webregister import QueryRegister
+
 
 @bottle.route('/')
 def root_path():
@@ -16,19 +22,22 @@ def root_path():
     return json.dumps('Use the /list_paths path to list all available paths')
 QueryRegister().register_path('/', root_path)
 
+
 @bottle.route('/list_paths')
 def list_paths():
     """Returns a list of available paths"""
     return json.dumps(QueryRegister().get_paths())
 QueryRegister().register_path('/list_paths', list_paths)
 
+
 @bottle.route('/path_help/<path>')
 def path_help(path=None):
-
+    """Redirects to the API description containing the path_help"""
     if path is None:
         return bottle.HTTPError(503, 'Path not specified.')
 
-    return json.dumps(QueryRegister().get_path_help(path))
+    redirect("https://ftp-master.debian.org/epydoc/%s-module.html#%s" %
+             (QueryRegister().get_path_help(path), path))
 QueryRegister().register_path('/path_help', list_paths)
 
 # Import our other methods

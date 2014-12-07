@@ -1,4 +1,11 @@
-#!/usr/bin/python
+""" Suite related queries
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2014  Mark Hymers <mhy@debian.org>
+@license: GNU General Public License version 2 or later
+
+@newfield maps: Mapping, Mappings
+"""
 
 import bottle
 import json
@@ -6,18 +13,25 @@ import json
 from daklib.dbconn import DBConn, Suite
 from dakweb.webregister import QueryRegister
 
+
 @bottle.route('/suites')
 def suites():
     """
-    suites()
-
-    returns: list of dictionaries
-
     Give information about all known suites.
 
-    name maps to Suite: in the release file
-    codename maps to Codename: in the release file.
-    dakname is an internal name and should not be relied upon.
+    @maps: name maps to Suite: in the release file
+    @maps: codename maps to Codename: in the release file.
+    @maps: dakname is an internal name and should not be relied upon.
+
+    @rtype: list of dictionaries
+    @return: Dictionaries made out of
+             - name
+             - codename
+             - dakname
+             - archive
+             - architectures
+             - components
+
     """
 
     s = DBConn().session()
@@ -41,14 +55,27 @@ QueryRegister().register_path('/suites', suites)
 @bottle.route('/suite/<suite>')
 def suite(suite=None):
     """
-    suite(suite)
-
-    returns: dictionary
-
     Gives information about a single suite.  Note that this routine will look
     up a suite first by the main suite_name, but then also by codename if no
     suite is initially found.  It can therefore be used to canonicalise suite
-    names
+    names.
+
+    @type suite: string
+    @param suite: Name or codename of the suite.
+    @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
+
+    @maps: name maps to Suite: in the release file
+    @maps: codename maps to Codename: in the release file.
+    @maps: dakname is an internal name and should not be relied upon.
+
+    @rtype: dictionary
+    @return: A dictionary of
+             - name
+             - codename
+             - dakname
+             - archive
+             - architectures
+             - components
     """
 
     if suite is None:
@@ -90,4 +117,3 @@ def suite(suite=None):
     return json.dumps(so)
 
 QueryRegister().register_path('/suite', suite)
-

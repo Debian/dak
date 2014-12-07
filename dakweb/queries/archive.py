@@ -1,19 +1,26 @@
 #!/usr/bin/python
 
+""" Archive related queries
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2014  Mark Hymers <mhy@debian.org>
+@license: GNU General Public License version 2 or later
+"""
+
 import bottle
 import json
 
 from daklib.dbconn import DBConn, Archive
 from dakweb.webregister import QueryRegister
 
+
 @bottle.route('/archives')
 def archives():
     """
-    archives()
-
-    returns: list of dictionaries
-
     Give information about all known archives (sets of suites)
+
+    @rtype: dict
+    return: list of dictionaries
     """
 
     s = DBConn().session()
@@ -29,4 +36,3 @@ def archives():
     return json.dumps(ret)
 
 QueryRegister().register_path('/archives', archives)
-

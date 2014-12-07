@@ -1,3 +1,11 @@
+""" "Madison" interface
+
+@contact: Debian FTPMaster <ftpmaster@debian.org>
+@copyright: 2014  Ansgar Burchardt <ansgar@debian.org>
+@copyright: 2014  Joerg Jaspert <joerg@debian.org>
+@license: GNU General Public License version 2 or later
+"""
+
 import bottle
 import json
 
@@ -7,13 +15,20 @@ from dakweb.webregister import QueryRegister
 @bottle.route('/madison')
 def madison():
     """
-    Display information about packages.
+    Display information about B{package(s)}.
 
-    b=TYPE      only show info for binary TYPE
-    c=COMPONENT only show info for COMPONENT(s)
-    s=SUITE     only show info for this suite
-    S=true      show info for the binary children of source pkgs
-    f=json      output json format
+    @since: December 2014
+
+    @keyword package: Space seperated list of packages.
+    @keyword b: only show info for a binary type. I{deb/udeb/dsc}
+    @keyword c: only show info for specified component(s). I{main/contrib/non-free}
+    @keyword s: only show info for this suite.
+    @keyword S: show info for the binary children of source pkgs. I{true/false}
+    @keyword f: output json format. I{json}
+    @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
+
+    @rtype: text/plain or application/json
+    @return: Text or Json format of the data
     """
 
     r = bottle.request
