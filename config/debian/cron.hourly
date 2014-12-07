@@ -47,6 +47,8 @@ cat removals.822 >> removals-full.822
 $base/dak/tools/queue_rss.py -q $queuedir/new -o $webdir/rss/ -d $base/misc -l $base/log/
 $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 
+cd $masterdir
+/usr/bin/epydoc -q --html --graph all --css blue -n DAK -o $webdir/epydoc --include-log --graph all --show-imports $masterdir/dak/ $masterdir/dakweb/
 
 # Tell ries to sync its tree
 ${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 sync
