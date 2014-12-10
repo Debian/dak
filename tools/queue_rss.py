@@ -141,6 +141,7 @@ def add_rss_item(status, msg, direction):
 
     link = "https://ftp-master.debian.org/new/%s_%s.html" % \
             (msg['Source'], msg['Version'])
+    guid = msg['Checksums-Sha256'][0]['sha256']
 
     maintainer = parseaddr(msg['Maintainer'])
     author = "%s (%s)" % (maintainer[1], maintainer[0])
@@ -152,7 +153,7 @@ def add_rss_item(status, msg, direction):
             description = description,
             author = cgi.escape(author),
             link = link,
-            guid = link
+            guid = guid
         )
     )
 
