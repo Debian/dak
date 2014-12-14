@@ -26,7 +26,7 @@ QueryRegister().register_path('/', root_path)
 @bottle.route('/list_paths')
 def list_paths():
     """Returns a list of available paths"""
-    redirect("https://ftp-master.debian.org/epydoc/toc-dakweb-module.html")
+    redirect("https://ftp-master.debian.org/epydoc/dakweb-module.html#__package__")
 QueryRegister().register_path('/list_paths', list_paths)
 
 
