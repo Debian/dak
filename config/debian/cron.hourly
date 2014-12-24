@@ -58,7 +58,7 @@ $scriptsdir/generate-d-i
 # Update backports ACL
 sudo -u dak-unpriv cat /srv/backports-master.debian.org/etc/acl \
     | dak acl set-fingerprints backports \
-    | mail -a "X-Debian: DAK" -e -s "backports: acl changes" backports-team@debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+    | mail -a "X-Debian: DAK" -e -s "backports: acl changes" backports-team@debian.org
 
 # do the buildd key updates
 BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
@@ -73,6 +73,6 @@ done
 exec >>/dev/null 2>&1
 
 DATE=$(date -Is)
-cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" buildd-keys@ftp-master.debian.org -- -F "Debian FTP Masters" -f ftpmaster@ftp-master.debian.org
+cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" buildd-keys@ftp-master.debian.org
 
 rm -f "${BUILDDFUN}"
