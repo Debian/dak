@@ -46,7 +46,7 @@ fi
 
 for queue in embargoed unembargoed; do
     echo "$timestamp: processing ${queue}" >> ${report}
-    dak process-policy ${queue} | mail -a "X-Debian: DAK" -e -s "Automatically accepted from ${queue}" team@security.debian.org
+    dak process-policy ${queue} | mail -a "X-Debian: DAK" -e -s "Automatically accepted from ${queue}" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" team@security.debian.org
 done
 accepted=$(find ${queuedir}/accepted -type f -name "*.changes")
 if [ -n "${accepted}" ]; then

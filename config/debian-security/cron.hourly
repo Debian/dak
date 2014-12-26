@@ -39,6 +39,6 @@ done
 exec >>/dev/null 2>&1
 
 DATE=$(date -Is)
-cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" buildd-keys@ftp-master.debian.org
+cat "${BUILDDFUN}" | mail -a "X-Debian: DAK" -e -s "[$(hostname -s)] Buildd key changes ${DATE}" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" buildd-keys@ftp-master.debian.org
 
 rm -f "${BUILDDFUN}"
