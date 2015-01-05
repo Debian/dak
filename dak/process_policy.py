@@ -108,6 +108,8 @@ def try_or_reject(function):
                 real_comment_reject(upload, srcqueue, comments, transaction, notify=False)
         if not Options['No-Action']:
             transaction.commit()
+        else:
+            transaction.rollback()
     return wrapper
 
 ################################################################################
