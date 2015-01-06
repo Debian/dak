@@ -144,7 +144,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
         package_list = PackageList(db_source.proxy)
         component = source_component_from_package_list(package_list, upload.target_suite)
         if component is not None:
-            return get_mapped_component(component, session=session)
+            return get_mapped_component(component.component_name, session=session)
 
         # Fallback for packages without Package-List field
         query = session.query(Override).filter_by(suite=overridesuite, package=db_source.source) \
