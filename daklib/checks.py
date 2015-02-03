@@ -57,7 +57,7 @@ class Reject(Exception):
     """exception raised by failing checks"""
     pass
 
-class RejectStupidMaintainerException(Exception):
+class RejectExternalFilesMismatch(Reject):
     """exception raised by failing the external hashes check"""
 
     def __str__(self):
@@ -256,16 +256,16 @@ class ExternalHashesCheck(Check):
             return
 
         if ext_size != f.size:
-            raise RejectStupidMaintainerException(f.filename, 'size', f.size, ext_size)
+            raise RejectExternalFilesMismatch(f.filename, 'size', f.size, ext_size)
 
         if ext_md5sum != f.md5sum:
-            raise RejectStupidMaintainerException(f.filename, 'md5sum', f.md5sum, ext_md5sum)
+            raise RejectExternalFilesMismatch(f.filename, 'md5sum', f.md5sum, ext_md5sum)
 
         if ext_sha1sum != f.sha1sum:
-            raise RejectStupidMaintainerException(f.filename, 'sha1sum', f.sha1sum, ext_sha1sum)
+            raise RejectExternalFilesMismatch(f.filename, 'sha1sum', f.sha1sum, ext_sha1sum)
 
         if ext_sha256sum != f.sha256sum:
-            raise RejectStupidMaintainerException(f.filename, 'sha256sum', f.sha256sum, ext_sha256sum)
+            raise RejectExternalFilesMismatch(f.filename, 'sha256sum', f.sha256sum, ext_sha256sum)
 
     def check(self, upload):
         cnf = Config()
