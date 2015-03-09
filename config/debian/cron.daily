@@ -60,7 +60,7 @@ dak stats new ${webdir}/NEW-stats.yaml 2> /dev/null
 # FIXME: In a day or three, when this worked from cron without
 # failure, redirect its output to dev/null. Alternatively until then
 # enrico added a --quiet and we use that.
-dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/contributor.auth" --source ftp.debian.org --post
+REQUESTS_CA_BUNDLE=/etc/ssl/ca-debian/ca-certificates.crt dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/contributor.auth" --source ftp.debian.org --post
 
 ${scriptsdir}/link_morgue.sh
 
