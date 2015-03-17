@@ -300,7 +300,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     if "sourceNEW" in trclass:
         print "<td class=\"package\">%s</td>" % (source)
     else:
-        print "<td class=\"package\"><a href=\"http://packages.qa.debian.org/%(source)s\">%(source)s</a></td>" % {'source': source}
+        print "<td class=\"package\"><a href=\"https://tracker.debian.org/pkg/%(source)s\">%(source)s</a></td>" % {'source': source}
     print "<td class=\"version\">"
     for vers in version.split():
         print "<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers))
