@@ -407,7 +407,7 @@ class Upload(object):
         return sponsored
 
     def check_dm_upload(self, fpr, session):
-        # Quoth the GR (http://www.debian.org/vote/2007/vote_003):
+        # Quoth the GR (https://www.debian.org/vote/2007/vote_003):
         ## none of the uploaded packages are NEW
         ## none of the packages are being taken over from other source packages
         for b in self.pkg.changes["binary"].keys():

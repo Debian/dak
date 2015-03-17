@@ -8,14 +8,14 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 export TERM=linux
 
 destdir=$ftpdir/doc
-urlbase=http://www.debian.org/Bugs/
+urlbase=https://www.debian.org/Bugs/
 
 cd $destdir
 
 convert () {
 	src=$1; dst=$2
 	rm -f .new-$dst
-	echo Generating $dst from http://www.debian.org/Bugs/$src ...
+	echo Generating $dst from https://www.debian.org/Bugs/$src ...
 	lynx -nolist -dump $urlbase$src | sed -e 's/^ *$//' | perl -00 -ne 'exit if /Back to the Debian Project homepage/; print unless ($.==1 || $.==2 || $.==3 || /^\s*Other BTS pages:$/m)' >.new-$dst
 	if cmp -s .new-$dst $dst ; then rm -f .new-$dst
 	else mv -f .new-$dst $dst

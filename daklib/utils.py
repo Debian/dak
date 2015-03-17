@@ -566,7 +566,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
 ################################################################################
 
-# see http://bugs.debian.org/619131
+# see https://bugs.debian.org/619131
 def build_package_list(dsc, session = None):
     if not dsc.has_key("package-list"):
         return {}
@@ -1557,7 +1557,7 @@ Cnf = config.Config().Cnf
 
 def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm"):
     """
-    Parses the wnpp bug list available at http://qa.debian.org/data/bts/wnpp_rm
+    Parses the wnpp bug list available at https://qa.debian.org/data/bts/wnpp_rm
     Well, actually it parsed a local copy, but let's document the source
     somewhere ;)
 

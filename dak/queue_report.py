@@ -314,12 +314,12 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     (name, mail) = maint.split(":", 1)
 
     print "<td class=\"upload-data\">"
-    print "<span class=\"maintainer\">Maintainer: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
+    print "<span class=\"maintainer\">Maintainer: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
     (name, mail) = changedby.split(":", 1)
-    print "<span class=\"changed-by\">Changed-By: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
+    print "<span class=\"changed-by\">Changed-By: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
 
     if sponsor:
-        print "<span class=\"sponsor\">Sponsor: <a href=\"http://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(sponsor), utils.html_escape(sponsor))
+        print "<span class=\"sponsor\">Sponsor: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(sponsor), utils.html_escape(sponsor))
 
     print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
     print "</td>"

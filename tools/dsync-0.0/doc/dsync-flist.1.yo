@@ -152,7 +152,7 @@ manpagediagnostics()
 dsync-flist returns zero on normal operation, decimal 100 on error.
 
 manpagebugs()
-See http://bugs.debian.org/dsync.  If you wish to report a
+See https://bugs.debian.org/dsync.  If you wish to report a
 bug in bf(apt-get), please see bf(/usr/doc/debian/bug-reporting.txt)
 or the bf(bug(1)) command.
 
