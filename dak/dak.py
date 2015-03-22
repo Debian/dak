@@ -113,6 +113,8 @@ def init():
          "Manipulate/list override entries in bulk"),
         ("control-suite",
          "Manipulate suites in bulk"),
+        ("update-suite",
+         "Update suite with packages from a different suite"),
         ("cruft-report",
          "Check for obsolete or duplicated packages"),
         ("examine-package",
