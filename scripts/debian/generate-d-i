@@ -12,27 +12,53 @@ exec > $webdir/d-i 2>&1
 
 
 echo "udeb's in testing that don't (anymore) correspond to any testing source:"
-psql -c "select b.package, b.version, (SELECT arch_string from
-architecture where b.architecture=architecture.id) as arch, s.source from
-bin_associations ba LEFT JOIN binaries b on (ba.bin=b.id) LEFT JOIN source s
-on (b.source=s.id) WHERE ba.suite=4 AND s.id NOT IN (SELECT source from
-src_associations WHERE suite=4) AND b.type = 'udeb' ORDER BY s.source,
-b.package, b.architecture;"
+psql -c "
+  SELECT
+    b.package,
+    b.version,
+    (SELECT arch_string from architecture where b.architecture = architecture.id) as arch,
+    s.source
+  FROM bin_associations ba
+  LEFT JOIN binaries b on (ba.bin = b.id)
+  LEFT JOIN source s on (b.source = s.id)
+  WHERE ba.suite = 4
+    AND s.id NOT IN (SELECT source from src_associations WHERE suite = 4)
+    AND b.type = 'udeb'
+  ORDER BY s.source, b.package, b.architecture;
+  "
 
 echo "udeb's in unstable that should be in testing too:"
-psql -c "select b.package, b.version, (SELECT arch_string from
-architecture where b.architecture=architecture.id) as arch, s.source from
-bin_associations ba LEFT JOIN binaries b on (ba.bin=b.id) LEFT JOIN source s
-on (b.source=s.id) WHERE ba.suite=5 AND NOT EXISTS (SELECT 1 FROM
-bin_associations ba2 WHERE ba2.suite=4 AND ba2.bin=ba.bin) AND s.id IN (SELECT
-source from src_associations WHERE suite=4) AND b.type = 'udeb' AND
-b.architecture NOT IN (4,8,12) ORDER BY s.source, b.package, b.architecture;"
+psql -c "
+  SELECT
+    b.package,
+    b.version,
+    (SELECT arch_string from architecture where b.architecture = architecture.id) as arch,
+    s.source
+  FROM bin_associations ba
+  LEFT JOIN binaries b on (ba.bin=b.id)
+  LEFT JOIN source s on (b.source=s.id)
+  WHERE ba.suite=5
+    AND NOT EXISTS (SELECT 1 FROM bin_associations ba2 WHERE ba2.suite = 4 AND ba2.bin = ba.bin)
+    AND s.id IN (SELECT source from src_associations WHERE suite=4)
+    AND b.type = 'udeb'
+    AND b.architecture NOT IN (4,8,12)
+  ORDER BY s.source, b.package, b.architecture;
+  "
 
 echo "udeb's in t-p-u that should be in testing too:"
-psql -c "select b.package, b.version, (SELECT arch_string from
-architecture where b.architecture=architecture.id) as arch, s.source from
-bin_associations ba LEFT JOIN binaries b on (ba.bin=b.id) LEFT JOIN source s
-on (b.source=s.id) WHERE ba.suite=3 AND NOT EXISTS (SELECT 1 FROM
-bin_associations ba2 WHERE ba2.suite=4 AND ba2.bin=ba.bin) AND s.id IN (SELECT
-source from src_associations WHERE suite=4) AND b.type = 'udeb' AND
-b.architecture NOT IN (4,8,12) ORDER BY s.source, b.package, b.architecture;"
+psql -c "
+  SELECT
+    b.package,
+    b.version,
+    (SELECT arch_string from architecture where b.architecture=architecture.id) as arch,
+    s.source
+  FROM bin_associations ba
+  LEFT JOIN binaries b ON ba.bin = b.id
+  LEFT JOIN source s ON b.source = s.id
+  WHERE ba.suite = 3
+    AND NOT EXISTS (SELECT 1 FROM bin_associations ba2 WHERE ba2.suite = 4 AND ba2.bin = ba.bin)
+    AND s.id IN (SELECT source from src_associations WHERE suite = 4)
+    AND b.type = 'udeb'
+    AND b.architecture NOT IN (4,8,12)
+  ORDER BY s.source, b.package, b.architecture;
+  "
