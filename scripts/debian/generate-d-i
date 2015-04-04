@@ -3,6 +3,8 @@
 # Original written from Jeroen van Wolffelaar <jeroen@debian.org>
 
 set -e
+set -u
+
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
