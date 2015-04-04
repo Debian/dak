@@ -44,7 +44,7 @@ psql -c "
     AND NOT EXISTS (SELECT 1 FROM bin_associations ba2 WHERE ba2.suite = ${testing_id} AND ba2.bin = ba.bin)
     AND s.id IN (SELECT source from src_associations WHERE suite = ${testing_id})
     AND b.type = 'udeb'
-    AND b.architecture NOT IN (4,8,12)
+    AND b.architecture IN (SELECT architecture FROM suite_architectures WHERE suite = ${testing_id})
   ORDER BY s.source, b.package, b.architecture;
   "
 
@@ -62,6 +62,6 @@ psql -c "
     AND NOT EXISTS (SELECT 1 FROM bin_associations ba2 WHERE ba2.suite = ${testing_id} AND ba2.bin = ba.bin)
     AND s.id IN (SELECT source from src_associations WHERE suite = ${testing_id})
     AND b.type = 'udeb'
-    AND b.architecture NOT IN (4,8,12)
+    AND b.architecture IN (SELECT architecture FROM suite_architectures WHERE suite = ${testing_id})
   ORDER BY s.source, b.package, b.architecture;
   "
