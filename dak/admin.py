@@ -322,6 +322,9 @@ def __suite_add(d, args, addallarches=False):
     version = args[3]
     rest = args[3:]
 
+    if len(version) == 0:
+        version = None
+
     def get_field(field):
         for varval in args:
             if varval.startswith(field + '='):
