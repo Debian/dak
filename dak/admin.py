@@ -101,6 +101,8 @@ Perform administrative work on the dak database.
 
      s add-all-arches SUITE VERSION... as "s add" but adds suite-architecture
                             relationships for all architectures
+     s add-build-queue SUITE BUILD-QUEUE BUILD-QUEUE-CODENAME BUILD-QUEUE-ARCHIVE
+                            add a build queue for an existing suite
 
   suite-architecture / s-a:
      s-a list               show the architectures for all suites
@@ -384,6 +386,56 @@ def __suite_rm(d, args):
             die("E: Error removing suite {0} ({1})".format(name, e))
     print "Suite {0} removed".format(name)
 
+def __suite_add_build_queue(d, args):
+    session = d.session()
+
+    die_arglen(args, 6, "E: Adding a build queue needs four parameters.")
+
+    suite_name = args[2]
+    build_queue_name = args[3]
+    build_queue_codename = args[4]
+    build_queue_archive_name = args[5]
+    try:
+        suite = session.query(Suite).filter_by(suite_name=suite_name).one()
+    except NoResultFound:
+        die("E: Unknown suite '{0}'".format(suite_name))
+    try:
+        build_queue_archive = session.query(Archive).filter_by(archive_name=build_queue_archive_name).one()
+    except NoResultFound:
+        die("E: Unknown archive '{1}'".format(build_queue_archive_name))
+
+    # Create suite
+    s = Suite()
+    s.suite_name = build_queue_name
+    s.origin = suite.origin
+    s.label = suite.label
+    s.description = "buildd {0} incoming".format(suite_name)
+    s.codename = build_queue_codename
+    s.notautomatic = suite.notautomatic
+    s.overridesuite = suite.overridesuite
+    s.butautomaticupgrades = suite.butautomaticupgrades
+    s.signingkeys = suite.signingkeys
+    s.include_long_description = False
+
+    s.archive = build_queue_archive
+    s.architectures.extend(suite.architectures)
+    s.components.extend(suite.components)
+    s.srcformats.extend(suite.srcformats)
+
+    session.add(s)
+    session.flush()
+
+    bq = BuildQueue()
+    bq.queue_name = build_queue_codename
+    bq.suite = s
+
+    session.add(bq)
+    session.flush()
+
+    suite.copy_queues.append(bq)
+
+    session.commit()
+
 def suite(command):
     args = [str(x) for x in command]
     Cnf = utils.get_conf()
@@ -403,6 +455,8 @@ def suite(command):
         __suite_add(d, args, False)
     elif mode == 'add-all-arches':
         __suite_add(d, args, True)
+    elif mode == 'add-build-queue':
+        __suite_add_build_queue(d, args)
     else:
         die("E: suite command unknown")
 
