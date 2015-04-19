@@ -70,7 +70,7 @@ class SuiteUpdater(object):
 
         if obey_policy_queue and target.policy_queue_id is not None:
             raise Exception('Not implemented...')
-        self.logger = None if dry_run else daklog.Logger("update-suite")
+        self.logger = None if dry_run else daklib.daklog.Logger("update-suite")
 
     def query_new_binaries(self, additional_sources):
         # Candidates are binaries in the origin suite, and optionally in its policy queue.
