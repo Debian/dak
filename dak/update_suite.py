@@ -222,7 +222,7 @@ class SuiteUpdater(object):
     def update_suite(self):
         targets = set([self.target])
         if self.obey_build_queues:
-            targets.update(self.target.copy_queues)
+            targets.update([bq.suite for bq in self.target.copy_queues])
         target_names = [ s.suite_name for s in targets ]
         target_names.sort()
         target_name = ",".join(target_names)
