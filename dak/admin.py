@@ -415,7 +415,7 @@ def __suite_add_build_queue(d, args):
     s.description = "buildd {0} incoming".format(suite_name)
     s.codename = build_queue_codename
     s.notautomatic = suite.notautomatic
-    s.overridesuite = suite.overridesuite
+    s.overridesuite = suite.overridesuite or suite.suite_name
     s.butautomaticupgrades = suite.butautomaticupgrades
     s.signingkeys = suite.signingkeys
     s.include_long_description = False
