@@ -405,7 +405,7 @@ def __suite_add_build_queue(d, args):
     try:
         build_queue_archive = session.query(Archive).filter_by(archive_name=build_queue_archive_name).one()
     except NoResultFound:
-        die("E: Unknown archive '{1}'".format(build_queue_archive_name))
+        die("E: Unknown archive '{0}'".format(build_queue_archive_name))
 
     # Create suite
     s = Suite()
