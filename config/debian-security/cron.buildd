@@ -41,14 +41,17 @@ if [ ! -z "${dists}" ]; then
     trap 'kill -TERM $SSH_PID' 0
     for d in ${dists}; do
         case ${d} in
-            oldstable)
+            oldoldstable)
                 send=squeeze
                 ;;
-            stable)
+            oldstable)
                 send=wheezy
                 ;;
-            testing)
+            stable)
                 send=jessie
+                ;;
+            testing)
+                send=stretch
                 ;;
             *)
                 send=unknown

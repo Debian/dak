@@ -21,11 +21,11 @@ for file in override*.gz; do
 done
 find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
 
-for suite in stable testing; do
+for suite in oldstable stable testing; do
     case $suite in
-        oldstable) override_suite=squeeze;;
-        stable) override_suite=wheezy;;
-        testing) override_suite=jessie;;
+        oldstable) override_suite=wheezy  ;;
+        stable)    override_suite=jessie  ;;
+        testing)   override_suite=stretch ;;
         *) echo "Unknown suite type ($suite)"; exit 1;;
     esac
     for component in $components; do
