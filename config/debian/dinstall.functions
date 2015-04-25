@@ -144,10 +144,6 @@ function overrides() {
     log "Writing overrides into text files"
     cd $overridedir
     dak make-overrides
-
-    # FIXME
-    rm -f override.sid.all3
-    for i in main contrib non-free main.debian-installer; do cat override.sid.$i >> override.sid.all3; done
 }
 
 function mpfm() {
