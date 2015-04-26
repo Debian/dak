@@ -187,6 +187,8 @@ class SuiteUpdater(object):
                       .filter(ArchiveFile.archive_id == suite.archive_id)
 
     def install_binaries(self, binaries, suite):
+        if len(binaries) == 0:
+            return
         # If origin and target suites are in the same archive, we can skip the
         # overhead from ArchiveTransaction.copy_binary()
         if self.origin.archive_id == suite.archive_id:
@@ -207,6 +209,8 @@ class SuiteUpdater(object):
                       .filter(ArchiveFile.archive_id == suite.archive_id)
 
     def install_sources(self, sources, suite):
+        if len(sources) == 0:
+            return
         # If origin and target suites are in the same archive, we can skip the
         # overhead from ArchiveTransaction.copy_source()
         if self.origin.archive_id == suite.archive_id:
