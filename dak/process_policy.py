@@ -37,6 +37,7 @@ import re
 import sys
 import traceback
 import apt_pkg
+from sqlalchemy.orm.exc import NoResultFound
 
 from daklib.dbconn import *
 from daklib import daklog
