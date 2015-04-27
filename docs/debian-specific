@@ -12,3 +12,12 @@ DEBIAN-SPECIFIC NOTES                                  -*- mode: Org -*-
 - dcmd mv -n bla.changes ../unchecked
 - /srv/security-master.debian.org/dak/config/debian-security/cron.unchecked
 - cronon
+** Built-Using
+Source packages referred to via Built-Using need to be included in the
+security archive:
+
+- Obtain & verify .dsc
+- dak import built-using updates/<component> <.dsc...>
+
+If the .dsc is signed by an old key no longer in the keyring, use
+--ignore-signature. Make extra sure the .dsc is correct.
