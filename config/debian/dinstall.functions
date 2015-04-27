@@ -389,7 +389,7 @@ function mkchecksums() {
 }
 
 function mirror() {
-    local archiveroot
+    local archiveroot mirrordir
 
     log "Regenerating \"public\" mirror/ hardlink fun"
     DATE_SERIAL=$(date +"%Y%m%d01")
