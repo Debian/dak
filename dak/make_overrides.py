@@ -118,7 +118,7 @@ def main ():
             continue
 
         sys.stderr.write("Processing %s...\n" % (suite.suite_name))
-        override_suite = suite.overridecodename
+        override_suite = suite.overridecodename or suite.codename
 
         for component in session.query(Component).all():
             for otype in session.query(OverrideType).all():
