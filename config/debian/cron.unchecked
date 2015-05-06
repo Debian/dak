@@ -74,8 +74,8 @@ export LANG=C
 export LC_ALL=C
 
 # only run one cron.unchecked
-if ! lockfile -r8 $LOCKFILE; then
-    echo "aborting cron.unchecked because $LOCKFILE has already been locked"
+if ! lockfile -r8 $LOCKFILE 2> /dev/null; then
+    # echo "aborting cron.unchecked because $LOCKFILE has already been locked"
     exit 0
 fi
 trap cleanup 0
