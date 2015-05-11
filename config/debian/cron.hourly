@@ -50,7 +50,7 @@ $base/dak/tools/removals.pl $configdir/removalsrss.rc > $webdir/rss/removals.rss
 # cd $masterdir
 # timeout -k 180 120  /usr/bin/epydoc -q --html --graph all --css blue -n DAK -o $webdir/epydoc --include-log --graph all --show-imports $masterdir/dak/ $masterdir/dakweb/ || true
 
-# Tell ries to sync its tree
+# Tell the public mirror to sync its tree
 ${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 sync
 
 $scriptsdir/generate-d-i
