@@ -26,7 +26,7 @@ if ! lockfile -r100 "$LOCKFILE"; then
 fi
 trap cleanup EXIT
 
-dak generate-releases -a security
+dak generate-releases -a security >/dev/null
 
 cleanup
 trap - EXIT
