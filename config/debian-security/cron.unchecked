@@ -73,6 +73,9 @@ if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
     exit 0
 fi
 
+# Update stable-kfreebsd
+dak update-suite stable stable-kfreebsd
+
 # manage build queues
 dak manage-build-queues -a
 dak generate-packages-sources2 -a build-queues
