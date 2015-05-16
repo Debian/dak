@@ -30,7 +30,7 @@ LOGFILE="$logdir/daily_${NOW}.log"
 exec >> "$LOGFILE" 2>&1
 
 # get the latest list of wnpp bugs and their source packages
-wget -q -O${TMPFILE} https://qa.debian.org/data/bts/wnpp_rm
+wget -q -O${TMPFILE} --ca-directory=/etc/ssl/ca-debian https://qa.debian.org/data/bts/wnpp_rm
 chmod go+r ${TMPFILE}
 mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
 
