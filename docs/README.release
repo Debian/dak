@@ -1,0 +1,216 @@
+Notes from the Debian Jessie release
+====================================
+
+Some notes from the Debian Jessie release including some
+corrections. There might still be errors.
+
+UPDATE SUITES:
+
+begin;
+
+-- update suites:
+
+update suite set suite_name = 'oldoldstable', validtime = 0 where codename = 'squeeze';
+update suite set suite_name = 'oldstable' where codename = 'wheezy';
+update suite set suite_name = 'stable', version = '8.0', description = 'Debian 8.0 Released 25 April 2015', overrideprocess = false, overrideorigin = null, allowcsset = false, announce = array['debian-changes@lists.debian.org'], validtime = 0 where codename = 'jessie';
+update suite set suite_name = 'stable-kfreebsd', description = 'Debian 8 (kfreebsd)', overridesuite = 'stable', overridecodename = null where codename = 'jessie-kfreebsd';
+
+update suite set overridesuite = 'oldoldstable' where codename = 'squeeze-lts';
+
+update suite set suite_name = 'oldoldstable-proposed-updates', copychanges = 'dists/oldoldstable-proposed-updates', overridesuite = 'oldoldstable', validtime = 0 where codename = 'squeeze-proposed-updates';
+update suite set release_suite = 'oldoldstable-updates', overridesuite = 'oldoldstable', validtime = 0 where codename = 'squeeze-updates';
+
+update suite set suite_name = 'oldstable-proposed-updates', copychanges = 'dists/oldstable-proposed-updates', overridesuite = 'oldstable' where codename = 'wheezy-proposed-updates';
+update suite set release_suite = 'oldstable-updates', overridesuite = 'oldstable' where codename = 'wheezy-updates';
+
+update suite set suite_name = 'proposed-updates', version = '8-updates', description = 'Proposed Updates for Debian 8 - Not Released', copychanges = 'dists/proposed-updates', overridesuite = 'stable', announce = array['debian-changes@lists.debian.org'] where codename = 'jessie-proposed-updates';
+update suite set release_suite = 'stable-updates', overridesuite = 'stable' where codename = 'jessie-updates';
+
+update suite set suite_name = 'stable-kfreebsd-proposed-updates', description = 'Proposed Updates for Debian 8 (kfreebsd) - Not Released', copychanges = 'dists/stable-kfreebsd-proposed-updates', overridesuite = 'stable' where codename = 'jessie-kfreebsd-proposed-updates';
+
+-- helper suites:
+update suite set suite_name = 'oldoldstable-new', overridesuite = 'oldoldstable', codename = 'squeeze-new' where suite_name = 'oldstable-new';
+update suite set suite_name = 'oldstable-new', overridesuite = 'oldstable', codename = 'wheezy-new' where suite_name = 'stable-new';
+
+-- update build queues:
+
+update suite set overridesuite = 'oldoldstable' where codename = 'buildd-squeeze-lts';
+update suite set suite_name = 'buildd-oldstable-proposed-updates', overridesuite = 'oldstable' where codename = 'buildd-wheezy-proposed-updates';
+update suite set suite_name = 'buildd-proposed-updates', description = 'buildd jessie-proposed-updates incoming', overridesuite = 'stable' where codename = 'buildd-jessie-proposed-updates';
+update suite set suite_name = 'buildd-stable-kfreebsd-proposed-updates', description = 'buildd jessie-kfreebsd-proposed-updates incoming', overridesuite = 'stable' where codename = 'buildd-jessie-kfreebsd-proposed-updates';
+
+commit;
+
+MOVE STUFF AROUND:
+
+cd /srv/ftp-master.debian.org/ftp/dists
+rm oldstable oldstable-proposed-updates oldstable-updates proposed-updates stable stable-backports stable-proposed-updates stable-updates testing testing-kfreebsd testing-kfreebsd-proposed-updates testing-proposed-updates testing-updates
+ln -s squeeze oldoldstable
+ln -s squeeze-proposed-updates oldoldstable-proposed-updates
+ln -s squeeze-updates oldoldstable-updates
+ln -s jessie-proposed-updates proposed-updates
+ln -s jessie stable
+ln -s jessie-backports stable-backports
+ln -s jessie-proposed-updates stable-proposed-updates
+ln -s jessie-updates stable-updates
+ln -s stretch testing
+ln -s jessie-kfreebsd stable-kfreebsd
+ln -s jessie-kfreebsd-proposed-updates stable-kfreebsd-proposed-updates
+ln -s stretch-proposed-updates testing-proposed-updates
+ln -s stretch-updates testing-updates
+ln -s jessie Debian8.0
+
+# edit README, README.html, dists/README
+# rm .diff from dists/jessie
+# rm dists/jessie/ChangeLog*
+# add new dists/jessie/ChangeLog:
+cd /srv/ftp-master.debian.org/ftp/dists/jessie
+cat >ChangeLog <<EOT
+=========================================
+Sat, 25 Apr 2015 - Debian 8.0 released
+=========================================
+EOT
+
+# check win32-loader!
+#  - even copy in testing/ might be outdated.
+
+cd /srv/ftp-master.debian.org/public/incoming.debian.org/web/debian-buildd/dists
+rm buildd-jessie-proposed-updates buildd-testing-kfreebsd-proposed-updates buildd-wheezy-proposed-updates
+mv buildd-proposed-updates buildd-wheezy-proposed-updates
+mv buildd-testing-proposed-updates buildd-jessie-proposed-updates
+ln -s buildd-wheezy-proposed-updates buildd-oldstable-proposed-updates
+ln -s buildd-jessie-proposed-updates buildd-proposed-updates
+ln -s buildd-jessie-kfreebsd-proposed-updates buildd-stable-kfreebsd-proposed-updates
+
+SQL MISS:
+begin;
+update suite set changelog = null where codename = 'jessie';
+commit;
+
+D-I CLEANUP:
+cd /srv/ftp-master.debian.org/ftp/dists/jessie/main
+morgue=/srv/ftp-master.debian.org/morgue/d-i
+for arch in installer-*; do
+  for version in ${arch}/20*; do
+    case ${version} in
+      */20150422) ;;
+      *) mv -v -- ${version} ${morgue}/${arch}/ ;;
+    esac
+  done
+done
+
+INDICES:
+suite=stable
+dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
+
+BEGIN;
+  update suite set signingkeys = ARRAY['46925553', '2B90D010'] WHERE signingkeys = ARRAY['46925553'];
+COMMIT;
+
+dak generate-releases -f -s stable
+dak generate-releases -f -s oldstable
+dak generate-releases -f -s oldoldstable
+dak generate-releases -f -s oldoldstable-proposed-updates
+dak generate-releases -f -s oldoldstable-updates
+
+# rm InRelease
+# Add signatures from release team
+# mirror push (CD MIRROR ONLY!)
+
+LATER SQL:
+begin;
+update suite set untouchable = true where codename in ('squeeze', 'jessie', 'squeeze-proposed-updates', 'squeeze-updates');
+commit;
+
+JESSIE-R0:
+dak admin suite add jessie-r0 '' description='Extraneous packages/sources required for GPL compliance' origin=Debian label=Debian codename=jessie-r0 archive=ftp-master
+dak admin s-c add jessie-r0 main contrib non-free
+dak admin s-a add jessie-r0 $(dak admin s-a list-arch stable)
+
+dak control-suite -l stable | grep '^debian-installer ' | dak control-suite -a jessie-r0
+dak control-suite -l jessie-r0
+
+begin;
+  update suite set untouchable=true where codename='jessie-r0';
+commit;
+
+POLICY QUEUES:
+dak admin suite add stable-new '' codename=jessie-new archive=policy
+
+begin;
+update policy_queue set queue_name = 'oldoldstable-new', path = '/srv/ftp-master.debian.org/queue/o-o-p-u-new', change_perms = '0644' where queue_name = 'oldstable-new';
+update policy_queue set queue_name = 'oldstable-new', path = '/srv/ftp-master.debian.org/queue/o-p-u-new', change_perms = '0644' where queue_name = 'stable-new';
+insert into policy_queue (queue_name, path, change_perms, suite_id) values ('stable-new', '/srv/ftp-master.debian.org/queue/p-u-new', '0644', (select id from suite where codename='jessie-new'));
+update suite set policy_queue_id = (select id from policy_queue where queue_name = 'jessie-new') where codename = 'jessie-proposed-updates';
+commit;
+
+dak admin s-c add stable-new main contrib non-free
+dak admin s-a add stable-new source all $(dak admin s-a list-arch stable)
+
+NEW TESTING:
+dak admin suite add testing '' origin=Debian label=Debian codename=stretch description='Debian x.y Testing distribution - Not Released' archive=ftp-master
+dak admin s-c add testing main contrib non-free
+dak admin s-a add testing source all $(dak admin s-a list-arch stable)
+
+dak admin suite add testing-proposed-updates '' origin=Debian label=Debian codename=stretch-proposed-updates description='Debian x.y Testing distribution Proposed Updates - Not Released' archive=ftp-master
+dak admin s-c add testing-proposed-updates main contrib non-free
+dak admin s-a add testing-proposed-updates source all $(dak admin s-a list-arch stable)
+
+dak admin suite add testing-updates '' origin=Debian label=Debian codename=stretch-updates description='Debian x.y Testing distribution Updates - Not Released' archive=ftp-master
+dak admin s-c add testing-updates main contrib non-free
+dak admin s-a add testing-updates $(dak admin s-a list-arch stable)
+
+for c in main contrib non-free; do
+  for t in deb dsc udeb; do
+    dak control-overrides -s stable -t ${t} -c ${c} -l | dak control-overrides -s testing -t ${t} -c ${c} --set
+  done
+done
+
+time dak update-suite stable testing
+
+begin;
+  update suite set changelog = 'dists/stretch/ChangeLog', overrideprocess=true, overrideorigin = 'unstable' where codename = 'stretch';
+  update suite set overridesuite = 'testing', announce=array['debian-testing-changes@lists.debian.org'] where codename in ('stretch', 'stretch-proposed-updates', 'stretch-updates');
+  update suite set signingkeys = array['46925553','2B90D010'] where codename in ('stretch', 'stretch-proposed-updates', 'stretch-updates');
+commit;
+
+dak admin s add-build-queue testing-proposed-updates buildd-testing-proposed-updates buildd-stretch-proposed-updates build-queues
+
+cd /srv/ftp-master.debian.org/public/incoming.debian.org/web/debian-buildd/dists
+mkdir buildd-stretch-proposed-updates
+ln -s buildd-stretch-proposed-updates buildd-testing-proposed-updates
+
+MOVE MOVING AROUND:
+cd /srv/ftp-master.debian.org/queue
+mv o-p-u-new o-o-p-u-new
+mv p-u-new o-p-u-new
+mv oldstable-proposed-updates oldoldstable-proposed-updates
+mv proposed-updates oldstable-proposed-updates
+mkdir -p p-u-new/COMMENTS proposed-updates
+
+V-C:
+dak admin v-c add testing-proposed-updates Enhances testing
+dak admin v-c add testing-proposed-updates MustBeOlderThan experimental
+dak admin v-c add testing-proposed-updates MustBeNewerThan stable
+dak admin v-c add testing-proposed-updates MustBeNewerThan oldstable
+dak admin v-c add testing-proposed-updates MustBeNewerThan oldoldstable                
+dak admin v-c add testing-updates Enhances testing
+dak admin v-c add testing-proposed-updates MustBeNewerThan testing
+dak admin v-c add testing-updates MustBeNewerThan testing
+dak admin v-c add testing-updates MustBeOlderThan experimental
+dak admin v-c add testing-updates MustBeNewerThan stable
+dak admin v-c add testing-updates MustBeNewerThan oldstable
+dak admin v-c add testing-updates MustBeNewerThan oldoldstable
+dak admin v-c add unstable MustBeNewerThan testing
+dak admin v-c add experimental MustBeNewerThan testing
+dak admin v-c add stable-kfreebsd-proposed-updates Enhances stable-kfreebsd
+dak admin v-c add stable-kfreebsd-proposed-updates MustBeNewerThan stable-kfreebsd     
+
+FINISH:
+for s in testing testing-proposed-updates testing-updates; do
+  dak generate-packages-sources2 -s ${s}
+  dak contents generate -s ${s} -a ftp-master
+done
+dak generate-releases -a ftp-master
+dak generate-packages-sources2 -a build-queues
+dak generate-releases -a build-queues
