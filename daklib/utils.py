@@ -1824,7 +1824,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             # Remove [arch] information since we want to see breakage on all arches
             build_dep = re_build_dep_arch.sub("", build_dep)
             try:
-                parsed_dep += apt_pkg.parse_depends(build_dep)
+                parsed_dep += apt_pkg.parse_src_depends(build_dep)
             except ValueError as e:
                 print "Error for source %s: %s" % (source, e)
         for dep in parsed_dep:
