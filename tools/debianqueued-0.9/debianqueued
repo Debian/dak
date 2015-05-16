@@ -2275,11 +2275,7 @@ sub send_mail($$$) {
   my $package =
     keys %main::packages ? join( ' ', keys %main::packages ) : "";
 
-  use Email::Send;
-
-  unless ( defined($Email::Send::Sendmail::SENDMAIL) ) {
-    $Email::Send::Sendmail::SENDMAIL = $conf::mail;
-  }
+  use Email::Sender::Simple;
 
   if ($conf::overridemail) {
 	$addr = $conf::overridemail;
@@ -2305,17 +2301,7 @@ __MESSAGE__
   $message .= "\n$text";
   $message .= "\nGreetings,\n\n\tYour Debian queue daemon (running on host $main::hostname)\n";
 
-  my $mail = Email::Send->new;
-  for (qw[Sendmail SMTP]) {
-    $mail->mailer($_) and last if $mail->mailer_available($_);
-  }
-
-  my $ret = $mail->send($message);
-  if ( $ret && $ret !~ /Message sent|success/ ) {
-    return 0;
-  }
-
-  return 1;
+  return Email::Sender::Simple->try_to_send($message);
 } ## end sub send_mail($$$)
 
 #
