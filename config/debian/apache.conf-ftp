@@ -16,13 +16,13 @@ Use common-debian-service-https-redirect * ftp-master.debian.org
   Alias /users/ /srv/ftp.debian.org/web-users/
 
   <Directory /srv/ftp.debian.org/web-users>
-    Order allow,deny
-    Allow from All
+    Require all granted
     AllowOverride FileInfo AuthConfig Limit Indexes
     Options MultiViews Indexes SymLinksIfOwnerMatch
   </Directory>
 
   <Directory /srv/ftp.debian.org/web>
+    Require all granted
     AddCharset utf-8 .txt
   </Directory>
 

@@ -10,6 +10,11 @@
   </IfModule>
   DocumentRoot /srv/ftp-master.debian.org/export
 
+  <Directory /srv/ftp-master.debian.org/dak/dakweb>
+    <Files dakweb.wsgi>
+      Require all granted
+    </Files>
+  </Directory>
   WSGIDaemonProcess api.ftp-master.debian.org user=dak-web group=dak-web processes=1 threads=5
   WSGIScriptAlias / /srv/ftp-master.debian.org/dak/dakweb/dakweb.wsgi
 </Macro>
