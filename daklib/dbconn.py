@@ -1232,15 +1232,9 @@ class Keyring(object):
         l = ldap.open(LDAPServer)
 
         if ca_cert_file:
-            # TODO: This should request a new context and use
-            # connection-specific options (i.e. "l.set_option(...)")
-
-            # Request a new TLS context. If there was already one, libldap
-            # would not change the TLS options (like which CAs to trust).
-            #l.set_option(ldap.OPT_X_TLS_NEWCTX, True)
-            ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
-            #ldap.set_option(ldap.OPT_X_TLS_CACERTDIR, None)
-            ldap.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_file)
+            l.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
+            l.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_file)
+            l.set_option(ldap.OPT_X_TLS_NEWCTX, True)
             l.start_tls_s()
 
         l.simple_bind_s("","")
