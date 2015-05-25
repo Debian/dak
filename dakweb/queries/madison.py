@@ -20,6 +20,7 @@ def madison():
     @since: December 2014
 
     @keyword package: Space seperated list of packages.
+    @keyword a: only show info for specified architectures.
     @keyword b: only show info for a binary type. I{deb/udeb/dsc}
     @keyword c: only show info for specified component(s). I{main/contrib/non-free}
     @keyword s: only show info for this suite.
@@ -36,6 +37,9 @@ def madison():
     packages = r.query.get('package', '').split()
     kwargs = dict()
 
+    architectures = r.query.get('a', None)
+    if architectures is not None:
+        kwargs['architectures'] = architectures.split(",")
     binary_type = r.query.get('b', None)
     if binary_type is not None:
         kwargs['binary_types'] = [binary_type]
