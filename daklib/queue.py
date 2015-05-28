@@ -197,34 +197,11 @@ def edit_note(note, upload, session, trainee=False):
 
 ###############################################################################
 
-# FIXME: Should move into the database
-# suite names DMs can upload to
-dm_suites = ['unstable', 'experimental', 'squeeze-backports','squeeze-backports-sloppy', 'wheezy-backports']
-
-def get_newest_source(source, session):
-    'returns the newest DBSource object in dm_suites'
-    ## the most recent version of the package uploaded to unstable or
-    ## experimental includes the field "DM-Upload-Allowed: yes" in the source
-    ## section of its control file
-    q = session.query(DBSource).filter_by(source = source). \
-        filter(DBSource.suites.any(Suite.suite_name.in_(dm_suites))). \
-        order_by(desc('source.version'))
-    return q.first()
-
 def get_suite_version_by_source(source, session):
     'returns a list of tuples (suite_name, version) for source package'
     q = session.query(Suite.suite_name, DBSource.version). \
         join(Suite.sources).filter_by(source = source)
     return q.all()
-
-def get_source_by_package_and_suite(package, suite_name, session):
-    '''
-    returns a DBSource query filtered by DBBinary.package and this package's
-    suite_name
-    '''
-    return session.query(DBSource). \
-        join(DBSource.binaries).filter_by(package = package). \
-        join(DBBinary.suites).filter_by(suite_name = suite_name)
 
 def get_suite_version_by_package(package, arch_string, session):
     '''
@@ -308,79 +285,6 @@ class Upload(object):
 
     ###########################################################################
 
-    def check_distributions(self):
-        "Check and map the Distribution field"
-
-        Cnf = Config()
-
-        # Handle suite mappings
-        for m in Cnf.value_list("SuiteMappings"):
-            args = m.split()
-            mtype = args[0]
-            if mtype == "map" or mtype == "silent-map":
-                (source, dest) = args[1:3]
-                if self.pkg.changes["distribution"].has_key(source):
-                    del self.pkg.changes["distribution"][source]
-                    self.pkg.changes["distribution"][dest] = 1
-                    if mtype != "silent-map":
-                        self.notes.append("Mapping %s to %s." % (source, dest))
-                if self.pkg.changes.has_key("distribution-version"):
-                    if self.pkg.changes["distribution-version"].has_key(source):
-                        self.pkg.changes["distribution-version"][source]=dest
-            elif mtype == "map-unreleased":
-                (source, dest) = args[1:3]
-                if self.pkg.changes["distribution"].has_key(source):
-                    for arch in self.pkg.changes["architecture"].keys():
-                        if arch not in [ a.arch_string for a in get_suite_architectures(source) ]:
-                            self.notes.append("Mapping %s to %s for unreleased architecture %s." % (source, dest, arch))
-                            del self.pkg.changes["distribution"][source]
-                            self.pkg.changes["distribution"][dest] = 1
-                            break
-            elif mtype == "ignore":
-                suite = args[1]
-                if self.pkg.changes["distribution"].has_key(suite):
-                    del self.pkg.changes["distribution"][suite]
-                    self.warnings.append("Ignoring %s as a target suite." % (suite))
-            elif mtype == "reject":
-                suite = args[1]
-                if self.pkg.changes["distribution"].has_key(suite):
-                    self.rejects.append("Uploads to %s are not accepted." % (suite))
-            elif mtype == "propup-version":
-                # give these as "uploaded-to(non-mapped) suites-to-add-when-upload-obsoletes"
-                #
-                # changes["distribution-version"] looks like: {'testing': 'testing-proposed-updates'}
-                if self.pkg.changes["distribution"].has_key(args[1]):
-                    self.pkg.changes.setdefault("distribution-version", {})
-                    for suite in args[2:]:
-                        self.pkg.changes["distribution-version"][suite] = suite
-
-        # Ensure there is (still) a target distribution
-        if len(self.pkg.changes["distribution"].keys()) < 1:
-            self.rejects.append("No valid distribution remaining.")
-
-        # Ensure target distributions exist
-        for suite in self.pkg.changes["distribution"].keys():
-            if not get_suite(suite.lower()):
-                self.rejects.append("Unknown distribution `%s'." % (suite))
-
-    ###########################################################################
-
-    def per_suite_file_checks(self, f, suite, session):
-        raise Exception('removed')
-
-        # Handle component mappings
-        for m in cnf.value_list("ComponentMappings"):
-            (source, dest) = m.split()
-            if entry["component"] == source:
-                entry["original component"] = source
-                entry["component"] = dest
-
-    ###########################################################################
-
-    # Sanity check the time stamps of files inside debs.
-    # [Files in the near future cause ugly warnings and extreme time
-    #  travel can cause errors on extraction]
-
     def check_if_upload_is_sponsored(self, uid_email, uid_name):
         for key in "maintaineremail", "changedbyemail", "maintainername", "changedbyname":
             if not self.pkg.changes.has_key(key):
@@ -406,38 +310,8 @@ class Upload(object):
 
         return sponsored
 
-    def check_dm_upload(self, fpr, session):
-        # Quoth the GR (https://www.debian.org/vote/2007/vote_003):
-        ## none of the uploaded packages are NEW
-        ## none of the packages are being taken over from other source packages
-        for b in self.pkg.changes["binary"].keys():
-            for suite in self.pkg.changes["distribution"].keys():
-                for s in get_source_by_package_and_suite(b, suite, session):
-                    if s.source != self.pkg.changes["source"]:
-                        self.rejects.append("%s may not hijack %s from source package %s in suite %s" % (fpr.uid.uid, b, s, suite))
-
     ###########################################################################
     # End check_signed_by_key checks
-    ###########################################################################
-
-    def build_summaries(self):
-        """ Build a summary of changes the upload introduces. """
-
-        (byhand, new, summary, override_summary) = self.pkg.file_summary()
-
-        short_summary = summary
-
-        # This is for direport's benefit...
-        f = re_fdnic.sub("\n .\n", self.pkg.changes.get("changes", ""))
-
-        summary += "\n\nChanges:\n" + f
-
-        summary += "\n\nOverride entries for your package:\n" + override_summary + "\n"
-
-        summary += self.announce(short_summary, 0)
-
-        return (summary, short_summary)
-
     ###########################################################################
 
     def announce(self, short_summary, action):
@@ -533,146 +407,3 @@ class Upload(object):
         mail_message = utils.TemplateSubst(self.Subst, overridetemplate)
         utils.send_mail(mail_message)
         del self.Subst["__SUMMARY__"]
-
-    ################################################################################
-    def get_anyversion(self, sv_list, suite):
-        """
-        @type sv_list: list
-        @param sv_list: list of (suite, version) tuples to check
-
-        @type suite: string
-        @param suite: suite name
-
-        Description: TODO
-        """
-        Cnf = Config()
-        anyversion = None
-        anysuite = [suite] + [ vc.reference.suite_name for vc in get_version_checks(suite, "Enhances") ]
-        for (s, v) in sv_list:
-            if s in [ x.lower() for x in anysuite ]:
-                if not anyversion or apt_pkg.version_compare(anyversion, v) <= 0:
-                    anyversion = v
-
-        return anyversion
-
-    ################################################################################
-
-    def cross_suite_version_check(self, sv_list, filename, new_version, sourceful=False):
-        """
-        @type sv_list: list
-        @param sv_list: list of (suite, version) tuples to check
-
-        @type filename: string
-        @param filename: XXX
-
-        @type new_version: string
-        @param new_version: XXX
-
-        Ensure versions are newer than existing packages in target
-        suites and that cross-suite version checking rules as
-        set out in the conf file are satisfied.
-        """
-
-        cnf = Config()
-
-        # Check versions for each target suite
-        for target_suite in self.pkg.changes["distribution"].keys():
-            # Check we can find the target suite
-            ts = get_suite(target_suite)
-            if ts is None:
-                self.rejects.append("Cannot find target suite %s to perform version checks" % target_suite)
-                continue
-
-            must_be_newer_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan") ]
-            must_be_older_than = [ vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan") ]
-
-            # Enforce "must be newer than target suite" even if conffile omits it
-            if target_suite not in must_be_newer_than:
-                must_be_newer_than.append(target_suite)
-
-            for (suite, existent_version) in sv_list:
-                vercmp = apt_pkg.version_compare(new_version, existent_version)
-
-                if suite in must_be_newer_than and sourceful and vercmp < 1:
-                    self.rejects.append("%s: old version (%s) in %s >= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
-
-                if suite in must_be_older_than and vercmp > -1:
-                    cansave = 0
-
-                    if self.pkg.changes.get('distribution-version', {}).has_key(suite):
-                        # we really use the other suite, ignoring the conflicting one ...
-                        addsuite = self.pkg.changes["distribution-version"][suite]
-
-                        add_version = self.get_anyversion(sv_list, addsuite)
-                        target_version = self.get_anyversion(sv_list, target_suite)
-
-                        if not add_version:
-                            # not add_version can only happen if we map to a suite
-                            # that doesn't enhance the suite we're propup'ing from.
-                            # so "propup-ver x a b c; map a d" is a problem only if
-                            # d doesn't enhance a.
-                            #
-                            # i think we could always propagate in this case, rather
-                            # than complaining. either way, this isn't a REJECT issue
-                            #
-                            # And - we really should complain to the dorks who configured dak
-                            self.warnings.append("%s is mapped to, but not enhanced by %s - adding anyways" % (suite, addsuite))
-                            self.pkg.changes.setdefault("propdistribution", {})
-                            self.pkg.changes["propdistribution"][addsuite] = 1
-                            cansave = 1
-                        elif not target_version:
-                            # not targets_version is true when the package is NEW
-                            # we could just stick with the "...old version..." REJECT
-                            # for this, I think.
-                            self.rejects.append("Won't propogate NEW packages.")
-                        elif apt_pkg.version_compare(new_version, add_version) < 0:
-                            # propogation would be redundant. no need to reject though.
-                            self.warnings.append("ignoring versionconflict: %s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
-                            cansave = 1
-                        elif apt_pkg.version_compare(new_version, add_version) > 0 and \
-                             apt_pkg.version_compare(add_version, target_version) >= 0:
-                            # propogate!!
-                            self.warnings.append("Propogating upload to %s" % (addsuite))
-                            self.pkg.changes.setdefault("propdistribution", {})
-                            self.pkg.changes["propdistribution"][addsuite] = 1
-                            cansave = 1
-
-                    if not cansave:
-                        self.rejects.append("%s: old version (%s) in %s <= new version (%s) targeted at %s." % (filename, existent_version, suite, new_version, target_suite))
-
-    ################################################################################
-
-    def accepted_checks(self, overwrite_checks, session):
-        # Recheck anything that relies on the database; since that's not
-        # frozen between accept and our run time when called from p-a.
-
-        # overwrite_checks is set to False when installing to stable/oldstable
-
-        propogate={}
-        nopropogate={}
-
-        for checkfile in self.pkg.files.keys():
-            # The .orig.tar.gz can disappear out from under us is it's a
-            # duplicate of one in the archive.
-            if not self.pkg.files.has_key(checkfile):
-                continue
-
-            entry = self.pkg.files[checkfile]
-
-            # propogate in the case it is in the override tables:
-            for suite in self.pkg.changes.get("propdistribution", {}).keys():
-                if self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile, session):
-                    propogate[suite] = 1
-                else:
-                    nopropogate[suite] = 1
-
-        for suite in propogate.keys():
-            if suite in nopropogate:
-                continue
-            self.pkg.changes["distribution"][suite] = 1
-
-        for checkfile in self.pkg.files.keys():
-            # Check the package is still in the override tables
-            for suite in self.pkg.changes["distribution"].keys():
-                if not self.in_override_p(entry["package"], entry["component"], suite, entry.get("dbtype",""), checkfile, session):
-                    self.rejects.append("%s is NEW for %s." % (checkfile, suite))

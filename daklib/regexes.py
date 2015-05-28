@@ -34,8 +34,6 @@ re_isanum = re.compile (r"^\d+$")
 
 #: Looking for the default reply
 re_default_answer = re.compile(r"\[(.*)\]")
-#: Used in build_summaries to make changes output look better
-re_fdnic = re.compile(r"\n\n")
 #: Detect a binnmu
 re_bin_only_nmu = re.compile(r"\+b\d+$")
 
