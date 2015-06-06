@@ -117,6 +117,8 @@ def init():
          "Update suite with packages from a different suite"),
         ("cruft-report",
          "Check for obsolete or duplicated packages"),
+        ("auto-decruft",
+         "Clean cruft without reverse dependencies automatically"),
         ("examine-package",
          "Show information useful for NEW processing"),
         ("import",
