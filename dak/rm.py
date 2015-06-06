@@ -51,6 +51,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
+from daklib.rm import remove
 from daklib.regexes import re_strip_source_version, re_bin_only_nmu
 import debianbts as bts
 
@@ -180,7 +181,7 @@ def main ():
     # Accept 3 types of arguments (space separated):
     #  1) a number - assumed to be a bug number, i.e. nnnnn@bugs.debian.org
     #  2) the keyword 'package' - cc's $package@packages.debian.org for every argument
-    #  3) contains a '@' - assumed to be an email address, used unmofidied
+    #  3) contains a '@' - assumed to be an email address, used unmodified
     #
     carbon_copy = []
     for copy_to in utils.split_args(Options.get("Carbon-Copy")):
@@ -234,9 +235,6 @@ def main ():
     # Additional architecture checks
     if Options["Architecture"] and check_source:
         utils.warn("'source' in -a/--argument makes no sense and is ignored.")
-
-    # Additional component processing
-    over_con_components = con_components.replace("c.id", "component")
 
     # Don't do dependency checks on multiple suites
     if Options["Rdep-Check"] and len(suites) > 1:
@@ -315,7 +313,6 @@ def main ():
     summary = ""
     removals = d.keys()
     removals.sort()
-    versions = []
     for package in removals:
         versions = d[package].keys()
         versions.sort(apt_pkg.version_compare)
@@ -349,191 +346,19 @@ def main ():
     print "Going to remove the packages now."
     game_over()
 
-    whoami = utils.whoami()
-    date = commands.getoutput('date -R')
-
-    # Log first; if it all falls apart I want a record that we at least tried.
-    logfile = utils.open_file(cnf["Rm::LogFile"], 'a')
-    logfile.write("=========================================================================\n")
-    logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami))
-    logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary))
-    if Options["Done"]:
-        logfile.write("Closed bugs: %s\n" % (Options["Done"]))
-    logfile.write("\n------------------- Reason -------------------\n%s\n" % (Options["Reason"]))
-    logfile.write("----------------------------------------------\n")
-
-    # Do the same in rfc822 format
-    logfile822 = utils.open_file(cnf["Rm::LogFile822"], 'a')
-    logfile822.write("Date: %s\n" % date)
-    logfile822.write("Ftpmaster: %s\n" % whoami)
-    logfile822.write("Suite: %s\n" % suites_list)
-    sources = []
-    binaries = []
-    for package in summary.split("\n"):
-        for row in package.split("\n"):
-            element = row.split("|")
-            if len(element) == 3:
-                if element[2].find("source") > 0:
-                    sources.append("%s_%s" % tuple(elem.strip(" ") for elem in element[:2]))
-                    element[2] = sub("source\s?,?", "", element[2]).strip(" ")
-                if element[2]:
-                    binaries.append("%s_%s [%s]" % tuple(elem.strip(" ") for elem in element))
-    if sources:
-        logfile822.write("Sources:\n")
-        for source in sources:
-            logfile822.write(" %s\n" % source)
-    if binaries:
-        logfile822.write("Binaries:\n")
-        for binary in binaries:
-            logfile822.write(" %s\n" % binary)
-    logfile822.write("Reason: %s\n" % Options["Reason"].replace('\n', '\n '))
-    if Options["Done"]:
-        logfile822.write("Bug: %s\n" % Options["Done"])
-
-    dsc_type_id = get_override_type('dsc', session).overridetype_id
-    deb_type_id = get_override_type('deb', session).overridetype_id
-
     # Do the actual deletion
     print "Deleting...",
     sys.stdout.flush()
 
-    for i in to_remove:
-        package = i[0]
-        architecture = i[2]
-        package_id = i[3]
-        for suite_id in suite_ids_list:
-            if architecture == "source":
-                session.execute("DELETE FROM src_associations WHERE source = :packageid AND suite = :suiteid",
-                                {'packageid': package_id, 'suiteid': suite_id})
-                #print "DELETE FROM src_associations WHERE source = %s AND suite = %s" % (package_id, suite_id)
-            else:
-                session.execute("DELETE FROM bin_associations WHERE bin = :packageid AND suite = :suiteid",
-                                {'packageid': package_id, 'suiteid': suite_id})
-                #print "DELETE FROM bin_associations WHERE bin = %s AND suite = %s" % (package_id, suite_id)
-            # Delete from the override file
-            if not Options["Partial"]:
-                if architecture == "source":
-                    type_id = dsc_type_id
-                else:
-                    type_id = deb_type_id
-                # TODO: Again, fix this properly to remove the remaining non-bind argument
-                session.execute("DELETE FROM override WHERE package = :package AND type = :typeid AND suite = :suiteid %s" % (over_con_components), {'package': package, 'typeid': type_id, 'suiteid': suite_id})
-    session.commit()
-    print "done."
-
-    # If we don't have a Bug server configured, we're done
-    if not cnf.has_key("Dinstall::BugServer"):
-        if Options["Done"] or Options["Do-Close"]:
-            print "Cannot send mail to BugServer as Dinstall::BugServer is not configured"
-
-        logfile.write("=========================================================================\n")
-        logfile.close()
-
-        logfile822.write("\n")
-        logfile822.close()
-
-        return
-
-    # read common subst variables for all bug closure mails
-    Subst_common = {}
-    Subst_common["__RM_ADDRESS__"] = cnf["Dinstall::MyEmailAddress"]
-    Subst_common["__BUG_SERVER__"] = cnf["Dinstall::BugServer"]
-    Subst_common["__CC__"] = "X-DAK: dak rm"
-    if carbon_copy:
-        Subst_common["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
-    Subst_common["__SUITE_LIST__"] = suites_list
-    Subst_common["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
-    Subst_common["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
-    Subst_common["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
-    Subst_common["__WHOAMI__"] = whoami
-
-    # Send the bug closing messages
-    if Options["Done"]:
-        Subst_close_rm = Subst_common
-        bcc = []
-        if cnf.find("Dinstall::Bcc") != "":
-            bcc.append(cnf["Dinstall::Bcc"])
-        if cnf.find("Rm::Bcc") != "":
-            bcc.append(cnf["Rm::Bcc"])
-        if bcc:
-            Subst_close_rm["__BCC__"] = "Bcc: " + ", ".join(bcc)
-        else:
-            Subst_close_rm["__BCC__"] = "X-Filler: 42"
-        summarymail = "%s\n------------------- Reason -------------------\n%s\n" % (summary, Options["Reason"])
-        summarymail += "----------------------------------------------\n"
-        Subst_close_rm["__SUMMARY__"] = summarymail
-
-        for bug in utils.split_args(Options["Done"]):
-            Subst_close_rm["__BUG_NUMBER__"] = bug
-            if Options["Do-Close"]:
-                mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close-with-related")
-            else:
-                mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close")
-            utils.send_mail(mail_message, whitelists=whitelists)
-
-    # close associated bug reports
-    if Options["Do-Close"]:
-        Subst_close_other = Subst_common
-        bcc = []
-        wnpp = utils.parse_wnpp_bug_file()
-        versions = list(set([re_bin_only_nmu.sub('', v) for v in versions]))
-        if len(versions) == 1:
-            Subst_close_other["__VERSION__"] = versions[0]
-        else:
-            utils.fubar("Closing bugs with multiple package versions is not supported.  Do it yourself.")
-        if bcc:
-            Subst_close_other["__BCC__"] = "Bcc: " + ", ".join(bcc)
-        else:
-            Subst_close_other["__BCC__"] = "X-Filler: 42"
-        # at this point, I just assume, that the first closed bug gives
-        # some useful information on why the package got removed
-        Subst_close_other["__BUG_NUMBER__"] = utils.split_args(Options["Done"])[0]
-        if len(sources) == 1:
-            source_pkg = source.split("_", 1)[0]
-        else:
-            utils.fubar("Closing bugs for multiple source packages is not supported.  Do it yourself.")
-        Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
-        Subst_close_other["__SOURCE__"] = source_pkg
-        merged_bugs = set()
-        other_bugs = bts.get_bugs('src', source_pkg, 'status', 'open', 'status', 'forwarded')
-        if other_bugs:
-            for bugno in other_bugs:
-                if bugno not in merged_bugs:
-                    for bug in bts.get_status(bugno):
-                        for merged in bug.mergedwith:
-                            other_bugs.remove(merged)
-                            merged_bugs.add(merged)
-            logfile.write("Also closing bug(s):")
-            logfile822.write("Also-Bugs:")
-            for bug in other_bugs:
-                Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
-                logfile.write(" " + str(bug))
-                logfile822.write(" " + str(bug))
-            logfile.write("\n")
-            logfile822.write("\n")
-        if source_pkg in wnpp.keys():
-            logfile.write("Also closing WNPP bug(s):")
-            logfile822.write("Also-WNPP:")
-            for bug in wnpp[source_pkg]:
-                # the wnpp-rm file we parse also contains our removal
-                # bugs, filtering that out
-                if bug != Subst_close_other["__BUG_NUMBER__"]:
-                    Subst_close_other["__BUG_NUMBER_ALSO__"] += str(bug) + "-done@" + cnf["Dinstall::BugServer"] + ","
-                    logfile.write(" " + str(bug))
-                    logfile822.write(" " + str(bug))
-            logfile.write("\n")
-            logfile822.write("\n")
-
-        mail_message = utils.TemplateSubst(Subst_close_other,cnf["Dir::Templates"]+"/rm.bug-close-related")
-        if Subst_close_other["__BUG_NUMBER_ALSO__"]:
-            utils.send_mail(mail_message)
-
-
-    logfile.write("=========================================================================\n")
-    logfile.close()
-
-    logfile822.write("\n")
-    logfile822.close()
+    try:
+        remove(session, Options["Reason"], suites, to_remove,
+               partial=Options["Partial"], components=utils.split_args(Options["Components"]),
+               done_bugs=Options["Done"], carbon_copy=carbon_copy, close_related_bugs=Options["Do-Close"]
+               )
+    except ValueError as ex:
+        utils.fubar(ex.message)
+    else:
+        print "done."
 
 #######################################################################################
 
