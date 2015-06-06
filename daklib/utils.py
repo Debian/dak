@@ -1123,7 +1123,7 @@ def call_editor(text="", suffix=".txt"):
 
 ################################################################################
 
-def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False):
+def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False, quiet=False):
     dbsuite = get_suite(suite, session)
     overridesuite = dbsuite
     if dbsuite.overridesuite is not None:
@@ -1211,7 +1211,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                     all_broken.setdefault(source, {}).setdefault(package, set()).add(architecture)
                     dep_problem = 1
 
-    if all_broken:
+    if all_broken and not quiet:
         if cruft:
             print "  - broken Depends:"
         else:
@@ -1282,7 +1282,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 all_broken.setdefault(key, set()).add(pp_deps(dep))
                 dep_problem = 1
 
-    if all_broken:
+    if all_broken and not quiet:
         if cruft:
             print "  - broken Build-Depends:"
         else:

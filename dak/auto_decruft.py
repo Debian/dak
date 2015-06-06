@@ -78,7 +78,7 @@ def remove_sourceless_cruft(suite_name, suite_id, session, dryrun):
     message = '[auto-cruft] no longer built from source and no reverse dependencies'
     for row in rows:
         package = row[0]
-        if utils.check_reverse_depends([package], suite_name, [], session, True):
+        if utils.check_reverse_depends([package], suite_name, [], session, cruft=True, quiet=True):
             continue
 
         if dryrun:
@@ -117,7 +117,7 @@ def removeNBS(suite_name, suite_id, session, dryrun):
     arch2ids = {}
     for row in rows:
         (pkg_list, arch_list, source, _) = row
-        if utils.check_reverse_depends(pkg_list, suite_name, arch_list, session, True):
+        if utils.check_reverse_depends(pkg_list, suite_name, arch_list, session, cruft=True, quiet=True):
             continue
         arch_string = ','.join(arch_list)
         message = '[auto-cruft] NBS (no longer built by %s and had no reverse dependencies)' % source
