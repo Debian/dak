@@ -25,7 +25,17 @@
 
 ################################################################################
 
-# TODO: Insert "random dak quote" here
+# From: Andrew Morton <akpm@osdl.org>
+# Subject: 2.6.6-mm5
+# To: linux-kernel@vger.kernel.org
+# Date: Sat, 22 May 2004 01:36:36 -0700
+# X-Mailer: Sylpheed version 0.9.7 (GTK+ 1.2.10; i386-redhat-linux-gnu)
+#
+# [...]
+#
+# Although this feature has been around for a while it is new code, and the
+# usual cautions apply.  If it munches all your files please tell Jens and
+# he'll type them in again for you.
 
 ################################################################################
 
