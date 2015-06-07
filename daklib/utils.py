@@ -1130,11 +1130,11 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         overridesuite = get_suite(dbsuite.overridesuite, session)
     dep_problem = 0
     p2c = {}
-    all_broken = {}
+    all_broken = defaultdict(lambda: defaultdict(set))
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set([x.arch_string for x in get_suite_architectures(suite)])
+        all_arches = set(x.arch_string for x in get_suite_architectures(suite))
     all_arches -= set(["source", "all"])
     metakey_d = get_or_set_metadatakey("Depends", session)
     metakey_p = get_or_set_metadatakey("Provides", session)
@@ -1183,18 +1183,18 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 
         # If a virtual package is only provided by the to-be-removed
         # packages, treat the virtual package as to-be-removed too.
-        for virtual_pkg in virtual_packages.keys():
+        for virtual_pkg in virtual_packages:
             if virtual_packages[virtual_pkg] == 0:
                 removals.append(virtual_pkg)
 
         # Check binary dependencies (Depends)
-        for package in deps.keys():
+        for package in deps:
             if package in removals: continue
-            parsed_dep = []
             try:
-                parsed_dep += apt_pkg.parse_depends(deps[package])
+                parsed_dep = apt_pkg.parse_depends(deps[package])
             except ValueError as e:
                 print "Error for package %s: %s" % (package, e)
+                parsed_dep = []
             for dep in parsed_dep:
                 # Check for partial breakage.  If a package has a ORed
                 # dependency, there is only a dependency problem if all
@@ -1208,7 +1208,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                     source = sources[package]
                     if component != "main":
                         source = "%s/%s" % (source, component)
-                    all_broken.setdefault(source, {}).setdefault(package, set()).add(architecture)
+                    all_broken[source][package].add(architecture)
                     dep_problem = 1
 
     if all_broken and not quiet:
@@ -1236,7 +1236,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             print
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
-    all_broken.clear()
+    all_broken = defaultdict(set)
     metakey_bd = get_or_set_metadatakey("Build-Depends", session)
     metakey_bdi = get_or_set_metadatakey("Build-Depends-Indep", session)
     params = {
@@ -1261,7 +1261,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             # Remove [arch] information since we want to see breakage on all arches
             build_dep = re_build_dep_arch.sub("", build_dep)
             try:
-                parsed_dep += apt_pkg.parse_src_depends(build_dep)
+                parsed_dep = apt_pkg.parse_src_depends(build_dep)
             except ValueError as e:
                 print "Error for source %s: %s" % (source, e)
         for dep in parsed_dep:
@@ -1279,7 +1279,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 key = source
                 if component != "main":
                     key = "%s/%s" % (source, component)
-                all_broken.setdefault(key, set()).add(pp_deps(dep))
+                all_broken[key].add(pp_deps(dep))
                 dep_problem = 1
 
     if all_broken and not quiet:
