@@ -32,6 +32,8 @@
 import commands
 import apt_pkg
 from re import sub
+from collections import defaultdict
+from regexes import re_build_dep_arch
 
 from daklib.dbconn import *
 from daklib import utils
@@ -39,6 +41,247 @@ from daklib.regexes import re_bin_only_nmu
 import debianbts as bts
 
 ################################################################################
+
+
+class ReverseDependencyChecker(object):
+    """A bulk tester for reverse dependency checks
+
+    This class is similar to the check_reverse_depends method from "utils".  However,
+    it is primarily focused on facilitating bulk testing of reverse dependencies.
+    It caches the state of the suite and then uses that as basis for answering queries.
+    This saves a significant amount of time if multiple reverse dependency checks are
+    required.
+    """
+
+    def __init__(self, session, suite):
+        """Creates a new ReverseDependencyChecker instance
+
+        This will spend a significant amount of time caching data.
+
+        @type session: SQLA Session
+        @param session: The database session in use
+
+        @type suite: str
+        @param suite: The name of the suite that is used as basis for removal tests.
+        """
+        self._session = session
+        dbsuite = get_suite(suite, session)
+        suite_archs2id = dict((x.arch_string, x.arch_id) for x in get_suite_architectures(suite))
+        package_dependencies, arch_providors_of, arch_provided_by = self._load_package_information(session,
+                                                                                                   dbsuite.suite_id,
+                                                                                                   suite_archs2id)
+        self._package_dependencies = package_dependencies
+        self._arch_providors_of = arch_providors_of
+        self._arch_provided_by = arch_provided_by
+        self._archs_in_suite = set(suite_archs2id)
+
+    @staticmethod
+    def _load_package_information(session, suite_id, suite_archs2id):
+        package_dependencies = defaultdict(lambda: defaultdict(set))
+        arch_providors_of = defaultdict(lambda: defaultdict(set))
+        arch_provided_by = defaultdict(lambda: defaultdict(set))
+        source_deps = defaultdict(set)
+        metakey_d = get_or_set_metadatakey("Depends", session)
+        metakey_p = get_or_set_metadatakey("Provides", session)
+        params = {
+            'suite_id':     suite_id,
+            'arch_all_id':  suite_archs2id['all'],
+            'metakey_d_id': metakey_d.key_id,
+            'metakey_p_id': metakey_p.key_id,
+        }
+        all_arches = set(suite_archs2id)
+        all_arches.discard('source')
+
+        package_dependencies['source'] = source_deps
+
+        for architecture in all_arches:
+            deps = defaultdict(set)
+            providers_of = defaultdict(set)
+            provided_by = defaultdict(set)
+            arch_providors_of[architecture] = providers_of
+            arch_provided_by[architecture] = provided_by
+            package_dependencies[architecture] = deps
+
+            params['arch_id'] = suite_archs2id[architecture]
+
+            statement = '''
+                    SELECT b.package,
+                        (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
+                        (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
+                        FROM binaries b
+                        JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
+                        WHERE b.architecture = :arch_id OR b.architecture = :arch_all_id'''
+            query = session.query('package', 'depends', 'provides'). \
+                from_statement(statement).params(params)
+            for package, depends, provides in query:
+
+                if depends is not None:
+                    try:
+                        parsed_dep = []
+                        for dep in apt_pkg.parse_depends(depends):
+                            parsed_dep.append(frozenset(d[0] for d in dep))
+                        deps[package].update(parsed_dep)
+                    except ValueError as e:
+                        print "Error for package %s: %s" % (package, e)
+                # Maintain a counter for each virtual package.  If a
+                # Provides: exists, set the counter to 0 and count all
+                # provides by a package not in the list for removal.
+                # If the counter stays 0 at the end, we know that only
+                # the to-be-removed packages provided this virtual
+                # package.
+                if provides is not None:
+                    for virtual_pkg in provides.split(","):
+                        virtual_pkg = virtual_pkg.strip()
+                        if virtual_pkg == package:
+                            continue
+                        provided_by[virtual_pkg].add(package)
+                        providers_of[package].add(virtual_pkg)
+
+        # Check source dependencies (Build-Depends and Build-Depends-Indep)
+        metakey_bd = get_or_set_metadatakey("Build-Depends", session)
+        metakey_bdi = get_or_set_metadatakey("Build-Depends-Indep", session)
+        params = {
+            'suite_id':    suite_id,
+            'metakey_ids': (metakey_bd.key_id, metakey_bdi.key_id),
+        }
+        statement = '''
+            SELECT s.source, string_agg(sm.value, ', ') as build_dep
+               FROM source s
+               JOIN source_metadata sm ON s.id = sm.src_id
+               WHERE s.id in
+                   (SELECT source FROM src_associations
+                       WHERE suite = :suite_id)
+                   AND sm.key_id in :metakey_ids
+               GROUP BY s.id, s.source'''
+        query = session.query('source', 'build_dep').from_statement(statement). \
+            params(params)
+        for source, build_dep in query:
+            if build_dep is not None:
+                # Remove [arch] information since we want to see breakage on all arches
+                build_dep = re_build_dep_arch.sub("", build_dep)
+                try:
+                    parsed_dep = []
+                    for dep in apt_pkg.parse_src_depends(build_dep):
+                        parsed_dep.append(frozenset(d[0] for d in dep))
+                    source_deps[source].update(parsed_dep)
+                except ValueError as e:
+                    print "Error for package %s: %s" % (source, e)
+
+        return package_dependencies, arch_providors_of, arch_provided_by
+
+    def check_reverse_depends(self, removal_requests):
+        """Bulk check reverse dependencies
+
+        Example:
+          removal_request = {
+            "eclipse-rcp": None, # means ALL architectures (incl. source)
+            "eclipse": None, # means ALL architectures (incl. source)
+            "lintian": ["source", "all"], # Only these two "architectures".
+          }
+          obj.check_reverse_depends(removal_request)
+
+        @type removal_requests: dict (or a list of tuples)
+        @param removal_requests: A dictionary mapping a package name to a list of architectures.  The list of
+          architectures decides from which the package will be removed - if the list is empty the package will
+          be removed on ALL architectures in the suite (including "source").
+
+        @rtype: dict
+        @return: A mapping of "removed package" (as a "(pkg, arch)"-tuple) to a set of broken
+          broken packages (also as "(pkg, arch)"-tuple).  Note that the architecture values
+          in these tuples /can/ be "source" to reflect a breakage in build-dependencies.
+        """
+
+        archs_in_suite = self._archs_in_suite
+        removals_by_arch = defaultdict(set)
+        affected_virtual_by_arch = defaultdict(set)
+        package_dependencies = self._package_dependencies
+        arch_providors_of = self._arch_providors_of
+        arch_provided_by = self._arch_provided_by
+        arch_provides2removal = defaultdict(lambda: defaultdict(set))
+        dep_problems = defaultdict(set)
+        src_deps = package_dependencies['source']
+        src_removals = set()
+        arch_all_removals = set()
+
+        if isinstance(removal_requests, dict):
+            removal_requests = removal_requests.iteritems()
+
+        for pkg, arch_list in removal_requests:
+            if not arch_list:
+                arch_list = archs_in_suite
+            for arch in arch_list:
+                if arch == 'source':
+                    src_removals.add(pkg)
+                    continue
+                if arch == 'all':
+                    arch_all_removals.add(pkg)
+                    continue
+                removals_by_arch[arch].add(pkg)
+                if pkg in arch_providors_of[arch]:
+                    affected_virtual_by_arch[arch].add(pkg)
+
+        if arch_all_removals:
+            for arch in archs_in_suite:
+                if arch in ('all', 'source'):
+                    continue
+                removals_by_arch[arch].update(arch_all_removals)
+                for pkg in arch_all_removals:
+                    if pkg in arch_providors_of[arch]:
+                        affected_virtual_by_arch[arch].add(pkg)
+
+        if not removals_by_arch:
+            # Nothing to remove => no problems
+            return dep_problems
+
+        for arch, removed_providers in affected_virtual_by_arch.iteritems():
+            provides2removal = arch_provides2removal[arch]
+            removals = removals_by_arch[arch]
+            for virtual_pkg, virtual_providers in arch_provided_by[arch].iteritems():
+                v = virtual_providers & removed_providers
+                if len(v) == len(virtual_providers):
+                    # We removed all the providers of virtual_pkg
+                    removals.add(virtual_pkg)
+                    # Pick one to take the blame for the removal
+                    # - we sort for determinism, optimally we would prefer to blame the same package
+                    #   to minimise the number of blamed packages.
+                    provides2removal[virtual_pkg] = sorted(v)[0]
+
+        for arch, removals in removals_by_arch.iteritems():
+            deps = package_dependencies[arch]
+            provides2removal = arch_provides2removal[arch]
+
+            # Check binary dependencies (Depends)
+            for package, dependencies in deps.iteritems():
+                if package in removals:
+                    continue
+                for clause in dependencies:
+                    if not (clause <= removals):
+                        # Something probably still satisfies this relation
+                        continue
+                    # whoops, we seemed to have removed all packages that could possibly satisfy
+                    # this relation.  Lets blame something for it
+                    for dep_package in clause:
+                        removal = dep_package
+                        if dep_package in provides2removal:
+                            removal = provides2removal[dep_package]
+                        dep_problems[(removal, arch)].add((package, arch))
+
+            for source, build_dependencies in src_deps.iteritems():
+                if source in src_removals:
+                    continue
+                for clause in build_dependencies:
+                    if not (clause <= removals):
+                        # Something probably still satisfies this relation
+                        continue
+                    # whoops, we seemed to have removed all packages that could possibly satisfy
+                    # this relation.  Lets blame something for it
+                    for dep_package in clause:
+                        removal = dep_package
+                        if dep_package in provides2removal:
+                            removal = provides2removal[dep_package]
+                        dep_problems[(removal, arch)].add((source, 'source'))
+
+        return dep_problems
 
 
 def remove(session, reason, suites, removals,

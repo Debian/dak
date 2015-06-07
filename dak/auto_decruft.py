@@ -40,7 +40,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.cruft import *
-from daklib.rm import remove
+from daklib.rm import remove, ReverseDependencyChecker
 
 ################################################################################
 
@@ -55,7 +55,7 @@ Check for obsolete or duplicated packages.
 
 ################################################################################
 
-def remove_sourceless_cruft(suite_name, suite_id, session, dryrun):
+def remove_sourceless_cruft(suite_name, suite_id, session, dryrun, debug):
     """Remove binaries without a source
 
     @type suite_name: string
@@ -69,31 +69,96 @@ def remove_sourceless_cruft(suite_name, suite_id, session, dryrun):
 
     @type dryrun: bool
     @param dryrun: If True, just print the actions rather than actually doing them
+
+    @type debug: bool
+    @param debug: If True, print some extra information
     """""
     global Options
     rows = query_without_source(suite_id, session)
     arch_all_id = get_architecture('all', session=session)
+    discarded_removal = set()
 
     message = '[auto-cruft] no longer built from source, no reverse dependencies'
-    for row in rows:
-        package = row[0]
-        if utils.check_reverse_depends([package], suite_name, [], session, cruft=True, quiet=True):
-            continue
+    all_packages = dict((row[0], None) for row in rows)
+    if not all_packages:
+        if debug:
+            print "N: Found no candidates"
+        return
+    if debug:
+        print "N: Considering to remove %s" % str(sorted(all_packages.iterkeys()))
+    if debug:
+        print "N: Compiling ReverseDependencyChecker (RDC) - please hold ..."
 
-        if dryrun:
-            # Embed the -R just in case someone wants to run it manually later
-            print 'Would do:    dak rm -m "%s" -s %s -a all -p -R -b %s' % \
-                  (message, suite_name, package)
-        else:
-            q = session.execute("""
-            SELECT b.package, b.version, a.arch_string, b.id
-            FROM binaries b
-                JOIN bin_associations ba ON b.id = ba.bin
-                JOIN architecture a ON b.architecture = a.id
-                JOIN suite su ON ba.suite = su.id
-            WHERE a.id = :arch_all_id AND b.package = :package AND su.id = :suite_id
-            """, {arch_all_id: arch_all_id, package: package, suite_id: suite_id})
-            remove(session, message, [suite_name], list(q), partial=True, whoami="DAK's auto-decrufter")
+    rdc = ReverseDependencyChecker(session, suite_name)
+    if debug:
+        print "N: Computing initial breakage..."
+    breakage = rdc.check_reverse_depends(all_packages)
+    while breakage:
+        by_breakers = [(len(breakage[x]), x, breakage[x]) for x in breakage]
+        by_breakers.sort(reverse=True)
+        if debug:
+            print "N: - Removal would break %s (package, architecture)-pairs" % (len(breakage))
+            print "N: - full breakage:"
+            for _, breaker, broken in by_breakers:
+                bname = "%s/%s" % breaker
+                broken_str = ", ".join("%s/%s" % b for b in sorted(broken))
+                print "N:    * %s => %s" % (bname, broken_str)
+
+        _, worst_package_arch, worst_breakage = by_breakers.pop(0)
+        averted_breakage = set(worst_breakage)
+        del all_packages[worst_package_arch[0]]
+        discarded_removal.add(worst_package_arch[0])
+        if debug:
+            print "N: - skip removal of %s (due to %s)" % (worst_package_arch[0], sorted(averted_breakage))
+        for _, package_arch, breakage in by_breakers:
+            package = package_arch[0]
+            if breakage <= averted_breakage:
+                # We already avoided this break
+                continue
+            if package in discarded_removal:
+                averted_breakage |= breakage
+                continue
+            if debug:
+                print "N: - skip removal of %s (due to %s)" % (
+                    package, str(sorted(breakage - averted_breakage)))
+            discarded_removal.add(package)
+            averted_breakage |= breakage
+            del all_packages[package]
+
+        if not all_packages:
+            if debug:
+                print "N: Nothing left to remove"
+            return
+
+        if debug:
+            print "N: Now considering to remove %s" % str(sorted(all_packages.iterkeys()))
+        breakage = rdc.check_reverse_depends(all_packages)
+
+    if debug:
+        print "N: Removal looks good"
+
+    if dryrun:
+        # Embed the -R just in case someone wants to run it manually later
+        print 'Would do:    dak rm -m "%s" -s %s -a all -p -R -b %s' % \
+              (message, suite_name, " ".join(sorted(all_packages)))
+    else:
+        params = {
+            arch_all_id: arch_all_id,
+            all_packages: tuple(all_packages),
+            suite_id: suite_id
+        }
+        q = session.execute("""
+        SELECT b.package, b.version, a.arch_string, b.id
+        FROM binaries b
+            JOIN bin_associations ba ON b.id = ba.bin
+            JOIN architecture a ON b.architecture = a.id
+            JOIN suite su ON ba.suite = su.id
+        WHERE a.id = :arch_all_id AND b.package IN :all_packages AND su.id = :suite_id
+        """, params)
+        remove(session, message, [suite_name], list(q), partial=True, whoami="DAK's auto-decrufter")
+
+
+
 
 
 def removeNBS(suite_name, suite_id, session, dryrun):
@@ -154,8 +219,9 @@ def main ():
 
     Arguments = [('h',"help","Auto-Decruft::Options::Help"),
                  ('n',"dry-run","Auto-Decruft::Options::Dry-Run"),
+                 ('d',"debug","Auto-Decruft::Options::Debug"),
                  ('s',"suite","Auto-Decruft::Options::Suite","HasArg")]
-    for i in ["help", "Dry-Run"]:
+    for i in ["help", "Dry-Run", "Debug"]:
         if not cnf.has_key("Auto-Decruft::Options::%s" % (i)):
             cnf["Auto-Decruft::Options::%s" % (i)] = ""
 
@@ -167,9 +233,12 @@ def main ():
     if Options["Help"]:
         usage()
 
+    debug = False
     dryrun = False
     if Options["Dry-Run"]:
         dryrun = True
+    if Options["Debug"]:
+        debug = True
 
     session = DBConn().session()
 
@@ -180,8 +249,8 @@ def main ():
     suite_id = suite.suite_id
     suite_name = suite.suite_name.lower()
 
-    remove_sourceless_cruft(suite_name, suite_id, session, dryrun)
-    removeNBS(suite_name, suite_id, session, dryrun)
+    remove_sourceless_cruft(suite_name, suite_id, session, dryrun, debug)
+    #removeNBS(suite_name, suite_id, session, dryrun)
 
 ################################################################################
 
