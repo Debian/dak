@@ -131,17 +131,20 @@ def removeNBS(suite_name, suite_id, session, dryrun):
             for architecture in arch_list:
                 if architecture in arch2ids:
                     arch2ids[architecture] = utils.get_architecture(architecture, session=session)
-            arch_ids = ", ".join(arch2ids[architecture] for architecture in arch_list)
-            pkg_db_set = ", ".join('"%s"' % package for package in pkg_list)
-            # TODO: Fix this properly to remove the remaining non-bind arguments
+            arch_ids = tuple(arch2ids[architecture] for architecture in arch_list)
+            params = {
+                suite_id: suite_id,
+                arch_ids: arch2ids,
+                pkg_list: tuple(pkg_list),
+            }
             q = session.execute("""
             SELECT b.package, b.version, a.arch_string, b.id
             FROM binaries b
                 JOIN bin_associations ba ON b.id = ba.bin
                 JOIN architecture a ON b.architecture = a.id
                 JOIN suite su ON ba.suite = su.id
-            WHERE a.id IN (%s) AND b.package IN (%s) AND su.id = :suite_id
-            """ % (arch_ids, pkg_db_set), { suite_id: suite_id})
+            WHERE a.id IN :arch_ids AND b.package IN :pkg_db_set AND su.id = :suite_id
+            """, params)
             remove(session, message, [suite_name], list(q), partial=True, whoami="DAK's auto-decrufter")
 
 ################################################################################
