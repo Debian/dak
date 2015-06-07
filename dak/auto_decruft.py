@@ -68,7 +68,7 @@ def remove_sourceless_cruft(suite_name, suite_id, session, dryrun):
     @param session: The database session in use
 
     @type dryrun: bool
-    @param dryrun: If True, just to print the actions rather than actually doing them
+    @param dryrun: If True, just print the actions rather than actually doing them
     """""
     global Options
     rows = query_without_source(suite_id, session)
@@ -110,7 +110,7 @@ def removeNBS(suite_name, suite_id, session, dryrun):
     @param session: The database session in use
 
     @type dryrun: bool
-    @param dryrun: If True, just to print the actions rather than actually doing them
+    @param dryrun: If True, just print the actions rather than actually doing them
     """""
     global Options
     rows = queryNBS(suite_id, session)
