@@ -173,7 +173,7 @@ def main():
         if code == PROC_STATUS_SUCCESS:
             Logger.log([msg])
         elif code == PROC_STATUS_SIGNALRAISED:
-            Logger.log(['E: Subprocess recieved signal ', msg])
+            Logger.log(['E: Subprocess received signal ', msg])
         else:
             Logger.log(['E: ', msg])
 
