@@ -1136,6 +1136,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
     else:
         all_arches = set(x.arch_string for x in get_suite_architectures(suite))
     all_arches -= set(["source", "all"])
+    removal_set = set(removals)
     metakey_d = get_or_set_metadatakey("Depends", session)
     metakey_p = get_or_set_metadatakey("Provides", session)
     params = {
@@ -1183,9 +1184,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 
         # If a virtual package is only provided by the to-be-removed
         # packages, treat the virtual package as to-be-removed too.
-        for virtual_pkg in virtual_packages:
-            if virtual_packages[virtual_pkg] == 0:
-                removals.append(virtual_pkg)
+        removal_set.update(virtual_pkg for virtual_pkg in virtual_packages if not virtual_packages[virtual_pkg])
 
         # Check binary dependencies (Depends)
         for package in deps:
