@@ -1150,7 +1150,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         params['arch_id'] = get_architecture(architecture, session).arch_id
 
         statement = '''
-            SELECT b.id, b.package, s.source, c.name as component,
+            SELECT b.package, s.source, c.name as component,
                 (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
                 (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
                 FROM binaries b
@@ -1159,9 +1159,9 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 JOIN files_archive_map af ON b.file = af.file_id
                 JOIN component c ON af.component_id = c.id
                 WHERE b.architecture = :arch_id'''
-        query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
+        query = session.query('package', 'source', 'component', 'depends', 'provides'). \
             from_statement(statement).params(params)
-        for binary_id, package, source, component, depends, provides in query:
+        for package, source, component, depends, provides in query:
             sources[package] = source
             p2c[package] = component
             if depends is not None:
@@ -1244,7 +1244,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         'metakey_ids': (metakey_bd.key_id, metakey_bdi.key_id),
     }
     statement = '''
-        SELECT s.id, s.source, string_agg(sm.value, ', ') as build_dep
+        SELECT s.source, string_agg(sm.value, ', ') as build_dep
            FROM source s
            JOIN source_metadata sm ON s.id = sm.src_id
            WHERE s.id in
@@ -1252,9 +1252,9 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                    WHERE suite = :suite_id)
                AND sm.key_id in :metakey_ids
            GROUP BY s.id, s.source'''
-    query = session.query('id', 'source', 'build_dep').from_statement(statement). \
+    query = session.query('source', 'build_dep').from_statement(statement). \
         params(params)
-    for source_id, source, build_dep in query:
+    for source, build_dep in query:
         if source in removals: continue
         parsed_dep = []
         if build_dep is not None:
