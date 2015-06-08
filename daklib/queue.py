@@ -45,7 +45,6 @@ from dak_exceptions import *
 from changes import *
 from regexes import *
 from config import Config
-from holding import Holding
 from urgencylog import UrgencyLog
 from dbconn import *
 from summarystats import SummaryStats

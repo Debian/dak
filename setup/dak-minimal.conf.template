@@ -42,7 +42,6 @@ Dir
   Log "__DAKBASE__/log/";
   Lock "__DAKBASE__/lock/";
   Morgue "__DAKBASE__/morgue/";
-  Holding "__DAKBASE__/holding/";
   Done "__DAKBASE__/done/";
   Reject "__DAKBASE__/reject/";
   TempPath "__DAKBASE__/tmp/";
