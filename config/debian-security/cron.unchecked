@@ -85,7 +85,6 @@ ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-secu
 if [ "x${dopolicy}x" = "xtruex" ]; then
     # We had something approved from a policy queue, push out new archive
     dak dominate
-    #dak generate-filelist
     cd $configdir
     $configdir/map.sh
     dak generate-packages-sources2 -a security

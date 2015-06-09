@@ -100,16 +100,10 @@ dak dominate --force -s ${suite}
 - check output from cruft report:
 dak cruft-report -s ${suite}
 
-dak generate-filelist -s ${suite}
-
 - Let SRM see if all is ok
 
 - then:
-if [[ ${suitename} == squeeze ]]; then
-  dak generate-packages-sources -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
-else
-  dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
-fi
+dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
 
 - For squeeze: merge Contents
 if [ "${suitename}" = "squeeze" ]; then
