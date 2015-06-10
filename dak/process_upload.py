@@ -297,7 +297,6 @@ def accept(directory, upload):
 
 @try_or_reject
 def accept_to_new(directory, upload):
-    cnf = Config()
 
     Logger.log(['ACCEPT-TO-NEW', upload.changes.filename])
     print "ACCEPT-TO-NEW"
@@ -378,8 +377,6 @@ def action(directory, upload):
     (prompt, answer) = ("", "XXX")
     if Options["No-Action"] or Options["Automatic"]:
         answer = 'S'
-
-    queuekey = ''
 
     print summary
     print
