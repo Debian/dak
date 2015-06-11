@@ -252,6 +252,14 @@ GO=(
 stage $GO
 
 GO=(
+    FUNC="autocruft"
+    TIME="autocruft"
+    ARGS="unstable experimental"
+    ERR=""
+)
+stage $GO
+
+GO=(
     FUNC="fingerprints"
     TIME="import-keyring"
     ARGS=""

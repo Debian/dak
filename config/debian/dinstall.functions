@@ -107,6 +107,18 @@ function dominate() {
     dak dominate
 }
 
+function autocruft() {
+    log "Check for obsolete binary packages"
+    suites=${1:-"unstable experimental"}
+    # Initially only run with -n and output into a file, to check.
+    dstamp=$(date -u +"%Y-%m-%d_%H:%M")
+    echo "Report for ${dstamp}" > $webdir/auto-cruft-report_${dstamp}.txt
+    for suite in ${suites}; do
+        dak auto-decruft -n -s ${suite} >> $webdir/auto-cruft-report_${dstamp}.txt
+    done
+    cat $webdir/auto-cruft-report_${dstamp}.txt | mail -a "X-Debian: DAK" -e -s "Debian archive AUTOMATIC cruft report for ${dstamp}" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" -c niels@thykier.net ftpmaster@ftp-master.debian.org
+}
+
 function fingerprints() {
     log "Updating fingerprints"
     dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
