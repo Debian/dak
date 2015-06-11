@@ -107,11 +107,6 @@ function dominate() {
     dak dominate
 }
 
-function filelist() {
-    log "Generating file lists for apt-ftparchive"
-    dak generate-filelist
-}
-
 function fingerprints() {
     log "Updating fingerprints"
     dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg

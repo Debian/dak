@@ -4,10 +4,10 @@ Rough Guide to doing Stable Point Releases in Debian
 - sudo to dak
 - bash:
 suite=stable
-suitename=wheezy
+suitename=jessie
 pusuite=proposed-updates
-oldrev=7.6
-newrev=7.7
+oldrev=8.0
+newrev=8.1
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -51,9 +51,9 @@ dak control-suite --force --add testing <propups.testing
 - ask rms if they have RMs to do.
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
-diver=20130613+deb7u2+b3
+diver=20150422+deb8u1
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
-dioldver=20130613+deb7u2+b1
+dioldver=empty
 cd $ftpdir/dists/${suite}/main
 if [ "${dioldver}" != "empty" ]; then
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -68,9 +68,9 @@ cd $ftpdir/dists/${suite}
 
 - Updates for win32-loader?
 cd ${ftpdir}/tools/win32-loader
-if [ -d ${suite}-proposed-updates ]; then
+if [ -d ${suitename}-proposed-updates ]; then
     rm -r ${suite}
-    mv ${suite}-proposed-updates ${suite}
+    mv ${suitename}-proposed-updates ${suite}
 fi
 cd ${ftpdir}
 
@@ -100,16 +100,10 @@ dak dominate --force -s ${suite}
 - check output from cruft report:
 dak cruft-report -s ${suite}
 
-dak generate-filelist -s ${suite}
-
 - Let SRM see if all is ok
 
 - then:
-if [ "${suitename}" = "squeeze" ]; then
-  dak generate-packages-sources -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
-else
-  dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
-fi
+dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
 
 - For squeeze: merge Contents
 if [ "${suitename}" = "squeeze" ]; then
@@ -125,13 +119,15 @@ if [ "${suitename}" = "squeeze" ]; then
 fi
 
 - For wheezy: update main/i18n/Index
-if [ "${suitename}" = "wheezy" ]; then
+if [[ ${suitename} == wheezy ]] || [[ ${suitename} == jessie ]]; then
   ${scriptsdir}/generate-i18n-Index "${ftpdir}/dists/${suite}"
 fi
 
 - Generate Releases:
 dak generate-releases -f -s ${suite}
-rm ${ftpdir}/dists/${suite}/InRelease
+if [[ ${suitename} != jessie ]]; then
+    rm ${ftpdir}/dists/${suite}/InRelease
+fi
 
 - have the SRMs sign it and put the signature in.
 cd ${ftpdir}/dists/${suite}

@@ -26,33 +26,15 @@ Queue utility functions for dak
 
 ###############################################################################
 
-import errno
 import os
-import stat
-import sys
-import time
-import apt_inst
-import apt_pkg
 import utils
-import commands
-import shutil
-import textwrap
 from types import *
-from sqlalchemy.sql.expression import desc
-from sqlalchemy.orm.exc import NoResultFound
 
 from dak_exceptions import *
 from changes import *
 from regexes import *
 from config import Config
-from holding import Holding
-from urgencylog import UrgencyLog
 from dbconn import *
-from summarystats import SummaryStats
-from utils import parse_changes, check_dsc_files
-from textutils import fix_maintainer
-from lintian import parse_lintian_output, generate_reject_messages
-from contents import UnpackedSource
 
 ################################################################################
 

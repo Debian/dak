@@ -99,8 +99,6 @@ def _do_Approve():
         # 3. Run all the steps that are needed to publish the changed archive
         print "Domination"
         spawn("dak dominate")
-        #    print "Generating filelist for apt-ftparchive"
-        #    spawn("dak generate-filelist")
         print "Updating Packages and Sources files... This may take a while, be patient"
         spawn("/srv/security-master.debian.org/dak/config/debian-security/map.sh")
         spawn("dak generate-packages-sources2 -a security")
