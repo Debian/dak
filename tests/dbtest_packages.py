@@ -113,10 +113,6 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual((False, self.file['sl_3.03-16.dsc']), \
             check_poolfile('main/s/sl/sl_3.03-16.dsc', 0, 'deadbeef', \
                 contrib.location_id, self.session))
-        # test get_poolfile_like_name()
-        self.assertEqual([self.file['sl_3.03-16.dsc']], \
-            get_poolfile_like_name('sl_3.03-16.dsc', self.session))
-        self.assertEqual([], get_poolfile_like_name('foobar', self.session))
 
     def test_maintainers(self):
         '''
@@ -209,27 +205,6 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual('main', dsc_component)
         self.assertEqual(self.loc['main'].location_id, dsc_location_id)
         self.assertEqual([], pfs)
-
-    def test_source_exists(self):
-        'test function source_exists()'
-
-        hello = self.source['hello_2.2-2']
-        self.assertTrue(source_exists(hello.source, hello.version, \
-            suites = ['sid'], session = self.session))
-        # binNMU
-        self.assertTrue(source_exists(hello.source, hello.version + '+b7', \
-            suites = ['sid'], session = self.session))
-        self.assertTrue(not source_exists(hello.source, hello.version, \
-            suites = ['lenny', 'squeeze'], session = self.session))
-        self.assertTrue(not source_exists(hello.source, hello.version, \
-            suites = ['lenny', 'sid'], session = self.session))
-        self.assertTrue(not source_exists(hello.source, hello.version, \
-            suites = ['sid', 'lenny'], session = self.session))
-        self.assertTrue(not source_exists(hello.source, '0815', \
-            suites = ['sid'], session = self.session))
-        # 'any' suite
-        self.assertTrue(source_exists(hello.source, hello.version, \
-            session = self.session))
 
     def test_get_suite_version_by_source(self):
         'test function get_suite_version_by_source()'

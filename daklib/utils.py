@@ -49,7 +49,7 @@ import daklib.config as config
 import daklib.daksubprocess
 from dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
-                   get_active_keyring_paths, get_primary_keyring_path, \
+                   get_active_keyring_paths, \
                    get_suite_architectures, get_or_set_metadatakey, DBSource, \
                    Component, Override, OverrideType
 from sqlalchemy import desc
