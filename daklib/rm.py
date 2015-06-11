@@ -77,18 +77,18 @@ class ReverseDependencyChecker(object):
         self._session = session
         dbsuite = get_suite(suite, session)
         suite_archs2id = dict((x.arch_string, x.arch_id) for x in get_suite_architectures(suite))
-        package_dependencies, arch_providors_of, arch_provided_by = self._load_package_information(session,
+        package_dependencies, arch_providers_of, arch_provided_by = self._load_package_information(session,
                                                                                                    dbsuite.suite_id,
                                                                                                    suite_archs2id)
         self._package_dependencies = package_dependencies
-        self._arch_providors_of = arch_providors_of
+        self._arch_providers_of = arch_providers_of
         self._arch_provided_by = arch_provided_by
         self._archs_in_suite = set(suite_archs2id)
 
     @staticmethod
     def _load_package_information(session, suite_id, suite_archs2id):
         package_dependencies = defaultdict(lambda: defaultdict(set))
-        arch_providors_of = defaultdict(lambda: defaultdict(set))
+        arch_providers_of = defaultdict(lambda: defaultdict(set))
         arch_provided_by = defaultdict(lambda: defaultdict(set))
         source_deps = defaultdict(set)
         metakey_d = get_or_set_metadatakey("Depends", session)
@@ -108,7 +108,7 @@ class ReverseDependencyChecker(object):
             deps = defaultdict(set)
             providers_of = defaultdict(set)
             provided_by = defaultdict(set)
-            arch_providors_of[architecture] = providers_of
+            arch_providers_of[architecture] = providers_of
             arch_provided_by[architecture] = provided_by
             package_dependencies[architecture] = deps
 
@@ -177,7 +177,7 @@ class ReverseDependencyChecker(object):
                 except ValueError as e:
                     print "Error for package %s: %s" % (source, e)
 
-        return package_dependencies, arch_providors_of, arch_provided_by
+        return package_dependencies, arch_providers_of, arch_provided_by
 
     def check_reverse_depends(self, removal_requests):
         """Bulk check reverse dependencies
@@ -205,7 +205,7 @@ class ReverseDependencyChecker(object):
         removals_by_arch = defaultdict(set)
         affected_virtual_by_arch = defaultdict(set)
         package_dependencies = self._package_dependencies
-        arch_providors_of = self._arch_providors_of
+        arch_providers_of = self._arch_providers_of
         arch_provided_by = self._arch_provided_by
         arch_provides2removal = defaultdict(lambda: defaultdict(set))
         dep_problems = defaultdict(set)
@@ -227,7 +227,7 @@ class ReverseDependencyChecker(object):
                     arch_all_removals.add(pkg)
                     continue
                 removals_by_arch[arch].add(pkg)
-                if pkg in arch_providors_of[arch]:
+                if pkg in arch_providers_of[arch]:
                     affected_virtual_by_arch[arch].add(pkg)
 
         if arch_all_removals:
@@ -236,7 +236,7 @@ class ReverseDependencyChecker(object):
                     continue
                 removals_by_arch[arch].update(arch_all_removals)
                 for pkg in arch_all_removals:
-                    if pkg in arch_providors_of[arch]:
+                    if pkg in arch_providers_of[arch]:
                         affected_virtual_by_arch[arch].add(pkg)
 
         if not removals_by_arch:
