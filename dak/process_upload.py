@@ -454,7 +454,7 @@ def unlink_if_exists(path):
         if e.errno != errno.ENOENT:
             raise
 
-def process_it(directory, changes, keyrings, session):
+def process_it(directory, changes, keyrings):
     global Logger
 
     print "\n{0}\n".format(changes.filename)
@@ -480,6 +480,7 @@ def process_changes(changes_filenames):
     session = DBConn().session()
     keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
     keyring_files = [ k.keyring_name for k in keyrings ]
+    session.close()
 
     changes = []
     for fn in changes_filenames:
@@ -493,9 +494,7 @@ def process_changes(changes_filenames):
     changes.sort(key=lambda x: x[1])
 
     for directory, c in changes:
-        process_it(directory, c, keyring_files, session)
-
-    session.rollback()
+        process_it(directory, c, keyring_files)
 
 ###############################################################################
 
