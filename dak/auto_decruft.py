@@ -53,7 +53,11 @@ Automatic removal of common kinds of cruft
 
   -h, --help                show this help and exit.
   -n, --dry-run             don't do anything, just show what would have been done
-  -s, --suite=SUITE         check suite SUITE."""
+  -s, --suite=SUITE         check suite SUITE.
+  --if-NVI OSUITE           remove all packages in SUITE with a lower version than
+                            in OSUITE (e.g. -s experimental --if-NVI unstable)
+  --if-NVI-rm-tag RMTAG     use RMTAG in the removal message (e.g. "NVIU")
+  """
     sys.exit(exit_code)
 
 ################################################################################
@@ -279,6 +283,73 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
         remove_groups(groups.itervalues(), suite_id, suite_name, session)
 
 
+def sources2removals(source_list, suite_id, session):
+    """Compute removals items given a list of names of source packages
+
+    @type source_list: list
+    @param source_list: A list of names of source packages
+
+    @type suite_id: int
+    @param suite_id: The id of the suite from which these sources should be removed
+
+    @type session: SQLA Session
+    @param session: The database session in use
+
+    @rtype: list
+    @return: A list of items to be removed to remove all sources and their binaries from the given suite
+    """
+    to_remove = []
+    params = {"suite_id": suite_id, "sources": tuple(source_list)}
+    q = session.execute("""
+                    SELECT s.source, s.version, 'source', s.id
+                    FROM source s,
+                         JOIN src_associations sa ON sa.source = s.id
+                         JOIN suite su ON sa.suite = su.id
+                    WHERE su.id = :suite_id AND s.source IN :sources""", params)
+    to_remove.extend(q)
+    q = session.execute("""
+                    SELECT b.package, b.version, a.arch_string, b.id
+                    FROM binaries b
+                         JOIN bin_associations ba ON b.id = ba.bin
+                         JOIN architecture a ON b.architecture = a.id
+                         JOIN suite su ON ba.suite = su.id
+                         JOIN source s ON b.source = s.id
+                         JOIN src_associations sa ON s.id = sa.source AND sa.suite = su.id
+                    WHERE su.id = :suite_id AND s.source IN :sources""", params)
+    to_remove.extend(q)
+    return to_remove
+
+
+def decruft_newer_version_in(othersuite, suite_name, suite_id, rm_msg, session, dryrun):
+    """Compute removals items given a list of names of source packages
+
+    @type othersuite: str
+    @param othersuite: The name of the suite to compare with (e.g. "unstable" for "NVIU")
+
+    @type suite: str
+    @param suite: The name of the suite from which to do removals (e.g. "experimental" for "NVIU")
+
+    @type suite_id: int
+    @param suite_id: The id of the suite from which these sources should be removed
+
+    @type rm_msg: str
+    @param rm_msg: The removal message (or tag, e.g. "NVIU")
+
+    @type session: SQLA Session
+    @param session: The database session in use
+
+    @type dryrun: bool
+    @param dryrun: If True, just print the actions rather than actually doing them
+    """
+    nvi_list = [x[0] for x in newer_version(othersuite, suite_name, session)]
+    if nvi_list:
+        message = "[auto-cruft] %s" % rm_msg
+        if dryrun:
+            print "    dak rm -m \"%s\" -s %s %s" % (message, suite_name, " ".join(nvi_list))
+        else:
+            removals = sources2removals(nvi_list, suite_id, session)
+            remove(session, message, [suite_name], removals, whoami="DAK's auto-decrufter")
+
 ################################################################################
 
 def main ():
@@ -288,8 +359,10 @@ def main ():
     Arguments = [('h',"help","Auto-Decruft::Options::Help"),
                  ('n',"dry-run","Auto-Decruft::Options::Dry-Run"),
                  ('d',"debug","Auto-Decruft::Options::Debug"),
-                 ('s',"suite","Auto-Decruft::Options::Suite","HasArg")]
-    for i in ["help", "Dry-Run", "Debug"]:
+                 ('s',"suite","Auto-Decruft::Options::Suite","HasArg"),
+                 ('z','if-NVI',"Auto-Decruft::Options::OtherSuite", "HasArg"),
+                 ('Z','if-NVI-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg")]
+    for i in ["help", "Dry-Run", "Debug", "OtherSuite", "OtherSuiteRMMsg"]:
         if not cnf.has_key("Auto-Decruft::Options::%s" % (i)):
             cnf["Auto-Decruft::Options::%s" % (i)] = ""
 
@@ -308,6 +381,9 @@ def main ():
     if Options["Debug"]:
         debug = True
 
+    if Options["OtherSuite"] and not Options["OtherSuiteRMMsg"]:
+        utils.fubar("--if-NVI requires --if-NVI-rm-msg")
+
     session = DBConn().session()
 
     suite = get_suite(Options["Suite"].lower(), session)
@@ -318,6 +394,10 @@ def main ():
     suite_name = suite.suite_name.lower()
 
     auto_decruft_suite(suite_name, suite_id, session, dryrun, debug)
+
+    if Options["OtherSuite"]:
+        osuite = get_suite(Options["OtherSuite"].lower(), session).suite_name
+        decruft_newer_version_in(osuite, suite_name, suite_id, Options["OtherSuiteRMMsg"], session, dryrun)
 
 ################################################################################
 
