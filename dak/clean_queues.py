@@ -39,7 +39,6 @@ import apt_pkg
 from daklib import utils
 from daklib import daklog
 from daklib.config import Config
-from daklib.dbconn import get_policy_queue
 
 ################################################################################
 
