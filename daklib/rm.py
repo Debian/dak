@@ -380,7 +380,8 @@ def remove(session, reason, suites, removals,
                 raise ValueError("component '%s' not recognised." % componentname)
             else:
                 component_ids_list.append(component.component_id)
-        con_components = "AND component IN (%s)" % ", ".join([str(i) for i in component_ids_list])
+        if component_ids_list:
+            con_components = "AND component IN (%s)" % ", ".join([str(i) for i in component_ids_list])
 
     for i in removals:
         package = i[0]
