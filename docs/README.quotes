@@ -134,13 +134,6 @@ DON'T PUT http://172.16.100.107/ IN YOUR URLS, YOU INCOMPETENT FUCKMONKEYS
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-| priviledged positions? What privilege? The honour of working harder
-| than most people for absolutely no recognition?
-
-Manoj Srivastava <srivasta@debian.org> in <87lln8aqfm.fsf@glaurung.internal.golden-gryphon.com>
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 <elmo_h> you could just r00t klecker through [...] and do it yourself
 <mdz> heh
 <mdz> I think there's a bit in the DMUP about that
@@ -238,20 +231,6 @@ Next week on "When Good Buildds Go Bad"[...]
 
 <aj>  153 NP+ 11 James Troup     (7.9K) you know you want it.  err.
 * aj looks disturbed as he trolls through his saved mail
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-From: Andrew Morton <akpm@osdl.org>
-Subject: 2.6.6-mm5
-To: linux-kernel@vger.kernel.org
-Date: Sat, 22 May 2004 01:36:36 -0700
-X-Mailer: Sylpheed version 0.9.7 (GTK+ 1.2.10; i386-redhat-linux-gnu)
-
-[...]
-
-  Although this feature has been around for a while it is new code, and the
-  usual cautions apply.  If it munches all your files please tell Jens and
-  he'll type them in again for you.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

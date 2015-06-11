@@ -1123,19 +1123,20 @@ def call_editor(text="", suffix=".txt"):
 
 ################################################################################
 
-def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False):
+def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False, quiet=False):
     dbsuite = get_suite(suite, session)
     overridesuite = dbsuite
     if dbsuite.overridesuite is not None:
         overridesuite = get_suite(dbsuite.overridesuite, session)
     dep_problem = 0
     p2c = {}
-    all_broken = {}
+    all_broken = defaultdict(lambda: defaultdict(set))
     if arches:
         all_arches = set(arches)
     else:
-        all_arches = set([x.arch_string for x in get_suite_architectures(suite)])
+        all_arches = set(x.arch_string for x in get_suite_architectures(suite))
     all_arches -= set(["source", "all"])
+    removal_set = set(removals)
     metakey_d = get_or_set_metadatakey("Depends", session)
     metakey_p = get_or_set_metadatakey("Provides", session)
     params = {
@@ -1150,7 +1151,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         params['arch_id'] = get_architecture(architecture, session).arch_id
 
         statement = '''
-            SELECT b.id, b.package, s.source, c.name as component,
+            SELECT b.package, s.source, c.name as component,
                 (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
                 (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
                 FROM binaries b
@@ -1159,9 +1160,9 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 JOIN files_archive_map af ON b.file = af.file_id
                 JOIN component c ON af.component_id = c.id
                 WHERE b.architecture = :arch_id'''
-        query = session.query('id', 'package', 'source', 'component', 'depends', 'provides'). \
+        query = session.query('package', 'source', 'component', 'depends', 'provides'). \
             from_statement(statement).params(params)
-        for binary_id, package, source, component, depends, provides in query:
+        for package, source, component, depends, provides in query:
             sources[package] = source
             p2c[package] = component
             if depends is not None:
@@ -1183,18 +1184,16 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 
         # If a virtual package is only provided by the to-be-removed
         # packages, treat the virtual package as to-be-removed too.
-        for virtual_pkg in virtual_packages.keys():
-            if virtual_packages[virtual_pkg] == 0:
-                removals.append(virtual_pkg)
+        removal_set.update(virtual_pkg for virtual_pkg in virtual_packages if not virtual_packages[virtual_pkg])
 
         # Check binary dependencies (Depends)
-        for package in deps.keys():
+        for package in deps:
             if package in removals: continue
-            parsed_dep = []
             try:
-                parsed_dep += apt_pkg.parse_depends(deps[package])
+                parsed_dep = apt_pkg.parse_depends(deps[package])
             except ValueError as e:
                 print "Error for package %s: %s" % (package, e)
+                parsed_dep = []
             for dep in parsed_dep:
                 # Check for partial breakage.  If a package has a ORed
                 # dependency, there is only a dependency problem if all
@@ -1208,10 +1207,10 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                     source = sources[package]
                     if component != "main":
                         source = "%s/%s" % (source, component)
-                    all_broken.setdefault(source, {}).setdefault(package, set()).add(architecture)
+                    all_broken[source][package].add(architecture)
                     dep_problem = 1
 
-    if all_broken:
+    if all_broken and not quiet:
         if cruft:
             print "  - broken Depends:"
         else:
@@ -1236,7 +1235,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             print
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
-    all_broken.clear()
+    all_broken = defaultdict(set)
     metakey_bd = get_or_set_metadatakey("Build-Depends", session)
     metakey_bdi = get_or_set_metadatakey("Build-Depends-Indep", session)
     params = {
@@ -1244,7 +1243,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         'metakey_ids': (metakey_bd.key_id, metakey_bdi.key_id),
     }
     statement = '''
-        SELECT s.id, s.source, string_agg(sm.value, ', ') as build_dep
+        SELECT s.source, string_agg(sm.value, ', ') as build_dep
            FROM source s
            JOIN source_metadata sm ON s.id = sm.src_id
            WHERE s.id in
@@ -1252,16 +1251,16 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                    WHERE suite = :suite_id)
                AND sm.key_id in :metakey_ids
            GROUP BY s.id, s.source'''
-    query = session.query('id', 'source', 'build_dep').from_statement(statement). \
+    query = session.query('source', 'build_dep').from_statement(statement). \
         params(params)
-    for source_id, source, build_dep in query:
+    for source, build_dep in query:
         if source in removals: continue
         parsed_dep = []
         if build_dep is not None:
             # Remove [arch] information since we want to see breakage on all arches
             build_dep = re_build_dep_arch.sub("", build_dep)
             try:
-                parsed_dep += apt_pkg.parse_src_depends(build_dep)
+                parsed_dep = apt_pkg.parse_src_depends(build_dep)
             except ValueError as e:
                 print "Error for source %s: %s" % (source, e)
         for dep in parsed_dep:
@@ -1279,10 +1278,10 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 key = source
                 if component != "main":
                     key = "%s/%s" % (source, component)
-                all_broken.setdefault(key, set()).add(pp_deps(dep))
+                all_broken[key].add(pp_deps(dep))
                 dep_problem = 1
 
-    if all_broken:
+    if all_broken and not quiet:
         if cruft:
             print "  - broken Build-Depends:"
         else:

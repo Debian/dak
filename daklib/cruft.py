@@ -121,3 +121,111 @@ def report_multiple_source(suite):
         if binary.has_multiple_sources():
             print binary
     print
+
+
+def query_without_source(suite_id, session):
+    """searches for arch: all packages from suite that do no longer
+    reference a source package in the same suite
+
+    subquery unique_binaries: selects all packages with only 1 version
+    in suite since 'dak rm' does not allow to specify version numbers"""
+
+    query = """
+    with unique_binaries as
+        (select package, max(version) as version, max(source) as source
+            from bin_associations_binaries
+        where architecture = 2 and suite = :suite_id
+            group by package having count(*) = 1)
+    select ub.package, ub.version
+        from unique_binaries ub
+        left join src_associations_src sas
+        on ub.source = sas.src and sas.suite = :suite_id
+        where sas.id is null
+        order by ub.package"""
+    return session.execute(query, {'suite_id': suite_id})
+
+
+def queryNBS(suite_id, session):
+    """This one is really complex. It searches arch != all packages that
+    are no longer built from current source packages in suite.
+
+    temp table unique_binaries: will be populated with packages that
+    have only one version in suite because 'dak rm' does not allow
+    specifying version numbers
+
+    temp table newest_binaries: will be populated with packages that are
+    built from current sources
+
+    subquery uptodate_arch: returns all architectures built from current
+    sources
+
+    subquery unique_binaries_uptodate_arch: returns all packages in
+    architectures from uptodate_arch
+
+    subquery unique_binaries_uptodate_arch_agg: same as
+    unique_binaries_uptodate_arch but with column architecture
+    aggregated to array
+
+    subquery uptodate_packages: similar to uptodate_arch but returns all
+    packages built from current sources
+
+    subquery outdated_packages: returns all packages with architectures
+    no longer built from current source
+    """
+
+    query = """
+create temp table unique_binaries (
+    package text not null,
+    architecture integer not null,
+    source integer not null);
+
+insert into unique_binaries
+    select bab.package, bab.architecture, max(bab.source)
+        from bin_associations_binaries bab
+        where bab.suite = :suite_id and bab.architecture > 2
+        group by package, architecture having count(*) = 1;
+
+create temp table newest_binaries (
+    package text not null,
+    architecture integer not null,
+    source text not null,
+    version debversion not null);
+
+insert into newest_binaries
+    select ub.package, ub.architecture, nsa.source, nsa.version
+        from unique_binaries ub
+        join newest_src_association nsa
+            on ub.source = nsa.src and nsa.suite = :suite_id;
+
+with uptodate_arch as
+    (select architecture, source, version
+        from newest_binaries
+        group by architecture, source, version),
+    unique_binaries_uptodate_arch as
+    (select ub.package, ub.architecture, ua.source, ua.version
+        from unique_binaries ub
+        join source s
+            on ub.source = s.id
+        join uptodate_arch ua
+            on ub.architecture = ua.architecture and s.source = ua.source),
+    unique_binaries_uptodate_arch_agg as
+    (select ubua.package,
+        array(select unnest(array_agg(a.arch_string)) order by 1) as arch_list,
+        ubua.source, ubua.version
+        from unique_binaries_uptodate_arch ubua
+        join architecture a
+            on ubua.architecture = a.id
+        group by ubua.source, ubua.version, ubua.package),
+    uptodate_packages as
+    (select package, source, version
+        from newest_binaries
+        group by package, source, version),
+    outdated_packages as
+    (select array(select unnest(array_agg(package)) order by 1) as pkg_list,
+        arch_list, source, version
+        from unique_binaries_uptodate_arch_agg
+        where package not in
+            (select package from uptodate_packages)
+        group by arch_list, source, version)
+    select * from outdated_packages order by source"""
+    return session.execute(query, {'suite_id': suite_id})
