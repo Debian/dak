@@ -41,7 +41,7 @@ def list_packages(packages, suites=None, components=None, architectures=None, bi
             where = where | t.c.source.op(comparison_operator)(package)
 
     if suites is not None:
-        where = where & t.c.suite.in_(suites)
+        where = where & (t.c.suite.in_(suites) | t.c.codename.in_(suites))
     if components is not None:
         where = where & t.c.component.in_(components)
     if architectures is not None:
