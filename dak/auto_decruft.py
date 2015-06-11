@@ -48,8 +48,8 @@ from daklib.rm import remove, ReverseDependencyChecker
 
 
 def usage(exit_code=0):
-    print """Usage: dak cruft-report
-Check for obsolete or duplicated packages.
+    print """Usage: dak auto-decruft
+Automatic removal of common kinds of cruft
 
   -h, --help                show this help and exit.
   -n, --dry-run             don't do anything, just show what would have been done
