@@ -393,7 +393,7 @@ def remove(session, reason, suites, removals,
         if architecture not in d[package][version]:
             d[package][version].append(architecture)
 
-    for package in sorted(removals):
+    for package in sorted(d):
         versions = sorted(d[package], cmp=apt_pkg.version_compare)
         for version in versions:
             d[package][version].sort(utils.arch_compare_sw)
