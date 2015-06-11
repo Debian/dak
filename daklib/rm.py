@@ -352,7 +352,7 @@ def remove(session, reason, suites, removals,
     suite_ids_list = []
     suites_list = utils.join_with_commas_and(suites)
     cnf = utils.get_conf()
-    con_components = None
+    con_components = ''
 
     #######################################################################################################
 
