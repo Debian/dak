@@ -67,7 +67,7 @@ def compute_sourceless_groups(suite_id, session):
     """Find binaries without a source
 
     @type suite_id: int
-    @param suite_id: The id of the suite donated by suite_name
+    @param suite_id: The id of the suite denoted by suite_name
 
     @type session: SQLA Session
     @param session: The database session in use
@@ -95,7 +95,7 @@ def compute_nbs_groups(suite_id, suite_name, session):
     """Find binaries no longer built
 
     @type suite_id: int
-    @param suite_id: The id of the suite donated by suite_name
+    @param suite_id: The id of the suite denoted by suite_name
 
     @type suite_name: string
     @param suite_name: The name of the suite to remove from
@@ -148,7 +148,7 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
     @param suite_name: The name of the suite to remove from
 
     @type suite_id: int
-    @param suite_id: The id of the suite donated by suite_name
+    @param suite_id: The id of the suite denoted by suite_name
 
     @type session: SQLA Session
     @param session: The database session in use
