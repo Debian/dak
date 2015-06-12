@@ -54,9 +54,11 @@ Automatic removal of common kinds of cruft
   -h, --help                show this help and exit.
   -n, --dry-run             don't do anything, just show what would have been done
   -s, --suite=SUITE         check suite SUITE.
-  --if-NVI OSUITE           remove all packages in SUITE with a lower version than
-                            in OSUITE (e.g. -s experimental --if-NVI unstable)
-  --if-NVI-rm-tag RMTAG     use RMTAG in the removal message (e.g. "NVIU")
+  --if-newer-version-in OS  remove all packages in SUITE with a lower version than
+                            in OS (e.g. -s experimental --if-newer-version-in
+                            unstable)
+  --if-newer-version-in-rm-msg RMMSG
+                            use RMMSG in the removal message (e.g. "NVIU")
   """
     sys.exit(exit_code)
 
@@ -360,8 +362,8 @@ def main ():
                  ('n',"dry-run","Auto-Decruft::Options::Dry-Run"),
                  ('d',"debug","Auto-Decruft::Options::Debug"),
                  ('s',"suite","Auto-Decruft::Options::Suite","HasArg"),
-                 ('z','if-NVI',"Auto-Decruft::Options::OtherSuite", "HasArg"),
-                 ('Z','if-NVI-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg")]
+                 ('z','if-newer-version-in',"Auto-Decruft::Options::OtherSuite", "HasArg"),
+                 ('Z','if-newer-version-in-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg")]
     for i in ["help", "Dry-Run", "Debug", "OtherSuite", "OtherSuiteRMMsg"]:
         if not cnf.has_key("Auto-Decruft::Options::%s" % (i)):
             cnf["Auto-Decruft::Options::%s" % (i)] = ""
@@ -382,7 +384,7 @@ def main ():
         debug = True
 
     if Options["OtherSuite"] and not Options["OtherSuiteRMMsg"]:
-        utils.fubar("--if-NVI requires --if-NVI-rm-msg")
+        utils.fubar("--if-newer-version-in requires --if-newer-version-in-rm-msg")
 
     session = DBConn().session()
 
