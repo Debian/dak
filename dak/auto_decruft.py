@@ -143,6 +143,52 @@ def remove_groups(groups, suite_id, suite_name, session):
         remove(session, message, [suite_name], list(q), partial=True, whoami="DAK's auto-decrufter")
 
 
+def dedup(*args):
+    seen = set()
+    for iterable in args:
+        for value in iterable:
+            if value not in seen:
+                seen.add(value)
+                yield value
+
+
+def merge_group(groupA, groupB):
+    """Merges two removal groups into one
+
+    Note that some values are taken entirely from groupA (e.g. name and message)
+
+    @type groupA: dict
+    @param groupA: A removal group
+
+    @type groupB: dict
+    @param groupB: Another removal group
+
+    @rtype: dict
+    @returns: A merged group
+    """
+    pkg_list = sorted(dedup(groupA["packages"], groupB["packages"]))
+    arch_list = sorted(dedup(groupA["architectures"], groupB["architectures"]), cmp=utils.arch_compare_sw)
+    arch_list_id = dedup(groupA["architecture_ids"], groupB["architecture_ids"])
+    removalA = groupA["removal_request"]
+    removalB = groupB["removal_request"]
+    new_removal = {}
+    for pkg in dedup(removalA, removalB):
+        listA = removalA[pkg] if pkg in removalA else []
+        listB = removalB[pkg] if pkg in removalB else []
+        new_removal[pkg] = sorted(dedup(listA, listB), cmp=utils.arch_compare_sw)
+
+    merged_group = {
+        "name": groupA["name"],
+        "packages": tuple(pkg_list),
+        "architectures": arch_list,
+        "architecture_ids": tuple(arch_list_id),
+        "message": groupA["message"],
+        "removal_request": new_removal,
+    }
+
+    return merged_group
+
+
 def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
     """Run the auto-decrufter on a given suite
 
@@ -172,24 +218,32 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
     )
     for group in group_generator:
         group_name = group["name"]
-        pkgs = group["packages"]
-        affected_archs = group["architectures"]
-        removal_request = group["removal_request"]
-        # If we remove an arch:all package, then the breakage can occur on any
-        # of the architectures.
-        if "all" in affected_archs:
-            affected_archs = all_architectures
-        for pkg_arch in product(pkgs, affected_archs):
-            pkg_arch2groups[pkg_arch].add(group_name)
-        groups[group_name] = group
-        group_order.append(group_name)
+        if group_name not in groups:
+            pkgs = group["packages"]
+            affected_archs = group["architectures"]
+            # If we remove an arch:all package, then the breakage can occur on any
+            # of the architectures.
+            if "all" in affected_archs:
+                affected_archs = all_architectures
+            for pkg_arch in product(pkgs, affected_archs):
+                pkg_arch2groups[pkg_arch].add(group_name)
+            groups[group_name] = group
+            group_order.append(group_name)
+        else:
+            # This case usually happens when versions differ between architectures...
+            if debug:
+                print "N: Merging group %s" % (group_name)
+            groups[group_name] = merge_group(groups[group_name], group)
 
+    for group_name in group_order:
+        removal_request = groups[group_name]["removal_request"]
         full_removal_request.extend(removal_request.iteritems())
 
     if not groups:
         if debug:
             print "N: Found no candidates"
         return
+
     if debug:
         print "N: Considering to remove the following packages:"
         for group_name in sorted(groups):
