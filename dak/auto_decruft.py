@@ -413,8 +413,9 @@ def main ():
                  ('n',"dry-run","Auto-Decruft::Options::Dry-Run"),
                  ('d',"debug","Auto-Decruft::Options::Debug"),
                  ('s',"suite","Auto-Decruft::Options::Suite","HasArg"),
-                 ('z','if-newer-version-in',"Auto-Decruft::Options::OtherSuite", "HasArg"),
-                 ('Z','if-newer-version-in-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg")]
+                 # The "\0" seems to be the only way to disable short options.
+                 ("\0",'if-newer-version-in',"Auto-Decruft::Options::OtherSuite", "HasArg"),
+                 ("\0",'if-newer-version-in-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg")]
     for i in ["help", "Dry-Run", "Debug", "OtherSuite", "OtherSuiteRMMsg"]:
         if not cnf.has_key("Auto-Decruft::Options::%s" % (i)):
             cnf["Auto-Decruft::Options::%s" % (i)] = ""
