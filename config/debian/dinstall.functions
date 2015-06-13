@@ -109,14 +109,12 @@ function dominate() {
 
 function autocruft() {
     log "Check for obsolete binary packages"
-    local suites=${1:-"unstable experimental"}
     # Initially only run with -n and output into a file, to check.
     local dstamp=$(date -u +"%Y-%m-%d_%H:%M")
     local report=${webdir}/auto-cruft-report_${dstamp}.txt
     echo "Report for ${dstamp}" > ${report}
-    for suite in ${suites}; do
-        dak auto-decruft -n -s ${suite} >> ${report}
-    done
+    dak auto-decruft -n -s unstable >> ${report}
+    dak auto-decruft -n -s experimental --if-newer-version-in unstable --if-newer-version-in-rm-msg "NVIU" >> ${report}
     cat ${report} | mail -a "X-Debian: DAK" -e -s "Debian archive AUTOMATIC cruft report for ${dstamp}" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" -c niels@thykier.net ftpmaster@ftp-master.debian.org
 }
 
