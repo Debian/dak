@@ -358,20 +358,17 @@ def sources2removals(source_list, suite_id, session):
     params = {"suite_id": suite_id, "sources": tuple(source_list)}
     q = session.execute("""
                     SELECT s.source, s.version, 'source', s.id
-                    FROM source s,
+                    FROM source s
                          JOIN src_associations sa ON sa.source = s.id
-                         JOIN suite su ON sa.suite = su.id
-                    WHERE su.id = :suite_id AND s.source IN :sources""", params)
+                    WHERE sa.suite = :suite_id AND s.source IN :sources""", params)
     to_remove.extend(q)
     q = session.execute("""
                     SELECT b.package, b.version, a.arch_string, b.id
                     FROM binaries b
                          JOIN bin_associations ba ON b.id = ba.bin
                          JOIN architecture a ON b.architecture = a.id
-                         JOIN suite su ON ba.suite = su.id
                          JOIN source s ON b.source = s.id
-                         JOIN src_associations sa ON s.id = sa.source AND sa.suite = su.id
-                    WHERE su.id = :suite_id AND s.source IN :sources""", params)
+                    WHERE ba.suite = :suite_id AND s.source IN :sources""", params)
     to_remove.extend(q)
     return to_remove
 
