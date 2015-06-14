@@ -24,6 +24,7 @@ Logging functions
 
 ################################################################################
 
+import fcntl
 import os
 import pwd
 import time
@@ -80,13 +81,14 @@ class Logger(object):
         details.insert(0, timestamp)
         # Force the contents of the list to be string.join-able
         details = [ str(i) for i in details ]
+        fcntl.lockf(self.logfile, fcntl.LOCK_EX)
         # Write out the log in TSV
         self.logfile.write("|".join(details)+'\n')
         # Flush the output to enable tail-ing
         self.logfile.flush()
+        fcntl.lockf(self.logfile, fcntl.LOCK_UN)
 
     def close (self):
         "Close a Logger object"
         self.log(["program end"])
-        self.logfile.flush()
         self.logfile.close()
