@@ -41,6 +41,7 @@
 
 import commands
 import apt_pkg
+import fcntl
 from re import sub
 from collections import defaultdict
 from regexes import re_build_dep_arch
@@ -423,6 +424,9 @@ def remove(session, reason, suites, removals,
     log_filename = cnf["Rm::LogFile"]
     log822_filename = cnf["Rm::LogFile822"]
     with utils.open_file(log_filename, "a") as logfile, utils.open_file(log822_filename, "a") as logfile822:
+        fcntl.lockf(logfile, fcntl.LOCK_EX)
+        fcntl.lockf(logfile822, fcntl.LOCK_EX)
+
         logfile.write("=========================================================================\n")
         logfile.write("[Date: %s] [ftpmaster: %s]\n" % (date, whoami))
         logfile.write("Removed the following packages from %s:\n\n%s" % (suites_list, summary))
@@ -581,3 +585,6 @@ def remove(session, reason, suites, removals,
 
         logfile.write("=========================================================================\n")
         logfile822.write("\n")
+
+        fcntl.lockf(logfile822, fcntl.LOCK_UN)
+        fcntl.lockf(logfile, fcntl.LOCK_UN)
