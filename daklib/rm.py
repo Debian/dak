@@ -372,7 +372,7 @@ def remove(session, reason, suites, removals,
     if date is None:
         date = commands.getoutput("date -R")
 
-    if partial:
+    if partial and components:
 
         component_ids_list = []
         for componentname in components:
