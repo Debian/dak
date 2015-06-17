@@ -76,7 +76,8 @@ def compute_sourceless_groups(suite_id, session):
     """""
     rows = query_without_source(suite_id, session)
     message = '[auto-cruft] no longer built from source, no reverse dependencies'
-    arch_all_id_tuple = tuple([get_architecture('all', session=session)])
+    arch = get_architecture('all', session=session)
+    arch_all_id_tuple = tuple([arch.arch_id])
     arch_all_list = ["all"]
     for row in rows:
         package = row[0]
