@@ -454,6 +454,9 @@ def main ():
         osuite = get_suite(Options["OtherSuite"].lower(), session).suite_name
         decruft_newer_version_in(osuite, suite_name, suite_id, Options["OtherSuiteRMMsg"], session, dryrun)
 
+    if not dryrun:
+        session.commit()
+
 ################################################################################
 
 if __name__ == '__main__':
