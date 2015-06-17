@@ -25,6 +25,7 @@ lintian:
     - non-standard-toplevel-dir
     - license-problem-json-evil
     - gzip-file-is-not-multi-arch-same-safe
+    - empty-binary-package
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
