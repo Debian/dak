@@ -585,6 +585,3 @@ def remove(session, reason, suites, removals,
 
         logfile.write("=========================================================================\n")
         logfile822.write("\n")
-
-        fcntl.lockf(logfile822, fcntl.LOCK_UN)
-        fcntl.lockf(logfile, fcntl.LOCK_UN)
