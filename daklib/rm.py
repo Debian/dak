@@ -465,7 +465,7 @@ def remove(session, reason, suites, removals,
                     session.execute("DELETE FROM bin_associations WHERE bin = :packageid AND suite = :suiteid",
                                     {'packageid': package_id, 'suiteid': suite_id})
                 # Delete from the override file
-                if partial:
+                if not partial:
                     if architecture == "source":
                         type_id = dsc_type_id
                     else:
