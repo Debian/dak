@@ -354,7 +354,7 @@ def main ():
         bugs = utils.split_args(Options["Done"])
         remove(session, Options["Reason"], suites, to_remove,
                partial=Options["Partial"], components=utils.split_args(Options["Component"]),
-               done_bugs=Options["Done"], carbon_copy=carbon_copy, close_related_bugs=bugs
+               done_bugs=bugs, carbon_copy=carbon_copy, close_related_bugs=Options["Do-Close"]
                )
     except ValueError as ex:
         utils.fubar(ex.message)
