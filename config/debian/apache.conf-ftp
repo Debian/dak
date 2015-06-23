@@ -24,6 +24,7 @@ Use common-debian-service-https-redirect * ftp-master.debian.org
   <Directory /srv/ftp.debian.org/web>
     Require all granted
     AddCharset utf-8 .txt
+    Options MultiViews Indexes SymLinksIfOwnerMatch
   </Directory>
 
   RewriteEngine On
