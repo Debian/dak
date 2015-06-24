@@ -172,7 +172,7 @@ def export_files(session, archive, clpool, progress=False):
 
     sources = {}
     unpack = {}
-    files = ('changelog', 'copyright', 'NEWS.Debian', 'README.Debian')
+    files = ('changelog', 'copyright', 'NEWS', 'README.Debian')
     stats = {'unpack': 0, 'created': 0, 'removed': 0, 'errors': 0, 'files': 0}
     query = """SELECT DISTINCT s.source, su.suite_name AS suite, s.version, c.name || '/' || f.filename AS filename
                FROM source s
