@@ -19,7 +19,7 @@ cd $overridedir
 for file in override*.gz; do
     zcat -- "$file" > "${file%.gz}"
 done
-find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
+find . -maxdepth 1 -mindepth 1 -type l -delete
 
 for suite in oldstable stable testing; do
     case $suite in

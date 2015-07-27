@@ -542,7 +542,7 @@ function stats() {
 function cleantransactions() {
     log "Cleanup transaction ids older than 3 months"
     cd $base/backup/
-    find -maxdepth 1 -mindepth 1 -type f -name 'txid_*' -mtime +90 -print0 | xargs -0 --no-run-if-empty rm
+    find -maxdepth 1 -mindepth 1 -type f -name 'txid_*' -mtime +90 -delete
 }
 
 function logstats() {
