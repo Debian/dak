@@ -17,7 +17,7 @@ rsync --delete -r --include=override\* --exclude=\* --password-file /srv/securit
 
 cd $overridedir
 for file in override*.gz; do
-    zcat $file > $(basename $file .gz)
+    zcat -- "$file" > "${file%.gz}"
 done
 find . -maxdepth 1 -mindepth 1 -type l | xargs --no-run-if-empty rm
 
