@@ -228,11 +228,14 @@ function mkmaintainers() {
 function copyoverrides() {
     log 'Copying override files into public view ...'
 
-    for ofile in ${overridedir}/override.{squeeze,wheezy,jessie,stretch,sid}.{,extra.}{main,contrib,non-free}*; do
-        bname=${ofile##*/}
-        gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
-        chmod g+w ${indices}/${bname}.gz
-    done
+    (
+        shopt -s nullglob
+        for ofile in ${overridedir}/override.{squeeze,wheezy,jessie,stretch,sid}.{,extra.}{main,contrib,non-free}*; do
+            bname=${ofile##*/}
+            gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
+            chmod g+w ${indices}/${bname}.gz
+        done
+    )
 }
 
 function mkfilesindices() {
