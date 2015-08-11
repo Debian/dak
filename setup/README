@@ -20,8 +20,8 @@ The following roles are assumed to exist:
 For the purposes of this document, we'll be working in /srv/dak
 
 Set up the dak user:
-# sudo addgroup --system ftpmaster
-# sudo adduser --system dak --ingroup ftpmaster --shell /bin/bash
+# sudo addgroup ftpmaster
+# sudo adduser dak --disabled-login --ingroup ftpmaster --shell /bin/bash
 
 Create postgres roles and database:
 # sudo -u postgres psql
