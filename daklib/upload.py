@@ -54,7 +54,7 @@ class InvalidHashException(UploadException):
                 "According to the control file the {0} hash should be {2},\n"
                 "but {1} has {3}.\n"
                 "\n"
-                "If you did not include {1} in you upload, a different version\n"
+                "If you did not include {1} in your upload, a different version\n"
                 "might already be known to the archive software.") \
                 .format(self.hash_name, self.filename, self.expected, self.actual)
 
