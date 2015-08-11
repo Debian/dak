@@ -147,15 +147,18 @@ class HashedFile(object):
         @raise InvalidHashException: hash mismatch
         """
         path = os.path.join(directory, self.filename)
-
         try:
             with open(path) as fh:
-                size = os.fstat(fh.fileno()).st_size
-                hashes = apt_pkg.Hashes(fh)
+                self.check_fh(fh)
         except IOError as e:
             if e.errno == errno.ENOENT:
                 raise FileDoesNotExist(self.filename)
             raise
+
+    def check_fh(self, fh):
+        size = os.fstat(fh.fileno()).st_size
+        fh.seek(0)
+        hashes = apt_pkg.Hashes(fh)
 
         if size != self.size:
             raise InvalidHashException(self.filename, 'size', self.size, size)
