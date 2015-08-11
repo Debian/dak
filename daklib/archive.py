@@ -531,6 +531,9 @@ class ArchiveTransaction(object):
         self.session.rollback()
         self.fs.rollback()
 
+    def flush(self):
+        self.session.flush()
+
     def __enter__(self):
         return self
 
