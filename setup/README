@@ -2,14 +2,14 @@ Initialising a dak database schema
 ==================================
 
 The following packages are needed for the database:
- * postgresql-9.1 postgresql-client-9.1 postgresql-9.1-debversion
+ * postgresql-9.4 postgresql-client-9.4 postgresql-9.4-debversion
 and the following packages for dak itself:
  * python-psycopg2 python-sqlalchemy python-apt gnupg dpkg-dev lintian
    binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
    symlinks python-debian
 
 (the schema assumes at least postgresql 9.1; ftpmaster in Debian currently uses
-the squeeze postgresql 9.1 backport)
+the postgresql 9.4 version from Debian 8)
 
 The following roles are assumed to exist:
  * dak: database superuser: needs to be an actual user
