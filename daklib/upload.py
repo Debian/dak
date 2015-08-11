@@ -172,7 +172,7 @@ class HashedFile(object):
         if hashes.sha256 != self.sha256sum:
             raise InvalidHashException(self.filename, 'sha256sum', self.sha256sum, hashes.sha256)
 
-def parse_file_list(control, has_priority_and_section):
+def parse_file_list(control, has_priority_and_section, safe_file_regexp = re_file_safe, fields = ('Files', 'Checksums-Sha1', 'Checksums-Sha256')):
     """Parse Files and Checksums-* fields
 
     @type  control: dict-like
@@ -189,7 +189,7 @@ def parse_file_list(control, has_priority_and_section):
     """
     entries = {}
 
-    for line in control.get("Files", "").split('\n'):
+    for line in control.get(fields[0], "").split('\n'):
         if len(line) == 0:
             continue
 
@@ -202,26 +202,26 @@ def parse_file_list(control, has_priority_and_section):
 
         entries[filename] = entry
 
-    for line in control.get("Checksums-Sha1", "").split('\n'):
+    for line in control.get(fields[1], "").split('\n'):
         if len(line) == 0:
             continue
         (sha1sum, size, filename) = line.split()
         entry = entries.get(filename, None)
         if entry is None:
-            raise InvalidChangesException('{0} is listed in Checksums-Sha1, but not in Files.'.format(filename))
+            raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[1], fields[0]))
         if entry is not None and entry.get('size', None) != long(size):
-            raise InvalidChangesException('Size for {0} in Files and Checksum-Sha1 fields differ.'.format(filename))
+            raise InvalidChangesException('Size for {0} in {1} and {2} fields differ.'.format(filename, fields[0], fields[1]))
         entry['sha1sum'] = sha1sum
 
-    for line in control.get("Checksums-Sha256", "").split('\n'):
+    for line in control.get(fields[2], "").split('\n'):
         if len(line) == 0:
             continue
         (sha256sum, size, filename) = line.split()
         entry = entries.get(filename, None)
         if entry is None:
-            raise InvalidChangesException('{0} is listed in Checksums-Sha256, but not in Files.'.format(filename))
+            raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[2], fields[0]))
         if entry is not None and entry.get('size', None) != long(size):
-            raise InvalidChangesException('Size for {0} in Files and Checksum-Sha256 fields differ.'.format(filename))
+            raise InvalidChangesException('Size for {0} in {1} and {2} fields differ.'.format(filename, fields[0], fields[2]))
         entry['sha256sum'] = sha256sum
 
     files = {}
@@ -235,7 +235,7 @@ def parse_file_list(control, has_priority_and_section):
             raise InvalidChangesException('No sha1sum for {0}.'.format(filename))
         if 'sha256sum' not in entry:
             raise InvalidChangesException('No sha256sum for {0}.'.format(filename))
-        if not re_file_safe.match(filename):
+        if safe_file_regexp is not None and not safe_file_regexp.match(filename):
             raise InvalidChangesException("{0}: References file with unsafe filename {1}.".format(self.filename, filename))
         f = files[filename] = HashedFile(**entry)
 
