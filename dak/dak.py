@@ -119,6 +119,8 @@ def init():
          "Show information useful for NEW processing"),
         ("import",
          "Import existing source and binary packages"),
+        ("import-repository",
+         "Import packages from another repository"),
         ("import-keyring",
          "Populate fingerprint/uid table based on a new/updated keyring"),
         ("import-users-from-passwd",
