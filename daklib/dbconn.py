@@ -691,6 +691,16 @@ def get_component(component, session=None):
 
 __all__.append('get_component')
 
+def get_mapped_component_name(component_name):
+    cnf = Config()
+    for m in cnf.value_list("ComponentMappings"):
+        (src, dst) = m.split()
+        if component_name == src:
+            component_name = dst
+    return component_name
+
+__all__.append('get_mapped_component_name')
+
 @session_wrapper
 def get_mapped_component(component_name, session=None):
     """get component after mappings
@@ -709,11 +719,7 @@ def get_mapped_component(component_name, session=None):
     @rtype:  L{daklib.dbconn.Component} or C{None}
     @return: component after applying maps or C{None}
     """
-    cnf = Config()
-    for m in cnf.value_list("ComponentMappings"):
-        (src, dst) = m.split()
-        if component_name == src:
-            component_name = dst
+    component_name = get_mapped_component_name(component_name)
     component = session.query(Component).filter_by(component_name=component_name).first()
     return component
 

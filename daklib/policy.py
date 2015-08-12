@@ -17,7 +17,7 @@
 """module to process policy queue uploads"""
 
 from .config import Config
-from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, Suite, get_mapped_component
+from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, Suite, get_mapped_component, get_mapped_component_name
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
 from .packagelist import PackageList
@@ -287,8 +287,9 @@ class PolicyQueueUploadHandler(object):
             # see daklib.archive.source_component_from_package_list
             # which we cannot use here as we might not have a Package-List
             # field for old packages
+            mapped_components = [ get_mapped_component_name(c) for c in components ]
             query = self.session.query(Component).order_by(Component.ordering) \
-                    .filter(Component.component_name.in_(components))
+                    .filter(Component.component_name.in_(mapped_components))
             source_component = query.first().component_name
 
             override = self._source_override(source_component)
