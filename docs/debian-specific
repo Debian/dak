@@ -6,6 +6,7 @@ DEBIAN-SPECIFIC NOTES                                  -*- mode: Org -*-
 - dak process-new, accept
 - cd /srv/security-master.debian.org/queue/new/COMMENTS
 - Change first line to NOTOK, add comment "Moving back to unchecked."
+- Rename ACCEPT.* to REJECT.*
 - dak process-policy new; dak clean-suites
 - cd /srv/security-master.debian.org/queue/reject
 - dak admin forget-signature bla.changes
