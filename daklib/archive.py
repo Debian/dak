@@ -110,7 +110,7 @@ class ArchiveTransaction(object):
             session.flush()
 
             path = os.path.join(archive.path, 'pool', component.component_name, poolname)
-            hashed_file_path = os.path.join(directory, hashed_file.filename)
+            hashed_file_path = os.path.join(directory, hashed_file.input_filename)
             self.fs.copy(hashed_file_path, path, link=False, mode=archive.mode)
 
         return poolfile

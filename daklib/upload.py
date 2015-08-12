@@ -73,9 +73,18 @@ class FileDoesNotExist(UploadException):
 class HashedFile(object):
     """file with checksums
     """
-    def __init__(self, filename, size, md5sum, sha1sum, sha256sum, section=None, priority=None):
+    def __init__(self, filename, size, md5sum, sha1sum, sha256sum, section=None, priority=None, input_filename=None):
         self.filename = filename
         """name of the file
+        @type: str
+        """
+
+        if input_filename is None:
+            input_filename = filename
+        self.input_filename = input_filename
+        """name of the file on disk
+
+        Used for temporary files that should not be installed using their on-disk name.
         @type: str
         """
 
@@ -146,13 +155,13 @@ class HashedFile(object):
 
         @raise InvalidHashException: hash mismatch
         """
-        path = os.path.join(directory, self.filename)
+        path = os.path.join(directory, self.input_filename)
         try:
             with open(path) as fh:
                 self.check_fh(fh)
         except IOError as e:
             if e.errno == errno.ENOENT:
-                raise FileDoesNotExist(self.filename)
+                raise FileDoesNotExist(self.input_filename)
             raise
 
     def check_fh(self, fh):
@@ -445,7 +454,7 @@ class Binary(object):
         @type: HashedFile
         """
 
-        path = os.path.join(directory, hashed_file.filename)
+        path = os.path.join(directory, hashed_file.input_filename)
         data = apt_inst.DebFile(path).control.extractdata("control")
 
         self.control = apt_pkg.TagSection(data)
@@ -518,7 +527,7 @@ class Source(object):
         # make sure the hash for the dsc is valid before we use it
         self._dsc_file.check(directory)
 
-        dsc_file_path = os.path.join(directory, self._dsc_file.filename)
+        dsc_file_path = os.path.join(directory, self._dsc_file.input_filename)
         data = open(dsc_file_path, 'r').read()
         self._signed_file = SignedFile(data, keyrings, require_signature)
         self.dsc = apt_pkg.TagSection(self._signed_file.contents)
