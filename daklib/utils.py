@@ -1301,3 +1301,27 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             print
 
     return dep_problem
+
+################################################################################
+
+def parse_built_using(control):
+    """source packages referenced via Built-Using
+
+    @type  control: dict-like
+    @param control: control file to take Built-Using field from
+
+    @rtype:  list of (str, str)
+    @return: list of (source_name, source_version) pairs
+    """
+    built_using = control.get('Built-Using', None)
+    if built_using is None:
+        return []
+
+    bu = []
+    for dep in apt_pkg.parse_depends(built_using):
+        assert len(dep) == 1, 'Alternatives are not allowed in Built-Using field'
+        source_name, source_version, comp = dep[0]
+        assert comp == '=', 'Built-Using must contain strict dependencies'
+        bu.append((source_name, source_version))
+
+    return bu

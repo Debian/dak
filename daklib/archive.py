@@ -247,21 +247,15 @@ class ArchiveTransaction(object):
         """Add Built-Using sources to C{db_binary.extra_sources}
         """
         session = self.session
-        built_using = control.get('Built-Using', None)
 
-        if built_using is not None:
-            for dep in apt_pkg.parse_depends(built_using):
-                assert len(dep) == 1, 'Alternatives are not allowed in Built-Using field'
-                bu_source_name, bu_source_version, comp = dep[0]
-                assert comp == '=', 'Built-Using must contain strict dependencies'
+        for bu_source_name, bu_source_version in daklib.utils.parse_built_using(control):
+            bu_source = session.query(DBSource).filter_by(source=bu_source_name, version=bu_source_version).first()
+            if bu_source is None:
+                raise ArchiveException('{0}: Built-Using refers to non-existing source package {1} (= {2})'.format(filename, bu_source_name, bu_source_version))
 
-                bu_source = session.query(DBSource).filter_by(source=bu_source_name, version=bu_source_version).first()
-                if bu_source is None:
-                    raise ArchiveException('{0}: Built-Using refers to non-existing source package {1} (= {2})'.format(filename, bu_source_name, bu_source_version))
+            self._ensure_extra_source_exists(filename, bu_source, suite.archive, extra_archives=extra_archives)
 
-                self._ensure_extra_source_exists(filename, bu_source, suite.archive, extra_archives=extra_archives)
-
-                db_binary.extra_sources.append(bu_source)
+            db_binary.extra_sources.append(bu_source)
 
     def install_source_to_archive(self, directory, source, archive, component, changed_by, allow_tainted=False, fingerprint=None):
         session = self.session
