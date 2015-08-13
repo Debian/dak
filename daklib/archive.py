@@ -176,6 +176,10 @@ class ArchiveTransaction(object):
             maintainer=maintainer,
             poolfile=db_file,
             binarytype=binary.type,
+            )
+        # Other attributes that are ignored for purposes of equality with
+        # an existing source
+        rest2 = dict(
             fingerprint=fingerprint,
             )
 
@@ -187,6 +191,8 @@ class ArchiveTransaction(object):
         except NoResultFound:
             db_binary = DBBinary(**unique)
             for key, value in rest.iteritems():
+                setattr(db_binary, key, value)
+            for key, value in rest2.iteritems():
                 setattr(db_binary, key, value)
             session.add(db_binary)
             session.flush()
@@ -301,11 +307,15 @@ class ArchiveTransaction(object):
             )
         rest = dict(
             maintainer=maintainer,
-            changedby=changed_by,
             #install_date=datetime.now().date(),
             poolfile=db_file_dsc,
-            fingerprint=fingerprint,
             dm_upload_allowed=(control.get('DM-Upload-Allowed', 'no') == 'yes'),
+            )
+        # Other attributes that are ignored for purposes of equality with
+        # an existing source
+        rest2 = dict(
+            changedby=changed_by,
+            fingerprint=fingerprint,
             )
 
         created = False
@@ -318,6 +328,8 @@ class ArchiveTransaction(object):
             created = True
             db_source = DBSource(**unique)
             for key, value in rest.iteritems():
+                setattr(db_source, key, value)
+            for key, value in rest2.iteritems():
                 setattr(db_source, key, value)
             # XXX: set as default in postgres?
             db_source.install_date = datetime.now().date()
