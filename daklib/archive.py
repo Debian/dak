@@ -263,35 +263,8 @@ class ArchiveTransaction(object):
 
                 db_binary.extra_sources.append(bu_source)
 
-    def install_source(self, directory, source, suite, component, changed_by, allow_tainted=False, fingerprint=None):
-        """Install a source package
-
-        @type  directory: str
-        @param directory: directory the source package is located in
-
-        @type  source: L{daklib.upload.Source}
-        @param source: source package to install
-
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: target suite
-
-        @type  component: L{daklib.dbconn.Component}
-        @param component: target component
-
-        @type  changed_by: L{daklib.dbconn.Maintainer}
-        @param changed_by: person who prepared this version of the package
-
-        @type  allow_tainted: bool
-        @param allow_tainted: allow to copy additional files from tainted archives
-
-        @type  fingerprint: L{daklib.dbconn.Fingerprint}
-        @param fingerprint: optional fingerprint
-
-        @rtype:  L{daklib.dbconn.DBSource}
-        @return: database object for the new source
-        """
+    def install_source_to_archive(self, directory, source, archive, component, changed_by, allow_tainted=False, fingerprint=None):
         session = self.session
-        archive = suite.archive
         control = source.dsc
         maintainer = get_or_set_maintainer(control['Maintainer'], session)
         source_name = control['Source']
@@ -343,11 +316,6 @@ class ArchiveTransaction(object):
             session.add(db_dsc_file)
             session.flush()
 
-        if suite in db_source.suites:
-            return db_source
-
-        db_source.suites.append(suite)
-
         if not created:
             for f in db_source.srcfiles:
                 self._copy_file(f.poolfile, archive, component, allow_tainted=allow_tainted)
@@ -381,6 +349,42 @@ class ArchiveTransaction(object):
             for u in split_uploaders(control['Uploaders']):
                 db_source.uploaders.append(get_or_set_maintainer(u, session))
         session.flush()
+
+        return db_source
+
+    def install_source(self, directory, source, suite, component, changed_by, allow_tainted=False, fingerprint=None):
+        """Install a source package
+
+        @type  directory: str
+        @param directory: directory the source package is located in
+
+        @type  source: L{daklib.upload.Source}
+        @param source: source package to install
+
+        @type  suite: L{daklib.dbconn.Suite}
+        @param suite: target suite
+
+        @type  component: L{daklib.dbconn.Component}
+        @param component: target component
+
+        @type  changed_by: L{daklib.dbconn.Maintainer}
+        @param changed_by: person who prepared this version of the package
+
+        @type  allow_tainted: bool
+        @param allow_tainted: allow to copy additional files from tainted archives
+
+        @type  fingerprint: L{daklib.dbconn.Fingerprint}
+        @param fingerprint: optional fingerprint
+
+        @rtype:  L{daklib.dbconn.DBSource}
+        @return: database object for the new source
+        """
+        db_source = self.install_source_to_archive(directory, source, suite.archive, component, changed_by, allow_tainted, fingerprint)
+
+        if suite in db_source.suites:
+            return db_source
+        db_source.suites.append(suite)
+        self.session.flush()
 
         return db_source
 
