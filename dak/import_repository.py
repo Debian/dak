@@ -38,6 +38,7 @@ dak import-repository
   [--components=main,contrib (default: components in origin suite)]
   [--target-suite=${suite} (default: origin suite name)]
   [--add-overrides]
+  [--max-packages=${n} (import at maximum ${n} packages, default: no limit)]
   http://httpredir.debian.org/debian unstable
 
 Things to think about:
@@ -73,6 +74,55 @@ def get_packages_in_suite(suite):
 
     return sources, packages
 
+def import_sources(base, sources, transaction, target_suite, component, target_sources, extra_sources, extra_sources_comp, max_packages=None):
+    n = 0
+    for entry in sources:
+        if max_packages is not None and n > max_packages:
+            break
+        if entry.get('Extra-Source-Only', 'no') == 'yes':
+            # Remember package, we might need to import it later.
+            key = (entry['Package'], entry['Version'])
+            extra_sources[key] = entry
+            extra_sources_comp[key].add(c)
+            continue
+        if not entry_in_packages(entry, target_sources) or entry_is_newer(entry, target_sources):
+            print("Importing {0}={1}".format(entry['Package'], entry['Version']))
+            daklib.import_repository.import_source_to_suite(base, entry, transaction, target_suite, component)
+            n += 1
+            #transaction.commit()
+    return n
+
+def import_built_using(base, source, version, transaction, target_suite, component, extra_sources, extra_sources_comp):
+    if not daklib.import_repository.source_in_archive(bu_source, bu_version, target_suite.archive):
+        print("Importing extra source {0}={1}".format(bu_source, bu_version))
+        key = (bu_source, bu_version)
+        extra_entry = extra_sources.get(key)
+        if extra_entry is None:
+            raise Exception("Extra source {0}={1} referenced by {2}={3} ({4}) not found in source suite.".format(bu_source, bu_version, entry['Package'], entry['Version'], architecture))
+        extra_components = extra_sources_comp[key]
+        if c in components:
+            extra_component = component
+        else:
+            # TODO: Take preferred components from those listed...
+            raise Exception("Not implemented.")
+        daklib.import_repository.import_source_to_suite(base, extra_entry, transaction, target_suite, extra_component)
+
+def import_packages(base, packages, transaction, target_suite, component, architecture, target_binaries, extra_sources, extra_sources_comp, max_packages=None):
+    n = 0
+    for entry in packages:
+        if max_packages is not None and n > max_packages:
+            break
+        if not entry_in_packages(entry, target_binaries) or entry_is_newer(entry, target_binaries):
+            print("Importing {0}={1} ({2})".format(entry['Package'], entry['Version'], architecture))
+            # Import Built-Using sources:
+            for bu_source, bu_version in daklib.utils.parse_built_using(entry):
+                import_built_using(base, bu_source, bu_version, transaction, target_suite, component, extra_sources, extra_sources_comp)
+            # Import binary:
+            daklib.import_repository.import_package_to_suite(base, entry, transaction, target_suite, component)
+            n += 1
+            #transaction.commit()
+    return n
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
@@ -85,6 +135,7 @@ def main(argv=None):
         ('c', 'components', 'Import-Repository::Components', 'HasArg'),
         ('t', 'target-suite', 'Import-Repository::Target-Suite', 'HasArg'),
         ('A', 'add-overrides', 'Import-Repository::AddOverrides'),
+        ('n', 'max-packages', 'Import-Repository::MaxPackages', 'HasArg'),
         ]
 
     cnf = daklib.config.Config();
@@ -104,6 +155,11 @@ def main(argv=None):
 
     if 'AddOverrides' in options:
         raise Exception('Not implemented.')
+
+    if 'MaxPackages' in options:
+        max_packages = long(options['MaxPackages'])
+    else:
+        max_packages = None
 
     base, suite = argv[0:2]
 
@@ -130,51 +186,34 @@ def main(argv=None):
 
         # TODO: Clean this up...
 
+        n = 0
+
+        # For Extra-Source-Only sources packages, keep a dict
+        # (name, version) -> entry and (name, version) -> set of components
+        # to allow importing needed packages at a later stage
         extra_sources = dict()
         extra_sources_comp = defaultdict(set)
+
         for c in components:
             component = daklib.dbconn.get_component(c, transaction.session)
             print("Processing {0}/source...".format(c))
             sources = release.sources(c)
-            for entry in sources:
-                if entry.get('Extra-Source-Only', 'no') == 'yes':
-                    # Remember package, we might need to import it later.
-                    key = (entry['Package'], entry['Version'])
-                    extra_sources[key] = entry
-                    extra_sources_comp[key].add(c)
-                    continue
-                if not entry_in_packages(entry, target_sources) or entry_is_newer(entry, target_sources):
-                    print("Importing {0}={1}".format(entry['Package'], entry['Version']))
-                    daklib.import_repository.import_source_to_suite(base, entry, transaction, target_suite, component)
-                    #transaction.commit()
+            imported = import_sources(base, sources, transaction, target_suite, component, target_sources, extra_sources, extra_sources_comp, max_packages)
+            print("  imported {0} source packages".format(imported))
+            n += imported
+            if max_packages is not None:
+                max_packages -= n
 
         for c in components:
             component = daklib.dbconn.get_component(c, transaction.session)
             for architecture in architectures:
                 print("Processing {0}/{1}...".format(c, architecture))
                 packages = release.packages(c, architecture)
-                for entry in packages:
-                    if not entry_in_packages(entry, target_binaries) or entry_is_newer(entry, target_binaries):
-                        print("Importing {0}={1} ({2})".format(entry['Package'], entry['Version'], architecture))
-                        # Import Built-Using sources:
-                        for bu_source, bu_version in daklib.utils.parse_built_using(entry):
-                            if not daklib.import_repository.source_in_archive(bu_source, bu_version, target_suite.archive):
-                                print("Importing extra source {0}={1}".format(bu_source, bu_version))
-                                key = (bu_source, bu_version)
-                                extra_entry = extra_sources.get(key)
-                                if extra_entry is None:
-                                    raise Exception("Extra source {0}={1} referenced by {2}={3} ({4}) not found in source suite.".format(bu_source, bu_version, entry['Package'], entry['Version'], architecture))
-                                extra_components = extra_sources_comp[key]
-                                if c in components:
-                                    extra_component = component
-                                else:
-                                    # TODO: Take preferred components from those listed...
-                                    raise Exception("Not implemented.")
-                                # e.g. a contrib binary package Built-Using a main source
-                                daklib.import_repository.import_source_to_suite(base, extra_entry, transaction, target_suite, extra_component)
-                        # Import binary:
-                        daklib.import_repository.import_package_to_suite(base, entry, transaction, target_suite, component)
-                        #transaction.commit()
+                imported = import_packages(base, packages, transaction, target_suite, component, architecture, target_binaries, extra_sources, extra_sources_comp, max_packages)
+                print("  imported {0} binary packages".format(imported))
+                n += imported
+                if max_packages is not None:
+                    max_packages -= n
 
         transaction.rollback()
 
