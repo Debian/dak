@@ -81,7 +81,7 @@ class SignedFile(object):
         self.expired = False
         self.invalid = False
         self.fingerprints = []
-        self.primary_finterprints = []
+        self.primary_fingerprints = []
         self.signature_ids = []
 
         self._verify(data, require_signature)
