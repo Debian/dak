@@ -2,21 +2,20 @@ contribution: upload
 method: postgres
 db: service=projectb
 query:
-        SELECT s.install_date as date,
-               u.uid as id,
-               u.name as desc
-          FROM source s
-          JOIN fingerprint f ON s.sig_fpr = f.id
-          JOIN uid u ON f.uid = u.id
-url: https://qa.debian.org/developer.php?login={id}&comaint=yes
+        SELECT fingerprint AS id,
+               SUBSTRING(fingerprint FROM 40-7) AS key_id,
+               seen AS date
+          FROM changes
+         WHERE architecture LIKE '%source%'
+         ORDER BY seen DESC
+url: https://qa.debian.org/developer.php?login={key_id}&comaint=yes
 
 contribution: maint
 method: postgres
 db: service=projectb
 query:
-        SELECT s.install_date as date,
-               c.name as id
-          FROM source s
-          JOIN maintainer c ON s.changedby = c.id
+        SELECT changedby AS id,
+               seen AS date
+          FROM changes
+         WHERE architecture LIKE '%source%'
 url: https://qa.debian.org/developer.php?login={id}&comaint=yes
-
