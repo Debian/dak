@@ -318,7 +318,7 @@ class ArchiveTransaction(object):
         ### Now add remaining files and copy them to the archive.
 
         for hashed_file in source.files.itervalues():
-            hashed_file_path = os.path.join(directory, hashed_file.filename)
+            hashed_file_path = os.path.join(directory, hashed_file.input_filename)
             if os.path.exists(hashed_file_path):
                 db_file = self._install_file(directory, hashed_file, archive, component, source_name)
                 session.add(db_file)
