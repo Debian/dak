@@ -80,11 +80,26 @@ class SignedFile(object):
         self.valid = False
         self.expired = False
         self.invalid = False
-        self.fingerprint = None
-        self.primary_fingerprint = None
-        self.signature_id = None
+        self.fingerprints = []
+        self.primary_finterprints = []
+        self.signature_ids = []
 
         self._verify(data, require_signature)
+
+    @property
+    def fingerprint(self):
+        assert len(self.fingerprints) == 1
+        return self.fingerprints[0]
+
+    @property
+    def primary_fingerprint(self):
+        assert len(self.primary_fingerprints) == 1
+        return self.primary_fingerprints[0]
+
+    @property
+    def signature_id(self):
+        assert len(self.signature_ids) == 1
+        return self.signature_ids[0]
 
     def _verify(self, data, require_signature):
         with _Pipe() as stdin:
@@ -120,6 +135,9 @@ class SignedFile(object):
 
                 if require_signature and not self.valid:
                     raise GpgException("No valid signature found. (GPG exited with status code %s)\n%s" % (exit_code, self.stderr))
+
+        assert len(self.fingerprints) == len(self.primary_fingerprints)
+        assert len(self.fingerprints) == len(self.signature_ids)
 
     def _do_io(self, read, write):
         for fd in write.keys():
@@ -178,11 +196,9 @@ class SignedFile(object):
         #             <expire-timestamp> <sig-version> <reserved> <pubkey-algo>
         #             <hash-algo> <sig-class> <primary-key-fpr>
         if fields[1] == "VALIDSIG":
-            if self.fingerprint is not None:
-                raise GpgException("More than one signature is not (yet) supported.")
             self.valid = True
-            self.fingerprint = fields[2]
-            self.primary_fingerprint = fields[11]
+            self.fingerprints.append(fields[2])
+            self.primary_fingerprints.append(fields[11])
             self.signature_timestamp = self._parse_timestamp(fields[4], fields[3])
 
         elif fields[1] == "BADARMOR":
@@ -198,9 +214,7 @@ class SignedFile(object):
             raise GpgException("Other error: %s %s" % (fields[2], fields[3]))
 
         elif fields[1] == "SIG_ID":
-            if self.signature_id is not None:
-                raise GpgException("More than one signature id.")
-            self.signature_id = fields[2]
+            self.signature_ids.append(fields[2])
 
         elif fields[1] in ('PLAINTEXT', 'GOODSIG', 'NOTATION_NAME', 'NOTATION_DATA', 'SIGEXPIRED', 'KEYEXPIRED', 'POLICY_URL'):
             pass
