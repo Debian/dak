@@ -297,7 +297,7 @@ class BinaryCheck(Check):
                         for binary in upload.changes.binaries}
 
         for name, binary in binaries.items():
-            if binary.control['Section'] == debug_deb_section:
+            if binary.section == debug_deb_section:
                 # If we have a Binary package in the Debug section, we
                 # can allow it to not be present in the Binary field
                 # in the .changes file, so long as its name (without
