@@ -445,9 +445,9 @@ def main ():
 
             if action == "set" and not suite.allowcsset:
                 if force:
-                    utils.warn("Would not normally allow setting suite {0} (allowsetcs is FALSE), but --force used".format(suite_name))
+                    utils.warn("Would not normally allow setting suite {0} (allowcsset is FALSE), but --force used".format(suite_name))
                 else:
-                    utils.fubar("Will not reset suite {0} due to its database configuration (allowsetcs is FALSE)".format(suite_name))
+                    utils.fubar("Will not reset suite {0} due to its database configuration (allowcsset is FALSE)".format(suite_name))
 
             if file_list:
                 for f in file_list:
