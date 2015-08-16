@@ -49,6 +49,7 @@ from daklib.urgencylog import UrgencyLog
 from daklib.packagelist import PackageList
 
 import daklib.announce
+import daklib.utils
 
 # Globals
 Options = None
@@ -141,6 +142,12 @@ def comment_accept(upload, srcqueue, comments, transaction):
             component_name = section.split('/', 1)[0]
         return get_mapped_component(component_name, session=session)
 
+    def is_debug_binary(db_binary):
+        return daklib.utils.is_in_debug_section(db_binary.proxy)
+
+    def has_debug_binaries(upload):
+        return any((is_debug_binary(x) for x in upload.binaries))
+
     def source_component_func(db_source):
         package_list = PackageList(db_source.proxy)
         component = source_component_from_package_list(package_list, upload.target_suite)
@@ -157,13 +164,54 @@ def comment_accept(upload, srcqueue, comments, transaction):
     all_target_suites.extend([q.suite for q in upload.target_suite.copy_queues])
 
     for suite in all_target_suites:
+        debug_suite = suite.debug_suite
+
         if upload.source is not None:
-            transaction.copy_source(upload.source, suite, source_component_func(upload.source), allow_tainted=allow_tainted)
+            # If we have Source in this upload, let's include it into
+            # upload suite.
+            transaction.copy_source(
+                upload.source,
+                suite,
+                source_component_func(upload.source),
+                allow_tainted=allow_tainted,
+            )
+
+            if debug_suite is not None and has_debug_binaries(upload):
+                # If we're handing a debug package, we also need to include the
+                # source in the debug suite as well.
+                transaction.copy_source(
+                    upload.source,
+                    debug_suite,
+                    source_component_func(upload.source),
+                    allow_tainted=allow_tainted,
+                )
+
         for db_binary in upload.binaries:
-            # build queues may miss the source package if this is a binary-only upload
+            # Now, let's work out where to copy this guy to -- if it's
+            # a debug binary, and the suite has a debug suite, let's go
+            # ahead and target the debug suite rather then the stock
+            # suite.
+            copy_to_suite = suite
+            if debug_suite is not None and is_debug_binary(db_binary):
+                copy_to_suite = debug_suite
+
+            # build queues may miss the source package if this is a
+            # binary-only upload.
             if suite != upload.target_suite:
-                transaction.copy_source(db_binary.source, suite, source_component_func(db_binary.source), allow_tainted=allow_tainted)
-            transaction.copy_binary(db_binary, suite, binary_component_func(db_binary), allow_tainted=allow_tainted, extra_archives=[upload.target_suite.archive])
+                transaction.copy_source(
+                    db_binary.source,
+                    copy_to_suite,
+                    source_component_func(db_binary.source),
+                    allow_tainted=allow_tainted,
+                )
+
+            transaction.copy_binary(
+                db_binary,
+                copy_to_suite,
+                binary_component_func(db_binary),
+                allow_tainted=allow_tainted,
+                extra_archives=[upload.target_suite.archive],
+            )
 
     # Copy .changes if needed
     if upload.target_suite.copychanges:

@@ -2548,6 +2548,7 @@ class DBConn(object):
                properties = dict(suite_id = self.tbl_suite.c.id,
                                  policy_queue = relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.policy_queue_id == self.tbl_policy_queue.c.id)),
                                  new_queue = relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.new_queue_id == self.tbl_policy_queue.c.id)),
+                                 debug_suite = relation(Suite, remote_side=[self.tbl_suite.c.id]),
                                  copy_queues = relation(BuildQueue,
                                      secondary=self.tbl_suite_build_queue_copy),
                                  srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,

@@ -286,13 +286,41 @@ class ExternalHashesCheck(Check):
 class BinaryCheck(Check):
     """Check binary packages for syntax errors."""
     def check(self, upload):
+        debug_deb_name_postfix = "-dbgsym"
+        # XXX: Handle dynamic debug section name here
+
         for binary in upload.changes.binaries:
             self.check_binary(upload, binary)
 
-        binary_names = set([ binary.control['Package'] for binary in upload.changes.binaries ])
-        for bn in binary_names:
-            if bn not in upload.changes.binary_names:
-                raise Reject('Package {0} is not mentioned in Binary field in changes'.format(bn))
+        binaries = {binary.control['Package']: binary
+                        for binary in upload.changes.binaries}
+
+        for name, binary in binaries.items():
+            if name in upload.changes.binary_names:
+                # Package is listed in Binary field. Everything is good.
+                pass
+            elif daklib.utils.is_in_debug_section(binary.control):
+                # If we have a binary package in the debug section, we
+                # can allow it to not be present in the Binary field
+                # in the .changes file, so long as its name (without
+                # -dbgsym) is present in the Binary list.
+                if not name.endswith(debug_deb_name_postfix):
+                    raise Reject('Package {0} is in the debug section, but '
+                                 'does not end in {1}.'.format(name, debug_deb_name_postfix))
+
+                # Right, so, it's named properly, let's check that
+                # the corresponding package is in the Binary list
+                origin_package_name = name[:-len(debug_deb_name_postfix)]
+                if origin_package_name not in upload.changes.binary_names:
+                    raise Reject(
+                        "Debug package {debug}'s corresponding binary package "
+                        "{origin} is not present in the Binary field.".format(
+                            debug=name, origin=origin_package_name))
+            else:
+                # Someone was a nasty little hacker and put a package
+                # into the .changes that isn't in debian/control. Bad,
+                # bad person.
+                raise Reject('Package {0} is not mentioned in Binary field in changes'.format(name))
 
         return True
 
