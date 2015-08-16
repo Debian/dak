@@ -186,16 +186,6 @@ def comment_accept(upload, srcqueue, comments, transaction):
                 )
 
         for db_binary in upload.binaries:
-            # build queues may miss the source package if this is a
-            # binary-only upload.
-            if suite != upload.target_suite:
-                transaction.copy_source(
-                    db_binary.source,
-                    suite,
-                    source_component_func(db_binary.source),
-                    allow_tainted=allow_tainted,
-                )
-
             # Now, let's work out where to copy this guy to -- if it's
             # a debug binary, and the suite has a debug suite, let's go
             # ahead and target the debug suite rather then the stock
@@ -203,6 +193,16 @@ def comment_accept(upload, srcqueue, comments, transaction):
             copy_to_suite = suite
             if debug_suite is not None and is_debug_binary(db_binary):
                 copy_to_suite = debug_suite
+
+            # build queues may miss the source package if this is a
+            # binary-only upload.
+            if suite != upload.target_suite:
+                transaction.copy_source(
+                    db_binary.source,
+                    copy_to_suite,
+                    source_component_func(db_binary.source),
+                    allow_tainted=allow_tainted,
+                )
 
             transaction.copy_binary(
                 db_binary,
