@@ -462,9 +462,6 @@ class Binary(object):
         @type: dict-like
         """
 
-    def is_debug(self):
-        return self.section == "debug"
-
     @classmethod
     def from_file(cls, directory, filename):
         hashed_file = HashedFile.from_file(directory, filename)
@@ -499,13 +496,6 @@ class Binary(object):
         if not match:
             raise InvalidBinaryException('{0}: Does not match re_file_binary'.format(self.hashed_file.filename))
         return match.group('type')
-
-    @property
-    def section(self):
-        """section name
-        @type: str
-        """
-        return self.control['Section'].split('/', 1)[-1]
 
     @property
     def component(self):

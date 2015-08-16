@@ -1325,3 +1325,17 @@ def parse_built_using(control):
         bu.append((source_name, source_version))
 
     return bu
+
+################################################################################
+
+def is_in_debug_section(control):
+    """binary package is a debug package
+
+    @type  control: dict-like
+    @param control: control file of binary package
+
+    @rtype Boolean
+    @return: True if the binary package is a debug package
+    """
+    section = control['Section'].split('/', 1)[-1]
+    return section == "debug"

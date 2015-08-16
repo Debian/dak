@@ -1039,7 +1039,7 @@ class ArchiveUpload(object):
         db_binaries = []
         for binary in self.changes.binaries:
             copy_to_suite = suite
-            if binary.is_debug() and suite.debug_suite is not None:
+            if utils.is_in_debug_section(binary.control) and suite.debug_suite is not None:
                 copy_to_suite = suite.debug_suite
 
             component = binary_component_func(binary)

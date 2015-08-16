@@ -49,6 +49,7 @@ from daklib.urgencylog import UrgencyLog
 from daklib.packagelist import PackageList
 
 import daklib.announce
+import daklib.utils
 
 # Globals
 Options = None
@@ -142,7 +143,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
         return get_mapped_component(component_name, session=session)
 
     def is_debug_binary(db_binary):
-        return db_binary.proxy['Section'] == "debug"
+        return daklib.utils.is_in_debug_section(db_binary.proxy)
 
     def has_debug_binaries(upload):
         return any((is_debug_binary(x) for x in upload.binaries))
