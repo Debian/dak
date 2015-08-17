@@ -64,6 +64,7 @@ if lockfile -r3 "${lockfile}" 2> /dev/null; then
             rsync -aH -B8192 \
                   ${extra1} \
                   --exclude "/.nobackup" \
+                  --exclude "/archive/" \
                   --exclude "/backup/*.xz" \
                   --exclude "/backup/dump*" \
                   --exclude "/build-queues/" \
