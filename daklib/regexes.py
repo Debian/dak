@@ -42,13 +42,10 @@ re_comments = re.compile(r"\#.*")
 #: To ignore comment and whitespace lines.
 re_whitespace_comment = re.compile(r"^\s*(#|$)")
 re_no_epoch = re.compile(r"^\d+\:")
-re_no_revision = re.compile(r"-[^-]+$")
-re_arch_from_filename = re.compile(r"/binary-[^/]+/")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
 re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
 
 orig_source_ext_re = r"orig(?:-.+)?\.tar\.(?:gz|bz2|xz)"
-re_orig_source_ext = re.compile(orig_source_ext_re + "$")
 re_source_ext = re.compile("(" + orig_source_ext_re + r"|debian\.tar\.(?:gz|bz2|xz)|diff\.gz|tar\.(?:gz|bz2|xz)|dsc|asc)$")
 re_issource = re.compile(r"(.+)_(.+?)\." + re_source_ext.pattern)
 
@@ -82,18 +79,11 @@ re_version = re.compile('^(.*)\((.*)\)')
 re_newlinespace = re.compile('\n')
 re_spacestrip = re.compile('(\s)')
 
-# From import_archive.py
-re_arch_from_filename = re.compile(r"binary-[^/]+")
-
 # From new_security_install.py
 re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$")
 
 # From process_unchecked.py
-re_valid_version = re.compile(r"^([0-9]+:)?[0-9A-Za-z\.\-\+:~]+$")
-re_valid_pkg_name = re.compile(r"^[\dA-Za-z][\dA-Za-z\+\-\.]+$")
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
-re_strip_revision = re.compile(r"-([^-]+)$")
-re_strip_srcver = re.compile(r"\s+\(\S+\)$")
 re_spacestrip = re.compile('(\s)')
 
 # From dak/rm.py
@@ -112,9 +102,6 @@ re_user_name = re.compile(r"^pub:.*:(.*)<.*$", re.MULTILINE);
 re_re_mark = re.compile(r'^RE:')
 
 re_parse_lintian = re.compile(r"^(?P<level>W|E|O): (?P<package>.*?): (?P<tag>[^ ]*) ?(?P<description>.*)$")
-
-# in process-upload
-re_match_expired = re.compile(r"^The key used to sign .+ has expired on .+$")
 
 # in generate-releases
 re_gensubrelease = re.compile (r".*/(binary-[0-9a-z-]+|source)$")
