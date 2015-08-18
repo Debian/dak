@@ -58,8 +58,6 @@ re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
 re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
-re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
-
 html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
 re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
 
@@ -84,7 +82,6 @@ re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$")
 
 # From process_unchecked.py
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
-re_spacestrip = re.compile('(\s)')
 
 # From dak/rm.py
 re_strip_source_version = re.compile (r'\s+.*$')
