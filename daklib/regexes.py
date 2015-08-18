@@ -135,11 +135,11 @@ re_file_dsc = re.compile(_re_file_prefix + r'\.dsc$')
 
 # Match other source files
 # Groups: package, version
-re_file_source = re.compile(_re_file_prefix + r'(?:(?:\.orig(?:-[a-zA-Z0-9-]+)?|\.debian)?\.tar\.(?:bz2|gz|xz)|\.diff\.gz)$')
+re_file_source = re.compile(_re_file_prefix + r'(?:(?:\.orig(?:-[a-zA-Z0-9-]+)?|\.debian)?\.tar\.(?:bz2|gz|xz)|\.diff\.gz|\.asc)$')
 
 # Match upstream tarball
 # Groups: package, version
-re_file_orig = re.compile(_re_file_prefix + r'\.orig(?:-[a-zA-Z0-9-]+)?\.tar\.(?:bz2|gz|xz)')
+re_file_orig = re.compile(_re_file_prefix + r'\.orig(?:-[a-zA-Z0-9-]+)?(?:\.tar\.(?:bz2|gz|xz)|\.asc)')
 
 ######################################################################
 # Patterns matching fields                                           #
