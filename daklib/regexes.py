@@ -51,8 +51,6 @@ orig_source_ext_re = r"orig(?:-.+)?\.tar\.(?:gz|bz2|xz)"
 re_orig_source_ext = re.compile(orig_source_ext_re + "$")
 re_source_ext = re.compile("(" + orig_source_ext_re + r"|debian\.tar\.(?:gz|bz2|xz)|diff\.gz|tar\.(?:gz|bz2|xz)|dsc)$")
 re_issource = re.compile(r"(.+)_(.+?)\." + re_source_ext.pattern)
-re_is_orig_source = re.compile (r"(.+)_(.+?)\.orig(?:-.+)?\.tar\.(?:gz|bz2|xz)$")
-#re_is_orig_source = re.compile (r"(.+)_(.+?)\.(?:orig\.)?tar\.(?:gz|bz2)$")
 
 re_single_line_field = re.compile(r"^(\S*?)\s*:\s*(.*)")
 re_multi_line_field = re.compile(r"^\s(.*)")
