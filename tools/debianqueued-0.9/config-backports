@@ -47,7 +47,7 @@ $max_delayed = -1;
 $keep_files = '(status|\.message|README)$';
 
 # file patterns that aren't deleted right away
-$valid_files = '(\.changes|\.tar\.(?:gz|bz2|xz)|\.dsc|\.u?deb|diff\.gz|\.sh)$';
+$valid_files = '(\.changes|\.tar\.(?:gz|bz2|xz)|\.dsc|\.u?deb|diff\.gz|\.sh|\.asc)$';
 
 # Change files to mode 644 locally (after md5 check) or only on master?
 $chmod_on_target = 0;

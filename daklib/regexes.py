@@ -49,7 +49,7 @@ re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
 
 orig_source_ext_re = r"orig(?:-.+)?\.tar\.(?:gz|bz2|xz)"
 re_orig_source_ext = re.compile(orig_source_ext_re + "$")
-re_source_ext = re.compile("(" + orig_source_ext_re + r"|debian\.tar\.(?:gz|bz2|xz)|diff\.gz|tar\.(?:gz|bz2|xz)|dsc)$")
+re_source_ext = re.compile("(" + orig_source_ext_re + r"|debian\.tar\.(?:gz|bz2|xz)|diff\.gz|tar\.(?:gz|bz2|xz)|dsc|asc)$")
 re_issource = re.compile(r"(.+)_(.+?)\." + re_source_ext.pattern)
 
 re_single_line_field = re.compile(r"^(\S*?)\s*:\s*(.*)")
