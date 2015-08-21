@@ -1721,7 +1721,7 @@ class DBSource(ORMObject):
             'install_date', 'binaries_count', 'uploaders_count']
 
     def not_null_constraints(self):
-        return ['source', 'version', 'install_date', 'maintainer', \
+        return ['source', 'version', 'maintainer', \
             'changedby', 'poolfile']
 
     def read_control_fields(self):
