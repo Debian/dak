@@ -274,7 +274,6 @@ class ArchiveTransaction(object):
             )
         rest = dict(
             maintainer=maintainer,
-            #install_date=datetime.now().date(),
             poolfile=db_file_dsc,
             dm_upload_allowed=(control.get('DM-Upload-Allowed', 'no') == 'yes'),
             )
@@ -298,8 +297,6 @@ class ArchiveTransaction(object):
                 setattr(db_source, key, value)
             for key, value in rest2.iteritems():
                 setattr(db_source, key, value)
-            # XXX: set as default in postgres?
-            db_source.install_date = datetime.now().date()
             session.add(db_source)
             session.flush()
 
