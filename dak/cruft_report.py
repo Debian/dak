@@ -346,6 +346,7 @@ SELECT ss.src, ss.source, ss.version,
     LEFT JOIN bin_associations_binaries bab
 	ON ss.src = bab.source AND ss.suite = bab.suite
     WHERE s.suite_name = :suite_name AND bab.id IS NULL
+      AND now() - ss.install_date > '1 day'::interval
     ORDER BY install_date"""
     args = { 'suite_name': suite_name }
     return session.execute(query, args)
