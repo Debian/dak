@@ -55,6 +55,11 @@ class ParseDscTestCase(ParseChangesTestCase):
         with self.assertRaisesRegexp(ParseChangesError, "Empty changes"):
             self.assertParse('dsc/8.dsc', -1, 1)
 
+    def test_9(self):
+        changes = self.assertParse('dsc/9.dsc', -1, 1)
+        self.assert_(changes['question'] == 'Is this a bug?')
+        self.failIf(changes.get('this'))
+
 class ParseChangesTestCase(ParseChangesTestCase):
     def test_1(self):
         # Empty changes
@@ -76,11 +81,6 @@ class ParseChangesTestCase(ParseChangesTestCase):
                     strict_whitespace,
                 )
                 self.failIf(changes.get('you'))
-
-    def test_4(self):
-        changes = self.assertParse('changes/two-beginnings.changes', -1, 1)
-        self.assert_(changes['question'] == 'Is this a bug?')
-        self.failIf(changes.get('this'))
 
 if __name__ == '__main__':
     unittest.main()
