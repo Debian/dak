@@ -50,6 +50,11 @@ class ParseDscTestCase(ParseChangesTestCase):
         with self.assertRaises(GpgException):
             self.assertParse('dsc/7.dsc', -1, 1)
 
+    def test_8(self):
+        # No armored contents
+        with self.assertRaisesRegexp(ParseChangesError, "Empty changes"):
+            self.assertParse('dsc/8.dsc', -1, 1)
+
 class ParseChangesTestCase(ParseChangesTestCase):
     def test_1(self):
         # Empty changes
