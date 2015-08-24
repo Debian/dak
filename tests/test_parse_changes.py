@@ -45,6 +45,11 @@ class ParseDscTestCase(ParseChangesTestCase):
         # Extra blank line after signature header
         self.assertParse('dsc/6.dsc', -1, 1)
 
+    def test_7(self):
+        # Blank file is an invalid armored GPG file
+        with self.assertRaises(GpgException):
+            self.assertParse('dsc/7.dsc', -1, 1)
+
 class ParseChangesTestCase(ParseChangesTestCase):
     def test_1(self):
         # Empty changes
