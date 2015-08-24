@@ -113,7 +113,7 @@ if sa_major_version in ["0.5", "0.6", "0.7", "0.8", "0.9"]:
     from sqlalchemy.databases import postgres
     postgres.ischema_names['debversion'] = DebVersion
 else:
-    raise Exception("dak only ported to SQLA versions 0.5 to 0.9.  See daklib/dbconn.py")
+    raise Exception("dak only ported to SQLA versions 0.5 to 0.9 (%s installed).  See daklib/dbconn.py" % sa_major_version)
 
 ################################################################################
 
