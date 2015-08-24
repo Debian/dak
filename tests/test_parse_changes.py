@@ -12,18 +12,6 @@ class ParseChangesTestCase(DakTestCase):
     def assertParse(self, filename, *args):
         return parse_changes(fixture(filename), *args)
 
-    def assertFails(self, filename, line=None, *args):
-        try:
-            self.assertParse(filename, *args)
-            self.fail('%s was not recognised as invalid' % filename)
-        except ParseChangesError:
-            pass
-        except GpgException:
-            pass
-        except InvalidDscError as actual_line:
-            if line is not None:
-                assertEqual(actual_line, line)
-
 class ParseDscTestCase(ParseChangesTestCase):
     def test_1(self):
         self.assertParse('dsc/1.dsc', -1, 1)
@@ -46,7 +34,8 @@ class ParseDscTestCase(ParseChangesTestCase):
 
     def test_4(self):
         # No blank lines at all
-        self.assertFails('dsc/4.dsc', -1, 1, 1)
+        with self.assertRaises(GpgException):
+            self.assertParse('dsc/4.dsc', -1, 1)
 
     def test_5(self):
         # Extra blank line before signature body
@@ -59,7 +48,8 @@ class ParseDscTestCase(ParseChangesTestCase):
 class ParseChangesTestCase(ParseChangesTestCase):
     def test_1(self):
         # Empty changes
-        self.assertFails('changes/1.changes', 5, -1)
+        with self.assertRaises(GpgException):
+            self.assertParse('changes/1.changes', 1)
 
     def test_2(self):
         changes = self.assertParse('changes/2.changes', -1)
