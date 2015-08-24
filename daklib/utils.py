@@ -276,7 +276,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
                 missingfields.append(keyword)
 
                 if len(missingfields):
-                    raise ParseChangesError("Missing mandantory field(s) in changes file (policy 5.5): %s" % (missingfields))
+                    raise ParseChangesError("Missing mandatory field(s) in changes file (policy 5.5): %s" % (missingfields))
 
     return changes
 
