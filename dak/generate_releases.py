@@ -264,11 +264,6 @@ class ReleaseWriter(object):
             if filename in fileinfo.keys():
                 continue
 
-            # Skip uncompressed Contents files as they're huge, take ages to
-            # checksum and we checksum the compressed ones anyways
-            if os.path.basename(filename).startswith("Contents"):
-                continue
-
             fileinfo[filename] = {}
 
             # File handler is comp[0], filename of compressed file is comp[1]
