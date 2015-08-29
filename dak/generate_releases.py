@@ -246,11 +246,11 @@ class ReleaseWriter(object):
                 # If we find a file for which we have a compressed version and
                 # haven't yet seen the uncompressed one, store the possibility
                 # for future use
-                if entry.endswith(".gz") and entry[:-3] not in uncompnotseen.keys():
+                if entry.endswith(".gz") and entry[:-3] not in uncompnotseen:
                     uncompnotseen[filename[:-3]] = (gzip.GzipFile, filename)
-                elif entry.endswith(".bz2") and entry[:-4] not in uncompnotseen.keys():
+                elif entry.endswith(".bz2") and entry[:-4] not in uncompnotseen:
                     uncompnotseen[filename[:-4]] = (bz2.BZ2File, filename)
-                elif entry.endswith(".xz") and entry[:-3] not in uncompnotseen.keys():
+                elif entry.endswith(".xz") and entry[:-3] not in uncompnotseen:
                     uncompnotseen[filename[:-3]] = (XzFile, filename)
 
                 fileinfo[filename]['len'] = len(contents)
@@ -261,12 +261,7 @@ class ReleaseWriter(object):
         for filename, comp in uncompnotseen.items():
             # If we've already seen the uncompressed file, we don't
             # need to do anything again
-            if filename in fileinfo.keys():
-                continue
-
-            # Skip uncompressed Contents files as they're huge, take ages to
-            # checksum and we checksum the compressed ones anyways
-            if os.path.basename(filename).startswith("Contents"):
+            if filename in fileinfo:
                 continue
 
             fileinfo[filename] = {}
