@@ -74,6 +74,8 @@ function stage() {
     error=${ERR:-"true"}
 
     ARGS=${ARGS:-""}
+
+    log "########## DINSTALL BEGIN: ${FUNC} ${ARGS} ##########"
     STAGEFILE="${stagedir}/${FUNC}_${ARGS}"
     STAGEFILE=${STAGEFILE// /_}
     if [ -f "${STAGEFILE}" ]; then
@@ -131,6 +133,8 @@ function stage() {
     # to it.
     cat "${STAGEFILE}.log" >> "${LOGFILE}"
     rm -f "${STAGEFILE}.log"
+
+    echo "########## DINSTALL END: ${FUNC} ##########"
 
     if [ -f "${LOCK_STOP}" ]; then
         log "${LOCK_STOP} exists, exiting immediately"
