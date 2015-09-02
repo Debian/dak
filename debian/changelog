@@ -1,8 +1,6 @@
-dak (0notforuse0-0) unstable; urgency=low
+dak (0notforuse0) unstable; urgency=low
 
   * Initial non-release.  [The packaging is nowhere near complete; don't
     bother trying to use it unaltered.]
 
  -- James Troup <james@nocrew.org>  Tue, 16 May 2006 21:55:42 -0500
-
-
