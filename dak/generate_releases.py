@@ -70,7 +70,7 @@ Generate the Release files
   -h, --help                 show this help and exit
   -q, --quiet                Don't output progress
 
-SUITE can be a space seperated list, e.g.
+SUITE can be a space separated list, e.g.
    --suite=unstable testing
   """
     sys.exit(exit_code)
