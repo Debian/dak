@@ -1,87 +1,9 @@
 #!/usr/bin/make -f
-# debian/rules file - for dak (0.0)
-# Based on sample debian/rules file - for GNU Hello (1.3).
-# Copyright 1994,1995 by Ian Jackson.
-# Copyright 1998,1999,2000,2001,2002,2006 James Troup
-# I hereby give you perpetual unlimited permission to copy,
-# modify and relicense this file, provided that you do not remove
-# my name from the file itself.  (I assert my moral right of
-# paternity under the Copyright, Designs and Patents Act 1988.)
-# This file may have to be extensively modified
 
-PYTHONVER := `/usr/bin/python -c 'import sys;print sys.version[:3]'`
+%:
+	dh $@
 
-install_dir=install -d -m 755
-install_file=install -m 644
-install_script=install -m 755
-install_binary=install -m 755 -s
-
-build: build-stamp
-build-stamp:
-	$(MAKE)
-	$(MAKE) -C docs
-	touch $@
-
-clean: checkroot
-	$(checkdir)
-	-rm -rf debian/tmp debian/*~ debian/files* debian/substvars build-stamp
-	$(MAKE) clean
-
-binary-indep: checkroot build
-	$(checkdir)
-	-rm -rf debian/tmp
-
-	$(install_dir) debian/tmp/DEBIAN/
-	$(install_script) debian/postinst debian/tmp/DEBIAN/
-
-	$(install_dir) debian/tmp/usr/lib/python/site-packages/dak/lib/
-
-	$(install_file) dak/*.py debian/tmp/usr/lib/python/site-packages/dak/
-	$(install_file) dak/lib/*.py debian/tmp/usr/lib/python/site-packages/dak/lib/
-
-
-	$(install_dir) debian/tmp/usr/bin/
-	$(install_script) dak/shell.py debian/tmp/usr/bin/dak
-
-	$(install_dir) -m 755 debian/tmp/usr/share/man/man1/
-	$(install_file) docs/manpages/*.1 debian/tmp/usr/share/man/man1/
-	gzip -9v debian/tmp/usr/share/man/man1/*
-
-	$(install_dir) -m 755 debian/tmp/etc/dak/
-
-	$(install_dir) debian/tmp/usr/share/doc/dak/
-	$(install_file) debian/changelog debian/tmp/usr/share/doc/dak/changelog.Debian
-	$(install_file) README NEWS THANKS TODO debian/tmp/usr/share/doc/dak/
-	$(install_file) docs/README* debian/tmp/usr/share/doc/dak/
-	$(install_file) ChangeLog debian/tmp/usr/share/doc/dak/changelog
-	gzip -9v debian/tmp/usr/share/doc/dak/*
-	$(install_file) debian/copyright debian/tmp/usr/share/doc/dak/
-
-	$(install_dir) debian/tmp/usr/share/doc/dak/examples/
-	$(install_file) examples/dak.conf debian/tmp/usr/share/doc/dak/examples/
-	# Hoho (err, rather: FIXME)
-	$(install_file) *.sql debian/tmp/usr/share/doc/dak/examples/
-	gzip -9v debian/tmp/usr/share/doc/dak/examples/*
-
-	dpkg-shlibdeps sql-aptvc.so
-	/usr/bin/python debian/python-dep >> debian/substvars
-	dpkg-gencontrol -isp
-	chown -R root.root debian/tmp
-	chmod -R go=rX debian/tmp
-	dpkg --build debian/tmp ..
-
-binary-arch:
-
-define checkdir
-	test -f dak/ls.py -a -f debian/rules
-endef
-
-# Below here is fairly generic really
-
-binary: 	binary-indep binary-arch
-
-checkroot:
-	$(checkdir)
-	test root = "`whoami`"
-
-.PHONY: binary binary-arch binary-indep clean checkroot
+override_dh_auto_test:
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	tests/test_all.py
+endif
