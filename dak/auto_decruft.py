@@ -219,15 +219,15 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
     )
     for group in group_generator:
         group_name = group["name"]
+        pkgs = group["packages"]
+        affected_archs = group["architectures"]
+        # If we remove an arch:all package, then the breakage can occur on any
+        # of the architectures.
+        if "all" in affected_archs:
+            affected_archs = all_architectures
+        for pkg_arch in product(pkgs, affected_archs):
+            pkg_arch2groups[pkg_arch].add(group_name)
         if group_name not in groups:
-            pkgs = group["packages"]
-            affected_archs = group["architectures"]
-            # If we remove an arch:all package, then the breakage can occur on any
-            # of the architectures.
-            if "all" in affected_archs:
-                affected_archs = all_architectures
-            for pkg_arch in product(pkgs, affected_archs):
-                pkg_arch2groups[pkg_arch].add(group_name)
             groups[group_name] = group
             group_order.append(group_name)
         else:
