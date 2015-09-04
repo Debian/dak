@@ -246,11 +246,11 @@ class ReleaseWriter(object):
                 # If we find a file for which we have a compressed version and
                 # haven't yet seen the uncompressed one, store the possibility
                 # for future use
-                if entry.endswith(".gz") and entry[:-3] not in uncompnotseen:
+                if entry.endswith(".gz") and filename[:-3] not in uncompnotseen:
                     uncompnotseen[filename[:-3]] = (gzip.GzipFile, filename)
-                elif entry.endswith(".bz2") and entry[:-4] not in uncompnotseen:
+                elif entry.endswith(".bz2") and filename[:-4] not in uncompnotseen:
                     uncompnotseen[filename[:-4]] = (bz2.BZ2File, filename)
-                elif entry.endswith(".xz") and entry[:-3] not in uncompnotseen:
+                elif entry.endswith(".xz") and filename[:-3] not in uncompnotseen:
                     uncompnotseen[filename[:-3]] = (XzFile, filename)
 
                 fileinfo[filename]['len'] = len(contents)
