@@ -93,6 +93,16 @@ cd ${ftpdir}
   Clean up dists/stable/ChangeLog (add header, basically). bash:
 
 cd ${ftpdir}/dists/${suite}
+
+date_long=$(date "+%A, %-dth %B %Y" | sed 's/1th/1st/; s/2th/2nd/; s/3th/3rd/')
+date_iso=$(date "+%Y-%m-%d")
+date_short=$(date "+%a, %d %b %Y")
+sed -e "1i======================================\n${date_short} - Debian ${newrev} released\n======================================" -i ChangeLog
+sed -e "/^${suite}/ s/Debian ${oldrev}/Debian ${newrev}/" -i ../README
+sed -e "s/Debian ${oldrev}/Debian ${newrev}/g; /Debian ${newrev}/ s/released .*\\./released ${date_long}./" -i ../../README
+sed -e "s/Debian ${oldrev}/Debian ${newrev}/g; /Debian ${newrew}/ s/released .*\\./released ${date_long}./; /meta name=\"Modified\"/ s/content=\".*\"/content=\"${date_iso}\"/" -i ../../README.html
+
+# Inspect changes. Regular expressions might be a bit fragile.
 $EDITOR ChangeLog ../README ../../README ../../README.html
 rm -f -- ./*~ ../*~ ../../*~
 
