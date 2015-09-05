@@ -6,8 +6,8 @@ Rough Guide to doing Stable Point Releases in Debian
 suite=stable
 suitename=jessie
 pusuite=proposed-updates
-oldrev=8.0
-newrev=8.1
+oldrev=8.1
+newrev=8.2
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -25,7 +25,16 @@ dak control-suite -l ${suite} > ${suite}.list
 - ask SRMs if there is anything to be skipped from this release. If so
   edit ${pusuite}.list (and later the Changelog too)
 - bash:
+skip="squid3 icedove php5"
+if [ -n "${skip}" ]; then
+  mv ${pusuite}.list ${pusuite}.list.ori
+  grep -vFf <(dak ls -f heidi -S -s ${pusuite} ${skip}) ${pusuite}.list.ori > ${pusuite}.list
+fi
 dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/ChangeLog | sponge ${ftpdir}/dists/${suite}/ChangeLog
+if [ -n "${skip}" ]; then
+  $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
+fi
+
 dak control-suite --add ${suite} < ${pusuite}.list
 dak control-suite --remove ${pusuite} < ${pusuite}.list
 
@@ -51,17 +60,23 @@ dak control-suite --force --add testing <propups.testing
 - ask rms if they have RMs to do.
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
-diver=20150422+deb8u1
+diver=20150422+deb8u2
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
-dioldver=empty
-cd $ftpdir/dists/${suite}/main
+dioldver=20150422+deb8u1
 if [ "${dioldver}" != "empty" ]; then
+    cd $ftpdir/dists/${suite}/main
     for iarch in $(dak admin s-a list-arch ${suite}); do
         if [ -d "installer-${iarch}/${dioldver}" ]; then
             echo "Moving installer-${iarch}/${dioldver} to morgue"
             mkdir -p "${base}/morgue/d-i/installer-${iarch}/"
             mv "installer-${iarch}/${dioldver}" "${base}/morgue/d-i/installer-${iarch}/"
         fi
+    done
+
+    # Remove old version also from proposed-updates
+    cd $ftpdir/dists/${pusuite}/main
+    for iarch in $(dak admin s-a list-arch ${suite}); do
+        rm -rf -- "installer-${iarch}/${dioldver}"
     done
 fi
 cd $ftpdir/dists/${suite}
@@ -76,8 +91,10 @@ cd ${ftpdir}
 
 - Update version number in README, README.html and dists/README,
   Clean up dists/stable/ChangeLog (add header, basically). bash:
-  $EDITOR ChangeLog ../README ../../README*
-  rm -f *~ ../*~ ../../*~
+
+cd ${ftpdir}/dists/${suite}
+$EDITOR ChangeLog ../README ../../README ../../README.html
+rm -f -- ./*~ ../*~ ../../*~
 
 - Update the 'Debian<n>.<n>r<n>' symlink in dists/
 cd $ftpdir/dists/
@@ -99,35 +116,22 @@ EOF
 dak dominate --force -s ${suite}
 - check output from cruft report:
 dak cruft-report -s ${suite}
+- if cruft was removed: go back to run dominate again
 
 - Let SRM see if all is ok
 
 - then:
 dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
 
-- For squeeze: merge Contents
-if [ "${suitename}" = "squeeze" ]; then
-  cd $ftpdir/dists/${suite}
-  for carch in $(dak admin s-a list-arch ${suite}); do
-    echo doing ${carch}
-    cp $base/dak/templates/contents Contents-${carch}.new;
-    zcat {main,contrib,non-free}/Contents-${carch}.gz | ~joerg/mergecontents.pl | sort >> Contents-${carch}.new;
-    gzip -9v Contents-${carch}.new;
-    mv Contents-${carch}.new.gz Contents-${carch}.gz;
-  done
-  rm {main,contrib,non-free}/Contents-*
-fi
-
 - For wheezy: update main/i18n/Index
-if [[ ${suitename} == wheezy ]] || [[ ${suitename} == jessie ]]; then
+if [[ ${suitename} == wheezy ]]; then
   ${scriptsdir}/generate-i18n-Index "${ftpdir}/dists/${suite}"
 fi
 
 - Generate Releases:
-dak generate-releases -f -s ${suite}
-if [[ ${suitename} != jessie ]]; then
-    rm ${ftpdir}/dists/${suite}/InRelease
-fi
+dak generate-releases -f -s ${suite} ${pusuite}
+# Remove InRelease: Release can be signed by both ftpmaster & stable release keys
+rm ${ftpdir}/dists/${suite}/InRelease
 
 - have the SRMs sign it and put the signature in.
 cd ${ftpdir}/dists/${suite}
