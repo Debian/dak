@@ -87,7 +87,7 @@ class UploadCopy(object):
             for byhand in self.upload.byhand:
                 src = os.path.join(queue.path, byhand.filename)
                 dst = os.path.join(directory, byhand.filename)
-                if not os.path.exists(dst) or not ignore_existing:
+                if os.path.exists(src) and (not os.path.exists(dst) or not ignore_existing):
                     fs.copy(src, dst, mode=mode, symlink=symlink)
 
             # copy .changes
