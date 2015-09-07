@@ -22,7 +22,7 @@ error() {
 # Check validity of version number
 # Expected are: YYYYMMDD, YYYYMMDD.x, YYYYMMDD<suite>x, YYYYMMDD+<suite>x,
 # YYYYMMDD+debXuZ and the +b[0-9] on the end
-if ! echo "$VERSION" | grep -Eq "^[0-9]{8}((\.|\+?[a-z]+|\+deb[0-9]+u)[0-9]+)?(\+b[0-9])?$"; then
+if ! echo "$VERSION" | grep -Eq "^[0-9]{8}((\.|\+?[a-z]+|\+deb[0-9]+u|\+kbsd[0-9]+u)[0-9]+)?(\+b[0-9])?$"; then
 	error "Invalid version: '$VERSION'"
 fi
 
