@@ -26,7 +26,12 @@ if ! lockfile -r100 "$LOCKFILE"; then
 fi
 trap cleanup EXIT
 
+# Update Release for main archive
 dak generate-releases -a security >/dev/null
+
+# Update Release for buildd archive and publish it
+dak generate-releases -a build-queues >/dev/null
+${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
 
 cleanup
 trap - EXIT
