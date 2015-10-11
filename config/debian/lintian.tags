@@ -43,7 +43,6 @@ lintian:
     - section-is-dh_make-template
     - package-installs-python-bytecode
     - library-in-debug-or-profile-should-not-be-stripped
-    - binary-file-compressed-with-upx
     - file-in-usr-marked-as-conffile
     - build-info-in-binary-control-file-section
     - not-allowed-control-file
