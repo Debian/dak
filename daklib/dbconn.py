@@ -1031,7 +1031,7 @@ class Keyring(object):
 
         l.simple_bind_s("","")
         Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
-               "(&(keyfingerprint=*)(gidnumber=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
+               "(&(keyfingerprint=*)(supplementaryGid=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                ["uid", "keyfingerprint", "cn", "mn", "sn"])
 
         ldap_fin_uid_id = {}
