@@ -30,6 +30,7 @@
 ################################################################################
 
 import pwd
+import grp
 import sys
 import re
 import apt_pkg
@@ -73,15 +74,18 @@ def main ():
         usage(1)
 
     session = DBConn().session()
-    valid_gid = int(cnf.get("Import-Users-From-Passwd::ValidGID",""))
+    valid_gid = cnf.get("Import-Users-From-Passwd::ValidGID", "")
+    if valid_gid:
+        debiangrp = grp.getgrnam(valid_gid).gr_mem
+    else:
+        debiangrp = []
 
     passwd_unames = {}
     for entry in pwd.getpwall():
         uname = entry[0]
-        gid = entry[3]
-        if valid_gid and gid != valid_gid:
+        if uname not in debiangrp:
             if Options["Verbose"]:
-                print "Skipping %s (GID %s != Valid GID %s)." % (uname, gid, valid_gid)
+                print "Skipping %s (Not in group %s)." % (uname, valid_gid)
             continue
         passwd_unames[uname] = ""
 
