@@ -115,14 +115,14 @@ class Updates:
         self.history_order = []
         self.max = max
         self.readpath = readpath
-        self.filesizesha1 = None
+        self.filesizehashes = None
 
         if readpath:
             try:
                 f = open(readpath + "/Index")
                 x = f.readline()
 
-                def read_hashs(ind, f, self, x=x):
+                def read_hashs(ind, hashind, f, self, x=x):
                     while 1:
                         x = f.readline()
                         if not x or x[0] != " ": break
@@ -133,7 +133,12 @@ class Updates:
                         if not self.history.has_key(fname):
                             self.history[fname] = [None,None,None]
                             self.history_order.append(fname)
-                        self.history[fname][ind] = (l[0], int(l[1]))
+                        if not self.history[fname][ind]:
+                            self.history[fname][ind] = (int(l[1]), None, None)
+                        if hashind == 1:
+                            self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
+                        else:
+                            self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
                     return x
 
                 while x:
@@ -144,22 +149,41 @@ class Updates:
                         continue
 
                     if l[0] == "SHA1-History:":
-                        x = read_hashs(0,f,self)
+                        x = read_hashs(0,1,f,self)
+                        continue
+
+                    if l[0] == "SHA256-History:":
+                        x = read_hashs(0,2,f,self)
                         continue
 
                     if l[0] == "SHA1-Patches:":
-                        x = read_hashs(1,f,self)
+                        x = read_hashs(1,1,f,self)
+                        continue
+
+                    if l[0] == "SHA256-Patches:":
+                        x = read_hashs(1,2,f,self)
                         continue
 
                     if l[0] == "SHA1-Download:":
-                        x = read_hashs(2,f,self)
+                        x = read_hashs(2,1,f,self)
+                        continue
+
+                    if l[0] == "SHA256-Download:":
+                        x = read_hashs(2,2,f,self)
                         continue
 
                     if l[0] == "Canonical-Name:" or l[0]=="Canonical-Path:":
                         self.can_path = l[1]
 
                     if l[0] == "SHA1-Current:" and len(l) == 3:
-                        self.filesizesha1 = (l[1], int(l[2]))
+                        if not self.filesizehashes:
+                            self.filesizehashes = (int(l[2]), None, None)
+                        self.filesizehashes = (int(self.filesizehashes[0]), l[1], self.filesizehashes[2])
+
+                    if l[0] == "SHA256-Current:" and len(l) == 3:
+                        if not self.filesizehashes:
+                            self.filesizehashes = (int(l[2]), None, None)
+                        self.filesizehashes = (int(self.filesizehashes[0]), self.filesizehashes[2], l[1])
 
                     x = f.readline()
 
@@ -170,8 +194,11 @@ class Updates:
         if self.can_path:
             out.write("Canonical-Path: %s\n" % (self.can_path))
 
-        if self.filesizesha1:
-            out.write("SHA1-Current: %s %7d\n" % (self.filesizesha1))
+        if self.filesizehashes:
+            if self.filesizehashes[1]:
+                out.write("SHA1-Current: %s %7d\n" % (self.filesizehashes[1], self.filesizehashes[0]))
+            if self.filesizehashes[2]:
+                out.write("SHA256-Current: %s %7d\n" % (self.filesizehashes[2], self.filesizehashes[0]))
 
         hs = self.history
         l = self.history_order[:]
@@ -186,14 +213,28 @@ class Updates:
 
         out.write("SHA1-History:\n")
         for h in l:
-            out.write(" %s %7d %s\n" % (hs[h][0][0], hs[h][0][1], h))
+            if hs[h][0] and hs[h][0][1]:
+                out.write(" %s %7d %s\n" % (hs[h][0][1], hs[h][0][0], h))
+        out.write("SHA256-History:\n")
+        for h in l:
+            if hs[h][0] and hs[h][0][2]:
+                out.write(" %s %7d %s\n" % (hs[h][0][2], hs[h][0][0], h))
         out.write("SHA1-Patches:\n")
         for h in l:
-            out.write(" %s %7d %s\n" % (hs[h][1][0], hs[h][1][1], h))
+            if hs[h][1] and hs[h][1][1]:
+                out.write(" %s %7d %s\n" % (hs[h][1][1], hs[h][1][0], h))
+        out.write("SHA256-Patches:\n")
+        for h in l:
+            if hs[h][1] and hs[h][1][2]:
+                out.write(" %s %7d %s\n" % (hs[h][1][2], hs[h][1][0], h))
         out.write("SHA1-Download:\n")
         for h in l:
-            if hs[h][2]:
-                out.write(" %s %7d %s.gz\n" % (hs[h][2][0], hs[h][2][1], h))
+            if hs[h][2] and hs[h][2][1]:
+                out.write(" %s %7d %s.gz\n" % (hs[h][2][1], hs[h][2][0], h))
+        out.write("SHA256-Download:\n")
+        for h in l:
+            if hs[h][2] and hs[h][2][2]:
+                out.write(" %s %7d %s.gz\n" % (hs[h][2][2], hs[h][2][0], h))
 
 def create_temp_file(r):
     f = tempfile.TemporaryFile()
@@ -207,11 +248,13 @@ def create_temp_file(r):
     f.seek(0)
     return f
 
-def sizesha1(f):
+def sizehashes(f):
     size = os.fstat(f.fileno())[6]
     f.seek(0)
     sha1sum = apt_pkg.sha1sum(f)
-    return (sha1sum, size)
+    f.seek(0)
+    sha256sum = apt_pkg.sha256sum(f)
+    return (size, sha1sum, sha256sum)
 
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
     if Options.has_key("NoAct"):
@@ -247,7 +290,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
         return
 
     oldf = smartopen(oldfile)
-    oldsizesha1 = sizesha1(oldf)
+    oldsizehashes = sizehashes(oldf)
 
     # should probably early exit if either of these checks fail
     # alternatively (optionally?) could just trim the patch history
@@ -261,10 +304,10 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
     if os.path.exists(newfile): os.unlink(newfile)
     smartlink(origfile, newfile)
     newf = open(newfile, "r")
-    newsizesha1 = sizesha1(newf)
+    newsizehashes = sizehashes(newf)
     newf.close()
 
-    if newsizesha1 == oldsizesha1:
+    if newsizehashes == oldsizehashes:
         os.unlink(newfile)
         oldf.close()
         #print "%s: unchanged" % (origfile)
@@ -278,17 +321,17 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
         oldf.close()
 
         difff = smartopen(difffile)
-        difsizesha1 = sizesha1(difff)
+        difsizehashes = sizehashes(difff)
         difff.close()
 
         difffgz = open(difffile + ".gz", "r")
-        difgzsizesha1 = sizesha1(difffgz)
+        difgzsizehashes = sizehashes(difffgz)
         difffgz.close()
 
-        upd.history[patchname] = (oldsizesha1, difsizesha1, difgzsizesha1)
+        upd.history[patchname] = (oldsizehashes, difsizehashes, difgzsizehashes)
         upd.history_order.append(patchname)
 
-        upd.filesizesha1 = newsizesha1
+        upd.filesizehashes = newsizehashes
 
         os.unlink(oldfile + oldext)
         os.link(origfile + origext, oldfile + origext)
