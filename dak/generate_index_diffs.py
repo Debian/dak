@@ -127,10 +127,13 @@ class Updates:
                         x = f.readline()
                         if not x or x[0] != " ": break
                         l = x.split()
-                        if not self.history.has_key(l[2]):
-                            self.history[l[2]] = [None,None]
-                            self.history_order.append(l[2])
-                        self.history[l[2]][ind] = (l[0], int(l[1]))
+                        fname = l[2]
+                        if fname.endswith('.gz'):
+                            fname = fname[:-3]
+                        if not self.history.has_key(fname):
+                            self.history[fname] = [None,None,None]
+                            self.history_order.append(fname)
+                        self.history[fname][ind] = (l[0], int(l[1]))
                     return x
 
                 while x:
@@ -146,6 +149,10 @@ class Updates:
 
                     if l[0] == "SHA1-Patches:":
                         x = read_hashs(1,f,self)
+                        continue
+
+                    if l[0] == "SHA1-Download:":
+                        x = read_hashs(2,f,self)
                         continue
 
                     if l[0] == "Canonical-Name:" or l[0]=="Canonical-Path:":
@@ -183,6 +190,10 @@ class Updates:
         out.write("SHA1-Patches:\n")
         for h in l:
             out.write(" %s %7d %s\n" % (hs[h][1][0], hs[h][1][1], h))
+        out.write("SHA1-Download:\n")
+        for h in l:
+            if hs[h][2]:
+                out.write(" %s %7d %s.gz\n" % (hs[h][2][0], hs[h][2][1], h))
 
 def create_temp_file(r):
     f = tempfile.TemporaryFile()
@@ -270,7 +281,11 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
         difsizesha1 = sizesha1(difff)
         difff.close()
 
-        upd.history[patchname] = (oldsizesha1, difsizesha1)
+        difffgz = open(difffile + ".gz", "r")
+        difgzsizesha1 = sizesha1(difffgz)
+        difffgz.close()
+
+        upd.history[patchname] = (oldsizesha1, difsizesha1, difgzsizesha1)
         upd.history_order.append(patchname)
 
         upd.filesizesha1 = newsizesha1
