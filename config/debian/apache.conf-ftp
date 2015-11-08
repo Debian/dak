@@ -29,4 +29,5 @@ Use common-debian-service-https-redirect * ftp-master.debian.org
 
   RewriteEngine On
   RewriteRule ^/~(.+) /users/$1 [R=permanent,L]
+  RewriteRule ^/testing/(.*) https://release.debian.org/britney/$1 [R=permanent,L]
 </VirtualHost>
