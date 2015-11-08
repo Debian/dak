@@ -1,6 +1,6 @@
 Config
 {
-  chopin.debian.org
+  seger.debian.org
   {
     DakConfig           "/org/security-master.debian.org/dak/config/debian-security/dak.conf";
   }

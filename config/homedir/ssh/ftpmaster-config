@@ -38,6 +38,6 @@ Host dd-push-git
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_coccia_dak
 
 Host external-security
-  Hostname chopin.debian.org
+  Hostname seger.debian.org
   User dak
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_external_files

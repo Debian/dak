@@ -56,7 +56,7 @@ case "$(hostname)" in
 	SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 	archive=ftp-master
         ;;
-    chopin)
+    seger)
 	SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 	archive=security-master
 	;;

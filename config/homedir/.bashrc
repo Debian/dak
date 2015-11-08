@@ -31,7 +31,7 @@ case "$HOSTNAME" in
     franck|coccia)
         export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
         ;;
-    chopin)
+    seger)
         export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
         ;;
     *)
