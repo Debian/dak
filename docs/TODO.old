@@ -123,7 +123,7 @@ Others
   o 'dak import-users-from-passwd' should sync debadmin and ftpmaster (?)
 
   o <drow> Can't read file.:
-  /org/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.dak.
+  /srv/security.debian.org/queue/accepted/accepted/apache-perl_1.3.9-14.1-1.21.20000309-1_sparc.dak.
   You assume that the filenames are relative to accepted/, might want
   to doc or fix that.
 

@@ -2,6 +2,6 @@ Config
 {
   seger.debian.org
   {
-    DakConfig           "/org/security-master.debian.org/dak/config/debian-security/dak.conf";
+    DakConfig           "/srv/security-master.debian.org/dak/config/debian-security/dak.conf";
   }
 }
