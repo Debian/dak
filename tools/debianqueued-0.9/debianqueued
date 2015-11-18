@@ -622,7 +622,7 @@ sub process_changes($\@) {
   my (
        $pgplines,     @files,     @filenames,  @changes_stats,
        $failure_file, $retries,   $last_retry, $upload_time,
-       $file,         $do_report, $ls_l,       $problems_reported,
+       $file,         $do_report, $ls_l,
        $errs,         $pkgname,   $signator,   $extralines
      );
   local (*CHANGES);
@@ -829,16 +829,6 @@ outer_loop: while (<CHANGES>) {
   } ## end for $file (@files)
 
   $do_report = ( time - $upload_time ) > $conf::problem_report_timeout;
-  $problems_reported = $changes_stats[ST_MODE] & S_ISGID;
-
-  # if any of the files is newer than the .changes' ctime (the time
-  # we sent a report and set the sticky bit), send new problem reports
-  if ( $problems_reported && $changes_stats[ST_CTIME] < $upload_time ) {
-    $problems_reported = 0;
-    chmod +( $changes_stats[ST_MODE] &= ~S_ISGID ), $changes;
-    debug("upload_time>changes-ctime => resetting problems reported");
-  }
-  debug("do_report=$do_report problems_reported=$problems_reported");
 
   # now check all files for correct size and md5 sum
   for $file (@files) {
@@ -847,12 +837,7 @@ outer_loop: while (<CHANGES>) {
 
       # could be an upload that isn't complete yet, be quiet,
       # but don't process the file;
-      msg( "log,mail", "$filename doesn't exist\n" )
-        if $do_report && !$problems_reported;
-      msg( "log", "$filename doesn't exist (ignored for now)\n" )
-        if !$do_report;
-      msg( "log", "$filename doesn't exist (already reported)\n" )
-        if $problems_reported;
+      msg( "log", "$filename doesn't exist (ignored for now)\n" );
       ++$errs;
     } elsif ( $file->{"stats"}->[ST_SIZE] < $file->{"size"}
               && !$do_report )
@@ -889,22 +874,7 @@ outer_loop: while (<CHANGES>) {
       msg( "log,mail", "All files it mentions are also removed:\n" );
       msg( "log,mail", "  ", join( ", ", @filenames ), "\n" );
       rm( $changes, @filenames, $failure_file );
-    } elsif ( $do_report && !$problems_reported ) {
-
-      # otherwise, send a problem report, if not done already
-      msg(
-           "mail",
-           "Due to the errors above, the .changes file couldn't ",
-           "be processed.\n",
-           "Please fix the problems for the upload to happen.\n"
-         );
-
-      # remember we already have sent a mail regarding this file
-      debug("Sending problem report mail and setting SGID bit");
-      my $mode = $changes_stats[ST_MODE] |= S_ISGID;
-      msg( "log", "chmod failed: $!" )
-        if ( chmod( $mode, $changes ) != 1 );
-    } ## end elsif ( $do_report && !$problems_reported)
+    }
 
     # else: be quiet
 
