@@ -139,7 +139,9 @@ class ReleaseWriter(object):
                     ('Label',       'label'),
                     ('Suite',       'release_suite_output'),
                     ('Version',     'version'),
-                    ('Codename',    'codename') )
+                    ('Codename',    'codename'),
+                    ('Changelogs',  'changelog_url'),
+                  )
 
         # A "Sub" Release file has slightly different fields
         subattribs = ( ('Archive',  'suite_name'),
@@ -161,7 +163,7 @@ class ReleaseWriter(object):
         for key, dbfield in attribs:
             # Hack to skip NULL Version fields as we used to do this
             # We should probably just always ignore anything which is None
-            if key == "Version" and getattr(suite, dbfield) is None:
+            if key in ("Version", "Changelogs") and getattr(suite, dbfield) is None:
                 continue
 
             out.write("%s: %s\n" % (key, getattr(suite, dbfield)))
