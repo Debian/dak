@@ -1085,15 +1085,48 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
     @return: list of RFC 2047-encoded mail addresses to contact regarding
              this upload
     """
-    addresses = [maintainer]
-    if changed_by != maintainer:
-        addresses.append(changed_by)
+    recipients = Cnf.value_list('Dinstall::UploadMailRecipients')
+    if not recipients:
+        recipients = [
+            'maintainer',
+            'changed_by',
+            'signer'
+        ]
 
-    fpr_addresses = gpg_get_key_addresses(fingerprint)
-    if len(fpr_addresses) > 0 and fix_maintainer(changed_by)[3] not in fpr_addresses and fix_maintainer(maintainer)[3] not in fpr_addresses:
-        addresses.append(fpr_addresses[0])
+    # Ensure signer is last if present
+    try:
+        recipients.pop(recipients.index('signer'))
+        recipients.append('signer')
+    except ValueError:
+        pass
 
-    encoded_addresses = [ fix_maintainer(e)[1] for e in addresses ]
+    # Compute the set of addresses of the recipients
+    addresses = set()  # Name + email
+    emails = set()     # Email only
+    for recipient in recipients:
+        if recipient.startswith('mail:'):  # Email hardcoded in config
+            address = recipient[5:]
+        elif recipient == 'maintainer':
+            address = maintainer
+        elif recipient == 'changed_by':
+            address = changed_by
+        elif recipient == 'signer':
+            fpr_addresses = gpg_get_key_addresses(fingerprint)
+            address = fpr_addresses[0] if len(fpr_addresses) > 0 else None
+            if any([x in emails for x in fpr_addresses]):
+                # The signer already gets a copy via another email
+                address = None
+        else:
+            raise Exception('Unsupported entry in {0}: {1}'.format(
+                'Dinstall::UploadMailRecipients', recipient))
+
+        if address is not None:
+            email = fix_maintainer(address)[3]
+            if email not in emails:
+                addresses.add(address)
+                emails.add(email)
+
+    encoded_addresses = [fix_maintainer(e)[1] for e in addresses]
     return encoded_addresses
 
 ################################################################################
