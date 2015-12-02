@@ -4,8 +4,8 @@ set -u
 set -e
 set -o pipefail
 
-if [ $# -lt 4 ]; then
-	echo "Usage: $0 filename version arch changes_file"
+if [ $# -lt 5 ]; then
+	echo "Usage: $0 filename version arch changes_file suite"
 	exit 1
 fi
 
@@ -13,6 +13,7 @@ TARBALL="$1"	# Tarball to read, compressed with gzip
 VERSION="$2"
 ARCH="$3"
 CHANGES="$4"	# Changes file for the upload
+SUITE="$5"
 
 error() {
 	echo "$*"
@@ -26,13 +27,7 @@ if ! echo "$VERSION" | grep -Eq "^[0-9]{8}((\.|\+?[a-z]+|\+deb[0-9]+u|\+kbsd[0-9
 	error "Invalid version: '$VERSION'"
 fi
 
-# Get the target suite from the Changes file
-# NOTE: it may be better to pass this to the script as a parameter!
-SUITE="$(grep "^Distribution:" "$CHANGES" | awk '{print $2}')"
 case $SUITE in
-    "")
-	error "Error: unable to determine suite from Changes file"
-	;;
     unstable|sid|*-proposed-updates)
 	: # nothing to do
 	;;

@@ -28,8 +28,8 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 
 scriptname=byhand-debian-faq
 
-if [ $# -lt 4 ]; then
-    echo "usage: ${scriptname} <byhand-file> <version> <arch> <changes-file>" >&2
+if [ $# -lt 5 ]; then
+    echo "usage: ${scriptname} <byhand-file> <version> <arch> <changes-file> <suite>" >&2
     exit 1
 fi
 
@@ -38,8 +38,8 @@ byhand_file="${byhand_path##*/}"
 version="${2}"
 architecture="${3}"
 changes="${4}"
+suite="${5}"
 
-suite="$(awk '/^Distribution:/ { print $2 }' < "${changes}")"
 case "${suite}" in
     unstable|sid)
         : # okay

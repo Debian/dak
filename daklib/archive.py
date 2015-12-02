@@ -1170,7 +1170,7 @@ class ArchiveUpload(object):
                 continue
 
             script = rule['Script']
-            retcode = daklib.daksubprocess.call([script, os.path.join(self.directory, f.filename), control['Version'], arch, os.path.join(self.directory, self.changes.filename)], shell=False)
+            retcode = daklib.daksubprocess.call([script, os.path.join(self.directory, f.filename), control['Version'], arch, os.path.join(self.directory, self.changes.filename), suite.suite_name], shell=False)
             if retcode != 0:
                 print "W: error processing {0}.".format(f.filename)
                 remaining.append(f)
