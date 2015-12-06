@@ -114,7 +114,7 @@ function dep11() {
                     cd dists/${dir}/${comp}/dep11
                     rsync -aq --delete --delete-after --exclude *.tmp . ${ftpdir}/dists/${dir}/${comp}/dep11/.
                     cd ${scriptdir}/dep11
-                fi
+                done
             fi
         done
     else
