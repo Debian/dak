@@ -112,7 +112,7 @@ function dep11() {
             if [ -d ${dir}/ ]; then
                 for comp in main contrib non-free; do
                     mkdir -p ${ftpdir}/dists/${dir}/${comp}/dep11
-                    cd ${dir}/${comp}/dep11
+                    cd ${dir}/${comp}
                     rsync -aq --delete --delete-after --exclude *.tmp . ${ftpdir}/dists/${dir}/${comp}/dep11/.
                     cd ${scriptdir}/dep11
                 done
