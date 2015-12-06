@@ -111,6 +111,7 @@ function dep11() {
         for dir in stretch sid; do
             if [ -d ${dir}/ ]; then
                 for comp in main contrib non-free; do
+                    mkdir -p ${ftpdir}/dists/${dir}/${comp}/dep11
                     cd dists/${dir}/${comp}/dep11
                     rsync -aq --delete --delete-after --exclude *.tmp . ${ftpdir}/dists/${dir}/${comp}/dep11/.
                     cd ${scriptdir}/dep11
