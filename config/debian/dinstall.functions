@@ -97,6 +97,32 @@ function i18n1() {
     fi
 }
 
+# Syncing AppStream/DEP-11 data
+function dep11() {
+    log "Synchronizing AppStream metadata"
+    # First sync their newest data
+    mkdir -p ${scriptdir}/dep11
+    cd ${scriptdir}/dep11
+    rsync -aq --delete --delete-after dep11-sync:/does/not/matter . || true
+
+    # Lets check!
+    if ${scriptsdir}/dep11-basic-validate.py . ${scriptdir}/dep11/; then
+        # Yay, worked, lets copy around
+        for dir in stretch sid; do
+            if [ -d ${dir}/ ]; then
+                for comp in main contrib non-free; do
+                    cd dists/${dir}/${comp}/dep11
+                    rsync -aq --delete --delete-after --exclude *.tmp . ${ftpdir}/dists/${dir}/${comp}/dep11/.
+                    cd ${scriptdir}/dep11
+                fi
+            fi
+        done
+    else
+        echo "ARRRR, bad guys, wrong files, ARRR"
+        echo "Arf, Arf, Arf, bad guys, wrong files, arf, arf, arf" | mail -a "X-Debian: DAK" -s "Don't you kids take anything. I'm watching you. I've got eye implants in the back of my head." -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" mak@debian.org
+    fi
+}
+
 function cruft() {
     log "Checking for cruft in overrides"
     dak check-overrides

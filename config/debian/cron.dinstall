@@ -210,6 +210,14 @@ GO=(
 )
 stage $GO
 
+GO=(
+    FUNC="dep11"
+    TIME="dep11 1"
+    ARGS=""
+    ERR="false"
+)
+stage $GO
+
 lockfile "$LOCK_ACCEPTED"
 trap remove_all_locks EXIT TERM HUP INT QUIT
 
