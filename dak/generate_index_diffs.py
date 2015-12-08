@@ -337,9 +337,9 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
         os.link(origfile + origext, oldfile + origext)
         os.unlink(newfile)
 
-        f = open(outdir + "/Index", "w")
-        upd.dump(f)
-        f.close()
+        with open(outdir + "/Index.new", "w") as f:
+            upd.dump(f)
+        os.rename(outdir + "/Index.new", outdir + "/Index")
 
 
 def main():
