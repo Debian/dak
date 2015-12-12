@@ -429,13 +429,14 @@ def main():
                     packages = "Sources"
                     maxsuite = maxsources
                 else:
-                    longarch = "binary-%s"% (architecture)
+                    longarch = "binary-%s" % (architecture)
                     packages = "Packages"
                     maxsuite = maxpackages
-                    # Process Contents
-                    file = "%s/%s/Contents-%s" % (tree, component, architecture)
-                    storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
-                    genchanges(Options, file + ".diff", storename, file, maxcontents)
+
+                # Process Contents
+                file = "%s/%s/Contents-%s" % (tree, component, architecture)
+                storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
+                genchanges(Options, file + ".diff", storename, file, maxcontents)
 
                 file = "%s/%s/%s/%s" % (tree, component, longarch, packages)
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
