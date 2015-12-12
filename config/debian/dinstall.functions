@@ -485,7 +485,8 @@ function mirrorpush() {
         while read SHASUM SIZE NAME; do
             if ! [ -f "${subdir}/${NAME}" ]; then
                bname=$(basename ${NAME})
-                if [[ "${bname}" =~ ^(Packages|Sources|Contents-[a-zA-Z0-9-]+|Translation-[a-zA-Z_]+)$ ]]; then
+               if [[ "${bname}" =~ ^(Packages|Sources|Contents-[a-zA-Z0-9-]+|Translation-[a-zA-Z_]+|Components-(amd64|i386)\.yml|icons-(128x128|64x64)\.tar)$ ]]; then
+
                     # We don't keep unpacked files, don't check for their existance.
                     # We might want to go and check their unpacked shasum, but right now
                     # I don't care. I believe it should be enough if all the packed shasums
