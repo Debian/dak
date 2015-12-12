@@ -7,14 +7,14 @@ Contents:
 1. Little "Howto Use it"
 ------------------------
 
-The input file is in YAML format. Do bnot bother with comments, they
+The input file is in YAML format. Do not bother with comments, they
 will be removed.
 
-The format: Dont use tabs for indentation, use spaces.
+The format: Don't use tabs for indentation, use spaces.
 
 Strings should be within "", but normally work without.
 Exception: Version-numbers with an epoch really do want to be in
-"". YES, THEY WANT TO (or they get interpreted in a way you dont expect
+"". YES, THEY WANT TO (or they get interpreted in a way you don't expect
 it).
 
 Keys (The order of them does not matter, only the indentation):
@@ -127,7 +127,7 @@ PySyck python bindings to the Syck YAML parser kit
 
 ------------------------------------------------------------------------
 
-For completness, change the transition to (exact existing version):
+For completeness, change the transition to (exact existing version):
 lintian_funtest:
   reason: "Testing a new feature"
   source: lintian
@@ -171,7 +171,7 @@ lintian_funtest:
     - lintian
     - python-syck
 bar_breaks_it:
-  reason: We dont want bar to break it
+  reason: We don't want bar to break it
   source: bar
   new: "9:99"
   rm: Ganneff
@@ -209,7 +209,7 @@ Looking at transition: bar_breaks_it
  Source:      bar
  New Version: 9:99
  Responsible: Ganneff
- Description: We dont want bar to break it
+ Description: We don't want bar to break it
  Blocked Packages (total: 3): kdelibs, qt4-x11, libqt-perl
 
 Transition source bar not in testing, transition still ongoing.
@@ -259,7 +259,7 @@ Looking at transition: bar_breaks_it
  Source:      bar
  New Version: 9:99
  Responsible: Ganneff
- Description: We dont want bar to break it
+ Description: We don't want bar to break it
  Blocked Packages (total: 3): kdelibs, qt4-x11, libqt-perl
 
 Transition source bar not in testing, transition still ongoing.

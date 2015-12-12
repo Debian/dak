@@ -160,7 +160,7 @@ Others
 
   o dak doesn't recognise binonlyNMUs correctly in terms of telling
     who their source is; source-must-exist does, but the info is not
-    propogated down.
+    propagated down.
 
   o maintainers file needs overrides
 
@@ -181,7 +181,7 @@ Others
 
   o morgue needs auto-cleaning (?)
 
-  o dak stats: two modes, all included, seperate
+  o dak stats: two modes, all included, separate
   o dak stats: add non-US
   o dak stats: add ability to control components, architectures, archives, suites
   o dak stats: add key to expand header
@@ -245,7 +245,7 @@ Less Urgent
 
   o Do a checkpc(1)-a-like which sanitizes a config files.
   o fix parse_changes()/build_file_list() to sanity check filenames
-  o saftey check and/or rename debs so they match what they should be
+  o safety check and/or rename debs so they match what they should be
 
   o Improve 'dak compare-suites'.
   o Need to optimize all the queries by using EXAMINE and building some INDEXs.
@@ -282,7 +282,7 @@ Less Urgent
     o archive needs md5sum'ed regularly, but takes too long to do all
       in one go; make progressive or weekly.
     o test sig checking stuff in test/ (stupid thing is not modularized due to global abuse)
-    o when encountering suspicous things (e.g. file tainting) do something more drastic
+    o when encountering suspicious things (e.g. file tainting) do something more drastic
 
  * Easy:
 
@@ -305,7 +305,7 @@ Less Urgent
     o 'dak rm' should update the stable changelog [joey]
     o update tagdb.dia
 
- * Bizzare/uncertain:
+ * Bizzarre/uncertain:
 
     o drop rather dubious currval stuff (?)
     o rationalize os.path.join() usage

@@ -46,7 +46,7 @@ o Information display:
 Generic and useful, but only for those with existing archives
 -------------------------------------------------------------
 
-o dak init-archive - initializes a projectb database from an exisiting archive
+o dak init-archive - initializes a projectb database from an existing archive
 
 Generic but not overly useful (in normal use)
 ---------------------------------------------
@@ -55,7 +55,7 @@ o dak import-users-from-passwd - sync PostgreSQL users with system users
 o dak cruft-report - check for obsolete or duplicated packages
 o dak init-dirs - directory creation in the initial setup of an archive
 o dak check-archive - various sanity checks of the database and archive
-o dak control-overrides - manpiulates/list override entries
+o dak control-overrides - manipulates/lists override entries
 o dak control-suite - removes/adds/lists package(s) from/to/for a suite
 o dak stats - produces various statistics
 o dak find-null-maintainers - checks for users with no packages in the archive
