@@ -141,6 +141,10 @@ re_file_source = re.compile(_re_file_prefix + r'(?:(?:\.orig(?:-[a-zA-Z0-9-]+)?|
 # Groups: package, version
 re_file_orig = re.compile(_re_file_prefix + r'\.orig(?:-[a-zA-Z0-9-]+)?(?:\.tar\.(?:bz2|gz|xz)|\.asc)')
 
+# Match buildinfo file
+# Groups: package, version, suffix
+re_file_buildinfo = re.compile(_re_file_prefix + r'_(?P<suffix>[a-zA-Z0-9+]+)\.buildinfo$')
+
 ######################################################################
 # Patterns matching fields                                           #
 ######################################################################

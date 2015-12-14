@@ -374,6 +374,8 @@ class Changes(object):
         for f in self.files.itervalues():
             if re_file_dsc.match(f.filename) or re_file_source.match(f.filename) or re_file_binary.match(f.filename):
                 continue
+            if re_file_buildinfo.match(f.filename):
+                continue
             if f.section != 'byhand' and f.section[:4] != 'raw-':
                 raise InvalidChangesException("{0}: {1} looks like a byhand package, but is in section {2}".format(self.filename, f.filename, f.section))
             byhand.append(f)
