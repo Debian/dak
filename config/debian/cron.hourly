@@ -2,6 +2,10 @@
 #
 # Executed hourly via cron, out of dak's crontab.
 
+# Only one of me should ever run.
+[  "${FLOCKER}"  != "$0" ] && exec env FLOCKER="$0" flock -E 0 -en "$0" "$0"
+"$@" || :
+
 set -e
 set -o pipefail
 set -u
