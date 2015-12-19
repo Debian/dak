@@ -155,7 +155,15 @@ WITH
       f.size AS size,
       f.md5sum AS md5sum,
       f.sha1sum AS sha1sum,
-      f.sha256sum AS sha256sum
+      f.sha256sum AS sha256sum,
+      (SELECT value FROM binaries_metadata
+        WHERE bin_id = b.id
+          AND key_id = (SELECT key_id FROM metadata_keys WHERE key = 'Priority'))
+       AS fallback_priority,
+      (SELECT value FROM binaries_metadata
+        WHERE bin_id = b.id
+          AND key_id = (SELECT key_id FROM metadata_keys WHERE key = 'Section'))
+       AS fallback_section
     FROM
       binaries b
       JOIN bin_associations ba ON b.id = ba.bin
@@ -192,8 +200,8 @@ SELECT
      eo.package = tmp.package
      AND eo.suite = :overridesuite AND eo.component = :component
   ), '')
-  || E'\nSection\: ' || sec.section
-  || E'\nPriority\: ' || pri.priority
+  || E'\nSection\: ' || COALESCE(sec.section, tmp.fallback_section)
+  || E'\nPriority\: ' || COALESCE(pri.priority, tmp.fallback_priority)
   || E'\nFilename\: pool/' || :component_name || '/' || tmp.filename
   || E'\nSize\: ' || tmp.size
   || E'\nMD5sum\: ' || tmp.md5sum
@@ -202,9 +210,12 @@ SELECT
 
 FROM
   tmp
-  JOIN override o ON o.package = tmp.package
-  JOIN section sec ON sec.id = o.section
-  JOIN priority pri ON pri.id = o.priority
+  LEFT JOIN override o ON o.package = tmp.package
+                      AND o.type = :type_id
+                      AND o.suite = :overridesuite
+                      AND o.component = :component
+  LEFT JOIN section sec ON sec.id = o.section
+  LEFT JOIN priority pri ON pri.id = o.priority
 
 WHERE
   (
@@ -214,8 +225,6 @@ WHERE
     OR
       (architecture = :arch_all AND source NOT IN (SELECT DISTINCT source FROM tmp WHERE architecture <> :arch_all))
   )
-  AND
-    o.type = :type_id AND o.suite = :overridesuite AND o.component = :component
 
 ORDER BY tmp.source, tmp.package, tmp.version
 """
