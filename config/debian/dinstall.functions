@@ -132,6 +132,7 @@ function cruft() {
 function dominate() {
     log "Removing obsolete source and binary associations"
     dak dominate
+    dak manage-debug-suites unstable-debug experimental-debug
 }
 
 function autocruft() {
