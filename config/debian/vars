@@ -30,7 +30,7 @@ exportpublic=$public/rsync/export/
 
 ftpgroup=debadmin
 
-public_archives=(ftp-master backports)
+public_archives=(ftp-master backports debian-debug)
 
 TMPDIR=${base}/tmp
 
