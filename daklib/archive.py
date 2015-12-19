@@ -788,6 +788,8 @@ class ArchiveUpload(object):
             binaries = [ entry for entry in packages ]
 
         for b in binaries:
+            if utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
+                continue
             override = self._binary_override(suite, b)
             if override is None:
                 self.warnings.append('binary:{0} is NEW.'.format(b.name))
