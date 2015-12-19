@@ -144,8 +144,6 @@ def main ():
 
     starttime = datetime.now()
 
-    session = DBConn().session()
-
     with ArchiveTransaction() as transaction:
         session = transaction.session
         if Options['All']:
