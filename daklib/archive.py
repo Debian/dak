@@ -1272,7 +1272,7 @@ class ArchiveUpload(object):
             source_suites = self.session.query(Suite).filter(Suite.suite_id.in_(source_suite_ids)).subquery()
 
             source_component_func = lambda source: self._source_override(overridesuite, source).component
-            binary_component_func = lambda binary: self._binary_component(overridesuite, binary)
+            binary_component_func = lambda binary: self._binary_component(overridesuite, binary, only_overrides=False)
 
             (db_source, db_binaries) = self._install_to_suite(redirected_suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
 
