@@ -1338,4 +1338,5 @@ def is_in_debug_section(control):
     @return: True if the binary package is a debug package
     """
     section = control['Section'].split('/', 1)[-1]
-    return section == "debug"
+    auto_built_package = control.get("Auto-Built-Package")
+    return section == "debug" and auto_built_package == "debug-symbols"
