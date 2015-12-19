@@ -94,9 +94,6 @@ LEFT JOIN override o ON o.package = s.source
 LEFT JOIN section sec ON o.section = sec.id
 LEFT JOIN priority pri ON o.priority = pri.id
 
-WHERE
-  (src_associations_full.extra_source OR o.suite IS NOT NULL)
-
 ORDER BY
 s.source, s.version
 """
