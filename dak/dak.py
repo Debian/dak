@@ -98,6 +98,8 @@ def init():
          "Clean unused/superseded packages from the archive"),
         ("manage-build-queues",
          "Clean and update metadata for build queues"),
+        ("manage-debug-suites",
+         "Clean obsolete packages from debug suites"),
         ("clean-queues",
          "Clean cruft from incoming"),
 
