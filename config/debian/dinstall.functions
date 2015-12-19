@@ -530,6 +530,7 @@ function mirrorpush() {
     echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
     sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
     sudo -H -u archvsync /home/archvsync/runmirrors -a backports > ~dak/runmirrorsbpo.log 2>&1 &
+    sudo -H -u archvsync /home/archvsync/runmirrors -a debug > ~dak/runmirrors-debug.log 2>&1 &
 }
 
 function mirrorpush-backports() {
