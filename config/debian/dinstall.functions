@@ -438,7 +438,7 @@ function mirror() {
     # Ugly "hack", but hey, it does what we want.
     cp ${TRACEFILE} ${TRACEFILE_BDO}
 
-    for archive in "${public_archives[@]}"; do
+    for archive in ftp-master backports; do
         archiveroot="$(get_archiveroot "${archive}")"
         mirrordir="${archiveroot}/../mirror"
         cd ${mirrordir}
