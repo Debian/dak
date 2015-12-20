@@ -14,6 +14,7 @@ Use common-debian-service-https-redirect * ftp-master.debian.org
   Redirect permanent /oldstable-proposed-updates.html https://release.debian.org/proposed-updates/oldstable.html
   Redirect permanent /testing/hints/transitions.yaml https://ftp-master.debian.org/transitions.yaml
   Alias /users/ /srv/ftp.debian.org/web-users/
+  Alias /static/lintian.tags /srv/ftp-master.debian.org/dak/config/debian/lintian.tags
 
   <Directory /srv/ftp.debian.org/web-users>
     Require all granted
