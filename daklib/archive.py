@@ -780,20 +780,25 @@ class ArchiveUpload(object):
 
     def _check_new_binary_overrides(self, suite):
         new = False
-
-        binaries = self.changes.binaries
         source = self.changes.source
+
         if source is not None and not source.package_list.fallback:
             packages = source.package_list.packages_for_suite(suite)
             binaries = [ entry for entry in packages ]
-
-        for b in binaries:
-            if utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
-                continue
-            override = self._binary_override(suite, b)
-            if override is None:
-                self.warnings.append('binary:{0} is NEW.'.format(b.name))
-                new = True
+            for b in binaries:
+                override = self._binary_override(suite, b)
+                if override is None:
+                    self.warnings.append('binary:{0} is NEW.'.format(b.name))
+                    new = True
+        else:
+            binaries = self.changes.binaries
+            for b in binaries:
+                if utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
+                    continue
+                override = self._binary_override(suite, b)
+                if override is None:
+                    self.warnings.append('binary:{0} is NEW.'.format(b.name))
+                    new = True
 
         return new
 
