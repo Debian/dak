@@ -28,9 +28,11 @@ Use common-debian-service-https-redirect * ftp-master.debian.org
     Options MultiViews Indexes SymLinksIfOwnerMatch
   </Directory>
 
-  <Files /srv/ftp-master.debian.org/dak/config/debian/lintian.tags>
-    Require all granted
-  </Files>
+  <Directory /srv/ftp-master.debian.org/dak/config/debian>
+    <Files lintian.tags>
+      Require all granted
+    </Files>
+  </Directory>
 
   RewriteEngine On
   RewriteRule ^/~(.+) /users/$1 [R=permanent,L]
