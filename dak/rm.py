@@ -65,6 +65,8 @@ def usage (exit_code=0):
     print """Usage: dak rm [OPTIONS] PACKAGE[...]
 Remove PACKAGE(s) from suite(s).
 
+  -A, --no-arch-all-rdeps    Do not report breaking arch:all packages
+                             or Build-Depends-Indep
   -a, --architecture=ARCH    only act on this architecture
   -b, --binary               PACKAGE are binary packages to remove
   -B, --binary-only          remove binaries only
@@ -100,9 +102,9 @@ def game_over():
 
 ################################################################################
 
-def reverse_depends_check(removals, suite, arches=None, session=None):
+def reverse_depends_check(removals, suite, arches=None, session=None, include_arch_all=True):
     print "Checking reverse dependencies..."
-    if utils.check_reverse_depends(removals, suite, arches, session):
+    if utils.check_reverse_depends(removals, suite, arches, session, include_arch_all=include_arch_all):
         print "Dependency problem found."
         if not Options["No-Action"]:
             game_over()
@@ -118,6 +120,7 @@ def main ():
     cnf = Config()
 
     Arguments = [('h',"help","Rm::Options::Help"),
+                 ('A','no-arch-all-rdeps','Rm::Options::NoArchAllRdeps'),
                  ('a',"architecture","Rm::Options::Architecture", "HasArg"),
                  ('b',"binary", "Rm::Options::Binary"),
                  ('B',"binary-only", "Rm::Options::Binary-Only"),
@@ -133,7 +136,8 @@ def main ():
                  ('S',"source-only", "Rm::Options::Source-Only"),
                  ]
 
-    for i in [ "architecture", "binary", "binary-only", "carbon-copy", "component",
+    for i in [ 'NoArchAllRdeps',
+               "architecture", "binary", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
                "source-only", "Do-Close" ]:
         if not cnf.has_key("Rm::Options::%s" % (i)):
@@ -337,7 +341,8 @@ def main ():
 
     if Options["Rdep-Check"]:
         arches = utils.split_args(Options["Architecture"])
-        reverse_depends_check(removals, suites[0], arches, session)
+        include_arch_all = Options['NoArchAllRdeps'] == ''
+        reverse_depends_check(removals, suites[0], arches, session, include_arch_all=include_arch_all)
 
     # If -n/--no-action, drop out here
     if Options["No-Action"]:
