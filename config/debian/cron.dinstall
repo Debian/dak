@@ -170,333 +170,107 @@ trap remove_daily_lock EXIT TERM HUP INT QUIT
 
 touch "${LOCK_BRITNEY}"
 
-GO=(
-    FUNC="savetimestamp"
-    TIME=""
-    ARGS=""
-    ERR="false"
-)
-stage $GO
+# This loop simply wants to be fed by a list of values (see below)
+# which consists of 5 values currently.
+# The first four are the array values for the stage function, the
+# fifths tells us if we should background the stage call.
+#
+#  - FUNC - the function name to call
+#  - ARGS - Possible arguments to hand to the function. Can be the empty string
+#  - TIME - The timestamp name. Can be the empty string
+#  - ERR  - if this is the string false, then the call will be surrounded by
+#           set +e ... set -e calls, so errors in the function do not exit
+#           dinstall. Can be the empty string, meaning true.
+#  - BG   - Background the function stage?
+#
+# ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
+#
+# ATTENTION: There are two special values for the first column (FUNC).
+#            STATE   - do not call stage function, call the state
+#                      function to update the public statefile "where is dinstall"
+#            NOSTAGE - do not call stage function, call the command directly.
+while read FUNC ARGS TIME ERR BACKGROUND; do
+    debug "FUNC: $FUNC ARGS: $ARGS TIME: $TIME ERR: $ERR BG: $BACKGROUND"
 
-GO=(
-    FUNC="qa1"
-    TIME="init"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
+    # Empty values in the value list are the string "none" (or the
+    # while read loop won't work). Here we ensure that variables that
+    # can be empty, are empty if the string none is set for them.
+    for var in ARGS TIME; do
+        if [[ ${!var} == none ]]; then
+            typeset ${var}=''
+        fi
+    done
 
-GO=(
-    FUNC="pg_timestamp"
-    TIME="pg_dump1"
-    ARGS="predinstall"
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="updates"
-    TIME="External Updates"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-GO=(
-    FUNC="i18n1"
-    TIME="i18n 1"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-GO=(
-    FUNC="dep11"
-    TIME="dep11 1"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-lockfile "$LOCK_ACCEPTED"
-trap remove_all_locks EXIT TERM HUP INT QUIT
-
-GO=(
-    FUNC="punew"
-    TIME="p-u-new"
-    ARGS="stable-new"
-    ERR="false"
-)
-stage $GO
-
-GO=(
-    FUNC="opunew"
-    TIME="o-p-u-new"
-    ARGS="oldstable-new"
-    ERR="false"
-)
-stage $GO
-
-GO=(
-    FUNC="backports_policy"
-    TIME="backports-policy"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-GO=(
-    FUNC="cruft"
-    TIME="cruft"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-state "indices"
-
-GO=(
-    FUNC="dominate"
-    TIME="dominate"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="autocruft"
-    TIME="autocruft"
-    ARGS="unstable experimental"
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="fingerprints"
-    TIME="import-keyring"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-GO=(
-    FUNC="overrides"
-    TIME="overrides"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="mpfm"
-    TIME="pkg-file-mapping"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-state "packages/contents"
-GO=(
-    FUNC="packages"
-    TIME="apt-ftparchive"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-state "dists/"
-GO=(
-    FUNC="pdiff"
-    TIME="pdiff"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="gitpdiff"
-    TIME="gitpdiff"
-    ARGS=""
-    ERR=""
-)
-#stage $GO
-
-GO=(
-    FUNC="release"
-    TIME="release files"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="dakcleanup"
-    TIME="cleanup"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-state "scripts"
-GO=(
-    FUNC="mkmaintainers"
-    TIME="mkmaintainers"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="copyoverrides"
-    TIME="copyoverrides"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="mklslar"
-    TIME="mklslar"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="mkfilesindices"
-    TIME="mkfilesindices"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="mkchecksums"
-    TIME="mkchecksums"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="mirror"
-    TIME="mirror hardlinks"
-    ARGS=""
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="ddaccess"
-    TIME="ddaccessible sync"
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-
-remove_all_locks
-trap - EXIT TERM HUP INT QUIT
-
-ts "locked part finished"
-state "postlock"
-
-GO=(
-    FUNC="changelogs"
-    TIME="changelogs"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="pg_timestamp"
-    TIME="pg_dump2"
-    ARGS="postdinstall"
-    ERR=""
-)
-stage $GO
-
-GO=(
-    FUNC="expire"
-    TIME="expire_dumps"
-    ARGS=""
-    ERR=""
-)
-stage $GO &
-
-GO=(
-    FUNC="transitionsclean"
-    TIME="transitionsclean"
-    ARGS=""
-    ERR=""
-)
-stage $GO &
-
-GO=(
-    FUNC="dm"
-    TIME=""
-    ARGS=""
-    ERR=""
-)
-stage $GO &
-
-GO=(
-    FUNC="bts"
-    TIME=""
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="mirrorpush"
-    TIME="mirrorpush"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="mirrorpush-backports"
-    TIME="mirrorpush-backports"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="i18n2"
-    TIME="i18n 2"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="stats"
-    TIME="stats"
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-GO=(
-    FUNC="testingsourcelist"
-    TIME=""
-    ARGS=""
-    ERR="false"
-)
-stage $GO &
-
-rm -f "${LOCK_BRITNEY}"
-
-GO=(
-    FUNC="cleantransactions"
-    TIME=""
-    ARGS=""
-    ERR=""
-)
-stage $GO
+    case ${FUNC} in
+        STATE)
+            state ${ARGS}
+        ;;
+        NOSTAGE)
+            ${ARGS}
+        ;;
+        *)
+            GO=(
+                FUNC=${FUNC}
+                TIME=${TIME}
+                ARGS=${ARGS}
+                ERR=${ERR}
+            )
+            if [[ ${BACKGROUND} == true ]]; then
+                stage $GO &
+            else
+                stage $GO
+            fi
+        ;;
+    esac
+done < <(cat - <<EOF
+savetimestamp         none                  none           false              false
+qa1                   init                  none           false              true
+pg_timestamp          pg_dump1              predinstall    false              false
+updates               External\ Updates     none           false              false
+i18n1                 i18n\ 1               none           false              false
+dep11                 dep11\ 1              none           false              false
+NOSTAGE               lockaccepted          none           false              false
+punew                 p-u-new               stable-new     false              false
+opunew                o-p-u-new             oldstable-new  false              false
+backports_policy      backports-policy      none           false              false
+cruft                 cruft                 none           false              false
+STATE                 indices               none           false              false
+dominate              dominate              none           false              false
+autocruft             autocruft             unstable\ experimental false      false
+fingerprints          import-keyring        none           false              false
+overrides             overrides             none           false              false
+mpfm                  pkg-file-mapping      none           false              false
+STATE                 packages/contents     none           false              false
+packages              apt-ftparchive        none           false              false
+STATE                 dists/                none           false              false
+pdiff                 pdiff                 none           false              false
+release               release\ files        none           false              false
+dakcleanup            cleanup               none           false              false
+STATE                 scripts               none           false              false
+mkmaintainers         mkmaintainers         none           false              false
+copyoverrides         copyoverrides         none           false              false
+mklslar               mklslar               none           false              false
+mkfilesindices        mkfilesindices        none           false              false
+mkchecksums           mkchecksums           none           false              false
+mirror                mirror\ hardlinks     none           false              false
+ddaccess              ddaccessible\ sync    none           false              false
+NOSTAGE               remove_locks          none           false              false
+STATE                 postlock              none           false              false
+changelogs            changelogs            none           false              true
+pg_timestamp          pg_dump2              postdinstall   false              false
+expire                expire_dumps          none           false              true
+transitionsclean      transitionsclean      none           false              true
+dm                    none                  none           false              true
+bts                   none                  none           false              true
+mirrorpush            mirrorpush            none           false              true
+mirrorpush-backports  mirrorpush-backports  none           false              true
+i18n2                 i18n\ 2               none           false              true
+stats                 stats                 none           false              true
+testingsourcelist     none                  none           false              true
+NOSTAGE               rm\ -f\ "\${LOCK_BRITNEY}" none      false              false
+cleantransactions     none                  none           false              false
+EOF
+        )
 
 # we need to wait for the background processes before the end of dinstall
 wait

@@ -19,6 +19,17 @@ function remove_all_locks() {
     rm -f $LOCK_DAILY $LOCK_ACCEPTED
 }
 
+function remove_locks {
+    remove_all_locks
+    trap - EXIT TERM HUP INT QUIT
+    ts "locked part finished"
+}
+
+function lockaccepted {
+    lockfile "$LOCK_ACCEPTED"
+    trap remove_all_locks EXIT TERM HUP INT QUIT
+}
+
 # If we error out this one is called, *FOLLOWED* by cleanup above
 function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
