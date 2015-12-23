@@ -421,28 +421,30 @@ function mkchecksums() {
 }
 
 function mirror() {
-    local archiveroot mirrordir
+    local archiveroot mirrordir targetpath TRACEFILE
 
-    log "Regenerating \"public\" mirror/ hardlink fun"
-    DATE_SERIAL=$(date +"%Y%m%d01")
-    FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
-    if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
-        SERIAL="$DATE_SERIAL"
-    else
-        SERIAL="$FILESOAPLUS1"
-    fi
-    date -u > ${TRACEFILE}
-    echo "Using dak v1" >> ${TRACEFILE}
-    echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
-    echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
-
-    # Ugly "hack", but hey, it does what we want.
-    cp ${TRACEFILE} ${TRACEFILE_BDO}
-
-    for archive in ftp-master backports; do
+    for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
         mirrordir="${archiveroot}/../mirror"
-        cd ${mirrordir}
+        targetpath="${mirrordir}/${archive}"
+        TRACEFILE="${archiveroot}/project/trace/ftp-master.debian.org"
+        mkdir -p "${archiveroot}/project/trace/"
+
+        log "Regenerating \"public\" mirror/${archive} hardlink fun"
+        DATE_SERIAL=$(date +"%Y%m%d01")
+        FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
+        if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
+            SERIAL="$DATE_SERIAL"
+        else
+            SERIAL="$FILESOAPLUS1"
+        fi
+        date -u > ${TRACEFILE}
+        echo "Using dak v1" >> ${TRACEFILE}
+        echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
+        echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
+
+        mkdir -p ${targetpath}
+        cd ${targetpath}
         rsync -aH --link-dest ${archiveroot} --delete --delete-after --delete-excluded --exclude Packages.*.new --exclude Sources.*.new  --ignore-errors ${archiveroot}/. .
     done
 }
@@ -476,61 +478,82 @@ function ddaccess() {
 }
 
 function mirrorpush() {
-    log "Checking the public archive copy"
-    cd ${mirrordir}/dists
+    log "Checking the public archive copies..."
 
-    broken=0
-    for release in $(find . -name "InRelease"); do
-        echo "Processing: ${release}"
-        subdir=${release%/InRelease}
-        while read SHASUM SIZE NAME; do
-            if ! [ -f "${subdir}/${NAME}" ]; then
-               bname=$(basename ${NAME})
-               if [[ "${bname}" =~ ^(Packages|Sources|Contents-[a-zA-Z0-9-]+|Translation-[a-zA-Z_]+|Components-(amd64|i386)\.yml|icons-(128x128|64x64)\.tar)$ ]]; then
+    local archiveroot mirrordir targetpath
 
-                    # We don't keep unpacked files, don't check for their existance.
-                    # We might want to go and check their unpacked shasum, but right now
-                    # I don't care. I believe it should be enough if all the packed shasums
-                    # match.
+    for archive in "${public_archives[@]}"; do
+        log "... archive: ${archive}"
+        archiveroot="$(get_archiveroot "${archive}")"
+        mirrordir="${archiveroot}/../mirror"
+        targetpath="${mirrordir}/${archive}"
+        cd ${targetpath}/dists
+
+        broken=0
+        for release in $(find . -name "InRelease"); do
+            echo "Processing: ${release}"
+            subdir=${release%/InRelease}
+            while read SHASUM SIZE NAME; do
+                if ! [ -f "${subdir}/${NAME}" ]; then
+                    bname=$(basename ${NAME})
+                    if [[ "${bname}" =~ ^(Packages|Sources|Contents-[a-zA-Z0-9-]+|Translation-[a-zA-Z_]+|Components-(amd64|i386)\.yml|icons-(128x128|64x64)\.tar)$ ]]; then
+
+                        # We don't keep unpacked files, don't check for their existance.
+                        # We might want to go and check their unpacked shasum, but right now
+                        # I don't care. I believe it should be enough if all the packed shasums
+                        # match.
+                        continue
+                    fi
+                    broken=$(( broken + 1 ))
+                    echo "File ${subdir}/${NAME} is missing"
                     continue
                 fi
-                broken=$(( broken + 1 ))
-                echo "File ${subdir}/${NAME} is missing"
-                continue
-            fi
 
-           # We do have symlinks in the tree (see the contents files currently).
-           # So we use "readlink -f" to check the size of the target, as thats basically
-           # what gen-releases does
-            fsize=$(stat -c %s $(readlink -f "${subdir}/${NAME}"))
-            if [ ${fsize} -ne ${SIZE} ]; then
-                broken=$(( broken + 1 ))
-                echo "File ${subdir}/${NAME} has size ${fsize}, expected is ${SIZE}"
-                continue
-            fi
+                # We do have symlinks in the tree (see the contents files currently).
+                # So we use "readlink -f" to check the size of the target, as thats basically
+                # what gen-releases does
+                fsize=$(stat -c %s $(readlink -f "${subdir}/${NAME}"))
+                if [ ${fsize} -ne ${SIZE} ]; then
+                    broken=$(( broken + 1 ))
+                    echo "File ${subdir}/${NAME} has size ${fsize}, expected is ${SIZE}"
+                    continue
+                fi
 
-            fshasum=$(sha1sum $(readlink -f "${subdir}/${NAME}"))
-            fshasum=${fshasum%% *}
-            if [ "${fshasum}" != "${SHASUM}" ]; then
-                broken=$(( broken + 1 ))
-                echo "File ${subdir}/${NAME} has checksum ${fshasum}, expected is ${SHASUM}"
-                continue
-            fi
-        done < <(sed '1,/SHA1:/d' "${release}" | sed '/SHA256:/,$d')
-    done
+                fshasum=$(sha1sum $(readlink -f "${subdir}/${NAME}"))
+                fshasum=${fshasum%% *}
+                if [ "${fshasum}" != "${SHASUM}" ]; then
+                    broken=$(( broken + 1 ))
+                    echo "File ${subdir}/${NAME} has checksum ${fshasum}, expected is ${SHASUM}"
+                    continue
+                fi
+            done < <(sed '1,/SHA1:/d' "${release}" | sed '/SHA256:/,$d')
+        done
 
-    if [ $broken -gt 0 ]; then
-        log_error "Trouble with the public mirror, found ${broken} errors"
-        return 21
-    fi
-
-    log "Starting the mirrorpush"
-    date -u > /srv/ftp.debian.org/web/mirrorstart
-    echo "Using dak v1" >> /srv/ftp.debian.org/web/mirrorstart
-    echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/mirrorstart
-    sudo -H -u archvsync /home/archvsync/runmirrors > ~dak/runmirrors.log 2>&1 &
-    sudo -H -u archvsync /home/archvsync/runmirrors -a backports > ~dak/runmirrorsbpo.log 2>&1 &
-    sudo -H -u archvsync /home/archvsync/runmirrors -a debug > ~dak/runmirrors-debug.log 2>&1 &
+        if [ $broken -gt 0 ]; then
+            log_error "Trouble with the public mirror for ${archive}, found ${broken} errors"
+            continue
+        else
+            log "Starting the mirrorpush for ${archive}"
+            case ${archive} in
+                ftp-master)
+                    fname="mirrorstart"
+                    pusharg=""
+                    ;;
+                debian-debug)
+                    pusharg="-a debug"
+                    ;;&
+                backports)
+                    pusharg="-a backports"
+                    ;;&
+                *)
+                    fname="mirrorstart.${archive}"
+                    ;;
+            esac
+            date -u > /srv/ftp.debian.org/web/${fname}
+            echo "Using dak v1" >> /srv/ftp.debian.org/web/${fname}
+            echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/${fname}
+            sudo -H -u archvsync /home/archvsync/runmirrors ${pusharg} > ~dak/runmirrors-${archive}.log 2>&1 &
+        fi
 }
 
 function mirrorpush-backports() {

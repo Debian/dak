@@ -45,8 +45,3 @@ LOCK_CHANGELOG="$lockdir/changelog.lock"
 
 # Statefile for the users
 DINSTALLSTATE="${webdir}/dinstall.status"
-
-TRACEFILE="${ftpdir}/project/trace/ftp-master.debian.org"
-
-archiveroot="$(get_archiveroot "backports")"
-TRACEFILE_BDO="${archiveroot}/project/trace/ftp-master.debian.org"
