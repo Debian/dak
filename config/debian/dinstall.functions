@@ -443,7 +443,7 @@ function mirror() {
 
         log "Regenerating \"public\" mirror/${archive} hardlink fun"
         DATE_SERIAL=$(date +"%Y%m%d01")
-        FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} )
+        FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} || echo ${DATE_SERIAL} )
         if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
             SERIAL="$DATE_SERIAL"
         else
