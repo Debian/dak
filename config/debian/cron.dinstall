@@ -224,7 +224,7 @@ while read FUNC ARGS TIME ERR BACKGROUND; do
     esac
 done < <(cat - <<EOF
 savetimestamp          none                       none                       false   false
-qa1                    none                       init                       false   true
+qa1                    none                       init                       true    true
 pg_timestamp           predinstall                pg_dump1                   false   false
 updates                none                       External\ Updates          false   false
 i18n1                  none                       i18n\ 1                    false   false

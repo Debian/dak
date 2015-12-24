@@ -24,7 +24,7 @@ function debug () {
 }
 
 function wbtrigger() {
-    SSHOPT="-o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
+    SSHOPT="-n -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
     if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
         ssh -q -q ${SSHOPT} wbadm@buildd /srv/wanna-build/trigger.often
     fi
