@@ -223,52 +223,52 @@ while read FUNC ARGS TIME ERR BACKGROUND; do
         ;;
     esac
 done < <(cat - <<EOF
-savetimestamp         none                  none           false              false
-qa1                   init                  none           false              true
-pg_timestamp          pg_dump1              predinstall    false              false
-updates               External\ Updates     none           false              false
-i18n1                 i18n\ 1               none           false              false
-dep11                 dep11\ 1              none           false              false
-NOSTAGE               lockaccepted          none           false              false
-punew                 p-u-new               stable-new     false              false
-opunew                o-p-u-new             oldstable-new  false              false
-backports_policy      backports-policy      none           false              false
-cruft                 cruft                 none           false              false
-STATE                 indices               none           false              false
-dominate              dominate              none           false              false
-autocruft             autocruft             unstable\ experimental false      false
-fingerprints          import-keyring        none           false              false
-overrides             overrides             none           false              false
-mpfm                  pkg-file-mapping      none           false              false
-STATE                 packages/contents     none           false              false
-packages              apt-ftparchive        none           false              false
-STATE                 dists/                none           false              false
-pdiff                 pdiff                 none           false              false
-release               release\ files        none           false              false
-dakcleanup            cleanup               none           false              false
-STATE                 scripts               none           false              false
-mkmaintainers         mkmaintainers         none           false              false
-copyoverrides         copyoverrides         none           false              false
-mklslar               mklslar               none           false              false
-mkfilesindices        mkfilesindices        none           false              false
-mkchecksums           mkchecksums           none           false              false
-mirror                mirror\ hardlinks     none           false              false
-ddaccess              ddaccessible\ sync    none           false              false
-NOSTAGE               remove_locks          none           false              false
-STATE                 postlock              none           false              false
-changelogs            changelogs            none           false              true
-pg_timestamp          pg_dump2              postdinstall   false              false
-expire                expire_dumps          none           false              true
-transitionsclean      transitionsclean      none           false              true
-dm                    none                  none           false              true
-bts                   none                  none           false              true
-mirrorpush            mirrorpush            none           false              true
-mirrorpush-backports  mirrorpush-backports  none           false              true
-i18n2                 i18n\ 2               none           false              true
-stats                 stats                 none           false              true
-testingsourcelist     none                  none           false              true
-NOSTAGE               rm\ -f\ "\${LOCK_BRITNEY}" none      false              false
-cleantransactions     none                  none           false              false
+savetimestamp          none                       none                       false   false
+qa1                    none                       init                       false   true
+pg_timestamp           predinstall                pg_dump1                   false   false
+updates                none                       External\ Updates          false   false
+i18n1                  none                       i18n\ 1                    false   false
+dep11                  none                       dep11\ 1                   false   false
+NOSTAGE                lockaccepted               none                       false   false
+punew                  stable-new                 p-u-new                    false   false
+opunew                 oldstable-new              o-p-u-new                  false   false
+backports_policy       none                       backports-policy           false   false
+cruft                  none                       cruft                      false   false
+STATE                  indices                    none                       false   false
+dominate               none                       dominate                   false   false
+autocruft              unstable\ experimental     autocruft                  false   false
+fingerprints           none                       import-keyring             false   false
+overrides              none                       overrides                  false   false
+mpfm                   none                       pkg-file-mapping           false   false
+STATE                  packages/contents          none                       false   false
+packages               none                       apt-ftparchive             false   false
+STATE                  dists/                     none                       false   false
+pdiff                  none                       pdiff                      false   false
+release                none                       release\ files             false   false
+dakcleanup             none                       cleanup                    false   false
+STATE                  scripts                    none                       false   false
+mkmaintainers          none                       mkmaintainers              false   false
+copyoverrides          none                       copyoverrides              false   false
+mklslar                none                       mklslar                    false   false
+mkfilesindices         none                       mkfilesindices             false   false
+mkchecksums            none                       mkchecksums                false   false
+mirror                 none                       mirror\ hardlinks          false   false
+ddaccess               none                       ddaccessible\ sync         false   false
+NOSTAGE                remove_locks               none                       false   false
+STATE                  postlock                   none                       false   false
+changelogs             none                       changelogs                 false   true
+pg_timestamp           postdinstall               pg_dump2                   false   false
+expire                 none                       expire_dumps               false   true
+transitionsclean       none                       transitionsclean           false   true
+dm                     none                       none                       false   true
+bts                    none                       none                       false   true
+mirrorpush             none                       mirrorpush                 false   true
+mirrorpush-backports   none                       mirrorpush-backports       false   true
+i18n2                  none                       i18n\ 2                    false   true
+stats                  none                       stats                      false   true
+testingsourcelist      none                       none                       false   true
+NOSTAGE                rm\ -f\ "\${LOCK_BRITNEY}" none                       false   false
+cleantransactions      none                       none                       false   false
 EOF
         )
 
