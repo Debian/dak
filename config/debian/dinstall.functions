@@ -432,11 +432,10 @@ function mkchecksums() {
 }
 
 function mirror() {
-    local archiveroot mirrordir targetpath TRACEFILE
+    local archiveroot targetpath TRACEFILE
 
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
-        mirrordir="${archiveroot}/../mirror"
         targetpath="${mirrordir}/${archive}"
         TRACEFILE="${archiveroot}/project/trace/ftp-master.debian.org"
         mkdir -p "${archiveroot}/project/trace/"
@@ -491,12 +490,11 @@ function ddaccess() {
 function mirrorpush() {
     log "Checking the public archive copies..."
 
-    local archiveroot mirrordir targetpath
+    local archiveroot targetpath
 
     for archive in "${public_archives[@]}"; do
         log "... archive: ${archive}"
         archiveroot="$(get_archiveroot "${archive}")"
-        mirrordir="${archiveroot}/../mirror"
         targetpath="${mirrordir}/${archive}"
         cd ${targetpath}/dists
 
