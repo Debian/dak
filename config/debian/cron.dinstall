@@ -253,9 +253,9 @@ mklslar                none                       mklslar                    fal
 mkfilesindices         none                       mkfilesindices             false   false
 mkchecksums            none                       mkchecksums                false   false
 mirror                 none                       mirror\ hardlinks          false   false
-ddaccess               none                       ddaccessible\ sync         false   false
 NOSTAGE                remove_locks               none                       false   false
 STATE                  postlock                   none                       false   false
+ddaccess               none                       ddaccessible\ sync         true    true
 changelogs             none                       changelogs                 false   true
 pg_timestamp           postdinstall               pg_dump2                   false   false
 expire                 none                       expire_dumps               false   true
