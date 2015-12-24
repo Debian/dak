@@ -496,7 +496,7 @@ function mirrorpush() {
         log "... archive: ${archive}"
         archiveroot="$(get_archiveroot "${archive}")"
         targetpath="${mirrordir}/${archive}"
-        cd ${targetpath}/dists
+        cd ${archiveroot}/dists
 
         broken=0
         for release in $(find . -name "InRelease"); do
