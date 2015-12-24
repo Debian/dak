@@ -565,6 +565,7 @@ function mirrorpush() {
             echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/${fname}
             sudo -H -u archvsync /home/archvsync/runmirrors ${pusharg} > ~dak/runmirrors-${archive}.log 2>&1 &
         fi
+    done
 }
 
 function mirrorpush-backports() {
