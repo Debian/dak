@@ -236,7 +236,7 @@ backports_policy       none                       backports-policy           fal
 cruft                  none                       cruft                      false   false
 STATE                  indices                    none                       false   false
 dominate               none                       dominate                   false   false
-autocruft              unstable\ experimental     autocruft                  false   false
+autocruft              none                       autocruft                  false   false
 fingerprints           none                       import-keyring             false   false
 overrides              none                       overrides                  false   false
 mpfm                   none                       pkg-file-mapping           false   false
