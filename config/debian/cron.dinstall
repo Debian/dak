@@ -71,17 +71,17 @@ function stage() {
     ARGS='GO[@]'
     local "${!ARGS}"
 
-    error=${ERR:-"true"}
+    local error=${ERR:-"true"}
 
     ARGS=${ARGS:-""}
 
     log "########## DINSTALL BEGIN: ${FUNC} ${ARGS} ##########"
-    STAGEFILE="${stagedir}/${FUNC}_${ARGS}"
+    local STAGEFILE="${stagedir}/${FUNC}_${ARGS}"
     STAGEFILE=${STAGEFILE// /_}
     if [ -f "${STAGEFILE}" ]; then
-        stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
-        unixtime=$(date +%s)
-        difference=$(( $unixtime - $stamptime ))
+        local stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
+        local unixtime=$(date +%s)
+        local difference=$(( $unixtime - $stamptime ))
         if [ ${difference} -ge 14400 ]; then
             log_error "Did already run ${FUNC}, stagefile exists, but that was ${difference} seconds ago. Please check."
         else
