@@ -1,7 +1,7 @@
 #!/bin/bash
 # No way I try to deal with a crippled sh just for POSIX foo.
 
-# Copyright (C) 2009-2012 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2009-2015 Joerg Jaspert <joerg@debian.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -92,13 +92,14 @@ function stage() {
 
     debug "Now calling function ${FUNC}. Arguments: ${ARGS}. Timestamp: ${TIME}"
 
-    # Make sure we are always at the same place. If a function wants to be elsewhere,
-    # it has to cd first!
+    # Make sure we are always at the same place. If a function wants
+    # to be elsewhere, it has to cd first!
     cd ${configdir}
 
-    # Now redirect the output into $STAGEFILE.log. In case it errors out somewhere our
-    # errorhandler trap can then mail the contents of $STAGEFILE.log only, instead of a whole
-    # dinstall logfile. Short error mails ftw!
+    # Now redirect the output into $STAGEFILE.log. In case it errors
+    # out somewhere our errorhandler trap can then mail the contents
+    # of $STAGEFILE.log only, instead of a whole dinstall logfile.
+    # Short error mails ftw!
     exec >> "${STAGEFILE}.log" 2>&1
 
     if [ -f "${LOCK_STOP}" ]; then
@@ -106,18 +107,21 @@ function stage() {
         exit 42
     fi
 
+    # Do we care about trouble in the function we call?
     if [ "${error}" = "false" ]; then
         set +e
     fi
     ${FUNC} ${ARGS}
 
-    # No matter what happened in the function, we make sure we have set -e default state back
+    # No matter what happened in the function, we make sure we have
+    # set -e default state back
     set -e
 
     # Make sure we are always at the same place.
     cd ${configdir}
 
-    # We always use the same umask. If a function wants to do different, fine, but we reset.
+    # We always use the same umask. If a function wants to do
+    # different, fine, but we reset.
     umask 022
 
     touch "${STAGEFILE}"
@@ -129,8 +133,8 @@ function stage() {
     # And the output goes back to the normal logfile
     exec >> "$LOGFILE" 2>&1
 
-    # Now we should make sure that we have a usable dinstall.log, so append the $STAGEFILE.log
-    # to it.
+    # Now we should make sure that we have a usable dinstall.log, so
+    # append the $STAGEFILE.log to it.
     cat "${STAGEFILE}.log" >> "${LOGFILE}"
     rm -f "${STAGEFILE}.log"
 
@@ -171,9 +175,9 @@ trap remove_daily_lock EXIT TERM HUP INT QUIT
 touch "${LOCK_BRITNEY}"
 
 # This loop simply wants to be fed by a list of values (see below)
-# which consists of 5 values currently.
+# made out of 5 columns.
 # The first four are the array values for the stage function, the
-# fifths tells us if we should background the stage call.
+# fifth tells us if we should background the stage call.
 #
 #  - FUNC - the function name to call
 #  - ARGS - Possible arguments to hand to the function. Can be the empty string
@@ -185,10 +189,13 @@ touch "${LOCK_BRITNEY}"
 #
 # ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
 #
-# ATTENTION: There are two special values for the first column (FUNC).
-#            STATE   - do not call stage function, call the state
-#                      function to update the public statefile "where is dinstall"
-#            NOSTAGE - do not call stage function, call the command directly.
+# NOTE 1: There are two special values for the first column (FUNC).
+#         STATE   - do not call stage function, call the state
+#                   function to update the public statefile "where is dinstall"
+#         NOSTAGE - do not call stage function, call the command directly.
+#
+# Note 2: If you want to hand an empty value to the stage function,
+#         use the word "none" in the list below.
 while read FUNC ARGS TIME ERR BACKGROUND; do
     debug "FUNC: $FUNC ARGS: $ARGS TIME: $TIME ERR: $ERR BG: $BACKGROUND"
 
