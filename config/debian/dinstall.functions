@@ -626,14 +626,6 @@ function testingsourcelist() {
     dak ls -s testing -f heidi -r .| egrep 'source$' > ${webdir}/testing.list
 }
 
-# do a last run of process-unchecked before dinstall is on.
-function process_unchecked() {
-    log "Processing the unchecked queue"
-    UNCHECKED_WITHOUT_LOCK="-p"
-    do_unchecked
-    sync_debbugs
-}
-
 # Function to update a "statefile" telling people what we are doing
 # (more or less).
 #
