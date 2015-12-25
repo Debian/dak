@@ -208,6 +208,13 @@ while read FUNC ARGS TIME ERR BACKGROUND; do
         fi
     done
 
+    # ERR/BACKGROUND are boolean, check that they are.
+    for var in ERR BACKGROUND; do
+        if [[ ${!var} != false ]] && [[ ${!var} != true ]]; then
+            error "Illegal value ${!var} for ${var} (should be true or false), line for function ${FUNC}"
+        fi
+    done
+
     case ${FUNC} in
         STATE)
             state ${ARGS}
