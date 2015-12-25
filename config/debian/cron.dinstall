@@ -279,15 +279,19 @@ log "Daily cron scripts successful, all done"
 
 exec > "$logdir/afterdinstall.log" 2>&1
 
-GO=(
-    FUNC="renamelogfile"
-    TIME=""
-    ARGS=""
-    ERR="false"
-)
-stage $GO
-state "all done"
+if [ -f "${dbdir}/dinstallstart" ]; then
+    NOW=$(cat "${dbdir}/dinstallstart")
+    mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+    logstats "$logdir/dinstall_${NOW}.log"
+    bzip2 -9 "$logdir/dinstall_${NOW}.log"
+else
+    error "Problem, I don't know when dinstall started, unable to do log statistics."
+    NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+    mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
+    bzip2 -9 "$logdir/dinstall_${NOW}.log"
+fi
 
+state "all done"
 
 # Now, at the very (successful) end of dinstall, make sure we remove
 # our stage files, so the next dinstall run will do it all again.

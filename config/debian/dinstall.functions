@@ -622,22 +622,6 @@ function maillogfile() {
     cat "$LOGFILE" | mail -a "X-Debian: DAK" -s "Log for dinstall run of ${NOW}" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" cron@ftp-master.debian.org
 }
 
-function renamelogfile() {
-    if [ -f "${dbdir}/dinstallstart" ]; then
-        NOW=$(cat "${dbdir}/dinstallstart")
-#        maillogfile
-        mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
-        logstats "$logdir/dinstall_${NOW}.log"
-        bzip2 -9 "$logdir/dinstall_${NOW}.log"
-    else
-        error "Problem, I don't know when dinstall started, unable to do log statistics."
-        NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-#        maillogfile
-        mv "$LOGFILE" "$logdir/dinstall_${NOW}.log"
-        bzip2 -9 "$logdir/dinstall_${NOW}.log"
-    fi
-}
-
 function testingsourcelist() {
     dak ls -s testing -f heidi -r .| egrep 'source$' > ${webdir}/testing.list
 }
