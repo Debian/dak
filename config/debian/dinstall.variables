@@ -45,3 +45,13 @@ LOCK_CHANGELOG="$lockdir/changelog.lock"
 
 # Statefile for the users
 DINSTALLSTATE="${webdir}/dinstall.status"
+
+# dists for which we import external data (i18n, dep11)
+# as thats usually testing and unstable, but we need codenames,
+# get em out of the db.
+extimportdists=""
+for suite in testing unstable; do
+    codename=$(dak admin s show ${suite}|grep '^Codename')
+    codename=${codename##* }
+    extimportdists="${extimportdists} ${codename}"
+done

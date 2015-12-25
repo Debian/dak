@@ -87,7 +87,7 @@ function i18n1() {
             # Lets check!
             if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
                 # Yay, worked, lets copy around
-                for dir in stretch sid; do
+                for dir in ${extimportdists}; do
                     if [ -d dists/${dir}/ ]; then
                         cd dists/${dir}/main/i18n
                         rsync -aq --delete --delete-after --exclude Translation-en.bz2 --exclude Translation-*.diff/ . ${ftpdir}/dists/${dir}/main/i18n/.
@@ -112,20 +112,21 @@ function i18n1() {
 function dep11() {
     log "Synchronizing AppStream metadata"
     # First sync their newest data
-    mkdir -p ${scriptdir}/dep11
-    cd ${scriptdir}/dep11
+    local dep11dir="${scriptdir}/dep11"
+    mkdir -p ${dep11dir}
+    cd ${dep11dir}
     rsync -aq --delete --delete-after dep11-sync:/does/not/matter . || true
 
     # Lets check!
-    if ${scriptsdir}/dep11-basic-validate.py . ${scriptdir}/dep11/; then
+    if ${scriptsdir}/dep11-basic-validate.py . ${dep11dir}/; then
         # Yay, worked, lets copy around
-        for dir in stretch sid; do
+        for dir in ${extimportdists}; do
             if [ -d ${dir}/ ]; then
                 for comp in main contrib non-free; do
                     mkdir -p ${ftpdir}/dists/${dir}/${comp}/dep11
                     cd ${dir}/${comp}
                     rsync -aq --delete --delete-after --exclude *.tmp . ${ftpdir}/dists/${dir}/${comp}/dep11/.
-                    cd ${scriptdir}/dep11
+                    cd ${dep11dir}
                 done
             fi
         done
@@ -614,8 +615,8 @@ function logstats() {
 
 # save timestamp when we start
 function savetimestamp() {
-	NOW=`date "+%Y.%m.%d-%H:%M:%S"`
-	echo ${NOW} > "${dbdir}/dinstallstart"
+    NOW=`date "+%Y.%m.%d-%H:%M:%S"`
+    echo ${NOW} > "${dbdir}/dinstallstart"
 }
 
 function maillogfile() {

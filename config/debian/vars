@@ -1,3 +1,4 @@
+# -*- mode:sh -*-
 # locations used by many scripts
 
 base=/srv/ftp-master.debian.org
