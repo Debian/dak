@@ -662,36 +662,3 @@ function changelogs() {
         trap remove_changelog_lock EXIT TERM HUP INT QUIT
     fi
 }
-
-function gitpdiff() {
-    # Might be that we want to change this to have more than one git repository.
-    # Advantage of one is that we do not need much space in terms of storage in git itself,
-    # git gc is pretty good on our input.
-    # But it might be faster. Well, lets test.
-    log "Adjusting the git tree for pdiffs"
-    cd ${dbdir}/git/git/
-
-    # The regex needs the architectures seperated with \|
-    garchs=$(dak admin a list|sed -e ':q;N;s/\n/\\|/g;t q')
-
-    # First, get all the files we want to work on. ../dists/ is a symlink to the real dists/ we
-    # want to work with.
-    # Also, we only want contents, packages and sources.
-    for file in $(find ../dists/ -regex ".*/\(Contents-\($archs\)\|\(Packages\|Sources\)\).gz"); do
-        log "${file}"
-        basen=${file%%.gz};
-        basen=${basen##../};
-        dir=${basen%/*};
-        mkdir -p $dir;
-        zcat $file > $basen;
-    done
-
-    # Second, add all there is into git
-    cd dists
-    git add .
-    # Maybe we want to make this the same for tag and commit? But well, shouldn't matter
-    COMD=$(date  -Is)
-    TAGD=$(date +%Y-%m-%d-%H-%M)
-    git commit -m "Commit of ${COMD}"
-    git tag "${TAGD}"
- }
