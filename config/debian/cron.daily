@@ -14,10 +14,11 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 ################################################################################
 
 TMPFILE=$( mktemp -p ${TMPDIR} )
+TMPCNTB=$( mktemp -p ${TMPDIR} )
 
 function cleanup {
     ERRVAL=$?
-    rm -f ${TMPFILE}
+    rm -f ${TMPFILE} ${TMPCNTB}
     exit ${ERRVAL}
 }
 trap cleanup SIGHUP SIGINT SIGPIPE SIGTERM EXIT ERR
@@ -43,7 +44,7 @@ psql -c 'COPY files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, 
                 -i ${base}/s3kr1t/push_external_files dak@security-master.debian.org sync
 
 # Update wanna-build dump
-echo "Update wanna-build database dump"
+log "Update wanna-build database dump"
 $base/dak/scripts/nfu/get-w-b-db
 
 reports
@@ -60,13 +61,26 @@ dak stats new ${webdir}/NEW-stats.yaml 2> /dev/null
 # FIXME: In a day or three, when this worked from cron without
 # failure, redirect its output to dev/null. Alternatively until then
 # enrico added a --quiet and we use that.
-REQUESTS_CA_BUNDLE=/etc/ssl/ca-debian/ca-certificates.crt dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/contributor.auth" --source ftp.debian.org --post || echo "Error submitting contributor data"
+log "Submitting data to contributors"
+REQUESTS_CA_BUNDLE=/etc/ssl/ca-debian/ca-certificates.crt dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/contributor.auth" --source ftp.debian.org --json > ${TMPCNTB}
+
+# Post with curl as a workaround for #801506
+# See https://wiki.debian.org/ServicesSSL#curl
+dir=/etc/ssl/ca-debian
+test -d $dir && capath="--capath $dir"
+curl -s $capath https://contributors.debian.org/contributors/post \
+    -F source=ftp.debian.org \
+    -F auth_token="$(cat ${base}/s3kr1t/contributor.auth)" \
+    -F data=@${TMPCNTB} > ${TMPCNTB}.result
+cat ${TMPCNTB}.result
+rm -f ${TMPCNTB}.result
+
 
 ${scriptsdir}/link_morgue.sh
 
 ################################################################################
 
-echo "Finally, all is done, compressing logfile"
+log "Finally, all is done, compressing logfile"
 exec > /dev/null 2>&1
 
 bzip2 -9 "$LOGFILE"
