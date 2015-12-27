@@ -266,6 +266,7 @@ copyoverrides          none                       copyoverrides              fal
 mklslar                none                       mklslar                    false   false
 mkfilesindices         none                       mkfilesindices             false   false
 mkchecksums            none                       mkchecksums                false   false
+signotherfiles         none                       signotherfiles             false   false
 mirror                 none                       mirror\ hardlinks          false   false
 NOSTAGE                remove_locks               none                       false   false
 STATE                  postlock                   none                       false   false
@@ -285,6 +286,7 @@ NOSTAGE                rm\ -f\ "\${LOCK_BRITNEY}" none                       fal
 cleantransactions      none                       none                       false   false
 EOF
         )
+# FUNC                 ARGS                       TIME                       ERR     BG
 
 # we need to wait for the background processes before the end of dinstall
 wait
