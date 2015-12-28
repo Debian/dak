@@ -1,0 +1,3 @@
+# -*- mode:sh -*-
+DATE=$(date +%Y-%m)
+OLDDATE=$(date -d yesterday +%Y-%m)

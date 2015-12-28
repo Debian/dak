@@ -1,0 +1,9 @@
+# FUNC                 ARGS                       TIME                       ERR     BG
+pg_timestamp           preunchecked               none                       false   false
+punew                  stable-new                 p-u-new                    false   false
+opunew                 oldstable-new              o-p-u-new                  false   false
+backports_policy       none                       backports-policy           false   false
+cleanpolicy            none                       cleanpolicy                false   false
+do_unchecked           none                       unchecked                  false   false
+scancontents           none                       contentsscan               false   false
+pg_timestamp           postunchecked              none                       false   false

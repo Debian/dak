@@ -1,0 +1,50 @@
+# FUNC                 ARGS                       TIME                       ERR     BG
+STATE                  startup                    none                       false   false
+NOSTAGE                startup                    none                       false   false
+savetimestamp          none                       none                       false   false
+qa1                    none                       init                       true    true
+pg_timestamp           predinstall                pg_dump1                   false   false
+updates                none                       External\ Updates          false   false
+i18n1                  none                       i18n\ 1                    false   false
+dep11                  none                       dep11\ 1                   false   false
+NOSTAGE                lockaccepted               none                       false   false
+punew                  stable-new                 p-u-new                    false   false
+opunew                 oldstable-new              o-p-u-new                  false   false
+backports_policy       none                       backports-policy           false   false
+cruft                  none                       cruft                      false   false
+STATE                  indices                    none                       false   false
+dominate               none                       dominate                   false   false
+autocruft              none                       autocruft                  false   false
+fingerprints           none                       import-keyring             false   false
+overrides              none                       overrides                  false   false
+mpfm                   none                       pkg-file-mapping           false   false
+STATE                  packages/contents          none                       false   false
+packages               none                       apt-ftparchive             false   false
+STATE                  dists/                     none                       false   false
+pdiff                  none                       pdiff                      false   false
+release                none                       release\ files             false   false
+dakcleanup             none                       cleanup                    false   false
+STATE                  scripts                    none                       false   false
+mkmaintainers          none                       mkmaintainers              false   false
+copyoverrides          none                       copyoverrides              false   false
+mklslar                none                       mklslar                    false   false
+mkfilesindices         none                       mkfilesindices             false   false
+mkchecksums            none                       mkchecksums                false   false
+signotherfiles         none                       signotherfiles             false   false
+mirror                 none                       mirror\ hardlinks          false   false
+NOSTAGE                remove_locks               none                       false   false
+STATE                  postlock                   none                       false   false
+ddaccess               none                       ddaccessible\ sync         true    true
+changelogs             none                       changelogs                 false   true
+pg_timestamp           postdinstall               pg_dump2                   false   false
+expire                 none                       expire_dumps               false   true
+transitionsclean       none                       transitionsclean           false   true
+dm                     none                       none                       false   true
+bts                    none                       none                       false   true
+mirrorpush             none                       mirrorpush                 false   true
+mirrorpush-backports   none                       mirrorpush-backports       false   true
+i18n2                  none                       i18n\ 2                    false   true
+stats                  none                       stats                      false   true
+testingsourcelist      none                       none                       false   true
+NOSTAGE                rm\ -f\ "\${LOCK_BRITNEY}" none                       false   false
+cleantransactions      none                       none                       false   false

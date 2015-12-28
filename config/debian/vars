@@ -40,5 +40,9 @@ umask 022
 unset CDPATH
 GZIP='--rsyncable' ; export GZIP
 
+# lock cron.unchecked (it immediately exits when this exists)
+LOCK_DAILY="$lockdir/daily.lock"
+LOCK_UNCHECKED="$lockdir/unchecked.lock"
+
 # Set the database variables
 eval $(dak admin config db-shell)

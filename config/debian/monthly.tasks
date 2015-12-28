@@ -1,0 +1,3 @@
+# FUNC                 ARGS                       TIME                       ERR     BG
+rotatelog              none                       none                       false   true
+rotatequeued           none                       none                       false   true

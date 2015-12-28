@@ -1,0 +1,59 @@
+# -*- mode:sh -*-
+
+# get the latest list of wnpp bugs and their source packages
+function wnppbugs() {
+    TMPFILE=$( mktemp -p ${TMPDIR} )
+    TEMPFILES="${TEMPFILES} ${TMPFILE}"
+    wget -q -O${TMPFILE} --ca-directory=/etc/ssl/ca-debian https://qa.debian.org/data/bts/wnpp_rm
+    chmod go+r ${TMPFILE}
+    mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
+}
+
+# Push files over to security
+function pushfilesdb() {
+    # The key over there should have the following set for the ssh key:
+    #  command="/usr/bin/xzcat | /usr/bin/psql -1 -c 'DELETE FROM external_files; COPY external_files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) FROM STDIN' obscurity"
+    psql -c 'COPY files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) TO STDOUT' projectb | \
+        xz -3 | \
+        ssh -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 \
+            -i ${base}/s3kr1t/push_external_files dak@security-master.debian.org sync
+}
+
+# Update wanna-build dump
+function wbdump() {
+    log "Update wanna-build database dump"
+    $base/dak/scripts/nfu/get-w-b-db
+}
+
+# Generate list of override disparities
+function overridedisp() {
+    dak override-disparity | gzip -9 > ${webdir}/override-disparity.gz
+}
+
+# Generate stats about the new queue
+function newstats() {
+    dak stats new ${webdir}/NEW-stats.yaml 2> /dev/null
+}
+
+# Generate the contributor data
+function contributor() {
+    log "Submitting data to contributors"
+    TMPCNTB=$( mktemp -p ${TMPDIR} )
+    TEMPFILES="${TEMPFILES} ${TMPCNTB}"
+    REQUESTS_CA_BUNDLE=/etc/ssl/ca-debian/ca-certificates.crt dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/contributor.auth" --source ftp.debian.org --json > ${TMPCNTB}
+
+    # Post with curl as a workaround for #801506
+    # See https://wiki.debian.org/ServicesSSL#curl
+    dir=/etc/ssl/ca-debian
+    test -d $dir && capath="--capath $dir"
+    curl -s $capath https://contributors.debian.org/contributors/post \
+         -F source=ftp.debian.org \
+         -F auth_token="$(cat ${base}/s3kr1t/contributor.auth)" \
+         -F data=@${TMPCNTB} > ${TMPCNTB}.result
+    cat ${TMPCNTB}.result
+    rm -f ${TMPCNTB}.result
+}
+
+function linkmorgue() {
+    ${scriptsdir}/link_morgue.sh
+}

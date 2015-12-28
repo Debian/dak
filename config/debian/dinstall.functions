@@ -5,6 +5,7 @@ function ts() {
 }
 
 # Remove daily lock
+# FIXME: Dead code when switched to cronscript
 function remove_daily_lock() {
     rm -f $LOCK_DAILY
 }
@@ -50,7 +51,7 @@ function onerror() {
 }
 
 ########################################################################
-# the actual dinstall functions follow                                 #
+# the actual functions follow                                          #
 ########################################################################
 
 # pushing merkels QA user, part one
@@ -482,12 +483,6 @@ function bts() {
     sudo -u dak-unpriv dak bts-categorize
 }
 
-function ddaccess() {
-    # Tell our dd accessible mirror to sync itself up. Including ftp dir.
-    log "Trigger dd accessible parts sync including ftp dir"
-    ${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 sync
-}
-
 function mirrorpush() {
     log "Checking the public archive copies..."
 
@@ -615,7 +610,6 @@ function logstats() {
 
 # save timestamp when we start
 function savetimestamp() {
-    NOW=`date "+%Y.%m.%d-%H:%M:%S"`
     echo ${NOW} > "${dbdir}/dinstallstart"
 }
 
@@ -663,6 +657,7 @@ function changelogs() {
     fi
 }
 
+# Generate a list of extra mirror files, sha256sum em and sign that
 function signotherfiles() {
     log "Signing extra mirror files"
 
@@ -680,4 +675,14 @@ function signotherfiles() {
         gpg --no-options --batch --no-tty --armour --personal-digest-preferences=SHA256 --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --clearsign --output ${archiveroot}/extrafiles ${TMPLO}
         rm -f ${TMPLO}
     done
+}
+
+function startup() {
+    touch "${DINSTALLSTART}"
+    ts "startup"
+    DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
+    lockfile -l 3600 "${LOCK_DAILY}"
+    trap onerror ERR
+    TEMPFILES="${TEMPFILES} ${LOCK_DAILY}"
+    touch "${LOCK_BRITNEY}"
 }

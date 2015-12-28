@@ -23,6 +23,51 @@ function debug () {
     fi
 }
 
+# Function that only cleans tempfiles, but does not exit or otherwise
+# care about any exit status
+function cleantempfiles() {
+    resolvetmpfiles
+    for TEMPFILE in $TMPFILES; do
+        if [ -n "${TEMPFILE}" ] && [ -f "${TEMPFILE}" ]; then
+            rm -f "${TEMPFILE}"
+        elif [ -n "${TEMPFILE}" ] && [ -d "${TEMPFILE}" ]; then
+            if [ "${TEMPFILE}" != "/" ] && [ "${TEMPFILE}" != "/*" ]; then
+                rm -rf "${TEMPFILE}"
+            fi
+        fi
+    done
+    TMPFILES=""
+}
+
+function resolvetmpfiles() {
+    # If you don't understand this better not touch the script
+    for TEMPFILE in $TEMPFILES; do
+        TMPFILES="${TMPFILES} ${!TEMPFILE:-""}"
+    done
+    TEMPFILES=""
+}
+
+# Function cleanup
+# No arguments
+# Cleans up any known tempfile.
+# Just ensure your script sets the variable
+# TEMPFILES to the names of variables of tempfiles
+# Or TMPFILES to the pathes of tempfiles
+function cleanup() {
+    ERRVAL=$?
+    trap - ERR EXIT TERM HUP INT QUIT
+
+    cleantempfiles
+
+    exit $ERRVAL
+}
+TEMPFILES=${TEMPFILES:-""}
+TMPFILES=${TMPFILES:-""}
+
+
+########################################################################
+########################################################################
+
 function wbtrigger() {
     SSHOPT="-n -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
     if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
@@ -109,6 +154,11 @@ function do_unchecked () {
     echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
     dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
     dak process-commands -d "$unchecked" >> $report
+
+    if [ ! -z "$changes" ]; then
+        sync_debbugs
+        do_buildd
+    fi
 }
 
 # process NEW policy queue
@@ -173,4 +223,132 @@ function get_archiveroot() {
         return 1
     fi
     echo "${archiveroot}"
+}
+
+# Prepare the trees for buildds, then push wanna-build
+function do_buildd() {
+    if lockfile -r3 $NOTICE; then
+        TEMPFILES="${TEMPFILES} ${NOTICE}"
+        make_buildd_dir
+        wbtrigger
+    fi
+}
+
+# Cleanup policy queues
+function cleanpolicy() {
+    dak clean-suites -a backports-policy,policy
+}
+
+# Scan new packages for contents
+function scancontents() {
+    dak contents -l 10000 scan-binary
+    dak contents -l 1000 scan-source
+}
+
+function ddaccess() {
+    # Tell our dd accessible mirror to sync itself up. Including ftp dir.
+    log "Trigger dd accessible parts sync including ftp dir"
+    ${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 sync
+}
+
+
+
+########################################################################
+########################################################################
+########################################################################
+########################################################################
+
+# Function to save which stage we are in, so we can restart an interrupted
+# dinstall. Or even run actions in parallel, if we dare to, by simply
+# backgrounding the call to this function. But that should only really be
+# done for things we don't care much about.
+#
+# This should be called with the first argument being an array, with the
+# members
+#  - FUNC - the function name to call
+#  - ARGS - Possible arguments to hand to the function. Can be the empty string
+#  - TIME - The timestamp name. Can be the empty string
+#  - ERR  - if this is the string false, then the call will be surrounded by
+#           set +e ... set -e calls, so errors in the function do not exit
+#           dinstall. Can be the empty string, meaning true.
+#
+# MAKE SURE TO KEEP THIS THE LAST FUNCTION, AFTER ALL THE VARIOUS ONES
+# ADDED FOR DINSTALL FEATURES!
+function stage() {
+    ARGS='GO[@]'
+    local "${!ARGS}"
+
+    local error=${ERR:-"true"}
+
+    ARGS=${ARGS:-""}
+
+    log "########## ${PROGRAM} BEGIN: ${FUNC} ${ARGS} ##########"
+    local STAGEFILE="${stagedir}/${FUNC}_${ARGS}"
+    STAGEFILE=${STAGEFILE// /_}
+    if [ -f "${STAGEFILE}" ]; then
+        local stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
+        local unixtime=$(date +%s)
+        local difference=$(( $unixtime - $stamptime ))
+        if [ ${difference} -ge 14400 ]; then
+            log_error "Did already run ${FUNC}, stagefile exists, but that was ${difference} seconds ago. Please check."
+        else
+            log "Did already run ${FUNC}, not calling again..."
+        fi
+        return
+    fi
+
+    debug "Now calling function ${FUNC}. Arguments: ${ARGS}. Timestamp: ${TIME}"
+
+    # Make sure we are always at the same place. If a function wants
+    # to be elsewhere, it has to cd first!
+    cd ${configdir}
+
+    # Now redirect the output into $STAGEFILE.log. In case it errors
+    # out somewhere our errorhandler trap can then mail the contents
+    # of $STAGEFILE.log only, instead of a whole ${PROGRAM} logfile.
+    # Short error mails ftw!
+    exec >> "${STAGEFILE}.log" 2>&1
+
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
+
+    # Do we care about trouble in the function we call?
+    if [ "${error}" = "false" ]; then
+        set +e
+    fi
+    ${FUNC} ${ARGS}
+
+    # No matter what happened in the function, we make sure we have
+    # set -e default state back
+    set -e
+
+    # Make sure we are always at the same place.
+    cd ${configdir}
+
+    # We always use the same umask. If a function wants to do
+    # different, fine, but we reset.
+    umask 022
+
+    touch "${STAGEFILE}"
+
+    if [ -n "${TIME}" ]; then
+        ts "${TIME}"
+    fi
+
+    # And the output goes back to the normal logfile
+    exec >> "${LOGFILE}" 2>&1
+
+    # Now we should make sure that we have a usable ${PROGRAM}.log, so
+    # append the $STAGEFILE.log to it.
+    cat "${STAGEFILE}.log" >> "${LOGFILE}"
+    rm -f "${STAGEFILE}.log"
+
+    log "########## ${PROGRAM} END: ${FUNC} ##########"
+
+    if [ -f "${LOCK_STOP}" ]; then
+        log "${LOCK_STOP} exists, exiting immediately"
+        exit 42
+    fi
 }

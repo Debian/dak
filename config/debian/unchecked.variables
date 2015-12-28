@@ -1,0 +1,3 @@
+# -*- mode:sh -*-
+LOCKFILE="$lockdir/unchecked.lock"
+LOCK_BUILDD="$lockdir/buildd.lock"

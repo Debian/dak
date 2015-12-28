@@ -2,9 +2,6 @@
 # usually we are not using debug logs. Set to 1 if you want them.
 DEBUG=0
 
-# our name
-PROGRAM="dinstall"
-
 # where do we want mails to go? For example log entries made with error()
 if [ "x$(hostname -s)x" != "xfranckx" ]; then
     # Not our ftpmaster host
@@ -21,9 +18,6 @@ LOGROTATE=${LOGROTATE:-400}
 DINSTALLSTART="${lockdir}/dinstallstart"
 # Marker for dinstall end
 DINSTALLEND="${lockdir}/dinstallend"
-
-# lock cron.unchecked (it immediately exits when this exists)
-LOCK_DAILY="$lockdir/daily.lock"
 
 # Lock cron.unchecked from doing work
 LOCK_ACCEPTED="$lockdir/unchecked.lock"
