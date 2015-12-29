@@ -1,19 +1,23 @@
 MAILTO=cron@ftp-master.debian.org
 PATH=/usr/local/bin:/usr/bin:/bin
 # m        h          dom mon dow command
-2,17,32,47 *          *   *   *   /srv/ftp-master.debian.org/dak/config/debian/cron.unchecked
-0          *          *   *   *   /srv/ftp-master.debian.org/dak/config/debian/cron.hourly
-52         1,7,13,19  *   *   *   /srv/ftp-master.debian.org/dak/config/debian/cron.dinstall
-#### And an alternate line, for the times the release team wants it half an hour late.
-####22         2,8,14,20  *   *   *   /srv/ftp-master.debian.org/dak/config/debian/cron.dinstall
-3          9          *   *   *   /srv/ftp-master.debian.org/dak/config/debian/cron.daily
-0          12         *   *   0   /srv/ftp-master.debian.org/dak/config/debian/cron.weekly
-6          0          1   *   *   /srv/ftp-master.debian.org/dak/config/debian/cron.monthly
-@reboot                           /srv/ftp-master.debian.org/dak/config/debian/cron.reboot
+2,17,32,47 *          *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript unchecked
+0          *          *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript hourly
+52         1,7,13,19  *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript dinstall
+##### And an alternate line, for the times the release team wants it half an hour late.
+#####22         2,9,14,20  *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript dinstall
+# And for release time, turn off cron after final dinstall
+#45         9          *   *   *   /home/dak/bin/cronoff
+3          9          *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript daily
+0          12         *   *   0   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript weekly
+6          0          1   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript monthly
+
+# Reboot cron doesn't use cronscript
+@reboot                           flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cron.reboot
 
 0          0          *   *   *   crontab -l > ~/crontab.out
 
 # We do like our queued and make sure it will always be there.
 # Luckily it checks itself and doesn't start if it already runs
-@reboot sudo -u dak-unpriv /srv/queued/debianqueued-0.9/debianqueued
-*/10        *          *   *   *   sudo -u dak-unpriv /srv/queued/debianqueued-0.9/debianqueued 2>/dev/null
+@reboot                           sudo -u dak-unpriv /srv/upload.debian.org/queued/debianqueued
+*/10        *          *   *   *  sudo -u dak-unpriv /srv/upload.debian.org/queued/debianqueued 2>/dev/null
