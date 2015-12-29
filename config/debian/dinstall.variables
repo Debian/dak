@@ -19,6 +19,9 @@ DINSTALLSTART="${lockdir}/dinstallstart"
 # Marker for dinstall end
 DINSTALLEND="${lockdir}/dinstallend"
 
+# Timestamp for start
+DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
+
 # Lock cron.unchecked from doing work
 LOCK_ACCEPTED="$lockdir/unchecked.lock"
 

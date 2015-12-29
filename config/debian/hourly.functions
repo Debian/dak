@@ -7,7 +7,7 @@ function importusers() {
 function newoverview() {
     # do not run show-new and other stuff in parallel
     if lockfile -r16 $LOCK_UNCHECKED 2> /dev/null; then
-        TEMPFILES="${TEMPFILES} ${LOCK_UNCHECKED}"
+        TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
         do_new
         dak show-new > /dev/null || true
     fi
@@ -49,7 +49,7 @@ function backportsacl() {
 # do the buildd key updates
 function builddautosigning() {
     BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
-    TEMPFILES="${TEMPFILEs} ${BUILDDFUN}"
+    TMPFILES="${TMPFILES} ${BUILDDFUN}"
     exec >> "${BUILDDFUN}" 2>&1
     ${scriptsdir}/buildd-remove-keys
     ${scriptsdir}/buildd-add-keys

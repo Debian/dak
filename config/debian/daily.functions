@@ -3,7 +3,7 @@
 # get the latest list of wnpp bugs and their source packages
 function wnppbugs() {
     TMPFILE=$( mktemp -p ${TMPDIR} )
-    TEMPFILES="${TEMPFILES} ${TMPFILE}"
+    TMPFILES="${TMPFILES} ${TMPFILE}"
     wget -q -O${TMPFILE} --ca-directory=/etc/ssl/ca-debian https://qa.debian.org/data/bts/wnpp_rm
     chmod go+r ${TMPFILE}
     mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
@@ -39,7 +39,7 @@ function newstats() {
 function contributor() {
     log "Submitting data to contributors"
     TMPCNTB=$( mktemp -p ${TMPDIR} )
-    TEMPFILES="${TEMPFILES} ${TMPCNTB}"
+    TMPFILES="${TMPFILES} ${TMPCNTB}"
     REQUESTS_CA_BUNDLE=/etc/ssl/ca-debian/ca-certificates.crt dc-tool --mine="${configdir}/contributor.source" --auth-token @"${base}/s3kr1t/contributor.auth" --source ftp.debian.org --json > ${TMPCNTB}
 
     # Post with curl as a workaround for #801506

@@ -40,6 +40,10 @@ export LANG=C
 export LC_ALL=C
 
 ARG=${1:-"meh"}
+
+# set DEBUG if you want to see a little more logs (needs to be used more)
+DEBUG=${DEBUG:-0}
+
 # While this check can be done in the following case, some assumptions
 # down there are easier if we sorted out calls without an arg before.
 if [[ ${ARG} == meh ]]; then
@@ -101,15 +105,14 @@ case ${ARG,,} in
             # log "aborting cron.unchecked because $LOCK_UNCHECKED has already been locked"
             exit 0
         fi
-        TEMPFILES="${TEMPFILES} ${LOCK_UNCHECKED}"
+        TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
         ;;
     dinstall)
         ;;
     hourly)
         # Only one of me should ever run.
         FLOCKER=${FLOCKER:-""}
-        [  "${FLOCKER}"  != "${configdir}/${PROGRAM}.variables" ] && exec env FLOCKER="${configdir}/${PROGRAM}.variables" flock -E 0 -en "${configdir}/${PROGRAM}.variables" "$0"
-        "$@" || :
+        [  "${FLOCKER}"  != "${configdir}/${PROGRAM}.variables" ] && exec env FLOCKER="${configdir}/${PROGRAM}.variables" flock -E 0 -en "${configdir}/${PROGRAM}.variables" "$0" "$@" || :
         ;;
     daily)
         ;;
@@ -124,7 +127,7 @@ case ${ARG,,} in
 esac
 
 # An easy access by name for the current log
-ln -sf ${LOGFILE} ${PROGRAM}
+ln -sf ${LOGFILE} ${logdir}/${PROGRAM}
 
 # And from here, all output to the log please
 exec >> "$LOGFILE" 2>&1

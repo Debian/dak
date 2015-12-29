@@ -59,11 +59,15 @@ function cleanup() {
 
     cleantempfiles
 
-    exit $ERRVAL
+    return $ERRVAL
 }
 TEMPFILES=${TEMPFILES:-""}
 TMPFILES=${TMPFILES:-""}
 
+# Timestamp. Used for dinstall stat graphs
+function ts() {
+    echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
+}
 
 ########################################################################
 ########################################################################
@@ -114,17 +118,13 @@ function punew_do() {
 
 # These versions used in dinstall
 function punew() {
-    if [ "${PROGRAM}" = "dinstall" ]; then
-        log "Doing automated p-u-new processing"
-    fi
+    log "Doing automated p-u-new processing"
     cd "${queuedir}/p-u-new"
     punew_do "$1" "${queuedir}/p-u-new" "debian-release@lists.debian.org"
 }
 
 function opunew() {
-    if [ "${PROGRAM}" = "dinstall" ]; then
-        log "Doing automated o-p-u-new processing"
-    fi
+    log "Doing automated o-p-u-new processing"
     cd "${queuedir}/o-p-u-new"
     punew_do "$1" "${queuedir}/o-p-u-new" "debian-release@lists.debian.org"
 }
@@ -134,9 +134,7 @@ function backports_policy() {
     local qdir="/srv/backports-master.debian.org/queue/policy"
     local to="backports-team@debian.org"
 
-    if [ "${PROGRAM}" = "dinstall" ]; then
-        log "Doing automated ${queue} processing"
-    fi
+    log "Doing automated ${queue} processing"
 
     cd "${qdir}"
     punew_do "${queue}" "${qdir}" "${to}"
@@ -163,9 +161,7 @@ function do_unchecked () {
 
 # process NEW policy queue
 function do_new () {
-    if [ "${PROGRAM}" = "dinstall" ]; then
-	log "Doing NEW processing"
-    fi
+    log "Doing NEW processing"
     (dak process-policy new; dak process-policy byhand) | mail -a "X-Debian: DAK" -e -s "NEW and BYHAND processing" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ftpmaster@ftp-master.debian.org
 
     dak process-policy backports-new | mail -a "X-Debian: DAK" -e -s "NEW processing for backports-new" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" backports-team@debian.org
@@ -227,8 +223,8 @@ function get_archiveroot() {
 
 # Prepare the trees for buildds, then push wanna-build
 function do_buildd() {
-    if lockfile -r3 $NOTICE; then
-        TEMPFILES="${TEMPFILES} ${NOTICE}"
+    if lockfile -r3 ${LOCK_DAILY}; then
+        TMPFILES="${TMPFILES} ${LOCK_DAILY}"
         make_buildd_dir
         wbtrigger
     fi

@@ -43,6 +43,7 @@ GZIP='--rsyncable' ; export GZIP
 # lock cron.unchecked (it immediately exits when this exists)
 LOCK_DAILY="$lockdir/daily.lock"
 LOCK_UNCHECKED="$lockdir/unchecked.lock"
+LOCK_STOP="$lockdir/archive.stop"
 
 # Set the database variables
 eval $(dak admin config db-shell)

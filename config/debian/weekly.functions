@@ -1,11 +1,18 @@
 # -*- mode:sh -*-
 
 function purgeempty() {
-    log "Purging empty directories in $ftpdir/pool/"
+    log "Purging empty directories"
+    local archiveroot
 
-    if [ ! -z "$(find $ftpdir/pool/ -type d -empty)" ]; then
-        find $ftpdir/pool/ -type d -empty | xargs rmdir;
-    fi
+    for archive in "${public_archives[@]}"; do
+        log "... archive: ${archive}"
+        archiveroot="$(get_archiveroot "${archive}")"
+
+        # FIXME: double find
+        if [ ! -z "$(find ${archiveroot}/pool/ -type d -empty)" ]; then
+            find ${archiveroot}/pool/ -type d -empty | xargs rmdir;
+        fi
+    done
 }
 
 function gitcleanup() {
@@ -18,7 +25,13 @@ function gitcleanup() {
     chmod -R g+w logs/
 }
 
-function symlinks() {
-    log "Fixing symlinks in $ftpdir"
-    symlinks -d -r $ftpdir
+function fixsymlinks() {
+    log "Fixing symlinks"
+    local archiveroot
+
+    for archive in "${public_archives[@]}"; do
+        log "... archive: ${archive}"
+        archiveroot="$(get_archiveroot "${archive}")"
+        symlinks -d -r ${archiveroot}
+    done
 }

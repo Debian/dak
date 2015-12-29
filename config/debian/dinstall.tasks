@@ -46,5 +46,4 @@ mirrorpush-backports   none                       mirrorpush-backports       fal
 i18n2                  none                       i18n\ 2                    false   true
 stats                  none                       stats                      false   true
 testingsourcelist      none                       none                       false   true
-NOSTAGE                rm\ -f\ "\${LOCK_BRITNEY}" none                       false   false
 cleantransactions      none                       none                       false   false

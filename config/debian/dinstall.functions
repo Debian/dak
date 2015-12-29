@@ -1,8 +1,4 @@
 # -*- mode:sh -*-
-# Timestamp. Used for dinstall stat graphs
-function ts() {
-        echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
-}
 
 # Remove daily lock
 # FIXME: Dead code when switched to cronscript
@@ -193,13 +189,13 @@ function mpfm() {
 
     log "Generating package / file mapping"
     for archive in "${public_archives[@]}"; do
+        log "  archive: ${archive}"
         archiveroot="$(get_archiveroot "${archive}")"
         dak make-pkg-file-mapping "${archive}" | bzip2 -9 > "${archiveroot}/indices/package-file.map.bz2"
     done
 }
 
 function packages() {
-    log "Generating Packages and Sources files"
     for archive in "${public_archives[@]}"; do
         log "  Generating Packages/Sources for ${archive}"
         dak generate-packages-sources2 -a "${archive}"
@@ -216,6 +212,7 @@ function pdiff() {
 function release() {
     log "Generating Release files"
     for archive in "${public_archives[@]}"; do
+        log "  archive: ${archive}"
         dak generate-releases -a "${archive}"
     done
 }
@@ -680,9 +677,8 @@ function signotherfiles() {
 function startup() {
     touch "${DINSTALLSTART}"
     ts "startup"
-    DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
     lockfile -l 3600 "${LOCK_DAILY}"
     trap onerror ERR
-    TEMPFILES="${TEMPFILES} ${LOCK_DAILY}"
     touch "${LOCK_BRITNEY}"
+    TMPFILES="${TMPFILES} ${LOCK_DAILY} ${LOCK_BRITNEY}"
 }

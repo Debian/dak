@@ -1,4 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
-purgeempty             none                       none                       false   false
-gitcleanup             none                       none                       false   false
-symlinks               none                       none                       false   false
+purgeempty             none                       none                       false   true
+gitcleanup             none                       none                       false   true
+fixsymlinks            none                       none                       false   true
+linkmorgue             none                       none                       false   true
