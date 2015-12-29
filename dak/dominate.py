@@ -140,7 +140,8 @@ def main():
         suites = [suite.suite_name for suite in query_suites]
         cnf['Obsolete::Options::Suite'] = str(','.join(suites))
 
-    Logger = daklog.Logger("dominate")
+    if not Options['No-Action']:
+       Logger = daklog.Logger("dominate")
     session = DBConn().session()
     for suite_name in utils.split_args(Options['Suite']):
         suite = session.query(Suite).filter_by(suite_name = suite_name).one()
@@ -156,7 +157,8 @@ def main():
         session.rollback()
     else:
         session.commit()
-    Logger.close()
+    if Logger:
+        Logger.close()
 
 if __name__ == '__main__':
     main()
