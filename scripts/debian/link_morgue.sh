@@ -85,6 +85,11 @@ cd "${PROCESSDIR}"
 log "Processing ${PROCESSDIR}"
 find ${PROCESSDIR} -type f |
 while read mfile; do
+    if [[ -f ${mfile}.nosnapshot ]]; then
+        # We know this file does not exist on snapshot, don't check again
+        continue
+    fi
+
     # Get the files sha1sum
     mshasum=$(sha1sum ${mfile})
     mshasum=${mshasum%% *}
@@ -111,6 +116,8 @@ while read mfile; do
             # Yay for tons of dangling symlinks, but when this is done a rsync
             # will run and transfer the whole shitload of links over to the morgue host.
             ln -sf "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" "${mfile}"
+        else
+            touch "${mfile}.nosnapshot"
         fi
     fi
 done # for mfile in...
