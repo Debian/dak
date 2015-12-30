@@ -60,7 +60,7 @@ Currently accepted Arguments:
 
    unchecked - Process the unchecked queue
    dinstall  - Run a dinstall
-   hourly, daily, weekly - Run that part
+   yearly, hourly, daily, weekly - Run that part
 
 EOF
     exit 0
@@ -121,6 +121,8 @@ case ${ARG} in
     weekly)
         ;;
     monthly)
+        ;;
+    yearly)
         ;;
     *)
         error "Unknown arg ${ARG}"
@@ -229,6 +231,8 @@ case ${ARG} in
     weekly)
         ;;
     monthly)
+        ;;
+    yearly)
         ;;
 esac
 
