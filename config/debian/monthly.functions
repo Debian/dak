@@ -17,3 +17,9 @@ function rotatequeued() {
     xz -9 log.${OLDDATE}
     sudo -u dak-unpriv /srv/upload.debian.org/queued/debianqueued 2>/dev/null
 }
+
+function archivequeuedone() {
+    log "Archiving queue/done files of ${DONEYEAR}-${DONEMONTH}"
+    cd ${queuedir}/done/${DONEYEAR}
+    tar --create --xz --remove-files --file ${DONEMONTH}.tar.xz ${DONEMONTH}
+}

@@ -1,3 +1,6 @@
 # -*- mode:sh -*-
 DATE=$(date +%Y-%m)
 OLDDATE=$(date -d yesterday +%Y-%m)
+
+DONEYEAR=$(date -d '2 months ago' +%Y)
+DONEMONTH=$(date -d '2 months ago' +%m)
