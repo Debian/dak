@@ -444,6 +444,11 @@ def output_deb_info(suite, filename, packagename, session = None):
             field_value = arch
         elif key == 'Maintainer':
             field_value = maintainer
+        elif key == 'Homepage':
+            field_value = escape_if_needed(control.find(key))
+            if use_html:
+                field_value = '<a href="%s" rel="nofollow">%s</a>' % \
+                    (field_value, field_value)
         elif key == 'Description':
             if use_html:
                 field_value = formatted_text(control.find(key), strip=True)
