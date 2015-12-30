@@ -3,17 +3,17 @@
 #
 # Set $PROGRAM to a string to have it added to the output.
 function log () {
-        local prefix=${PROGRAM:-}
-        echo "$(date +"%b %d %H:%M:%S") $(hostname -s) ${prefix}[$$]: $@"
+    local prefix=${PROGRAM:-}
+    echo "$(date +"%b %d %H:%M:%S") $(hostname -s) ${prefix}[$$]: $@"
 }
 
 # log the message using log() but then also send a mail
 # to the address configured in MAILTO (if non-empty)
 function log_error () {
-        log "$@"
-        if [ -z "${MAILTO}" ]; then
-                echo "$@" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@$(hostname -s)] ERROR [$$]" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ${MAILTO}
-        fi
+    log "$@"
+    if [ -z "${MAILTO}" ]; then
+        echo "$@" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@$(hostname -s)] ERROR [$$]" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ${MAILTO}
+    fi
 }
 
 # debug log, only output when DEBUG=1

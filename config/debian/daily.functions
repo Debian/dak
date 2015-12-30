@@ -2,15 +2,17 @@
 
 # get the latest list of wnpp bugs and their source packages
 function wnppbugs() {
-    TMPFILE=$( mktemp -p ${TMPDIR} )
-    TMPFILES="${TMPFILES} ${TMPFILE}"
-    wget -q -O${TMPFILE} --ca-directory=/etc/ssl/ca-debian https://qa.debian.org/data/bts/wnpp_rm
-    chmod go+r ${TMPFILE}
-    mv ${TMPFILE} /srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm
+    log "Fetching latest list of wnpp bugs"
+    TMPLIST=$( mktemp -p ${TMPDIR} )
+    TMPFILES="${TMPFILES} ${TMPLIST}"
+    wget -q -O${TMPLIST} --ca-directory=/etc/ssl/ca-debian https://qa.debian.org/data/bts/wnpp_rm
+    chmod go+r ${TMPLIST}
+    mv ${TMPLIST} ${scriptdir}/masterfiles/wnpp_rm
 }
 
 # Push files over to security
 function pushfilesdb() {
+    log "Pushing files table to security"
     # The key over there should have the following set for the ssh key:
     #  command="/usr/bin/xzcat | /usr/bin/psql -1 -c 'DELETE FROM external_files; COPY external_files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) FROM STDIN' obscurity"
     psql -c 'COPY files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) TO STDOUT' projectb | \
@@ -22,16 +24,19 @@ function pushfilesdb() {
 # Update wanna-build dump
 function wbdump() {
     log "Update wanna-build database dump"
-    $base/dak/scripts/nfu/get-w-b-db
+    ${masterdir}/scripts/nfu/get-w-b-db
 }
+
 
 # Generate list of override disparities
 function overridedisp() {
+    log "Generating list of override disparities"
     dak override-disparity | gzip -9 > ${webdir}/override-disparity.gz
 }
 
 # Generate stats about the new queue
 function newstats() {
+    log "Generating stats about the new queue"
     dak stats new ${webdir}/NEW-stats.yaml 2> /dev/null
 }
 
@@ -45,15 +50,13 @@ function contributor() {
     # Post with curl as a workaround for #801506
     # See https://wiki.debian.org/ServicesSSL#curl
     dir=/etc/ssl/ca-debian
-    test -d $dir && capath="--capath $dir"
-    curl -s $capath https://contributors.debian.org/contributors/post \
+    test -d ${dir} && capath="--capath ${dir}"
+    curl -s ${capath} https://contributors.debian.org/contributors/post \
          -F source=ftp.debian.org \
          -F auth_token="$(cat ${base}/s3kr1t/contributor.auth)" \
          -F data=@${TMPCNTB} > ${TMPCNTB}.result
+    log "Results:"
     cat ${TMPCNTB}.result
+    log "----"
     rm -f ${TMPCNTB}.result
-}
-
-function linkmorgue() {
-    ${scriptsdir}/link_morgue.sh
 }

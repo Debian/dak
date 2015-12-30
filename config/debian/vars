@@ -1,49 +1,50 @@
 # -*- mode:sh -*-
-# locations used by many scripts
 
-base=/srv/ftp-master.debian.org
-public=/srv/ftp.debian.org
-bindir=$base/bin
-ftpdir=$base/ftp
-webdir=$public/web
-indices=$ftpdir/indices
-archs=$(dak admin a list | tr '\n' ' ')
-
-scriptdir=$base/scripts
-masterdir=$base/dak/
-configdir=$base/dak/config/debian/
-scriptsdir=$base/dak/scripts/debian/
-dbdir=$base/database/
-lockdir=$base/lock/
-stagedir=$lockdir/stages
-overridedir=$scriptdir/override
-extoverridedir=$scriptdir/external-overrides
-logdir=$base/log/cron/
-
-queuedir=$base/queue/
-unchecked=$queuedir/unchecked/
-accepted=$queuedir/accepted/
-mirrordir=$base/mirror/
-incoming=$base/public/incoming.debian.org/
-newstage=$queuedir/newstage/
-exportdir=$base/export/
-exportpublic=$public/rsync/export/
-
-ftpgroup=debadmin
-
-public_archives=(ftp-master backports debian-debug)
-
-TMPDIR=${base}/tmp
-
-PATH=$masterdir:$PATH
 umask 022
 unset CDPATH
 GZIP='--rsyncable' ; export GZIP
 
-# lock cron.unchecked (it immediately exits when this exists)
-LOCK_DAILY="$lockdir/daily.lock"
-LOCK_UNCHECKED="$lockdir/unchecked.lock"
-LOCK_STOP="$lockdir/archive.stop"
+# locations used by many scripts
+base=/srv/ftp-master.debian.org
+bindir=${base}/bin
+masterdir=${base}/dak/
+queuedir=${base}/queue/
+scriptdir=${base}/scripts
+
+configdir=${masterdir}/config/debian/
+dbdir=${base}/database/
+exportdir=${base}/export/
+extoverridedir=${scriptdir}/external-overrides
+ftpdir=${base}/ftp
+incoming=${base}/public/incoming.debian.org/
+indices=${ftpdir}/indices
+lockdir=${base}/lock/
+logdir=${base}/log/cron/
+mirrordir=${base}/mirror/
+
+accepted=${queuedir}/accepted/
+newstage=${queuedir}/newstage/
+overridedir=${scriptdir}/override
+scriptsdir=${masterdir}/scripts/debian/
+stagedir=${lockdir}/stages
+unchecked=${queuedir}/unchecked/
+
+public=/srv/ftp.debian.org
+webdir=${public}/web
+exportpublic=${public}/rsync/export/
+
+ftpgroup=debadmin
+public_archives=(ftp-master backports debian-debug)
+
+TMPDIR=${base}/tmp
+PATH=${masterdir}:${PATH}
+
+# Various lockfiles used by multiple cron scripts
+LOCK_DAILY="${lockdir}/daily.lock"
+LOCK_UNCHECKED="${lockdir}/unchecked.lock"
+LOCK_STOP="${lockdir}/archive.stop"
+
+archs=$(dak admin a list | tr '\n' ' ')
 
 # Set the database variables
 eval $(dak admin config db-shell)

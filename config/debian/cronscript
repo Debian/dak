@@ -27,6 +27,9 @@
 
 # exit on errors
 set -e
+# A pipeline's return status is the value of the last (rightmost)
+# command to exit with a non-zero status, or zero if all commands exit
+# successfully.
 set -o pipefail
 # make sure to only use defined variables
 set -u
@@ -36,16 +39,18 @@ set -u
 set -E
 
 # And use one locale, no matter what the caller has set
-export LANG=C
-export LC_ALL=C
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
 
-ARG=${1:-"meh"}
+# One arg please
+declare -lr ARG=${1:-"meh"}
 
 # set DEBUG if you want to see a little more logs (needs to be used more)
 DEBUG=${DEBUG:-0}
 
-# While this check can be done in the following case, some assumptions
-# down there are easier if we sorted out calls without an arg before.
+# This doesn't catch calling us with an unknown argument, but it
+# catches missing args and saves a good bunch of processing time
+# (reading the scriptvars later is slow)
 if [[ ${ARG} == meh ]]; then
     cat - <<EOF
 This is the FTPMaster cronscript. It needs an argument or it won't do
@@ -61,9 +66,6 @@ EOF
     exit 0
 fi
 
-# Make sure we start out with a sane umask setting
-umask 022
-
 # import the general variable set.
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
@@ -72,13 +74,13 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . "${configdir}/common"
 
 # program name is the (lower cased) first argument.
-PROGRAM="${ARG,,}"
+PROGRAM="${ARG}"
 
 # Timestamp when we started
 NOW=$(date "+%Y.%m.%d-%H:%M:%S")
 
 # Which list of tasks should we run?
-TASKLIST="${configdir}/${PROGRAM}.tasks"
+declare -r TASKLIST="${configdir}/${PROGRAM}.tasks"
 
 # A logfile for every cron script
 LOGFILE="${logdir}/${PROGRAM}_${NOW}.log"
@@ -94,7 +96,7 @@ done
 # Get rid of tempfiles at the end
 trap cleanup EXIT TERM HUP INT QUIT
 
-case ${ARG,,} in
+case ${ARG} in
     unchecked)
         # Do not run during dinstall
         if [[ -e ${LOCK_DAILY} ]]; then
@@ -212,7 +214,7 @@ log "Cron script successful, all done"
 # and ensure its no longer used
 exec > "$logdir/after${PROGRAM}.log" 2>&1
 
-case ${ARG,,} in
+case ${ARG} in
     unchecked)
         ;;
     dinstall)
@@ -234,5 +236,9 @@ esac
 # our stage files, so the next dinstall run will do it all again.
 rm -f ${stagedir}/*
 bzip2 -9 ${LOGFILE}
+
+# Logfile should be gone, remove the symlink
+[[ -L ${logdir}/${PROGRAM} ]] && [[ ! -f ${logdir}/${PROGRAM} ]] && rm -f ${logdir}/${PROGRAM} || log "Logfile still exists or symlink gone already? Something fishy going on"
+
 # FIXME: Mail the log when its non-empty
 [[ -s "${logdir}/after${PROGRAM}.log" ]] || rm "${logdir}/after${PROGRAM}.log"

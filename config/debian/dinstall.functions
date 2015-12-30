@@ -319,11 +319,11 @@ function mkfilesindices() {
     ARCHES=$( (<$ARCHLIST sed -n 's/^.*|//p'; echo amd64) | grep . | grep -v all | sort -u)
     for a in $ARCHES; do
         (sed -n "s/|$a$//p" $ARCHLIST
-            sed -n 's/|all$//p' $ARCHLIST
+         sed -n 's/|all$//p' $ARCHLIST
 
-            cd $base/ftp
-            find ./dists -maxdepth 1 \! -type d
-            find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
+         cd $base/ftp
+         find ./dists -maxdepth 1 \! -type d
+         find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
         ) | sort -u | gzip -9 > arch-$a.list.gz
     done
 
@@ -370,43 +370,43 @@ function mkfilesindices() {
     }
 
     psql -F' ' -At -c "SELECT id, suite_name FROM suite" |
-    while read id suite; do
-        [ -e $base/ftp/dists/$suite ] || continue
-        (
-            (cd $base/ftp
-                distname=$(cd dists; readlink $suite || echo $suite)
-                find ./dists/$distname \! -type d
-                for distdir in ./dists/*; do
-                    [ "$(readlink $distdir)" != "$distname" ] || echo $distdir
-                done
-            )
-            suite_list $id
-        ) | sort -u | gzip -9 > suite-${suite}.list.gz
-    done
+        while read id suite; do
+            [ -e $base/ftp/dists/$suite ] || continue
+            (
+                (cd $base/ftp
+                 distname=$(cd dists; readlink $suite || echo $suite)
+                 find ./dists/$distname \! -type d
+                 for distdir in ./dists/*; do
+                     [ "$(readlink $distdir)" != "$distname" ] || echo $distdir
+                 done
+                )
+                suite_list $id
+            ) | sort -u | gzip -9 > suite-${suite}.list.gz
+        done
 
     log "Finding everything on the ftp site to generate sundries"
     (cd $base/ftp; find . \! -type d \! -name 'Archive_Maintenance_In_Progress' | sort) >$ARCHLIST
 
     rm -f sundries.list
     zcat *.list.gz | cat - *.list | sort -u |
-    diff - $ARCHLIST | sed -n 's/^> //p' > sundries.list
+        diff - $ARCHLIST | sed -n 's/^> //p' > sundries.list
 
     log "Generating files list"
 
     for a in $ARCHES; do
         (echo ./project/trace; zcat arch-$a.list.gz source.list.gz) |
-        cat - sundries.list dists.list project.list docs.list indices.list |
-        sort -u | poolfirst > ../arch-$a.files
+            cat - sundries.list dists.list project.list docs.list indices.list |
+            sort -u | poolfirst > ../arch-$a.files
     done
 
     (cd $base/ftp/
-	    for dist in sid jessie stretch; do
-		    find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
-	    done
+     for dist in sid jessie stretch; do
+	 find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
+     done
     )
 
     (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz ; zcat translation-stretch.list.gz) |
-    sort -u | poolfirst > ../typical.files
+        sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
     log "Done!"
