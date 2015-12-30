@@ -164,8 +164,10 @@ function do_new () {
     log "Doing NEW processing"
     (dak process-policy new; dak process-policy byhand) | mail -a "X-Debian: DAK" -e -s "NEW and BYHAND processing" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ftpmaster@ftp-master.debian.org
 
+    log "Processing Backports NEW"
     dak process-policy backports-new | mail -a "X-Debian: DAK" -e -s "NEW processing for backports-new" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" backports-team@debian.org
 
+    log "Cleanup NEW/Backports NEW"
     dak clean-suites -a new,backports-new
 }
 

@@ -1,6 +1,6 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
 importusers            none                       none                       false   false
-newoverview            none                       none                       false   false
+newoverview            none                       none                       false   true
 queuereport            none                       none                       false   true
 removalstxt            none                       none                       false   true
 rss                    none                       none                       false   true
