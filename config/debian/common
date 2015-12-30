@@ -83,6 +83,7 @@ function wbtrigger() {
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
     # We generate straight into the static mirror location for incoming
+    log "Preparing buildd area"
     dak manage-build-queues -a
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
@@ -91,6 +92,7 @@ function make_buildd_dir () {
     echo "<p>Last updated: `date -u`</p>" > ${incoming}/web/README.html
 
     # Tell the mirrors that we've updated
+    log "Pushing static for incoming.d.o"
     chronic /usr/local/bin/static-update-component incoming.debian.org
 }
 
@@ -144,18 +146,21 @@ function backports_policy() {
 function do_unchecked () {
     cd $unchecked
 
-    changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
+    changes=$(find . -maxdepth 1 -mindepth 1 -type f \( -name \*.changes -o -name \*.dak-commands \) | sed -e "s,./,," | xargs)
     report=$queuedir/REPORT
     timestamp=$(date "+%Y-%m-%d %H:%M")
-    UNCHECKED_WITHOUT_LOCK=${UNCHECKED_WITHOUT_LOCK:-""}
-
-    echo "$timestamp": ${changes:-"Nothing to do"}  >> $report
-    dak process-upload -a ${UNCHECKED_WITHOUT_LOCK} -d "$unchecked" >> $report
-    dak process-commands -d "$unchecked" >> $report
 
     if [ ! -z "$changes" ]; then
+        log "Processing files ${changes}"
+        echo "${timestamp}: ${changes}"  >> $report
+        dak process-upload -a -d "$unchecked" >> $report
+        dak process-commands -d "$unchecked" >> $report
+
         sync_debbugs
         do_buildd
+    else
+        log "Nothing to do"
+        echo "Nothing to do" >> ${report}
     fi
 }
 
@@ -173,6 +178,7 @@ function do_new () {
 
 function sync_debbugs () {
     # sync with debbugs
+    log "Sync debbugs version tracking information"
     echo "--" >> $report
     timestamp=$(date "+%Y-%m-%d-%H:%M")
     mkdir -p $queuedir/bts_version_track_archive/${timestamp}
@@ -183,11 +189,12 @@ function sync_debbugs () {
     TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
     DIFF=$(( NOW - TSTAMP ))
     if [ $DIFF -ge 259200 ]; then
-        log "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
+        log_error "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
     fi
 }
 
 function clean_debbugs () {
+    log "Cleanup debbugs"
     # Delete files older than 60 days
     find $queuedir/bts_version_track_archive/ -mtime +60 -type f -delete
     # Delete empty directories
@@ -244,8 +251,8 @@ function scancontents() {
 }
 
 function ddaccess() {
-    # Tell our dd accessible mirror to sync itself up. Including ftp dir.
-    log "Trigger dd accessible parts sync including ftp dir"
+    # Tell our dd accessible mirror to sync itself up.
+    log "Trigger dd accessible parts sync"
     ${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 sync
 }
 
