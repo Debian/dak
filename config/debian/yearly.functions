@@ -1,0 +1,11 @@
+# -*- mode:sh -*-
+
+function removalsarchive() {
+    cd ${webdir}
+    for ending in txt 822; do
+        mv removals.${ending} removals-${LASTYEAR}.${ending}
+        touch removals.${ending}
+        chmod g+w removals.${ending}
+        chown dak:ftpteam removals.${ending}
+    done
+}

@@ -1,0 +1,2 @@
+# -*- mode:sh -*-
+LASTYEAR=$(date -d 'last year' +%Y)
