@@ -87,11 +87,11 @@ def deleteAssociations(table, idList, session):
     query = """
         DELETE
             FROM %s
-            WHERE id = :id
+            WHERE id IN :idList
     """ % table
-    params = [{'id': id} for id in idList]
-    if len(params) == 0:
+    if not idList:
         return
+    params = {'idList': tuple(idList)}
     session.execute(query, params)
 
 def doDaDoDa(suite, session):
