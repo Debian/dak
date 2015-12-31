@@ -84,12 +84,13 @@ def obsoleteAllAssociations(suite, session):
     return fetch('old_and_unreferenced', query, { 'suite': suite }, session)
 
 def deleteAssociations(table, idList, session):
+    global Options
     query = """
         DELETE
             FROM %s
             WHERE id IN :idList
     """ % table
-    if not idList:
+    if not idList or Options['No-Action']:
         return
     params = {'idList': tuple(idList)}
     session.execute(query, params)
