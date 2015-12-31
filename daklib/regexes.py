@@ -143,7 +143,7 @@ re_file_orig = re.compile(_re_file_prefix + r'\.orig(?:-[a-zA-Z0-9-]+)?(?:\.tar\
 
 # Match buildinfo file
 # Groups: package, version, suffix
-re_file_buildinfo = re.compile(_re_file_prefix + r'_(?P<suffix>[a-zA-Z0-9+]+)\.buildinfo$')
+re_file_buildinfo = re.compile(_re_file_prefix + r'_(?P<suffix>[a-zA-Z0-9+-]+)\.buildinfo$')
 
 ######################################################################
 # Patterns matching fields                                           #
