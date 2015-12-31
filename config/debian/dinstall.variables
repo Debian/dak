@@ -52,3 +52,6 @@ for suite in testing unstable; do
     codename=${codename##* }
     extimportdists="${extimportdists} ${codename}"
 done
+
+# Common wget options
+wgetopts="-t2 -T20 -q -N --ca-directory=/etc/ssl/ca-debian"

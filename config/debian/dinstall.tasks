@@ -2,8 +2,12 @@
 STATE                  startup                    none                       false   false
 NOSTAGE                startup                    none                       false   false
 savetimestamp          none                       none                       false   false
-updates                none                       External\ Updates          false   false
+qa1                    none                       init                       false   true
 pg_timestamp           predinstall                pg_dump1                   true    false
+bugdoctxt              none                       External\ Updates          false   true
+mirrorlists            none                       none                       false   true
+mailingliststxt        none                       none                       false   true
+pseudopackages         none                       none                       false   true
 i18n1                  none                       i18n\ 1                    false   false
 dep11                  none                       dep11\ 1                   false   false
 NOSTAGE                lockaccepted               none                       false   false
