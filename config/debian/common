@@ -288,7 +288,7 @@ function stage() {
     ARGS=${ARGS:-""}
 
     log "########## ${PROGRAM} BEGIN: ${FUNC} ${ARGS} ##########"
-    local STAGEFILE="${stagedir}/${FUNC}_${ARGS}"
+    local STAGEFILE="${stagedir}/${FUNC}${ARGS:+_}${ARGS}"
     STAGEFILE=${STAGEFILE// /_}
     if [ -f "${STAGEFILE}" ]; then
         local stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
