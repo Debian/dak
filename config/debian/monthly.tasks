@@ -2,3 +2,4 @@
 rotatelog              none                       none                       false   true
 rotatequeued           none                       none                       false   true
 archivequeuedone       none                       none                       false   true
+rotatereports          none                       none                       false   true
