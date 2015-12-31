@@ -4,7 +4,7 @@ newoverview            none                       none                       fal
 queuereport            none                       none                       false   true
 removalstxt            none                       none                       false   true
 rss                    none                       none                       false   true
-ddaccess               none                       none                       true    true
+ddaccess               none                       none                       false    true
 gen_di                 none                       none                       false   false
 backportsacl           none                       none                       false   false
 builddautosigning      none                       none                       false   false
