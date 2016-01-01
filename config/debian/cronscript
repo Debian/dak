@@ -88,173 +88,187 @@ EOF
         ;;
 esac
 
-# common functions are "outsourced"
-. "${configdir}/common"
+(
+    LOCKFREE=0
+    flock --shared --nonblock 42 || LOCKFREE=1
 
-# Timestamp when we started
-NOW=$(date "+%Y.%m.%d-%H:%M:%S")
-
-# Which list of tasks should we run?
-declare -r TASKLIST="${configdir}/${PROGRAM}.tasks"
-
-# A logfile for every cron script
-LOGFILE="${logdir}/${PROGRAM}_${NOW}.log"
-
-# Each "cronscript" may have a variables and a functions file
-# that we source
-for what in variables functions; do
-    if [[ -f ${configdir}/${PROGRAM}.${what} ]]; then
-        . ${configdir}/${PROGRAM}.${what}
+    # Did we get the lock? (It's shared, so usually we will. But DSA
+    # can take an exclusive one in preparation for a reboot)
+    if [[ ${LOCKFREE} -gt 0 ]]; then
+        echo "Couldn't get (shared) reboot lock"
+        exit 1
     fi
-done
 
-# Get rid of tempfiles at the end
-trap cleanup EXIT TERM HUP INT QUIT
+    # common functions are "outsourced"
+    . "${configdir}/common"
 
-case ${ARG} in
-    unchecked)
-        # Do not run during dinstall
-        if [[ -e ${LOCK_DAILY} ]]; then
-            exit 0;
-        fi
-        # only run one cron.unchecked and also lock against hourly (newoverview)
-        if ! lockfile -r8 ${LOCK_UNCHECKED} 2> /dev/null; then
-            # log "aborting cron.unchecked because $LOCK_UNCHECKED has already been locked"
-            exit 0
-        fi
-        TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
-        ;;
-    dinstall)
-        ;;
-    hourly)
-        ;;
-    daily)
-        ;;
-    weekly)
-        ;;
-    monthly)
-        ;;
-    yearly)
-        ;;
-    *)
-        error "Unknown arg ${ARG}"
-        exit 42
-    ;;
-esac
+    # Timestamp when we started
+    NOW=$(date "+%Y.%m.%d-%H:%M:%S")
 
-# An easy access by name for the current log
-ln -sf ${LOGFILE} ${logdir}/${PROGRAM}
+    # Which list of tasks should we run?
+    declare -r TASKLIST="${configdir}/${PROGRAM}.tasks"
 
-# And from here, all output to the log please
-exec >> "$LOGFILE" 2>&1
+    # A logfile for every cron script
+    LOGFILE="${logdir}/${PROGRAM}_${NOW}.log"
 
-# The stage function uses this directory
-# This amends the stagedir variable from "vars"
-stagedir="${stagedir}/${PROGRAM}"
-# Ensure the dir exists
-mkdir -p ${stagedir}
-
-# This loop simply wants to be fed by a list of values (see below)
-# made out of 5 columns.
-# The first four are the array values for the stage function, the
-# fifth tells us if we should background the stage call.
-#
-#  - FUNC - the function name to call
-#  - ARGS - Possible arguments to hand to the function. Can be the empty string
-#  - TIME - The timestamp name. Can be the empty string
-#  - ERR  - if this is the string false, then the call will be surrounded by
-#           set +e ... set -e calls, so errors in the function do not exit
-#           dinstall. Can be the empty string, meaning true.
-#  - BG   - Background the function stage?
-#
-# ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
-#
-# NOTE 1: There are two special values for the first column (FUNC).
-#         STATE   - do not call stage function, call the state
-#                   function to update the public statefile "where is dinstall"
-#         NOSTAGE - do not call stage function, call the command directly.
-#
-# Note 2: If you want to hand an empty value to the stage function,
-#         use the word "none" in the list below.
-while read FUNC ARGS TIME ERR BACKGROUND; do
-    debug "FUNC: $FUNC ARGS: $ARGS TIME: $TIME ERR: $ERR BG: $BACKGROUND"
-
-    # Empty values in the value list are the string "none" (or the
-    # while read loop won't work). Here we ensure that variables that
-    # can be empty, are empty if the string none is set for them.
-    for var in ARGS TIME; do
-        if [[ ${!var} == none ]]; then
-            typeset ${var}=''
+    # Each "cronscript" may have a variables and a functions file
+    # that we source
+    for what in variables functions; do
+        if [[ -f ${configdir}/${PROGRAM}.${what} ]]; then
+            . ${configdir}/${PROGRAM}.${what}
         fi
     done
 
-    # ERR/BACKGROUND are boolean, check that they are.
-    for var in ERR BACKGROUND; do
-        if [[ ${!var} != false ]] && [[ ${!var} != true ]]; then
-            error "Illegal value ${!var} for ${var} (should be true or false), line for function ${FUNC}"
-        fi
-    done
+    # Get rid of tempfiles at the end
+    trap cleanup EXIT TERM HUP INT QUIT
 
-    case ${FUNC} in
-        STATE)
-            state ${ARGS}
-        ;;
-        NOSTAGE)
-            ${ARGS}
-        ;;
-        *)
-            GO=(
-                FUNC=${FUNC}
-                TIME=${TIME}
-                ARGS=${ARGS}
-                ERR=${ERR}
-            )
-            if [[ ${BACKGROUND} == true ]]; then
-                stage $GO &
-            else
-                stage $GO
+    case ${ARG} in
+        unchecked)
+            # Do not run during dinstall
+            if [[ -e ${LOCK_DAILY} ]]; then
+                exit 0;
             fi
-        ;;
+            # only run one cron.unchecked and also lock against hourly (newoverview)
+            if ! lockfile -r8 ${LOCK_UNCHECKED} 2> /dev/null; then
+                # log "aborting cron.unchecked because $LOCK_UNCHECKED has already been locked"
+                exit 0
+            fi
+            TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
+            ;;
+        dinstall)
+            ;;
+        hourly)
+            ;;
+        daily)
+            ;;
+        weekly)
+            ;;
+        monthly)
+            ;;
+        yearly)
+            ;;
+        *)
+            error "Unknown arg ${ARG}"
+            exit 42
+            ;;
     esac
-done < <(grep -v '^#' ${TASKLIST} )
 
-# we need to wait for the background processes before the end of the cron script
-wait
+    # An easy access by name for the current log
+    ln -sf ${LOGFILE} ${logdir}/${PROGRAM}
+
+    # And from here, all output to the log please
+    exec >> "$LOGFILE" 2>&1
+
+    # The stage function uses this directory
+    # This amends the stagedir variable from "vars"
+    stagedir="${stagedir}/${PROGRAM}"
+    # Ensure the dir exists
+    mkdir -p ${stagedir}
+
+    # This loop simply wants to be fed by a list of values (see below)
+    # made out of 5 columns.
+    # The first four are the array values for the stage function, the
+    # fifth tells us if we should background the stage call.
+    #
+    #  - FUNC - the function name to call
+    #  - ARGS - Possible arguments to hand to the function. Can be the empty string
+    #  - TIME - The timestamp name. Can be the empty string
+    #  - ERR  - if this is the string false, then the call will be surrounded by
+    #           set +e ... set -e calls, so errors in the function do not exit
+    #           dinstall. Can be the empty string, meaning true.
+    #  - BG   - Background the function stage?
+    #
+    # ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
+    #
+    # NOTE 1: There are two special values for the first column (FUNC).
+    #         STATE   - do not call stage function, call the state
+    #                   function to update the public statefile "where is dinstall"
+    #         NOSTAGE - do not call stage function, call the command directly.
+    #
+    # Note 2: If you want to hand an empty value to the stage function,
+    #         use the word "none" in the list below.
+    while read FUNC ARGS TIME ERR BACKGROUND; do
+        debug "FUNC: $FUNC ARGS: $ARGS TIME: $TIME ERR: $ERR BG: $BACKGROUND"
+
+        # Empty values in the value list are the string "none" (or the
+        # while read loop won't work). Here we ensure that variables that
+        # can be empty, are empty if the string none is set for them.
+        for var in ARGS TIME; do
+            if [[ ${!var} == none ]]; then
+                typeset ${var}=''
+            fi
+        done
+
+        # ERR/BACKGROUND are boolean, check that they are.
+        for var in ERR BACKGROUND; do
+            if [[ ${!var} != false ]] && [[ ${!var} != true ]]; then
+                error "Illegal value ${!var} for ${var} (should be true or false), line for function ${FUNC}"
+            fi
+        done
+
+        case ${FUNC} in
+            STATE)
+                state ${ARGS}
+                ;;
+            NOSTAGE)
+                ${ARGS}
+                ;;
+            *)
+                GO=(
+                    FUNC=${FUNC}
+                    TIME=${TIME}
+                    ARGS=${ARGS}
+                    ERR=${ERR}
+                )
+                if [[ ${BACKGROUND} == true ]]; then
+                    stage $GO &
+                else
+                    stage $GO
+                fi
+                ;;
+        esac
+    done < <(grep -v '^#' ${TASKLIST} )
+
+    # we need to wait for the background processes before the end of the cron script
+    wait
 
 
-# Common to all cron scripts
-log "Cron script successful, all done"
-# Redirect output to another file, as we want to compress our logfile
-# and ensure its no longer used
-exec > "$logdir/after${PROGRAM}.log" 2>&1
+    # Common to all cron scripts
+    log "Cron script successful, all done"
+    # Redirect output to another file, as we want to compress our logfile
+    # and ensure its no longer used
+    exec > "$logdir/after${PROGRAM}.log" 2>&1
 
-case ${ARG} in
-    unchecked)
+    case ${ARG} in
+        unchecked)
         ;;
-    dinstall)
-        logstats ${LOGFILE}
-        state "all done"
-        touch "${DINSTALLEND}"
-        ;;
-    hourly)
-        ;;
-    daily)
-        ;;
-    weekly)
-        ;;
-    monthly)
-        ;;
-    yearly)
-        ;;
-esac
+        dinstall)
+            logstats ${LOGFILE}
+            state "all done"
+            touch "${DINSTALLEND}"
+            ;;
+        hourly)
+            ;;
+        daily)
+            ;;
+        weekly)
+            ;;
+        monthly)
+            ;;
+        yearly)
+            ;;
+    esac
 
-# Now, at the very (successful) end of this run, make sure we remove
-# our stage files, so the next dinstall run will do it all again.
-rm -f ${stagedir}/*
-bzip2 -9 ${LOGFILE}
+    # Now, at the very (successful) end of this run, make sure we remove
+    # our stage files, so the next dinstall run will do it all again.
+    rm -f ${stagedir}/*
+    bzip2 -9 ${LOGFILE}
 
-# Logfile should be gone, remove the symlink
-[[ -L ${logdir}/${PROGRAM} ]] && [[ ! -f ${logdir}/${PROGRAM} ]] && rm -f ${logdir}/${PROGRAM} || log "Logfile still exists or symlink gone already? Something fishy going on"
+    # Logfile should be gone, remove the symlink
+    [[ -L ${logdir}/${PROGRAM} ]] && [[ ! -f ${logdir}/${PROGRAM} ]] && rm -f ${logdir}/${PROGRAM} || log "Logfile still exists or symlink gone already? Something fishy going on"
 
-# FIXME: Mail the log when its non-empty
-[[ -s "${logdir}/after${PROGRAM}.log" ]] || rm "${logdir}/after${PROGRAM}.log"
+    # FIXME: Mail the log when its non-empty
+    [[ -s "${logdir}/after${PROGRAM}.log" ]] || rm "${logdir}/after${PROGRAM}.log"
+
+# And end the reboot-locked part
+) 42</var/run/reboot-lock
