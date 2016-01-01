@@ -38,21 +38,42 @@ set -u
 # the important part here)
 set -E
 
+# The extglob shell option is enabled using the shopt builtin, several
+# extended pattern matching operators are recognized. We use it for
+# the POSSIBLEARGS and the first case ${ARGS} matching
+shopt -s extglob
+
 # And use one locale, no matter what the caller has set
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
+# import the general variable set.
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
 # One arg please
 declare -lr ARG=${1:-"meh"}
+
+# program name is the (lower cased) first argument.
+PROGRAM="${ARG}"
+
+# And the following types of cronscripts exists
+declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly)'
 
 # set DEBUG if you want to see a little more logs (needs to be used more)
 DEBUG=${DEBUG:-0}
 
-# This doesn't catch calling us with an unknown argument, but it
-# catches missing args and saves a good bunch of processing time
-# (reading the scriptvars later is slow)
-if [[ ${ARG} == meh ]]; then
-    cat - <<EOF
+# Check if the argument is a known one. If so, lock us so that only
+# one copy of the type of cronscript runs. The $type.tasks file is
+# mandantory, so use that for locking.
+case ${ARG} in
+    ${POSSIBLEARGS})
+        # Only one of me should ever run.
+        FLOCKER=${FLOCKER:-""}
+        [  "${FLOCKER}"  != "${configdir}/${PROGRAM}.tasks" ] && exec env FLOCKER="${configdir}/${PROGRAM}.tasks" flock -E 0 -en "${configdir}/${PROGRAM}.tasks" "$0" "$@" || :
+        ;;
+    *)
+        cat - <<EOF
 This is the FTPMaster cronscript. It needs an argument or it won't do
 anything for you.
 
@@ -63,18 +84,12 @@ Currently accepted Arguments:
    yearly, hourly, daily, weekly - Run that part
 
 EOF
-    exit 0
-fi
-
-# import the general variable set.
-export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
-. $SCRIPTVARS
+        exit 0
+        ;;
+esac
 
 # common functions are "outsourced"
 . "${configdir}/common"
-
-# program name is the (lower cased) first argument.
-PROGRAM="${ARG}"
 
 # Timestamp when we started
 NOW=$(date "+%Y.%m.%d-%H:%M:%S")
@@ -112,9 +127,6 @@ case ${ARG} in
     dinstall)
         ;;
     hourly)
-        # Only one of me should ever run.
-        FLOCKER=${FLOCKER:-""}
-        [  "${FLOCKER}"  != "${configdir}/${PROGRAM}.variables" ] && exec env FLOCKER="${configdir}/${PROGRAM}.variables" flock -E 0 -en "${configdir}/${PROGRAM}.variables" "$0" "$@" || :
         ;;
     daily)
         ;;
