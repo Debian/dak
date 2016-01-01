@@ -47,8 +47,12 @@ shopt -s extglob
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 
-# import the general variable set.
-export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+# If run from crontab, CONFIGDIR will point to the correct dir
+# where we find the vars file
+configdir=${configdir:-"/srv/ftp-master.debian.org/dak/config/debian"}
+# import the general variable set. (This will overwrite configdir, but
+# it is expected to have the same value)
+export SCRIPTVARS=${configdir}/vars
 . $SCRIPTVARS
 
 # One arg please
