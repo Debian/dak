@@ -1,19 +1,23 @@
 MAILTO=cron@ftp-master.debian.org
 PATH=/usr/local/bin:/usr/bin:/bin
+SHELL=/bin/bash
+configdir=/srv/ftp-master.debian.org/dak/config/debian
+
 # m        h          dom mon dow command
-2,17,32,47 *          *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript unchecked
-0          *          *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript hourly
-52         1,7,13,19  *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript dinstall
-##### And an alternate line, for the times the release team wants it half an hour late.
-#####22         2,9,14,20  *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript dinstall
+2,17,32,47 *          *   *   *   $configdir/cronscript unchecked
+0          *          *   *   *   $configdir/cronscript hourly
+52         1,7,13,19  *   *   *   $configdir/cronscript dinstall
+###### And an alternate line, for the times the release team wants it half an hour late.
+######22         2,9,14,20  *   *   *   $configdir/cronscript dinstall
 # And for release time, turn off cron after final dinstall
 #45         9          *   *   *   /home/dak/bin/cronoff
-3          9          *   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript daily
-0          12         *   *   0   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript weekly
-6          0          1   *   *   flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cronscript monthly
+3          9          *   *   *   $configdir/cronscript daily
+0          12         *   *   0   $configdir/cronscript weekly
+6          0          1   *   *   $configdir/cronscript monthly
+3          0          1   1   *   $configdir/cronscript yearly
 
-# Reboot cron doesn't use cronscript
-@reboot                           flock -s -E 0 -n /var/run/reboot-lock /srv/ftp-master.debian.org/dak/config/debian/cron.reboot
+## Reboot cron doesn't use cronscript
+@reboot                           $configdir/cron.reboot
 
 0          0          *   *   *   crontab -l > ~/crontab.out
 
