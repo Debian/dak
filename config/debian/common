@@ -23,6 +23,19 @@ function debug () {
     fi
 }
 
+# Get a tempfile, add it to the right variable to get rid of it,
+# and return it
+function gettempfile() {
+    local MAKEDIR=${1:-false}
+    local TMPARGS=""
+    if [[ ${MAKEDIR} == true ]]; then
+        TMPARGS="--directory"
+    fi
+    local TMPFILE=$( mktemp -p ${TMPDIR} ${TMPARGS} )
+    TMPFILES="${TEMPFILES} ${TMPFILE}"
+    echo "${TMPFILE}"
+}
+
 # Function that only cleans tempfiles, but does not exit or otherwise
 # care about any exit status
 function cleantempfiles() {

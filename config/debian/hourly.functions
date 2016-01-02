@@ -54,8 +54,7 @@ function backportsacl() {
 
 # do the buildd key updates
 function builddautosigning() {
-    BUILDDFUN=$(mktemp -p "${TMPDIR}" BUILDDFUN.XXXXXX)
-    TMPFILES="${TMPFILES} ${BUILDDFUN}"
+    BUILDDFUN=$( gettempfile )
     exec >> "${BUILDDFUN}" 2>&1
     ${scriptsdir}/buildd-remove-keys
     ${scriptsdir}/buildd-add-keys
