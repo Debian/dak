@@ -4,7 +4,7 @@
 # Set $PROGRAM to a string to have it added to the output.
 function log () {
     local prefix=${PROGRAM:-}
-    echo "$(date +"%b %d %H:%M:%S") $(hostname -s) ${prefix}[$$]: $@"
+    echo "$(date +"%b %d %H:%M:%S") ${HOSTNAME} ${prefix}[$$]: $@"
 }
 
 # log the message using log() but then also send a mail
@@ -12,7 +12,7 @@ function log () {
 function log_error () {
     log "$@"
     if [ -z "${MAILTO}" ]; then
-        echo "$@" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@$(hostname -s)] ERROR [$$]" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ${MAILTO}
+        echo "$@" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@${HOSTNAME}] ERROR [$$]" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ${MAILTO}
     fi
 }
 
@@ -347,7 +347,7 @@ function stage() {
 
     # Now we should make sure that we have a usable ${PROGRAM}.log, so
     # append the $STAGEFILE.log to it.
-    cat "${STAGEFILE}.log" >> "${LOGFILE}"
+    /usr/bin/ts "%b %d %H:%M:%S ${HOSTNAME} ${PROGRAM}[$$]: ${FUNC} " < "${STAGEFILE}.log"
     rm -f "${STAGEFILE}.log"
 
     log "########## ${PROGRAM} END: ${FUNC} ##########"
