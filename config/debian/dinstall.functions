@@ -1,11 +1,5 @@
 # -*- mode:sh -*-
 
-# Remove daily lock
-# FIXME: Dead code when switched to cronscript
-function remove_daily_lock() {
-    rm -f $LOCK_DAILY
-}
-
 # Remove changelog lock
 function remove_changelog_lock() {
     rm -f $LOCK_CHANGELOG
