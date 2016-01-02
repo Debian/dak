@@ -11,14 +11,14 @@ function log () {
 # to the address configured in MAILTO (if non-empty)
 function log_error () {
     log "$@"
-    if [ -z "${MAILTO}" ]; then
+    if [[ -z ${MAILTO} ]]; then
         echo "$@" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@${HOSTNAME}] ERROR [$$]" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ${MAILTO}
     fi
 }
 
 # debug log, only output when DEBUG=1
 function debug () {
-    if [ $DEBUG -eq 1 ]; then
+    if [[ $DEBUG -eq 1 ]]; then
         log "$*"
     fi
 }
@@ -41,10 +41,10 @@ function gettempfile() {
 function cleantempfiles() {
     resolvetmpfiles
     for TEMPFILE in $TMPFILES; do
-        if [ -n "${TEMPFILE}" ] && [ -f "${TEMPFILE}" ]; then
+        if [[ -n ${TEMPFILE} ]] && [[ -f ${TEMPFILE} ]]; then
             rm -f "${TEMPFILE}"
-        elif [ -n "${TEMPFILE}" ] && [ -d "${TEMPFILE}" ]; then
-            if [ "${TEMPFILE}" != "/" ] && [ "${TEMPFILE}" != "/*" ]; then
+        elif [[ -n ${TEMPFILE} ]] && [[ -d ${TEMPFILE} ]]; then
+            if [[ ${TEMPFILE} != / ]] && [[ ${TEMPFILE} != /* ]]; then
                 rm -rf "${TEMPFILE}"
             fi
         fi
@@ -160,14 +160,14 @@ function do_unchecked () {
     cd $unchecked
 
     changes=$(find . -maxdepth 1 -mindepth 1 -type f \( -name \*.changes -o -name \*.dak-commands \) | sed -e "s,./,," | xargs)
-    report=$queuedir/REPORT
+    report=${queuedir}/REPORT
     timestamp=$(date "+%Y-%m-%d %H:%M")
 
-    if [ ! -z "$changes" ]; then
+    if [[ ! -z ${changes} ]]; then
         log "Processing files ${changes}"
-        echo "${timestamp}: ${changes}"  >> $report
-        dak process-upload -a -d "$unchecked" >> $report
-        dak process-commands -d "$unchecked" >> $report
+        echo "${timestamp}: ${changes}"  >> ${report}
+        dak process-upload -a -d "$unchecked" >> ${report}
+        dak process-commands -d "$unchecked" >> ${report}
 
         sync_debbugs
         do_buildd
@@ -201,7 +201,7 @@ function sync_debbugs () {
     NOW=$(date +%s)
     TSTAMP=$(stat -c %Y $lockdir/synced_bts_version)
     DIFF=$(( NOW - TSTAMP ))
-    if [ $DIFF -ge 259200 ]; then
+    if [[ $DIFF -ge 259200 ]]; then
         log_error "Kids, you tried your best and you failed miserably. The lesson is, never try. (Homer Simpson)"
     fi
 }
@@ -236,7 +236,7 @@ function get_archiveroot() {
     local archivename="$1"
     local query="SELECT path FROM archive WHERE name='${archivename}'"
     local archiveroot="$(psql -tAc "${query}")"
-    if [ -z "${archiveroot}" ]; then
+    if [[ -z ${archiveroot} ]]; then
         echo "get_archiveroot: couldn't get archiveroot for '${archivename}'" >&2
         return 1
     fi
@@ -303,11 +303,11 @@ function stage() {
     log "########## ${PROGRAM} BEGIN: ${FUNC} ${ARGS} ##########"
     local STAGEFILE="${stagedir}/${FUNC}${ARGS:+_}${ARGS}"
     STAGEFILE=${STAGEFILE// /_}
-    if [ -f "${STAGEFILE}" ]; then
+    if [[ -f ${STAGEFILE} ]]; then
         local stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
         local unixtime=$(date +%s)
         local difference=$(( $unixtime - $stamptime ))
-        if [ ${difference} -ge 14400 ]; then
+        if [[ ${difference} -ge 14400 ]]; then
             log_error "Did already run ${FUNC}, stagefile exists, but that was ${difference} seconds ago. Please check."
         else
             log "Did already run ${FUNC}, not calling again..."
@@ -327,13 +327,13 @@ function stage() {
     # Short error mails ftw!
     exec >> "${STAGEFILE}.log" 2>&1
 
-    if [ -f "${LOCK_STOP}" ]; then
+    if [[ -f ${LOCK_STOP} ]]; then
         log "${LOCK_STOP} exists, exiting immediately"
         exit 42
     fi
 
     # Do we care about trouble in the function we call?
-    if [ "${error}" = "false" ]; then
+    if [[ ${error} == false ]]; then
         set +e
     fi
     ${FUNC} ${ARGS}
@@ -351,7 +351,7 @@ function stage() {
 
     touch "${STAGEFILE}"
 
-    if [ -n "${TIME}" ]; then
+    if [[ -n ${TIME} ]]; then
         ts "${TIME}"
     fi
 
@@ -369,7 +369,7 @@ function stage() {
 
     log "########## ${PROGRAM} END: ${FUNC} ##########"
 
-    if [ -f "${LOCK_STOP}" ]; then
+    if [[ -f ${LOCK_STOP} ]]; then
         log "${LOCK_STOP} exists, exiting immediately"
         exit 42
     fi

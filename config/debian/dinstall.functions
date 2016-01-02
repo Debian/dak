@@ -10,30 +10,32 @@ function remove_all_locks() {
     rm -f $LOCK_DAILY $LOCK_ACCEPTED
 }
 
+# Get rid of all locks and unset the trap
 function remove_locks {
     remove_all_locks
     trap - EXIT TERM HUP INT QUIT
     ts "locked part finished"
 }
 
+# Lock accepted
 function lockaccepted {
     lockfile "$LOCK_ACCEPTED"
     trap remove_all_locks EXIT TERM HUP INT QUIT
 }
 
-# If we error out this one is called, *FOLLOWED* by cleanup above
+# If we error out this one is called, *FOLLOWED* by cleanup in common
 function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
 
     subject="ATTENTION ATTENTION!"
-    if [ "${error}" = "false" ]; then
+    if [[ ${error} = false  ]]; then
         subject="${subject} (continued)"
     else
         subject="${subject} (interrupted)"
     fi
     subject="${subject} dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)"
 
-    if [ -r "${STAGEFILE}.log" ]; then
+    if [[ -r ${STAGEFILE}.log  ]]; then
         cat "${STAGEFILE}.log"
     else
         echo "file ${STAGEFILE}.log does not exist, sorry"
@@ -108,12 +110,12 @@ function i18n1() {
         # to do more here. And we only test -d a directory on it anyway.
         TSTAMP=$(cat timestamp)
         # do we have the dir still?
-        if [ -d ${scriptdir}/i18n/${TSTAMP} ]; then
+        if [[ -d ${scriptdir}/i18n/${TSTAMP}  ]]; then
             # Lets check!
             if ${scriptsdir}/ddtp-i18n-check.sh . ${scriptdir}/i18n/${TSTAMP}; then
                 # Yay, worked, lets copy around
                 for dir in ${extimportdists}; do
-                    if [ -d dists/${dir}/ ]; then
+                    if [[ -d dists/${dir}/  ]]; then
                         cd dists/${dir}/main/i18n
                         rsync -aq --delete --delete-after --exclude Translation-en.bz2 --exclude Translation-*.diff/ . ${ftpdir}/dists/${dir}/main/i18n/.
                     fi
@@ -146,7 +148,7 @@ function dep11() {
     if ${scriptsdir}/dep11-basic-validate.py . ${dep11dir}/; then
         # Yay, worked, lets copy around
         for dir in ${extimportdists}; do
-            if [ -d ${dir}/ ]; then
+            if [[ -d ${dir}/  ]]; then
                 for comp in main contrib non-free; do
                     mkdir -p ${ftpdir}/dists/${dir}/${comp}/dep11
                     cd ${dir}/${comp}
@@ -185,7 +187,7 @@ function fingerprints() {
     OUTFILE=$( gettempfile )
     dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
 
-    if [ -s "${OUTFILE}" ]; then
+    if [[ -s ${OUTFILE} ]]; then
         /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
 From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
 To: <debian-project@lists.debian.org>
@@ -280,7 +282,7 @@ function mkmaintainers() {
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
 	indices="${archiveroot}/indices"
-	if ! [ -d "${indices}" ]; then
+	if ! [[ -d ${indices} ]]; then
 	    mkdir "${indices}"
 	fi
         cd "${indices}"
@@ -399,13 +401,13 @@ function mkfilesindices() {
 
     psql -F' ' -At -c "SELECT id, suite_name FROM suite" |
         while read id suite; do
-            [ -e $base/ftp/dists/$suite ] || continue
+            [[ -e $base/ftp/dists/$suite ]] || continue
             (
                 (cd $base/ftp
                  distname=$(cd dists; readlink $suite || echo $suite)
                  find ./dists/$distname \! -type d
                  for distdir in ./dists/*; do
-                     [ "$(readlink $distdir)" != "$distname" ] || echo $distdir
+                     [[ $(readlink $distdir) != $distname ]] || echo $distdir
                  done
                 )
                 suite_list $id
@@ -470,10 +472,10 @@ function mirror() {
         log "Regenerating \"public\" mirror/${archive} hardlink fun"
         DATE_SERIAL=$(date +"%Y%m%d01")
         FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} || echo ${DATE_SERIAL} )
-        if [ "$DATE_SERIAL" -gt "$FILESOAPLUS1" ]; then
-            SERIAL="$DATE_SERIAL"
+        if [[ ${DATE_SERIAL} -gt ${FILESOAPLUS1}  ]]; then
+            SERIAL="${DATE_SERIAL}"
         else
-            SERIAL="$FILESOAPLUS1"
+            SERIAL="${FILESOAPLUS1}"
         fi
         date -u > ${TRACEFILE}
         echo "Using dak v1" >> ${TRACEFILE}
@@ -488,19 +490,19 @@ function mirror() {
 
 function expire() {
     log "Expiring old database dumps..."
-    cd $base/backup
-    $scriptsdir/expire_dumps -d . -p -f "dump_*"
+    cd ${base}/backup
+    ${scriptsdir}/expire_dumps -d . -p -f "dump_*"
 }
 
 function transitionsclean() {
     log "Removing out of date transitions..."
-    cd $base
+    cd ${base}
     dak transitions -c -a
 }
 
 function dm() {
     log "Updating DM permissions page"
-    dak acl export-per-source dm >$exportdir/dm.txt
+    dak acl export-per-source dm >${exportdir}/dm.txt
 }
 
 function bts() {
@@ -524,7 +526,7 @@ function mirrorpush() {
             echo "Processing: ${release}"
             subdir=${release%/InRelease}
             while read SHASUM SIZE NAME; do
-                if ! [ -f "${subdir}/${NAME}" ]; then
+                if ! [[ -f ${subdir}/${NAME} ]]; then
                     bname=$(basename ${NAME})
                     if [[ "${bname}" =~ ^(Packages|Sources|Contents-[a-zA-Z0-9-]+|Translation-[a-zA-Z_]+|Components-(amd64|i386)\.yml|icons-(128x128|64x64)\.tar)$ ]]; then
 
@@ -543,7 +545,7 @@ function mirrorpush() {
                 # So we use "readlink -f" to check the size of the target, as thats basically
                 # what gen-releases does
                 fsize=$(stat -c %s $(readlink -f "${subdir}/${NAME}"))
-                if [ ${fsize} -ne ${SIZE} ]; then
+                if [[ ${fsize} -ne ${SIZE} ]]; then
                     broken=$(( broken + 1 ))
                     echo "File ${subdir}/${NAME} has size ${fsize}, expected is ${SIZE}"
                     continue
@@ -551,7 +553,7 @@ function mirrorpush() {
 
                 fshasum=$(sha1sum $(readlink -f "${subdir}/${NAME}"))
                 fshasum=${fshasum%% *}
-                if [ "${fshasum}" != "${SHASUM}" ]; then
+                if [[ ${fshasum} != ${SHASUM} ]]; then
                     broken=$(( broken + 1 ))
                     echo "File ${subdir}/${NAME} has checksum ${fshasum}, expected is ${SHASUM}"
                     continue
@@ -559,7 +561,7 @@ function mirrorpush() {
             done < <(sed '1,/SHA1:/d' "${release}" | sed '/SHA256:/,$d')
         done
 
-        if [ $broken -gt 0 ]; then
+        if [[ $broken -gt 0 ]]; then
             log_error "Trouble with the public mirror for ${archive}, found ${broken} errors"
             continue
         else
@@ -616,21 +618,21 @@ function i18n2() {
 
 function stats() {
     log "Updating stats data"
-    cd $configdir
-    $scriptsdir/update-ftpstats $base/log/* > $base/misc/ftpstats.data
-    R --slave --vanilla < $base/misc/ftpstats.R
-    dak stats arch-space > $webdir/arch-space
-    dak stats pkg-nums > $webdir/pkg-nums
+    cd ${configdir}
+    ${scriptsdir}/update-ftpstats ${base}/log/* > ${base}/misc/ftpstats.data
+    R --slave --vanilla < ${base}/misc/ftpstats.R
+    dak stats arch-space > ${webdir}/arch-space
+    dak stats pkg-nums > ${webdir}/pkg-nums
 }
 
 function cleantransactions() {
     log "Cleanup transaction ids older than 3 months"
-    cd $base/backup/
+    cd ${base}/backup/
     find -maxdepth 1 -mindepth 1 -type f -name 'txid_*' -mtime +90 -delete
 }
 
 function logstats() {
-    $masterdir/tools/logs.py "$1"
+    ${masterdir}/tools/logs.py "$1"
 }
 
 # save timestamp when we start
@@ -663,22 +665,22 @@ EOF
 
 # extract changelogs and stuff
 function changelogs() {
-    if lockfile -r3 $LOCK_CHANGELOG; then
+    if lockfile -r3 ${LOCK_CHANGELOG}; then
+        trap remove_changelog_lock EXIT TERM HUP INT QUIT
         log "Extracting changelogs"
         dak make-changelog -e -a ftp-master
-        [ -f ${exportdir}/changelogs/filelist.yaml ] && xz -f ${exportdir}/changelogs/filelist.yaml
+        [[ -f ${exportdir}/changelogs/filelist.yaml ]] && xz -f ${exportdir}/changelogs/filelist.yaml
         mkdir -p ${exportpublic}/changelogs
         cd ${exportpublic}/changelogs
         rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
         sudo -H -u staticsync /usr/local/bin/static-update-component metadata.ftp-master.debian.org >/dev/null 2>&1 &
 
         dak make-changelog -e -a backports
-        [ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml ] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
+        [[ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml  ]] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
         mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
         cd /srv/backports-master.debian.org/rsync/export/changelogs
         rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
         remove_changelog_lock
-        trap remove_changelog_lock EXIT TERM HUP INT QUIT
     fi
 }
 
