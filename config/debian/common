@@ -347,7 +347,11 @@ function stage() {
 
     # Now we should make sure that we have a usable ${PROGRAM}.log, so
     # append the $STAGEFILE.log to it.
-    /usr/bin/ts "%b %d %H:%M:%S ${HOSTNAME} ${PROGRAM}[$$]: ${FUNC} " < "${STAGEFILE}.log"
+    if [[ ${TIMESTAMP} == true ]]; then
+        /usr/bin/ts "%b %d %H:%M:%S ${HOSTNAME} ${PROGRAM}[$$]: ${FUNC} " < "${STAGEFILE}.log"
+    else
+        cat "${STAGEFILE}.log"
+    fi
     rm -f "${STAGEFILE}.log"
 
     log "########## ${PROGRAM} END: ${FUNC} ##########"

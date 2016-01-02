@@ -55,3 +55,6 @@ done
 
 # Common wget options
 wgetopts="-t2 -T20 -q -N --ca-directory=/etc/ssl/ca-debian"
+
+# dinstall wants timestamps added to stage logs
+TIMESTAMP=true

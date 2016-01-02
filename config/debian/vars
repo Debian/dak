@@ -44,6 +44,9 @@ LOCK_DAILY="${lockdir}/daily.lock"
 LOCK_UNCHECKED="${lockdir}/unchecked.lock"
 LOCK_STOP="${lockdir}/archive.stop"
 
+# By default, add no timestamps to stage logs
+TIMESTAMP=false
+
 # And the following types of cronscripts exists
 declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly)'
 declare -r HOSTNAME=$(hostname -s)
