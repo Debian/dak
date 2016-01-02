@@ -716,3 +716,9 @@ function startup() {
     touch "${LOCK_BRITNEY}"
     TMPFILES="${TMPFILES} ${LOCK_DAILY} ${LOCK_BRITNEY}"
 }
+
+function postcronscript() {
+    logstats ${LOGFILE}
+    state "all done"
+    touch "${DINSTALLEND}"
+}
