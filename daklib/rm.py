@@ -350,6 +350,7 @@ def remove(session, reason, suites, removals,
     binaries = []
     whitelists = []
     versions = []
+    newest_source = ''
     suite_ids_list = []
     suites_list = utils.join_with_commas_and(suites)
     cnf = utils.get_conf()
@@ -400,6 +401,8 @@ def remove(session, reason, suites, removals,
         for version in versions:
             d[package][version].sort(utils.arch_compare_sw)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
+            if apt_pkg.version_compare(version, newest_source) > 0:
+                newest_source = version
 
     for package in summary.split("\n"):
         for row in package.split("\n"):
@@ -524,22 +527,18 @@ def remove(session, reason, suites, removals,
 
         # close associated bug reports
         if close_related_bugs:
-            latest_version = ''
             Subst_close_other = Subst_common
             bcc = []
             wnpp = utils.parse_wnpp_bug_file()
-            versions = list(set([re_bin_only_nmu.sub('', v) for v in versions]))
+            newest_source = re_bin_only_nmu.sub('', newest_source)
             if len(set(s.split("_", 1)[0] for s in sources)) == 1:
                 source_pkg = source.split("_", 1)[0]
             else:
                 logfile.write("=========================================================================\n")
                 logfile822.write("\n")
                 raise ValueError("Closing bugs for multiple source packages is not supported.  Please do it yourself.")
-            for version in versions:
-                if apt_pkg.version_compare(version, latest_version) > 0:
-                    latest_version = version
-            if latest_version != '':
-                Subst_close_other["__VERSION__"] = latest_version
+            if newest_source != '':
+                Subst_close_other["__VERSION__"] = newest_source
             else:
                 logfile.write("=========================================================================\n")
                 logfile822.write("\n")
