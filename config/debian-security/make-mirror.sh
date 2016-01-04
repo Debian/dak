@@ -2,13 +2,23 @@
 
 set -e
 
-LANG=C
-LC_ALL=C
+LANG=C.UTF-8
+LC_ALL=C.UTF-8
+TRACEFILE=/srv/security-master.debian.org/ftp/project/trace/security-master.debian.org
 
 echo "Regenerating \"public\" mirror/ hardlink fun"
-date -u > /srv/security-master.debian.org/ftp/project/trace/security-master.debian.org
-echo "Using dak v1" >> /srv/security-master.debian.org/ftp/project/trace/security-master.debian.org
-echo "Running on host: $(hostname -f)" >> /srv/security-master.debian.org/ftp/project/trace/security-master.debian.org
+
+DATE_SERIAL=$(date +"%Y%m%d01")
+FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} || echo ${DATE_SERIAL} )
+if [[ ${DATE_SERIAL} -gt ${FILESOAPLUS1}  ]]; then
+    SERIAL="${DATE_SERIAL}"
+else
+    SERIAL="${FILESOAPLUS1}"
+fi
+date -u > ${TRACEFILE}
+echo "Using dak v1" >> ${TRACEFILE}
+echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
+echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
 cd /srv/security-master.debian.org/ftp/project/trace/
 ln -sf security-master.debian.org master
 cd /srv/security.debian.org/archive/debian-security/
