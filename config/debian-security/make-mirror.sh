@@ -16,9 +16,11 @@ else
     SERIAL="${FILESOAPLUS1}"
 fi
 date -u > ${TRACEFILE}
+rfc822date=$(LC_ALL=POSIX LANG=POSIX date -u -R)
 echo "Using dak v1" >> ${TRACEFILE}
 echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
 echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
+echo "Date: ${rfc822date}"
 cd /srv/security-master.debian.org/ftp/project/trace/
 ln -sf security-master.debian.org master
 cd /srv/security.debian.org/archive/debian-security/

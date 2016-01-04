@@ -477,10 +477,12 @@ function mirror() {
         else
             SERIAL="${FILESOAPLUS1}"
         fi
+        RFC822DATE=$(LC_ALL=POSIX LANG=POSIX date -u -R)
         date -u > ${TRACEFILE}
         echo "Using dak v1" >> ${TRACEFILE}
         echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
         echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
+        echo "Date: ${RFC822DATE}" >> ${TRACEFILE}
         # Now make it accessible via one name, no matter on which host we run
         cd ${archiveroot}/project/trace/
         ln -sf ftp-master.debian.org master
