@@ -481,6 +481,9 @@ function mirror() {
         echo "Using dak v1" >> ${TRACEFILE}
         echo "Running on host: $(hostname -f)" >> ${TRACEFILE}
         echo "Archive serial: ${SERIAL}" >> ${TRACEFILE}
+        # Now make it accessible via one name, no matter on which host we run
+        cd ${archiveroot}/project/trace/
+        ln -sf ftp-master.debian.org master
 
         mkdir -p ${targetpath}
         cd ${targetpath}
