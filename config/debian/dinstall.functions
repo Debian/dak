@@ -575,6 +575,7 @@ function mirrorpush() {
                 ftp-master)
                     fname="mirrorstart"
                     pusharg=""
+                    pname="debian"
                     ;;
                 debian-debug)
                     pusharg="-a debug"
@@ -584,11 +585,15 @@ function mirrorpush() {
                     ;;&
                 *)
                     fname="mirrorstart.${archive}"
+                    pname=${archive}
                     ;;
             esac
-            date -u > /srv/ftp.debian.org/web/${fname}
-            echo "Using dak v1" >> /srv/ftp.debian.org/web/${fname}
-            echo "Running on host $(hostname -f)" >> /srv/ftp.debian.org/web/${fname}
+            mkdir -p ${webdir}/${pname}/project/trace/
+            ln -sf ${mirrordir}/${archive}/project/trace/master ${webdir}/${pname}/project/trace/master
+
+            date -u > ${webdir}/${fname}
+            echo "Using dak v1" >> ${webdir}/${fname}
+            echo "Running on host $(hostname -f)" >> ${webdir}/${fname}
             sudo -H -u archvsync /home/archvsync/runmirrors ${pusharg} > ~dak/runmirrors-${archive}.log 2>&1 &
         fi
     done
