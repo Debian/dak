@@ -778,7 +778,7 @@ class ArchiveUpload(object):
         suites = session.query(Suite).filter(Suite.suite_name.in_(suite_names))
         return suites
 
-    def _check_new_binary_overrides(self, suite):
+    def _check_new_binary_overrides(self, suite, overridesuite):
         new = False
         source = self.changes.source
 
@@ -786,7 +786,7 @@ class ArchiveUpload(object):
             packages = source.package_list.packages_for_suite(suite)
             binaries = [ entry for entry in packages ]
             for b in binaries:
-                override = self._binary_override(suite, b)
+                override = self._binary_override(overridesuite, b)
                 if override is None:
                     self.warnings.append('binary:{0} is NEW.'.format(b.name))
                     new = True
@@ -795,19 +795,22 @@ class ArchiveUpload(object):
             for b in binaries:
                 if utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
                     continue
-                override = self._binary_override(suite, b)
+                override = self._binary_override(overridesuite, b)
                 if override is None:
                     self.warnings.append('binary:{0} is NEW.'.format(b.name))
                     new = True
 
         return new
 
-    def _check_new(self, suite):
+    def _check_new(self, suite, overridesuite):
         """Check if upload is NEW
 
         An upload is NEW if it has binary or source packages that do not have
-        an override in C{suite} OR if it references files ONLY in a tainted
-        archive (eg. when it references files in NEW).
+        an override in C{overridesuite} OR if it references files ONLY in a
+        tainted archive (eg. when it references files in NEW).
+
+        Debug packages (*-dbgsym in Section: debug) are not considered as NEW
+        if C{suite} has a seperate debug suite.
 
         @rtype:  bool
         @return: C{True} if the upload is NEW, C{False} otherwise
@@ -816,10 +819,10 @@ class ArchiveUpload(object):
         new = False
 
         # Check for missing overrides
-        if self._check_new_binary_overrides(suite):
+        if self._check_new_binary_overrides(suite, overridesuite):
             new = True
         if self.changes.source is not None:
-            override = self._source_override(suite, self.changes.source)
+            override = self._source_override(overridesuite, self.changes.source)
             if override is None:
                 self.warnings.append('source:{0} is NEW.'.format(self.changes.source.dsc['Source']))
                 new = True
@@ -851,7 +854,7 @@ class ArchiveUpload(object):
             overridesuite = suite
             if suite.overridesuite is not None:
                 overridesuite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
-            if self._check_new(overridesuite):
+            if self._check_new(suite, overridesuite):
                 self.new = True
             final_suites.add(suite)
 
