@@ -196,6 +196,11 @@ class SignedFile(object):
         #             <expire-timestamp> <sig-version> <reserved> <pubkey-algo>
         #             <hash-algo> <sig-class> <primary-key-fpr>
         if fields[1] == "VALIDSIG":
+            # GnuPG accepted MD5 as a hash algorithm until gnupg 1.4.20,
+            # which Debian 8 does not yet include.  We want to make sure
+            # to not accept uploads covered by a MD5-based signature.
+            if fields[9] == "1":
+                raise GpgException("Digest algorithm MD5 is not trusted.")
             self.valid = True
             self.fingerprints.append(fields[2])
             self.primary_fingerprints.append(fields[11])

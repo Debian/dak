@@ -69,5 +69,9 @@ class GpgTest(DakTestCase):
         with self.assertRaises(GpgException):
             verify('gpg/plaintext.txt')
 
+    def test_md5_assertion(self):
+        with self.assertRaises(GpgException):
+            verify('gpg/md5.asc')
+
 if __name__ == '__main__':
     unittest.main()
