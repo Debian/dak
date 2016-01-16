@@ -972,6 +972,7 @@ class ArchiveUpload(object):
             self.final_suites = final_suites
 
             for chk in (
+                    checks.SuiteCheck,
                     checks.TransitionCheck,
                     checks.ACLCheck,
                     checks.NoSourceOnlyCheck,

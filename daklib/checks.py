@@ -799,6 +799,14 @@ class SourceFormatCheck(Check):
         if query.first() is None:
             raise Reject('source format {0} is not allowed in suite {1}'.format(source_format, suite.suite_name))
 
+class SuiteCheck(Check):
+    def per_suite_check(self, upload, suite):
+        if not suite.accept_source_uploads and upload.changes.source is not None:
+            raise Reject('The suite "{0}" does not accept source uploads.'.format(suite.suite_name))
+        if not suite.accept_binary_uploads and len(upload.changes.binaries) != 0:
+            raise Reject('The suite "{0}" does not accept binary uploads.'.format(suite.suite_name))
+        return True
+
 class SuiteArchitectureCheck(Check):
     def per_suite_check(self, upload, suite):
         session = upload.session
