@@ -420,6 +420,10 @@ def __suite_add_build_queue(d, args):
     s.signingkeys = suite.signingkeys
     s.include_long_description = False
 
+    # Do not accept direct uploads to the build queue
+    s.accept_source_uploads = False
+    s.accept_binary_uploads = False
+
     s.archive = build_queue_archive
     s.architectures.extend(suite.architectures)
     s.components.extend(suite.components)
