@@ -195,9 +195,9 @@ def comment_accept(upload, srcqueue, comments, transaction):
             if debug_suite is not None and is_debug_binary(db_binary):
                 copy_to_suite = debug_suite
 
-            # build queues may miss the source package if this is a
-            # binary-only upload.
-            if suite != upload.target_suite:
+            # build queues and debug suites may miss the source package
+            # if this is a binary-only upload.
+            if copy_to_suite != upload.target_suite:
                 transaction.copy_source(
                     db_binary.source,
                     copy_to_suite,
