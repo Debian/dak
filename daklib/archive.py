@@ -961,6 +961,7 @@ class ArchiveUpload(object):
                     checks.BinaryCheck,
                     checks.BinaryTimestampCheck,
                     checks.SingleDistributionCheck,
+                    checks.ArchAllBinNMUCheck,
                     ):
                 chk().check(self)
 

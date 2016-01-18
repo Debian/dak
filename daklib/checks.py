@@ -725,6 +725,16 @@ class NoSourceOnlyCheck(Check):
 
         return True
 
+class ArchAllBinNMUCheck(Check):
+    """Check for arch:all binNMUs"""
+    def check(self, upload):
+        changes = upload.changes
+
+        if 'all' in changes.architectures and changes.changes.get('Binary-Only') == 'yes':
+            raise Reject('arch:all binNMUs are not allowed.')
+
+        return True
+
 class LintianCheck(Check):
     """Check package using lintian"""
     def check(self, upload):
