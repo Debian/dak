@@ -28,7 +28,7 @@ if ! echo "$VERSION" | grep -Eq "^[0-9]{8}((\.|\+?[a-z]+|\+deb[0-9]+u|\+kbsd[0-9
 fi
 
 case $SUITE in
-    unstable|sid|*-proposed-updates)
+    unstable|sid|*proposed-updates)
 	: # nothing to do
 	;;
     *)

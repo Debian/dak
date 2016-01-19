@@ -19,7 +19,7 @@ CHANGES="$4"	# Changes file for the upload
 SUITE="$5"
 
 case $SUITE in
-    unstable|sid|*-proposed-updates)
+    unstable|sid|*proposed-updates)
 	    : # nothing to do
 	    ;;
     *)
