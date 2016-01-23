@@ -53,7 +53,7 @@ configdir=${configdir:-"/srv/ftp-master.debian.org/dak/config/debian"}
 # import the general variable set. (This will overwrite configdir, but
 # it is expected to have the same value)
 export SCRIPTVARS=${configdir}/vars
-. $SCRIPTVARS
+. ${SCRIPTVARS}
 
 # One arg please
 declare -lr ARG=${1:-"meh"}
@@ -71,7 +71,7 @@ case ${ARG} in
     ${POSSIBLEARGS})
         # Only one of me should ever run.
         FLOCKER=${FLOCKER:-""}
-        [  "${FLOCKER}"  != "${configdir}/${PROGRAM}.tasks" ] && exec env FLOCKER="${configdir}/${PROGRAM}.tasks" flock -E 0 -en "${configdir}/${PROGRAM}.tasks" "$0" "$@" || :
+        [[ ${FLOCKER} != ${configdir}/${PROGRAM}.tasks ]] && exec env FLOCKER="${configdir}/${PROGRAM}.tasks" flock -E 0 -en "${configdir}/${PROGRAM}.tasks" "$0" "$@" || :
         ;;
     *)
         cat - <<EOF

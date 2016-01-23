@@ -4,7 +4,7 @@
 # Set $PROGRAM to a string to have it added to the output.
 function log () {
     local prefix=${PROGRAM:-}
-    echo "$(date +"%b %d %H:%M:%S") ${HOSTNAME} ${prefix}[$$]: $@"
+    echo "$(date +"%b %d %H:%M:%S") ${HOSTNAME} ${prefix}[$$]: $*"
 }
 
 # log the message using log() but then also send a mail
@@ -12,7 +12,7 @@ function log () {
 function log_error () {
     log "$@"
     if [[ -z ${MAILTO} ]]; then
-        echo "$@" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@${HOSTNAME}] ERROR [$$]" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ${MAILTO}
+        echo "$*" | mail -a "X-Debian: DAK" -e -s "[$PROGRAM@${HOSTNAME}] ERROR [$$]" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ${MAILTO}
     fi
 }
 
@@ -102,7 +102,7 @@ function make_buildd_dir () {
     dak generate-releases -a build-queues >/dev/null
 
     # Stick a last modified date in the page footer
-    echo "<p>Last updated: `date -u`</p>" > ${incoming}/web/README.html
+    echo "<p>Last updated: $(date -u)</p>" > ${incoming}/web/README.html
 
     # Tell the mirrors that we've updated
     log "Pushing static for incoming.d.o"
@@ -165,9 +165,11 @@ function do_unchecked () {
 
     if [[ ! -z ${changes} ]]; then
         log "Processing files ${changes}"
-        echo "${timestamp}: ${changes}"  >> ${report}
-        dak process-upload -a -d "$unchecked" >> ${report}
-        dak process-commands -d "$unchecked" >> ${report}
+        {
+            echo "${timestamp}: ${changes}"
+            dak process-upload -a -d "$unchecked"
+            dak process-commands -d "$unchecked"
+        } >> ${report}
 
         sync_debbugs
         do_buildd
@@ -223,7 +225,7 @@ function reports() {
     log "Sending information about crufty packages"
     dak cruft-report -R > $webdir/cruft-report-daily.txt
     dak cruft-report -R -s experimental >> $webdir/cruft-report-daily.txt
-    cat $webdir/cruft-report-daily.txt | mail -a "X-Debian: DAK" -e -s "Debian archive cruft report for $(date +%D)" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ftpmaster@ftp-master.debian.org
+    mail -a "X-Debian: DAK" -e -s "Debian archive cruft report for $(date +%D)" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ftpmaster@ftp-master.debian.org < $webdir/cruft-report-daily.txt
 }
 
 function pg_timestamp() {
@@ -306,7 +308,7 @@ function stage() {
     if [[ -f ${STAGEFILE} ]]; then
         local stamptime=$(/usr/bin/stat -c %Z "${STAGEFILE}")
         local unixtime=$(date +%s)
-        local difference=$(( $unixtime - $stamptime ))
+        local difference=$(( unixtime - stamptime ))
         if [[ ${difference} -ge 14400 ]]; then
             log_error "Did already run ${FUNC}, stagefile exists, but that was ${difference} seconds ago. Please check."
         else
