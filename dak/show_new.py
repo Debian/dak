@@ -33,7 +33,6 @@ import examine_package
 from daklib import policy
 from daklib.dbconn import *
 from daklib import utils
-from daklib.regexes import re_source_ext
 from daklib.config import Config
 from daklib import daklog
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_SIGNALRAISED
