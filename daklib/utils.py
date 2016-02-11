@@ -340,7 +340,8 @@ def check_dsc_files(dsc_filename, dsc, dsc_files):
 
         # File does not match anything in lookup table; reject
         if not matched:
-            reject("%s: unexpected source file '%s'" % (dsc_filename, f))
+            rejmsg.append("%s: unexpected source file '%s'" % (dsc_filename, f))
+            break
 
     # Check for multiple files
     for file_type in ('orig_tar', 'orig_tar_sig', 'native_tar', 'debian_tar', 'debian_diff'):
