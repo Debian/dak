@@ -45,8 +45,9 @@ re_no_epoch = re.compile(r"^\d+\:")
 re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
 re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
 
-orig_source_ext_re = r"orig(?:-.+)?\.tar\.(?:gz|bz2|xz)"
-re_source_ext = re.compile("(" + orig_source_ext_re + r"|debian\.tar\.(?:gz|bz2|xz)|diff\.gz|tar\.(?:gz|bz2|xz)|dsc|asc)$")
+orig_source_ext_re = r"orig(?:-[a-zA-Z0-9-]+)?\.tar\.(?:gz|bz2|xz)(?:\.asc)?"
+file_source_ext_re = "(" + orig_source_ext_re + r"|(?:debian\.)?tar\.(?:gz|bz2|xz)|diff\.gz)"
+re_source_ext = re.compile("(" + file_source_ext_re + r"|dsc)$")
 re_issource = re.compile(r"(.+)_(.+?)\." + re_source_ext.pattern)
 
 re_single_line_field = re.compile(r"^(\S*?)\s*:\s*(.*)")
@@ -135,11 +136,11 @@ re_file_dsc = re.compile(_re_file_prefix + r'\.dsc$')
 
 # Match other source files
 # Groups: package, version
-re_file_source = re.compile(_re_file_prefix + r'(?:(?:\.orig(?:-[a-zA-Z0-9-]+)?|\.debian)?\.tar\.(?:bz2|gz|xz)|\.diff\.gz|\.asc)$')
+re_file_source = re.compile(_re_file_prefix + r'\.' + file_source_ext_re)
 
 # Match upstream tarball
 # Groups: package, version
-re_file_orig = re.compile(_re_file_prefix + r'\.orig(?:-[a-zA-Z0-9-]+)?(?:\.tar\.(?:bz2|gz|xz)|\.asc)')
+re_file_orig = re.compile(_re_file_prefix + r'\.' + orig_source_ext_re)
 
 # Match buildinfo file
 # Groups: package, version, suffix
