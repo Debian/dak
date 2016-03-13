@@ -224,9 +224,8 @@ class ReleaseWriter(object):
 
         os.chdir(os.path.join(suite.archive.path, "dists", suite.suite_name, suite_suffix))
 
-        hashfuncs = { 'MD5Sum' : apt_pkg.md5sum,
-                      'SHA1' : apt_pkg.sha1sum,
-                      'SHA256' : apt_pkg.sha256sum }
+        hashfuncs = dict(zip([x.upper().replace('UM', 'um') for x in suite.checksums],
+                             [getattr(apt_pkg, "%s" % (x)) for x in [x.replace("sum", "") + "sum" for x in suite.checksums]]))
 
         fileinfo = {}
 
