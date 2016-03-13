@@ -45,7 +45,6 @@ transitionsclean       none                       transitionsclean           fal
 dm                     none                       none                       false   true
 bts                    none                       none                       false   true
 mirrorpush             none                       mirrorpush                 false   true
-mirrorpush-backports   none                       mirrorpush-backports       false   true
 i18n2                  none                       i18n\ 2                    false   true
 stats                  none                       stats                      false   true
 testingsourcelist      none                       none                       false   true

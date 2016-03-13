@@ -34,7 +34,7 @@ webdir=${public}/web
 exportpublic=${public}/rsync/export/
 
 ftpgroup=debadmin
-public_archives=(ftp-master backports debian-debug)
+public_archives=(ftp-master debian-debug)
 
 TMPDIR=${base}/tmp
 PATH=${masterdir}:${PATH}
