@@ -205,9 +205,9 @@ SELECT
   || E'\nPriority\: ' || COALESCE(pri.priority, tmp.fallback_priority)
   || E'\nFilename\: pool/' || :component_name || '/' || tmp.filename
   || E'\nSize\: ' || tmp.size
-  || E'\nMD5sum\: ' || tmp.md5sum
-  || E'\nSHA1\: ' || tmp.sha1sum
-  || E'\nSHA256\: ' || tmp.sha256sum
+  || CASE WHEN sui.checksums && array['md5sum'] THEN E'\nMD5sum\: ' || tmp.md5sum ELSE '' END
+  || CASE WHEN sui.checksums && array['sha1'] THEN E'\nSHA1\: ' || tmp.sha1sum ELSE '' END
+  || CASE WHEN sui.checksums && array['sha256'] THEN E'\nSHA256\: ' || tmp.sha256sum ELSE '' END
 
 FROM
   tmp
@@ -217,6 +217,7 @@ FROM
                       AND o.component = :component
   LEFT JOIN section sec ON sec.id = o.section
   LEFT JOIN priority pri ON pri.id = o.priority
+  LEFT JOIN suite sui ON suite.id = :suite
 
 WHERE
   (
