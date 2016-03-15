@@ -73,7 +73,7 @@ def tryunlink(file):
         print "warning: removing of %s denied" % (file)
 
 def smartstat(file):
-    for ext in ["", ".gz", ".bz2"]:
+    for ext in ["", ".gz", ".bz2", ".xz"]:
         if os.path.isfile(file + ext):
             return (ext, os.stat(file + ext))
     return (None, None)
@@ -85,6 +85,8 @@ def smartlink(f, t):
         os.system("gzip -d < %s.gz > %s" % (f, t))
     elif os.path.isfile("%s.bz2" % (f)):
         os.system("bzip2 -d < %s.bz2 > %s" % (f, t))
+    elif os.path.isfile("%s.xz" % (f)):
+        os.system("xz -d < %s.xz > %s" % (f, t))
     else:
         print "missing: %s" % (f)
         raise IOError(f)
@@ -96,6 +98,8 @@ def smartopen(file):
         f = create_temp_file(os.popen("zcat %s.gz" % file, "r"))
     elif os.path.isfile("%s.bz2" % file):
         f = create_temp_file(os.popen("bzcat %s.bz2" % file, "r"))
+    elif os.path.isfile("%s.xz" % file):
+        f = create_temp_file(os.popen("xzcat %s.xz" % file, "r"))
     else:
         f = None
     return f
