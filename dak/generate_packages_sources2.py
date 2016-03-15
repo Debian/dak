@@ -56,9 +56,12 @@ SELECT
      STRING_AGG(
        CASE
          WHEN key = 'Source' THEN E'Package\: '
-         WHEN key = 'Files' THEN E'Files\:\n ' || f.md5sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
-         WHEN key = 'Checksums-Sha1' THEN E'Checksums-Sha1\:\n ' || f.sha1sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
-         WHEN key = 'Checksums-Sha256' THEN E'Checksums-Sha256\:\n ' || f.sha256sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
+         WHEN key = 'Files' AND sui.checksums && array['md5sum'] THEN E'Files\:\n ' || f.md5sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
+         WHEN key = 'Files' THEN NULL
+         WHEN key = 'Checksums-Sha1' AND sui.checksums && array['sha1'] THEN E'Checksums-Sha1\:\n ' || f.sha1sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
+         WHEN key = 'Checksums-Sha1' THEN NULL
+         WHEN key = 'Checksums-Sha256' AND sui.checksums && array['sha256'] THEN E'Checksums-Sha256\:\n ' || f.sha256sum || ' ' || f.size || ' ' || SUBSTRING(f.filename FROM E'/([^/]*)\\Z')
+         WHEN key = 'Checksums-Sha256' THEN NULL
          ELSE key || E'\: '
        END || value, E'\n' ORDER BY mk.ordering, mk.key)
    FROM
@@ -93,6 +96,7 @@ LEFT JOIN override o ON o.package = s.source
                      AND o.type = :dsc_type
 LEFT JOIN section sec ON o.section = sec.id
 LEFT JOIN priority pri ON o.priority = pri.id
+LEFT JOIN suite sui on sui.id = :suite
 
 ORDER BY
 s.source, s.version
@@ -201,9 +205,9 @@ SELECT
   || E'\nPriority\: ' || COALESCE(pri.priority, tmp.fallback_priority)
   || E'\nFilename\: pool/' || :component_name || '/' || tmp.filename
   || E'\nSize\: ' || tmp.size
-  || E'\nMD5sum\: ' || tmp.md5sum
-  || E'\nSHA1\: ' || tmp.sha1sum
-  || E'\nSHA256\: ' || tmp.sha256sum
+  || CASE WHEN sui.checksums && array['md5sum'] THEN E'\nMD5sum\: ' || tmp.md5sum ELSE '' END
+  || CASE WHEN sui.checksums && array['sha1'] THEN E'\nSHA1\: ' || tmp.sha1sum ELSE '' END
+  || CASE WHEN sui.checksums && array['sha256'] THEN E'\nSHA256\: ' || tmp.sha256sum ELSE '' END
 
 FROM
   tmp
@@ -213,6 +217,7 @@ FROM
                       AND o.component = :component
   LEFT JOIN section sec ON sec.id = o.section
   LEFT JOIN priority pri ON pri.id = o.priority
+  LEFT JOIN suite sui ON suite.id = :suite
 
 WHERE
   (
