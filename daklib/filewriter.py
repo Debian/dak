@@ -29,7 +29,23 @@ from daklib.config import Config
 
 from daklib.daksubprocess import check_call
 
+import errno
 import os, os.path
+
+class CompressionMethod(object):
+    def __init__(self, keyword, extension, command):
+        self.keyword = keyword
+        self.extension = extension
+        self.command = command
+
+_compression_methods = (
+    CompressionMethod('bzip2', '.bz2', ['bzip2', '-9']),
+    CompressionMethod('gzip', '.gz', ['gzip', '-9cn', '--rsyncable']),
+    CompressionMethod('xz', '.xz', ['xz', '-c']),
+    # 'none' must be the last compression method as BaseFileWriter
+    # handling it will remove the input file for other compressions
+    CompressionMethod('none', '', None),
+)
 
 class BaseFileWriter(object):
     '''
@@ -43,11 +59,7 @@ class BaseFileWriter(object):
         include strings for suite, component, architecture and booleans
         uncompressed, gzip, bzip2.
         '''
-        compression = keywords.get('compression', ['none'])
-        self.uncompressed = 'none' in compression
-        self.gzip = 'gzip' in compression
-        self.bzip2 = 'bzip2' in compression
-        self.xz = 'xz' in compression
+        self.compression = keywords.get('compression', ['none'])
         self.path = template % keywords
 
     def open(self):
@@ -71,24 +83,28 @@ class BaseFileWriter(object):
     # internal helper function to compress output
     def compress(self, cmd, suffix, path):
         in_filename = "{0}.new".format(path)
-        out_filename = "{0}.{1}.new".format(path, suffix)
-        with open(in_filename, 'r') as in_fh, open(out_filename, 'w') as out_fh:
-            check_call(cmd, stdin=in_fh, stdout=out_fh)
-        self.rename("{0}.{1}".format(path, suffix))
+        out_filename = "{0}{1}.new".format(path, suffix)
+        if cmd is not None:
+            with open(in_filename, 'r') as in_fh, open(out_filename, 'w') as out_fh:
+                check_call(cmd, stdin=in_fh, stdout=out_fh)
+        self.rename("{0}{1}".format(path, suffix))
 
     def close(self):
         '''
         Closes the file object and does the compression and rename work.
         '''
         self.file.close()
-        if self.gzip:
-            self.compress(['gzip', '-9cn', '--rsyncable'], 'gz', self.path)
-        if self.bzip2:
-            self.compress(['bzip2', '-9'], 'bz2', self.path)
-        if self.xz:
-            self.compress(['xz', '-c'], 'xz', self.path)
-        if self.uncompressed:
-            self.rename(self.path)
+        for method in _compression_methods:
+            if method.keyword in self.compression:
+                self.compress(method.command, method.extension, self.path)
+            else:
+                # Try removing the file that would be generated.
+                # It's not an error if it does not exist.
+                try:
+                    os.unlink("{0}{1}".format(self.path, method.extension))
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
         else:
             os.unlink(self.path + '.new')
 
