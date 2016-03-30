@@ -299,6 +299,11 @@ class ContentsWriter(object):
         deb_id = get_override_type('deb', session).overridetype_id
         udeb_id = get_override_type('udeb', session).overridetype_id
         pool = Pool()
+
+        # Lock tables so that nobody can change things underneath us
+        session.execute("LOCK TABLE bin_contents IN SHARE MODE")
+        session.execute("LOCK TABLE src_contents IN SHARE MODE")
+
         for suite in suite_query:
             suite_id = suite.suite_id
             for component in component_query:
