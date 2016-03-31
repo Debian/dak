@@ -357,7 +357,7 @@ def main():
 
     Arguments = [('h',"help","Generate-Packages-Sources::Options::Help"),
                  ('a','archive','Generate-Packages-Sources::Options::Archive','HasArg'),
-                 ('s',"suite","Generate-Packages-Sources::Options::Suite"),
+                 ('s',"suite","Generate-Packages-Sources::Options::Suite",'HasArg'),
                  ('f',"force","Generate-Packages-Sources::Options::Force"),
                  ('o','option','','ArbItem')]
 
