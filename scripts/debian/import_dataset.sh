@@ -38,6 +38,11 @@ case "${IMPORTSUITE}" in
         INPUTFILE="/srv/release.debian.org/britney/Heidi/set/current"
         DO_CHANGELOG="true"
         ;;
+    testing-debug)
+        # What file we look at.
+        INPUTFILE="/srv/release.debian.org/sets/testing-debug/current"
+        DO_CHANGELOG="false"
+        ;;
     squeeze-updates)
         # What file we look at.
         INPUTFILE="/srv/release.debian.org/sets/squeeze-updates/current"
