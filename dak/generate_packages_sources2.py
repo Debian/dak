@@ -361,7 +361,7 @@ def main():
                  ('f',"force","Generate-Packages-Sources::Options::Force"),
                  ('o','option','','ArbItem')]
 
-    suite_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     try:
         Options = cnf.subtree("Generate-Packages-Sources::Options")
     except KeyError:
@@ -382,6 +382,7 @@ def main():
 
     if Options.has_key("Suite"):
         suites = []
+        suite_names = Options['Suite'].split(',')
         for s in suite_names:
             suite = get_suite(s.lower(), session)
             if suite:
