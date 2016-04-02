@@ -15,10 +15,20 @@ function newoverview() {
     fi
 }
 
+function do_report() {
+    local target=${1:-"${webdir}/new.html"}
+    local opts=${2:-"-n"}
+    local TMPOUT=$( mktemp -p "${TMPDIR}" reportout.XXXXXX )
+    TMPFILES="${TMPFILES} ${TMPOUT}"
+    dak queue-report ${opts} > ${TMPOUT}
+    chmod 644 ${TMPOUT}
+    mv -f ${TMPOUT} ${target}
+}
+
 function queuereport() {
     log "Creating queue reports, new/backports-new, 822 format"
-    dak queue-report -n > ${webdir}/new.html
-    dak queue-report -n -d backports-new,backports-policy > ${webdir}/backports-new.html
+    do_report
+    do_report ${webdir}/backports-new.html "-n -d backports-new,backports-policy"
     dak queue-report -8 -d new,byhand,stable-new,oldstable-new,backports-new -r ${webdir}/stat
     log "Deferred queue overview"
     sudo -u dak-unpriv dak show-deferred -r ${webdir}/stat > ${webdir}/deferred.html
