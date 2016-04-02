@@ -48,7 +48,7 @@ LOCK_STOP="${lockdir}/archive.stop"
 TIMESTAMP=false
 
 # And the following types of cronscripts exists
-declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly)'
+declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly|mirror)'
 declare -r HOSTNAME=$(hostname -s)
 
 archs=$(dak admin a list | tr '\n' ' ')
