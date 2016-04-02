@@ -6,8 +6,8 @@ Rough Guide to doing Stable Point Releases in Debian
 suite=stable
 suitename=jessie
 pusuite=proposed-updates
-oldrev=8.2
-newrev=8.3
+oldrev=8.3
+newrev=8.4
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -65,9 +65,9 @@ dak control-suite --force --add testing <propups.testing
 
 - and then check if they have a d-i update. if so, bash:
 # set dioldver to "empty" if there is no old to remove
-diver=20150422+deb8u3
+diver=20150422+deb8u3+b1
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
-dioldver=20150422+deb8u2
+dioldver=20150422+deb8u3
 if [ "${dioldver}" != "empty" ]; then
     cd $ftpdir/dists/${suite}/main
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -105,7 +105,7 @@ date_short=$(date "+%a, %d %b %Y")
 sed -e "1i======================================\n${date_short} - Debian ${newrev} released\n======================================" -i ChangeLog
 sed -e "/^${suite}/ s/Debian ${oldrev}/Debian ${newrev}/" -i ../README
 sed -e "s/Debian ${oldrev}/Debian ${newrev}/g; /Debian ${newrev}/ s/released .*\\./released ${date_long}./" -i ../../README
-sed -e "s/Debian ${oldrev}/Debian ${newrev}/g; /Debian ${newrew}/ s/released .*\\./released ${date_long}./; /meta name=\"Modified\"/ s/content=\".*\"/content=\"${date_iso}\"/" -i ../../README.html
+sed -e "s/Debian ${oldrev}/Debian ${newrev}/g; /Debian ${newrev}/ s/released .*\\./released ${date_long}./; /meta name=\"Modified\"/ s/content=\".*\"/content=\"${date_iso}\"/" -i ../../README.html
 
 # Inspect changes. Regular expressions might be a bit fragile.
 for f in README README.html dists/README dists/${suite}/ChangeLog; do
@@ -139,11 +139,13 @@ dak dominate --force -s ${suite}
 dak cruft-report -s ${suite}
 - if cruft was removed: go back to run dominate again
 
+- if cruft was removed: update changelog from /srv/ftp.debian.org/web/removals.txt:
+# $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
+
 - Let SRM see if all is ok
 
 - then:
-dak generate-packages-sources2 --force -s ${suite} && dak contents generate -f -s ${suite} -a ftp-master
-dak generate-packages-sources2 -s ${pusuite}
+dak generate-packages-sources2 --force -s ${suite},${pusuite} && dak contents generate -f -s ${suite} -a ftp-master
 
 - For wheezy: update main/i18n/Index
 if [[ ${suitename} == wheezy ]]; then
@@ -157,7 +159,7 @@ rm ${ftpdir}/dists/${suite}/InRelease
 
 - have the SRMs sign it and put the signature in.
 cd ${ftpdir}/dists/${suite}
-cat /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release.gpg >> Release.gpg
+cat /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release-${newrev}.gpg >> Release.gpg
 gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
 
 - Check if a mirror push is needed or next dinstall is enough. for a push
