@@ -28,7 +28,7 @@ function rotatereports() {
     # Do not rotate while it might receive data
     if lockfile -r -1 ${LOCK_UNCHECKED} 2> /dev/null; then
         TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
-        for dir in ${queuedir}/{.,p-u-new,o-p-u-new}; do
+        for dir in ${queuedir}/{.,p-u-new,o-p-u-new} /srv/backports-master.debian.org/queue/policy; do
             cd ${dir}
             mv REPORT REPORT.${OLDDATE}
             xz -9 REPORT.${OLDDATE}
