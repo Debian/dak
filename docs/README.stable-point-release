@@ -3,11 +3,9 @@ Rough Guide to doing Stable Point Releases in Debian
 
 - sudo to dak
 - bash:
-suite=stable
-suitename=jessie
-pusuite=proposed-updates
-oldrev=8.3
-newrev=8.4
+suitename=wheezy
+newrev=7.10
+
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 . "${configdir}/common"
@@ -15,6 +13,18 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 umask 022
 export LANG=C
 export LC_ALL=C
+
+suite=$(psql -qAtc "SELECT suite_name FROM suite WHERE codename='${suitename}'")
+oldrev=$(psql -qAtc "SELECT version FROM suite WHERE codename='${suitename}'")
+case "${suite}" in
+  stable)    pusuite=proposed-updates ;;
+  oldstable) pusuite=oldstable-proposed-updates ;;
+  *)         pusuite=INVALID ;;
+esac
+
+echo "Point release for ${suite} (${suitename}); old version: ${oldrev}, new: ${newrev}"
+echo "Updates come from ${pusuite}"
+
 pg_timestamp pre_${suite}_${newrev}
 cd ~
 mkdir -p ${suitename}_${newrev}
@@ -31,6 +41,7 @@ if [ -n "${skip}" ]; then
   mv ${pusuite}.list ${pusuite}.list.ori
   grep -vFf <(dak ls -f heidi -S -s ${pusuite} ${skip}) ${pusuite}.list.ori > ${pusuite}.list
 fi
+
 dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/ChangeLog | sponge ${ftpdir}/dists/${suite}/ChangeLog
 if [ -n "${skip}" ]; then
   $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
@@ -64,10 +75,11 @@ dak control-suite --force --add testing <propups.testing
 # $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
 
 - and then check if they have a d-i update. if so, bash:
-# set dioldver to "empty" if there is no old to remove
-diver=20150422+deb8u3+b1
+diver=20130613+deb7u3+b1
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
-dioldver=20150422+deb8u3
+
+# set dioldver to "empty" if there is no old to remove
+dioldver=20130613+deb7u3
 if [ "${dioldver}" != "empty" ]; then
     cd $ftpdir/dists/${suite}/main
     for iarch in $(dak admin s-a list-arch ${suite}); do
