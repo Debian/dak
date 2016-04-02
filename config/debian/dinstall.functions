@@ -606,6 +606,11 @@ function mirrorpush-backports() {
     sudo -u backports /home/backports/bin/update-archive
 }
 
+function mirrorpush-release() {
+    log "Pushing cdbuilder host"
+    sudo -H -u archvsync /home/archvsync/runmirrors release > ~dak/runmirrors-release.log 2>&1 &
+}
+
 function i18n2() {
     log "Exporting package data foo for i18n project"
     STAMP=$(date "+%Y%m%d%H%M")
