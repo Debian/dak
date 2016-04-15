@@ -86,7 +86,7 @@ class BaseFileWriter(object):
         out_filename = "{0}{1}.new".format(path, suffix)
         if cmd is not None:
             with open(in_filename, 'r') as in_fh, open(out_filename, 'w') as out_fh:
-                check_call(cmd, stdin=in_fh, stdout=out_fh)
+                check_call(cmd, stdin=in_fh, stdout=out_fh, close_fds=True)
         self.rename("{0}{1}".format(path, suffix))
 
     def close(self):
