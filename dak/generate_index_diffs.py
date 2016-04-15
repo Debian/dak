@@ -107,7 +107,7 @@ def smartopen(file):
 def pipe_file(f, t):
     f.seek(0)
     while 1:
-        l = f.read()
+        l = f.read(65536)
         if not l: break
         t.write(l)
     t.close()
@@ -243,7 +243,7 @@ class Updates:
 def create_temp_file(r):
     f = tempfile.TemporaryFile()
     while 1:
-        x = r.readline()
+        x = r.read(65536)
         if not x: break
         f.write(x)
     r.close()
