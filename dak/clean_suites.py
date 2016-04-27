@@ -34,6 +34,7 @@
 
 ################################################################################
 
+import errno
 import os
 import stat
 import sys
@@ -384,6 +385,36 @@ SELECT f.id, f.fingerprint FROM fingerprint f
 
 ################################################################################
 
+def clean_byhash(now_date, session):
+    Logger.log(["Cleaning out unused by-hash files..."])
+
+    q = session.execute("""
+        DELETE FROM hashfile h
+        USING suite s, archive a
+        WHERE s.id = h.suite_id
+          AND a.id = s.archive_id
+          AND h.unreferenced + a.stayofexecution < CURRENT_TIMESTAMP
+        RETURNING a.path, s.suite_name, h.path""")
+    count = q.rowcount
+
+    if not Options["No-Action"]:
+        for base, suite, path in q:
+            filename = os.path.join(base, 'dists', suite, path)
+            try:
+                os.unlink(filename)
+            except OSError as exc:
+                if exc.errno != errno.ENOENT:
+                    raise
+                Logger.log(['database referred to non-existing file', filename])
+            else:
+                Logger.log(['delete hashfile', suite, path])
+        session.commit()
+
+    if count > 0:
+        Logger.log(["total", count])
+
+################################################################################
+
 def clean_empty_directories(session):
     """
     Removes empty directories from pool directories.
@@ -486,6 +517,7 @@ def main():
     clean(now_date, archives, max_delete, session)
     clean_maintainers(now_date, session)
     clean_fingerprints(now_date, session)
+    clean_byhash(now_date, session)
     clean_empty_directories(session)
 
     session.rollback()
