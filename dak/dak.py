@@ -228,7 +228,7 @@ def main():
             logger.log([msg])
         sys.exit(1)
     except SystemExit:
-        pass
+        raise
     except:
         if logger:
             for line in traceback.format_exc().split('\n')[:-1]:
