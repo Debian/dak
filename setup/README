@@ -6,7 +6,7 @@ The following packages are needed for the database:
 and the following packages for dak itself:
  * python-psycopg2 python-sqlalchemy python-apt gnupg dpkg-dev lintian
    binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
-   symlinks python-debian
+   symlinks python-debian python-debianbts
 
 (the schema assumes at least postgresql 9.1; ftpmaster in Debian currently uses
 the postgresql 9.4 version from Debian 8)
