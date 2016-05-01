@@ -18,6 +18,10 @@ doanything=false
 dopolicy=false
 LOCKFILE="$lockdir/unchecked.lock"
 
+last_changed() {
+    psql -qAtc "SELECT MAX(last_changed) FROM suite WHERE archive_id=(SELECT id FROM archive WHERE name='$1')"
+}
+
 cleanup() {
     rm -f "$LOCKFILE"
 }
@@ -27,6 +31,8 @@ if ! lockfile -r8 "$LOCKFILE"; then
     exit 0
 fi
 trap cleanup EXIT
+
+old_last_changed=$(last_changed security)
 
 cd $unchecked
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
@@ -82,7 +88,9 @@ dak generate-packages-sources2 -a build-queues
 dak generate-releases -a build-queues >/dev/null
 ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
 
-if [ "x${dopolicy}x" = "xtruex" ]; then
+new_last_changed=$(last_changed security)
+
+if [[ "${old_last_changed}" != "${new_last_changed}" ]]; then
     # We had something approved from a policy queue, push out new archive
     dak dominate
     cd $configdir
