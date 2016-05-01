@@ -1068,6 +1068,8 @@ class ArchiveUpload(object):
             dst = os.path.join(suite.archive.path, 'dists', suite.suite_name, self.changes.filename)
             self.transaction.fs.copy(src, dst, mode=suite.archive.mode)
 
+        suite.update_last_changed()
+
         return (db_source, db_binaries)
 
     def _install_changes(self):

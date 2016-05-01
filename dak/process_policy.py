@@ -213,6 +213,8 @@ def comment_accept(upload, srcqueue, comments, transaction):
                 extra_archives=[upload.target_suite.archive],
             )
 
+        suite.update_last_changed()
+
     # Copy .changes if needed
     if upload.target_suite.copychanges:
         src = os.path.join(upload.policy_queue.path, upload.changes.changesname)

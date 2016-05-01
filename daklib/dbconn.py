@@ -1948,6 +1948,9 @@ class Suite(ORMObject):
         else:
             return object_session(self).query(Suite).filter_by(suite_name=self.overridesuite).one()
 
+    def update_last_changed(self):
+        self.last_changed = sqlalchemy.func.now()
+
     @property
     def path(self):
         return os.path.join(self.archive.path, 'dists', self.suite_name)
