@@ -2158,7 +2158,8 @@ class BinaryMetadata(ORMObject):
     def __init__(self, key = None, value = None, binary = None):
         self.key = key
         self.value = value
-        self.binary = binary
+        if binary is not None:
+            self.binary = binary
 
     def properties(self):
         return ['binary', 'key', 'value']
@@ -2174,7 +2175,8 @@ class SourceMetadata(ORMObject):
     def __init__(self, key = None, value = None, source = None):
         self.key = key
         self.value = value
-        self.source = source
+        if source is not None:
+            self.source = source
 
     def properties(self):
         return ['source', 'key', 'value']
