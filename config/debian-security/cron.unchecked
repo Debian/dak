@@ -87,6 +87,7 @@ dak manage-build-queues -a
 dak generate-packages-sources2 -a build-queues
 dak generate-releases -a build-queues >/dev/null
 ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
+$configdir/cron.buildd
 
 new_last_changed=$(last_changed security)
 
@@ -103,5 +104,3 @@ fi
 
 cleanup
 trap - EXIT
-
-$configdir/cron.buildd
