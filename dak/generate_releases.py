@@ -37,6 +37,7 @@ import stat
 import time
 import gzip
 import bz2
+import errno
 import apt_pkg
 import subprocess
 from tempfile import mkstemp, mkdtemp
@@ -151,7 +152,9 @@ class ReleaseWriter(object):
 
         # Boolean stuff. If we find it true in database, write out "yes" into the release file
         boolattrs = ( ('NotAutomatic',         'notautomatic'),
-                      ('ButAutomaticUpgrades', 'butautomaticupgrades') )
+                      ('ButAutomaticUpgrades', 'butautomaticupgrades'),
+                      ('Acquire-By-Hash',      'byhash'),
+                    )
 
         cnf = Config()
 
@@ -283,6 +286,47 @@ class ReleaseWriter(object):
 
         out.close()
         os.rename(outfile + '.new', outfile)
+
+        if suite.byhash:
+            query = """
+                UPDATE hashfile SET unreferenced = CURRENT_TIMESTAMP
+                WHERE suite_id = :id AND unreferenced IS NULL"""
+            session.execute(query, {'id': suite.suite_id})
+
+            for filename in fileinfo:
+                if not os.path.exists(filename):
+                    # probably an uncompressed index we didn't generate
+                    continue
+
+                for h in hashfuncs:
+                    hashfile = os.path.join(os.path.dirname(filename), 'by-hash', h, fileinfo[filename][h])
+                    query = "SELECT 1 FROM hashfile WHERE path = :p AND suite_id = :id"
+                    q = session.execute(
+                            query,
+                            {'p': hashfile, 'id': suite.suite_id})
+                    if q.rowcount:
+                        session.execute('''
+                            UPDATE hashfile SET unreferenced = NULL
+                            WHERE path = :p and suite_id = :id''',
+                            {'p': hashfile, 'id': suite.suite_id})
+                    else:
+                        session.execute('''
+                            INSERT INTO hashfile (path, suite_id)
+                            VALUES (:p, :id)''',
+                            {'p': hashfile, 'id': suite.suite_id})
+
+                    try:
+                        os.makedirs(os.path.dirname(hashfile))
+                    except OSError as exc:
+                        if exc.errno != errno.EEXIST:
+                            raise
+                    try:
+                        os.link(filename, hashfile)
+                    except OSError as exc:
+                        if exc.errno != errno.EEXIST:
+                            raise
+
+                session.commit()
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
