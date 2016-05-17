@@ -117,6 +117,20 @@ class XzFile(object):
             (stdout, stderr) = process.communicate()
             return stdout
 
+
+class HashFunc(object):
+    def __init__(self, release_field, func, db_name):
+        self.release_field = release_field
+        self.func = func
+        self.db_name = db_name
+
+RELEASE_HASHES = [
+    HashFunc('MD5Sum', apt_pkg.md5sum, 'md5'),
+    HashFunc('SHA1', apt_pkg.sha1sum, 'sha1'),
+    HashFunc('SHA256', apt_pkg.sha256sum, 'sha256'),
+]
+
+
 class ReleaseWriter(object):
     def __init__(self, suite):
         self.suite = suite
@@ -289,8 +303,7 @@ class ReleaseWriter(object):
 
         os.chdir(self.suite_path())
 
-        hashfuncs = dict(zip([x.upper().replace('UM', 'um') for x in suite.checksums],
-                             [getattr(apt_pkg, "%s" % (x)) for x in [x.replace("sum", "") + "sum" for x in suite.checksums]]))
+        hashes = [x for x in RELEASE_HASHES if x.db_name in suite.checksums]
 
         fileinfo = {}
 
@@ -321,8 +334,8 @@ class ReleaseWriter(object):
 
                 fileinfo[filename]['len'] = len(contents)
 
-                for hf, func in hashfuncs.items():
-                    fileinfo[filename][hf] = func(contents)
+                for hf in hashes:
+                    fileinfo[filename][hf.release_field] = hf.func(contents)
 
         for filename, comp in uncompnotseen.items():
             # If we've already seen the uncompressed file, we don't
@@ -337,14 +350,14 @@ class ReleaseWriter(object):
 
             fileinfo[filename]['len'] = len(contents)
 
-            for hf, func in hashfuncs.items():
-                fileinfo[filename][hf] = func(contents)
+            for hf in hashes:
+                fileinfo[filename][hf.release_field] = hf.func(contents)
 
 
-        for h in sorted(hashfuncs.keys()):
-            out.write('%s:\n' % h)
+        for field in sorted(h.release_field for h in hashes):
+            out.write('%s:\n' % field)
             for filename in sorted(fileinfo.keys()):
-                out.write(" %s %8d %s\n" % (fileinfo[filename][h], fileinfo[filename]['len'], filename))
+                out.write(" %s %8d %s\n" % (fileinfo[filename][field], fileinfo[filename]['len'], filename))
 
         out.close()
         os.rename(outfile + '.new', outfile)
@@ -360,8 +373,9 @@ class ReleaseWriter(object):
                     # probably an uncompressed index we didn't generate
                     continue
 
-                for h in hashfuncs:
-                    hashfile = os.path.join(os.path.dirname(filename), 'by-hash', h, fileinfo[filename][h])
+                for h in hashes:
+                    field = h.release_field
+                    hashfile = os.path.join(os.path.dirname(filename), 'by-hash', field, fileinfo[filename][field])
                     query = "SELECT 1 FROM hashfile WHERE path = :p AND suite_id = :id"
                     q = session.execute(
                             query,
