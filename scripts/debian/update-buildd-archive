@@ -43,17 +43,6 @@ if [ ! -d "${dest}" ]; then
   exit 1
 fi
 
-# Make sure ${dest}/dists exists to avoid a special case later
-if [ ! -d "${dest}/dists" ]; then
-  mkdir "${dest}/dists"
-fi
-for olddir in dists.new dists.old; do
-  if [ -e "${dest}/${olddir}" ]; then
-    echo "Removing old ${olddir}..."
-    rm -r "${dest}/${olddir}"
-  fi
-done
-
 # Make sure ${dest}/pool exists
 if [ ! -e "${dest}/pool" ]; then
   # Files are only removed from the build queues once they are no longer
@@ -61,8 +50,25 @@ if [ ! -e "${dest}/pool" ]; then
   ln -s "${source}/pool" "${dest}/pool"
 fi
 
-# Finally copy dists/ to dists.new/, rename it and remove old version
-cp -a "${source}/dists" "${dest}/dists.new"
-mv "${dest}/dists" "${dest}/dists.old"
-mv "${dest}/dists.new" "${dest}/dists"
-rm -r "${dest}/dists.old"
+for subdir in dists zzz-dists; do
+  if [ ! -d "${source}/${subdir}" ]; then
+    continue
+  fi
+
+  # Make sure ${dest}/${subdir} exists to avoid a special case later
+  if [ ! -d "${dest}/${subdir}" ]; then
+    mkdir "${dest}/${subdir}"
+  fi
+  for olddir in ${subdir}.new ${subdir}.old; do
+    if [ -e "${dest}/${olddir}" ]; then
+      echo "Removing old ${olddir}..."
+      rm -r "${dest}/${olddir}"
+    fi
+  done
+
+  # Finally copy ${subdir}/ to ${subdir}.new/, rename it and remove old version
+  cp -a "${source}/${subdir}" "${dest}/${subdir}.new"
+  mv "${dest}/${subdir}" "${dest}/${subdir}.old"
+  mv "${dest}/${subdir}.new" "${dest}/${subdir}"
+  rm -r "${dest}/${subdir}.old"
+done
