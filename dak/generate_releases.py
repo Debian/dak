@@ -121,6 +121,65 @@ class ReleaseWriter(object):
     def __init__(self, suite):
         self.suite = suite
 
+    def suite_path(self):
+        """
+        Absolute path to the suite-specific files.
+        """
+        cnf = Config()
+        suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
+
+        return os.path.join(self.suite.archive.path, 'dists',
+                            self.suite.suite_name, suite_suffix)
+
+    def suite_release_path(self):
+        """
+        Absolute path where Release files are physically stored.
+        This should be a path that sorts after the dists/ directory.
+        """
+        # TODO: Eventually always create Release in `zzz-dists` to avoid
+        # special cases. However we don't want to move existing Release files
+        # for released suites.
+        # See `create_release_symlinks` below.
+        if not self.suite.byhash:
+            return self.suite_path()
+
+        cnf = Config()
+        suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
+
+        return os.path.join(self.suite.archive.path, 'zzz-dists',
+                            self.suite.suite_name, suite_suffix)
+
+    def create_release_symlinks(self):
+        """
+        Create symlinks for Release files.
+        This creates the symlinks for Release files in the `suite_path`
+        to the actual files in `suite_release_path`.
+        """
+        # TODO: Eventually always create the links.
+        # See `suite_release_path` above.
+        if not self.suite.byhash:
+            return
+
+        relpath = os.path.relpath(self.suite_release_path(), self.suite_path())
+        for f in ("Release", "Release.gpg", "InRelease"):
+            source = os.path.join(relpath, f)
+            dest = os.path.join(self.suite_path(), f)
+            if not os.path.islink(dest):
+                os.unlink(dest)
+            elif os.readlink(dest) == source:
+                continue
+            else:
+                os.unlink(dest)
+            os.symlink(source, dest)
+
+    def create_output_directories(self):
+        for path in (self.suite_path(), self.suite_release_path()):
+            try:
+                os.makedirs(path)
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+
     def generate_release_files(self):
         """
         Generate Release files for the given suite
@@ -160,7 +219,10 @@ class ReleaseWriter(object):
 
         suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
 
-        outfile = os.path.join(suite.archive.path, 'dists', suite.suite_name, suite_suffix, "Release")
+        self.create_output_directories()
+        self.create_release_symlinks()
+
+        outfile = os.path.join(self.suite_release_path(), "Release")
         out = open(outfile + ".new", "w")
 
         for key, dbfield in attribs:
@@ -193,7 +255,7 @@ class ReleaseWriter(object):
             out.write("Description: %s\n" % suite.description)
 
         for comp in components:
-            for dirpath, dirnames, filenames in os.walk(os.path.join(suite.archive.path, "dists", suite.suite_name, suite_suffix, comp), topdown=True):
+            for dirpath, dirnames, filenames in os.walk(os.path.join(self.suite_path(), comp), topdown=True):
                 if not re_gensubrelease.match(dirpath):
                     continue
 
@@ -225,7 +287,7 @@ class ReleaseWriter(object):
         # their checksums to the main Release file
         oldcwd = os.getcwd()
 
-        os.chdir(os.path.join(suite.archive.path, "dists", suite.suite_name, suite_suffix))
+        os.chdir(self.suite_path())
 
         hashfuncs = dict(zip([x.upper().replace('UM', 'um') for x in suite.checksums],
                              [getattr(apt_pkg, "%s" % (x)) for x in [x.replace("sum", "") + "sum" for x in suite.checksums]]))
