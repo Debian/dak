@@ -32,14 +32,6 @@ from daklib import utils
 from daklib.regexes import re_html_escaping, html_escaping
 
 ################################################################################
-### work around bug #487902 in debian-python 0.1.10
-deb822.Changes._multivalued_fields = {
-            "files": [ "md5sum", "size", "section", "priority", "name" ],
-            "checksums-sha1": ["sha1", "size", "name"],
-            "checksums-sha256": ["sha256", "size", "name"],
-          }
-
-################################################################################
 
 row_number = 1
 
