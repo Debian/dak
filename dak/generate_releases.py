@@ -206,8 +206,8 @@ class ReleaseWriter(object):
             query = "SELECT path FROM hashfile WHERE suite_id = :id"
             q = session.execute(query, {'id': self.suite.suite_id})
             known_hashfiles = set(row[0] for row in q)
-            updated = []
-            new = []
+            updated = set()
+            new = set()
 
             # Update the hashfile table with new or updated files
             for filename in fileinfo:
@@ -219,15 +219,15 @@ class ReleaseWriter(object):
                     field = h.release_field
                     hashfile = os.path.join(byhashdir, field, fileinfo[filename][field])
                     if hashfile in known_hashfiles:
-                        updated.append(hashfile)
+                        updated.add(hashfile)
                     else:
-                        new.append(hashfile)
+                        new.add(hashfile)
 
             if updated:
                 session.execute("""
                     UPDATE hashfile SET unreferenced = NULL
                     WHERE path = ANY(:p) AND suite_id = :id""",
-                    {'p': updated, 'id': self.suite.suite_id})
+                    {'p': list(updated), 'id': self.suite.suite_id})
             if new:
                 session.execute("""
                     INSERT INTO hashfile (path, suite_id)
