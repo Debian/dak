@@ -390,7 +390,16 @@ class ReleaseWriter(object):
                             INSERT INTO hashfile (path, suite_id)
                             VALUES (:p, :id)''',
                             {'p': hashfile, 'id': suite.suite_id})
+            session.commit()
 
+            for filename in fileinfo:
+                if not os.path.exists(filename):
+                    # probably an uncompressed index we didn't generate
+                    continue
+
+                for h in hashes:
+                    field = h.release_field
+                    hashfile = os.path.join(os.path.dirname(filename), 'by-hash', field, fileinfo[filename][field])
                     try:
                         os.makedirs(os.path.dirname(hashfile))
                     except OSError as exc:
@@ -402,7 +411,6 @@ class ReleaseWriter(object):
                         if exc.errno != errno.EEXIST:
                             raise
 
-                session.commit()
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
