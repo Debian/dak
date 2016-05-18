@@ -362,37 +362,49 @@ class ReleaseWriter(object):
         out.close()
         os.rename(outfile + '.new', outfile)
 
+        # Mark all by-hash files as obsolete.  We will undo that for the ones
+        # we still reference later.
         query = """
             UPDATE hashfile SET unreferenced = CURRENT_TIMESTAMP
             WHERE suite_id = :id AND unreferenced IS NULL"""
         session.execute(query, {'id': suite.suite_id})
 
         if suite.byhash:
+            query = "SELECT path FROM hashfile WHERE suite_id = :id"
+            q = session.execute(query, {'id': suite.suite_id})
+            known_hashfiles = set(row[0] for row in q)
+            updated = []
+            new = []
+
+            # Update the hashfile table with new or updated files
             for filename in fileinfo:
                 if not os.path.exists(filename):
                     # probably an uncompressed index we didn't generate
                     continue
-
+                byhashdir = os.path.join(os.path.dirname(filename), 'by-hash')
                 for h in hashes:
                     field = h.release_field
-                    hashfile = os.path.join(os.path.dirname(filename), 'by-hash', field, fileinfo[filename][field])
-                    query = "SELECT 1 FROM hashfile WHERE path = :p AND suite_id = :id"
-                    q = session.execute(
-                            query,
-                            {'p': hashfile, 'id': suite.suite_id})
-                    if q.rowcount:
-                        session.execute('''
-                            UPDATE hashfile SET unreferenced = NULL
-                            WHERE path = :p and suite_id = :id''',
-                            {'p': hashfile, 'id': suite.suite_id})
+                    hashfile = os.path.join(byhashdir, field, fileinfo[filename][field])
+                    if hashfile in known_hashfiles:
+                        updated.append(hashfile)
                     else:
-                        session.execute('''
-                            INSERT INTO hashfile (path, suite_id)
-                            VALUES (:p, :id)''',
-                            {'p': hashfile, 'id': suite.suite_id})
+                        new.append(hashfile)
+
+            if updated:
+                session.execute("""
+                    UPDATE hashfile SET unreferenced = NULL
+                    WHERE path = ANY(:p) AND suite_id = :id""",
+                    {'p': updated, 'id': suite.suite_id})
+            if new:
+                session.execute("""
+                    INSERT INTO hashfile (path, suite_id)
+                    VALUES (:p, :id)""",
+                    [{'p': hashfile, 'id': suite.suite_id} for hashfile in new])
+
         session.commit()
 
         if suite.byhash:
+            # Create hardlinks in by-hash directories
             for filename in fileinfo:
                 if not os.path.exists(filename):
                     # probably an uncompressed index we didn't generate
