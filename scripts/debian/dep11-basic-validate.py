@@ -19,6 +19,7 @@ import os
 import sys
 import yaml
 import gzip
+import lzma
 from voluptuous import Schema, Required, All, Any, Length, Range, Match, Url
 from optparse import OptionParser
 
@@ -154,6 +155,8 @@ def validate_file(fname):
     f = None
     if fname.endswith(".gz"):
         f = gzip.open(fname, 'r')
+    elif fname.endswith(".xz"):
+        f = lzma.open(fname, 'r')
     else:
         f = open(fname, 'r')
 
@@ -166,7 +169,7 @@ def validate_dir(dirname):
     ret = True
     for root, subfolders, files in os.walk(dirname):
         for fname in files:
-             if fname.endswith(".yml.gz"):
+             if fname.endswith(".yml.gz") or fname.endswith(".yml.xz"):
                  if not validate_file(os.path.join(root, fname)):
                      ret = False
 
