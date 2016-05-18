@@ -117,6 +117,20 @@ class XzFile(object):
             (stdout, stderr) = process.communicate()
             return stdout
 
+
+class HashFunc(object):
+    def __init__(self, release_field, func, db_name):
+        self.release_field = release_field
+        self.func = func
+        self.db_name = db_name
+
+RELEASE_HASHES = [
+    HashFunc('MD5Sum', apt_pkg.md5sum, 'md5'),
+    HashFunc('SHA1', apt_pkg.sha1sum, 'sha1'),
+    HashFunc('SHA256', apt_pkg.sha256sum, 'sha256'),
+]
+
+
 class ReleaseWriter(object):
     def __init__(self, suite):
         self.suite = suite
@@ -179,6 +193,69 @@ class ReleaseWriter(object):
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
+
+    def _update_hashfile_table(self, session, fileinfo, hashes):
+        # Mark all by-hash files as obsolete.  We will undo that for the ones
+        # we still reference later.
+        query = """
+            UPDATE hashfile SET unreferenced = CURRENT_TIMESTAMP
+            WHERE suite_id = :id AND unreferenced IS NULL"""
+        session.execute(query, {'id': self.suite.suite_id})
+
+        if self.suite.byhash:
+            query = "SELECT path FROM hashfile WHERE suite_id = :id"
+            q = session.execute(query, {'id': self.suite.suite_id})
+            known_hashfiles = set(row[0] for row in q)
+            updated = []
+            new = []
+
+            # Update the hashfile table with new or updated files
+            for filename in fileinfo:
+                if not os.path.exists(filename):
+                    # probably an uncompressed index we didn't generate
+                    continue
+                byhashdir = os.path.join(os.path.dirname(filename), 'by-hash')
+                for h in hashes:
+                    field = h.release_field
+                    hashfile = os.path.join(byhashdir, field, fileinfo[filename][field])
+                    if hashfile in known_hashfiles:
+                        updated.append(hashfile)
+                    else:
+                        new.append(hashfile)
+
+            if updated:
+                session.execute("""
+                    UPDATE hashfile SET unreferenced = NULL
+                    WHERE path = ANY(:p) AND suite_id = :id""",
+                    {'p': updated, 'id': self.suite.suite_id})
+            if new:
+                session.execute("""
+                    INSERT INTO hashfile (path, suite_id)
+                    VALUES (:p, :id)""",
+                    [{'p': hashfile, 'id': self.suite.suite_id} for hashfile in new])
+
+        session.commit()
+
+    def _make_byhash_links(self, fileinfo, hashes):
+        # Create hardlinks in by-hash directories
+        for filename in fileinfo:
+            if not os.path.exists(filename):
+                # probably an uncompressed index we didn't generate
+                continue
+
+            for h in hashes:
+                field = h.release_field
+                hashfile = os.path.join(os.path.dirname(filename), 'by-hash', field, fileinfo[filename][field])
+                try:
+                    os.makedirs(os.path.dirname(hashfile))
+                except OSError as exc:
+                    if exc.errno != errno.EEXIST:
+                        raise
+                try:
+                    os.link(filename, hashfile)
+                except OSError as exc:
+                    if exc.errno != errno.EEXIST:
+                        raise
 
     def generate_release_files(self):
         """
@@ -289,8 +366,7 @@ class ReleaseWriter(object):
 
         os.chdir(self.suite_path())
 
-        hashfuncs = dict(zip([x.upper().replace('UM', 'um') for x in suite.checksums],
-                             [getattr(apt_pkg, "%s" % (x)) for x in [x.replace("sum", "") + "sum" for x in suite.checksums]]))
+        hashes = [x for x in RELEASE_HASHES if x.db_name in suite.checksums]
 
         fileinfo = {}
 
@@ -321,8 +397,8 @@ class ReleaseWriter(object):
 
                 fileinfo[filename]['len'] = len(contents)
 
-                for hf, func in hashfuncs.items():
-                    fileinfo[filename][hf] = func(contents)
+                for hf in hashes:
+                    fileinfo[filename][hf.release_field] = hf.func(contents)
 
         for filename, comp in uncompnotseen.items():
             # If we've already seen the uncompressed file, we don't
@@ -337,58 +413,21 @@ class ReleaseWriter(object):
 
             fileinfo[filename]['len'] = len(contents)
 
-            for hf, func in hashfuncs.items():
-                fileinfo[filename][hf] = func(contents)
+            for hf in hashes:
+                fileinfo[filename][hf.release_field] = hf.func(contents)
 
 
-        for h in sorted(hashfuncs.keys()):
-            out.write('%s:\n' % h)
+        for field in sorted(h.release_field for h in hashes):
+            out.write('%s:\n' % field)
             for filename in sorted(fileinfo.keys()):
-                out.write(" %s %8d %s\n" % (fileinfo[filename][h], fileinfo[filename]['len'], filename))
+                out.write(" %s %8d %s\n" % (fileinfo[filename][field], fileinfo[filename]['len'], filename))
 
         out.close()
         os.rename(outfile + '.new', outfile)
 
+        self._update_hashfile_table(session, fileinfo, hashes)
         if suite.byhash:
-            query = """
-                UPDATE hashfile SET unreferenced = CURRENT_TIMESTAMP
-                WHERE suite_id = :id AND unreferenced IS NULL"""
-            session.execute(query, {'id': suite.suite_id})
-
-            for filename in fileinfo:
-                if not os.path.exists(filename):
-                    # probably an uncompressed index we didn't generate
-                    continue
-
-                for h in hashfuncs:
-                    hashfile = os.path.join(os.path.dirname(filename), 'by-hash', h, fileinfo[filename][h])
-                    query = "SELECT 1 FROM hashfile WHERE path = :p AND suite_id = :id"
-                    q = session.execute(
-                            query,
-                            {'p': hashfile, 'id': suite.suite_id})
-                    if q.rowcount:
-                        session.execute('''
-                            UPDATE hashfile SET unreferenced = NULL
-                            WHERE path = :p and suite_id = :id''',
-                            {'p': hashfile, 'id': suite.suite_id})
-                    else:
-                        session.execute('''
-                            INSERT INTO hashfile (path, suite_id)
-                            VALUES (:p, :id)''',
-                            {'p': hashfile, 'id': suite.suite_id})
-
-                    try:
-                        os.makedirs(os.path.dirname(hashfile))
-                    except OSError as exc:
-                        if exc.errno != errno.EEXIST:
-                            raise
-                    try:
-                        os.link(filename, hashfile)
-                    except OSError as exc:
-                        if exc.errno != errno.EEXIST:
-                            raise
-
-                session.commit()
+            self._make_byhash_links(fileinfo, hashes)
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
