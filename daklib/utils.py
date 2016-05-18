@@ -72,10 +72,6 @@ default_config = "/etc/dak/dak.conf"     #: default dak config, defines host pro
 alias_cache = None        #: Cache for email alias checks
 key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 
-# (hashname, function, earliest_changes_version)
-known_hashes = [("sha1", apt_pkg.sha1sum, (1, 8)),
-                ("sha256", apt_pkg.sha256sum, (1, 8))] #: hashes we accept for entries in .changes/.dsc
-
 # Monkeypatch commands.getstatusoutput as it may not return the correct exit
 # code in lenny's Python. This also affects commands.getoutput and
 # commands.getstatus.
