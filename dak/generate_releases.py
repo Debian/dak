@@ -362,12 +362,12 @@ class ReleaseWriter(object):
         out.close()
         os.rename(outfile + '.new', outfile)
 
-        if suite.byhash:
-            query = """
-                UPDATE hashfile SET unreferenced = CURRENT_TIMESTAMP
-                WHERE suite_id = :id AND unreferenced IS NULL"""
-            session.execute(query, {'id': suite.suite_id})
+        query = """
+            UPDATE hashfile SET unreferenced = CURRENT_TIMESTAMP
+            WHERE suite_id = :id AND unreferenced IS NULL"""
+        session.execute(query, {'id': suite.suite_id})
 
+        if suite.byhash:
             for filename in fileinfo:
                 if not os.path.exists(filename):
                     # probably an uncompressed index we didn't generate
@@ -390,8 +390,9 @@ class ReleaseWriter(object):
                             INSERT INTO hashfile (path, suite_id)
                             VALUES (:p, :id)''',
                             {'p': hashfile, 'id': suite.suite_id})
-            session.commit()
+        session.commit()
 
+        if suite.byhash:
             for filename in fileinfo:
                 if not os.path.exists(filename):
                     # probably an uncompressed index we didn't generate
