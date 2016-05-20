@@ -307,11 +307,11 @@ def check_dsc_files(dsc_filename, dsc, dsc_files):
     has = defaultdict(lambda: 0)
 
     ftype_lookup = (
+        (r'orig\.tar\.(gz|bz2|xz)\.asc', ('orig_tar_sig',)),
         (r'orig\.tar\.gz',             ('orig_tar_gz', 'orig_tar')),
         (r'diff\.gz',                  ('debian_diff',)),
         (r'tar\.gz',                   ('native_tar_gz', 'native_tar')),
         (r'debian\.tar\.(gz|bz2|xz)',  ('debian_tar',)),
-        (r'orig\.tar\.(gz|bz2|xz)\.asc', ('orig_tar_sig',)),
         (r'orig\.tar\.(gz|bz2|xz)',    ('orig_tar',)),
         (r'tar\.(gz|bz2|xz)',          ('native_tar',)),
         (r'orig-.+\.tar\.(gz|bz2|xz)\.asc', ('more_orig_tar_sig',)),
