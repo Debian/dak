@@ -5,7 +5,7 @@ from base_test import DakTestCase, fixture
 import unittest
 
 from daklib.gpg import GpgException
-from daklib.utils import parse_changes
+from daklib.utils import parse_changes, check_dsc_files, build_file_list
 from daklib.dak_exceptions import InvalidDscError, ParseChangesError
 
 class ParseChangesTestCase(DakTestCase):
@@ -14,7 +14,10 @@ class ParseChangesTestCase(DakTestCase):
 
 class ParseDscTestCase(ParseChangesTestCase):
     def test_1(self):
-        self.assertParse('dsc/1.dsc', -1, 1)
+        changes = self.assertParse('dsc/1.dsc', -1, 1)
+        files = build_file_list(changes, 1)
+        rejmsg = check_dsc_files('1.dsc', changes, files.keys())
+        self.assertEqual(rejmsg, [])
 
     def test_1_ignoreErrors(self):
         # Valid .dsc ; ignoring errors
@@ -59,6 +62,13 @@ class ParseDscTestCase(ParseChangesTestCase):
         changes = self.assertParse('dsc/9.dsc', -1, 1)
         self.assert_(changes['question'] == 'Is this a bug?')
         self.failIf(changes.get('this'))
+
+    def test_10(self):
+        changes = self.assertParse('dsc/10.dsc', -1, 1)
+        files = build_file_list(changes, 1)
+        rejmsg = check_dsc_files('10.dsc', changes, files.keys())
+        self.assertEqual(rejmsg, [])
+
 
 class ParseChangesTestCase(ParseChangesTestCase):
     def test_1(self):
