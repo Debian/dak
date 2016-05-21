@@ -403,7 +403,7 @@ def main():
         # Split out into (code, msg)
         code, msg = message
         if code == PROC_STATUS_SUCCESS:
-            logger.log([msg])
+            logger.log(msg)
         elif code == PROC_STATUS_SIGNALRAISED:
             logger.log(['E: Subprocess recieved signal ', msg])
         else:
