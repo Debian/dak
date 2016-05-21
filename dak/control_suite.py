@@ -251,7 +251,7 @@ def set_suite(file, suite, transaction, britney=False, force=False):
             else:
                 transaction.copy_binary(pkg, suite, component)
 
-            Logger.log(["added", " ".join(key)])
+            Logger.log(["added", suite.suite_name, " ".join(key)])
 
     # Check to see which packages need removed and remove them
     for key, pkid in current.iteritems():
@@ -261,7 +261,7 @@ def set_suite(file, suite, transaction, britney=False, force=False):
                 session.execute("""DELETE FROM src_associations WHERE id = :pkid""", {'pkid': pkid})
             else:
                 session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': pkid})
-            Logger.log(["removed", " ".join(key), pkid])
+            Logger.log(["removed", suite.suite_name, " ".join(key), pkid])
 
     session.commit()
 
