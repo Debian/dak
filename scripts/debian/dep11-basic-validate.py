@@ -169,9 +169,9 @@ def validate_dir(dirname):
     ret = True
     for root, subfolders, files in os.walk(dirname):
         for fname in files:
-             if fname.endswith(".yml.gz") or fname.endswith(".yml.xz"):
-                 if not validate_file(os.path.join(root, fname)):
-                     ret = False
+            if fname.endswith(".yml.gz") or fname.endswith(".yml.xz"):
+                if not validate_file(os.path.join(root, fname)):
+                    ret = False
 
     return ret
 
