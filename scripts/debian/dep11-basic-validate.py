@@ -169,8 +169,12 @@ def validate_dir(dirname):
     ret = True
     for root, subfolders, files in os.walk(dirname):
         for fname in files:
+            fpath = os.path.join(root, fname)
+            if os.path.islink(fpath):
+                add_issue("FATAL: Symlinks are not allowed")
+                return False
             if fname.endswith(".yml.gz") or fname.endswith(".yml.xz"):
-                if not validate_file(os.path.join(root, fname)):
+                if not validate_file(fpath):
                     ret = False
 
     return ret
@@ -187,6 +191,9 @@ def main():
 
     if os.path.isdir(fname):
         ret = validate_dir(fname)
+    elif os.path.islink(fname):
+        add_issue("FATAL: Symlinks are not allowed")
+        ret = False
     else:
         ret = validate_file(fname)
     if ret:
