@@ -31,31 +31,16 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 
 IMPORTSUITE=${1:-"testing"}
 BRITNEY=""
+MD5SUM="${SSH_ORIGINAL_COMMAND}"
 
 case "${IMPORTSUITE}" in
     testing)
-        # What file we look at.
-        INPUTFILE="/srv/release.debian.org/britney/Heidi/set/current"
         DO_CHANGELOG="true"
         ;;
     testing-debug)
-        # What file we look at.
-        INPUTFILE="/srv/release.debian.org/sets/testing-debug/current"
-        DO_CHANGELOG="false"
-        ;;
     squeeze-updates)
-        # What file we look at.
-        INPUTFILE="/srv/release.debian.org/sets/squeeze-updates/current"
-        DO_CHANGELOG="false"
-        ;;
     wheezy-updates)
-        # What file we look at.
-        INPUTFILE="/srv/release.debian.org/sets/wheezy-updates/current"
-        DO_CHANGELOG="false"
-        ;;
     jessie-updates)
-        # What file we look at.
-        INPUTFILE="/srv/release.debian.org/sets/jessie-updates/current"
         DO_CHANGELOG="false"
         ;;
     *)
@@ -74,7 +59,13 @@ if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     BRITNEY=" --britney"
 fi
 
-dak control-suite --set ${IMPORTSUITE} ${BRITNEY} < ${INPUTFILE}
+tmpfile=$(mktemp)
+trap "rm -f ${tmpfile}" EXIT
+cat > ${tmpfile}
+if ! echo "${MD5SUM}  ${tmpfile}" | md5sum -c --quiet; then
+    exit 42
+fi
+dak control-suite --set ${IMPORTSUITE} ${BRITNEY} < ${tmpfile}
 
 if [ "x${DO_CHANGELOG}x" = "xtruex" ]; then
     NOW=$(date "+%Y%m%d%H%M")
