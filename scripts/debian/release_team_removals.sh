@@ -30,26 +30,23 @@ set -u
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
-SUITE="testing-proposed-updates"
-IMPORTDIR="/srv/release.debian.org/sets/tpu-removals"
-IMPORTFILE="${IMPORTDIR}/current"
+tempfile=$(mktemp)
+trap "rm -f ${tempfile}" EXIT
 
-if [ ! -e "${IMPORTFILE}" ]; then
-    echo "${IMPORTFILE} not found"
+cat > ${tempfile}
+expected_checksum="${SSH_ORIGINAL_COMMAND}"
+if ! echo "${expected_checksum} ${tempfile}" | md5sum --check --quiet; then
     exit 1
 fi
 
 # Change to a known safe location
 cd $masterdir
 
+SUITE="testing-proposed-updates"
+
 echo "Performing cleanup on ${SUITE}"
 
-dak control-suite --remove ${SUITE} < ${IMPORTFILE}
-
-if [ $? -eq 0 ]; then
-    NOW=$(date "+%Y%m%d%H%M")
-    mv "${IMPORTFILE}" "${IMPORTDIR}/processed.${NOW}"
-fi
+dak control-suite --remove ${SUITE} < ${tempfile}
 
 echo "Done"
 
