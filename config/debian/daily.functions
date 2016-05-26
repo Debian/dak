@@ -58,3 +58,9 @@ function contributor() {
     log "----"
     rm -f ${TMPCNTB}.result
 }
+
+# Clean up urgency log
+function cleanurgencylog() {
+    log "Cleaning up urgency log"
+    find /srv/ftp.debian.org/web/britney/urgencies -type -f -mtime +365 -delete
+}

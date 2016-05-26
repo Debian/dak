@@ -7,3 +7,4 @@ clean_debbugs          none                       none                       fal
 overridedisp           none                       none                       false   false
 newstats               none                       none                       false   false
 contributor            none                       none                       false   false
+cleanurgencylog        none                       none                       false   false
