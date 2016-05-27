@@ -225,6 +225,7 @@ function reports() {
     log "Sending information about crufty packages"
     dak cruft-report -R > $webdir/cruft-report-daily.txt.new
     dak cruft-report -R -s experimental >> $webdir/cruft-report-daily.txt.new
+    echo "Page generated on $(date -u)" >> $webdir/cruft-report-daily.txt.new
     mv $webdir/cruft-report-daily.txt.new $webdir/cruft-report-daily.txt
     mail -a "X-Debian: DAK" -e -s "Debian archive cruft report for $(date +%D)" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" ftpmaster@ftp-master.debian.org < $webdir/cruft-report-daily.txt
 }
