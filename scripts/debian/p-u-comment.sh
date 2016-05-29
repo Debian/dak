@@ -54,7 +54,7 @@ case "${COMMAND}" in
         ;;
 esac
 
-destdir=${queuedir}/queue/${QUEUE}/COMMENTS/
+destdir=${queuedir}/${QUEUE}/COMMENTS/
 cd $destdir
 
 echo "Importing new ${COMMAND} comment file for ${PACKAGE} into ${QUEUE}"
