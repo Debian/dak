@@ -65,6 +65,7 @@ tmpfile=$( gettempfile )
 destfile=${COMMAND}.${PACKAGE}
 
 cat > ${tmpfile}
+chmod a+r ${tmpfile}
 
 mv ${tmpfile} ${destfile}
 
