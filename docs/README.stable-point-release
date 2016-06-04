@@ -3,8 +3,8 @@ Rough Guide to doing Stable Point Releases in Debian
 
 - sudo to dak
 - bash:
-suitename=wheezy
-newrev=7.10
+suitename=jessie
+newrev=8.5
 
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
@@ -42,7 +42,10 @@ if [ -n "${skip}" ]; then
   grep -vFf <(dak ls -f heidi -S -s ${pusuite} ${skip}) ${pusuite}.list.ori > ${pusuite}.list
 fi
 
-dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/ChangeLog | sponge ${ftpdir}/dists/${suite}/ChangeLog
+tmpfile=$(mktemp -p "${TMPDIR}" changelog.XXXXXX)
+dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/ChangeLog > ${tmpfile}
+chmod 0644 ${tmpfile}
+mv ${tmpfile} ${ftpdir}/dists/${suite}/ChangeLog
 if [ -n "${skip}" ]; then
   $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
 fi
@@ -56,18 +59,26 @@ pumorguedir="${base}/morgue/queues/$(date +%Y/%m)"
 mkdir -p "${pumorguedir}"
 cd ${ftpdir}/dists/${pusuite}
 mv -t "${pumorguedir}" -n -- *.changes
+if [ -n "${skip}" ]; then
+    for pack in ${skip}; do
+        mv -t "${ftpdir}/dists/${pusuite}" ${pumorguedir}/${pack}*.changes
+    done
+fi
 
-- -r0 additions?
-  For example new d-i. If so:
+# do r0 and propups, if any
 cd ~/${suitename}_${newrev}
-cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs .
-dak control-suite --add ${suitename}-r0 < ${suitename}-r0-additions.cs
-
-- sync with stable RM if there is any propup needed. do it, if so:
-cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.unstable .
-dak control-suite --force --add unstable <propups.unstable
-cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.testing .
-dak control-suite --force --add testing <propups.testing
+if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs ]]; then
+    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs .
+    dak control-suite --add ${suitename}-r0 < ${suitename}-r0-additions.cs
+fi
+if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.unstable ]]; then
+    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.unstable .
+    dak control-suite --force --add unstable <propups.unstable
+fi
+if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.testing ]]; then
+    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.testing .
+    dak control-suite --force --add testing <propups.testing
+fi
 
 - ask rms if they have RMs to do.
 # dak rm -s ${suite} -R -p -d ### -m '###' ###
@@ -75,11 +86,11 @@ dak control-suite --force --add testing <propups.testing
 # $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
 
 - and then check if they have a d-i update. if so, bash:
-diver=20130613+deb7u3+b1
+diver=20150422+deb8u4
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
 
 # set dioldver to "empty" if there is no old to remove
-dioldver=20130613+deb7u3
+dioldver=20150422+deb8u3+b1
 if [ "${dioldver}" != "empty" ]; then
     cd $ftpdir/dists/${suite}/main
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -168,13 +179,19 @@ fi
 dak generate-releases -f -s ${suite} ${pusuite}
 # Remove InRelease: Release can be signed by both ftpmaster & stable release keys
 rm ${ftpdir}/dists/${suite}/InRelease
-
-- have the SRMs sign it and put the signature in.
 cd ${ftpdir}/dists/${suite}
-cat /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release-${newrev}.gpg >> Release.gpg
-gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
+while :; do
+    if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release-${newrev}.gpg ]]; then
+        cat /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release-${newrev}.gpg >> Release.gpg
+        gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
+        break
+    else
+        sleep 10
+        continue
+    fi
+done
+echo "Done"
 
-- Check if a mirror push is needed or next dinstall is enough. for a push
-o if so, bash:
+- Check if a mirror push is needed or next dinstall is enough. for a push, bash:
 cd
 ${configdir}/cronscript mirror
