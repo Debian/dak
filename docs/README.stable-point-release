@@ -1,6 +1,8 @@
 Rough Guide to doing Stable Point Releases in Debian
 ----------------------------------------------------
 
+TRY THE NEW pointrelease SCRIPT INSTEAD!
+
 - sudo to dak
 - bash:
 suitename=jessie
