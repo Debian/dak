@@ -117,7 +117,7 @@ while read mfile; do
             # will run and transfer the whole shitload of links over to the morgue host.
             ln -sf "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" "${mfile}"
         else
-            touch "${mfile}.nosnapshot"
+            touch "${mfile}.nosnapshot" || true
         fi
     fi
 done # for mfile in...
