@@ -67,7 +67,7 @@ package main;
 ($main::hostname, undef, undef, undef, undef) = gethostbyname(hostname());
 
 my %packages = ();
-my $re_file_safe_prefix = qr/\A([a-zA-Z0-9.][a-zA-Z0-9_.:~+-]*)/s;
+my $re_file_safe_prefix = qr/\A([a-zA-Z0-9][a-zA-Z0-9_.~+-]*)/s;
 my $re_file_safe = qr/$re_file_safe_prefix\z/s;
 
 # extract -r and -k args
