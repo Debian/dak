@@ -35,7 +35,7 @@
 ################################################################################
 
 from copy import copy
-import glob, os, stat, sys, time
+import glob, os, stat, sys, time, datetime
 import apt_pkg
 try:
     import rrdtool
@@ -310,7 +310,10 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     for dist in distribution:
         print "%s<br/>" % (dist)
     print "</td>"
-    print "<td class=\"age\">%s</td>" % (last_mod)
+    print "<td class=\"age\"><abbr title=\"%s\">%s</abbr></td>" % (
+        datetime.datetime.utcnow(last_mod).strftime('%a, %d %b %Y %T UTC'),
+        time_pp(last_mod),
+    )
     (name, mail) = maint.split(":", 1)
 
     print "<td class=\"upload-data\">"
@@ -583,7 +586,7 @@ def process_queue(queue, log, rrd_dir):
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
                 (source, binary, version_list, arch_list, processed, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
-                table_row(source, version_list, arch_list, time_pp(last_modified), maint, distribution, closes, fingerprint, sponsor, changedby)
+                table_row(source, version_list, arch_list, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
     # The "normal" output without any formatting.
