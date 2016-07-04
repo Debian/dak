@@ -587,14 +587,14 @@ def process_queue(queue, log, rrd_dir):
         if len(entries) > 0:
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
-                (source, binary, version_list, arch_list, processed, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, undef) = entry
+                (source, binary, version_list, arch_list, processed, note, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby, _) = entry
                 table_row(source, version_list, arch_list, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif not Cnf.has_key("Queue-Report::Options::822"):
     # The "normal" output without any formatting.
         msg = ""
         for entry in entries:
-            (source, binary, version_list, arch_list, processed, note, last_modified, undef, undef, undef, undef, undef, undef, undef) = entry
+            (source, binary, version_list, arch_list, processed, note, last_modified, _, _, _, _, _, _, _) = entry
             if processed:
                 format="%%-%ds | %%-%ds | %%-%ds | %%s\n" % (max_source_len, max_version_len, max_arch_len)
                 msg += format % (source, version_list, arch_list, processed)
