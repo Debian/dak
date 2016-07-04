@@ -534,7 +534,7 @@ def process_queue(queue, log, rrd_dir):
                 elif i == "nf":
                     # Notes first.
                     direction.append([5,-1,0])
-    entries.sort(lambda x, y: sortfunc(x, y))
+    entries.sort(sortfunc)
     # Yes, in theory you can add several sort options at the commandline with. But my mind is to small
     # at the moment to come up with a real good sorting function that considers all the sidesteps you
     # have with it. (If you combine options it will simply take the last one at the moment).
@@ -581,7 +581,7 @@ def process_queue(queue, log, rrd_dir):
 
     if Cnf.has_key("Queue-Report::Options::New"):
         direction.append([6,1,"ao"])
-        entries.sort(lambda x, y: sortfunc(x, y))
+        entries.sort(sortfunc)
         # Output for a html file. First table header. then table_footer.
         # Any line between them is then a <tr> printed from subroutine table_row.
         if len(entries) > 0:
