@@ -34,21 +34,23 @@
 
 ################################################################################
 
-from copy import copy
-import glob, os, stat, sys, time, datetime
+import os
+import sys
+import time
 import apt_pkg
+import datetime
+
 try:
     import rrdtool
 except ImportError:
     pass
 
 from daklib import utils
-from daklib.dbconn import DBConn, DBSource, has_new_comment, PolicyQueue, \
-                          get_uid_from_fingerprint
+from daklib.utils import get_logins_from_ldap
+from daklib.dbconn import DBConn, has_new_comment, PolicyQueue, get_uid_from_fingerprint
 from daklib.policy import PolicyQueueUploadHandler
 from daklib.textutils import fix_maintainer
-from daklib.utils import get_logins_from_ldap
-from daklib.dak_exceptions import *
+from daklib.dak_exceptions import ParseMaintError
 
 Cnf = None
 direction = []
