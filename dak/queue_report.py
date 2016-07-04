@@ -364,8 +364,8 @@ RRA:MAX:0.5:24:775
 RRA:MAX:0.5:288:795
 """.strip().split("\n")
         try:
-            rc = rrdtool.create(*create)
-            ru = rrdtool.update(*update)
+            rrdtool.create(*create)
+            rrdtool.update(*update)
         except rrdtool.error as e:
             print('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e))
     except NameError:
