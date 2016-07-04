@@ -92,25 +92,25 @@ def plural(x):
 
 def time_pp(x):
     if x < 60:
-        unit="second"
+        unit = "second"
     elif x < 3600:
         x /= 60
-        unit="minute"
+        unit = "minute"
     elif x < 86400:
         x /= 3600
-        unit="hour"
+        unit = "hour"
     elif x < 604800:
         x /= 86400
-        unit="day"
+        unit = "day"
     elif x < 2419200:
         x /= 604800
-        unit="week"
+        unit = "week"
     elif x < 29030400:
         x /= 2419200
-        unit="month"
+        unit = "month"
     else:
         x /= 29030400
-        unit="year"
+        unit = "year"
     x = int(x)
     return "%s %s%s" % (x, unit, plural(x))
 
@@ -146,33 +146,33 @@ def sortfunc(a,b):
         (sortkey, way, time) = sorting
         ret = 0
         if time == "m":
-            x=int(a[sortkey]/60)
-            y=int(b[sortkey]/60)
+            x = int(a[sortkey] / 60)
+            y = int(b[sortkey] / 60)
         elif time == "h":
-            x=int(a[sortkey]/3600)
-            y=int(b[sortkey]/3600)
+            x = int(a[sortkey] / 3600)
+            y = int(b[sortkey] / 3600)
         elif time == "d":
-            x=int(a[sortkey]/86400)
-            y=int(b[sortkey]/86400)
+            x = int(a[sortkey] / 86400)
+            y = int(b[sortkey] / 86400)
         elif time == "w":
-            x=int(a[sortkey]/604800)
-            y=int(b[sortkey]/604800)
+            x = int(a[sortkey] / 604800)
+            y = int(b[sortkey] / 604800)
         elif time == "o":
-            x=int(a[sortkey]/2419200)
-            y=int(b[sortkey]/2419200)
+            x = int(a[sortkey] / 2419200)
+            y = int(b[sortkey] / 2419200)
         elif time == "y":
-            x=int(a[sortkey]/29030400)
-            y=int(b[sortkey]/29030400)
+            x = int(a[sortkey] / 29030400)
+            y = int(b[sortkey] / 29030400)
         else:
-            x=a[sortkey]
-            y=b[sortkey]
+            x = a[sortkey]
+            y = b[sortkey]
         if x < y:
             ret = -1
         elif x > y:
             ret = 1
         if ret != 0:
             if way < 0:
-                ret = ret*-1
+                ret = ret * -1
             return ret
     return 0
 
@@ -430,14 +430,14 @@ def process_queue(queue, log, rrd_dir):
         logins = dict()
     for i in per_source_items:
         maintainer = {}
-        maint=""
-        distribution=""
-        closes=""
-        fingerprint=""
+        maint = ""
+        distribution = ""
+        closes = ""
+        fingerprint = ""
         changeby = {}
-        changedby=""
-        sponsor=""
-        filename=i[1]["list"][0].changes.changesname
+        changedby = ""
+        sponsor= ""
+        filename = i[1]["list"][0].changes.changesname
         last_modified = time.time()-i[1]["oldest"]
         source = i[1]["list"][0].changes.source
         if len(source) > max_source_len:
@@ -459,7 +459,7 @@ def process_queue(queue, log, rrd_dir):
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
                     maintainer["maintaineremail"] = "Unknown"
-                maint="%s:%s" % (maintainer["maintainername"], maintainer["maintaineremail"])
+                maint = "%s:%s" % (maintainer["maintainername"], maintainer["maintaineremail"])
                 # ...likewise for the Changed-By: field if it exists.
                 try:
                     (changeby["changedby822"], changeby["changedby2047"],
@@ -469,10 +469,10 @@ def process_queue(queue, log, rrd_dir):
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
                      ("", "", "", "")
-                changedby="%s:%s" % (changeby["changedbyname"], changeby["changedbyemail"])
+                changedby = "%s:%s" % (changeby["changedbyname"], changeby["changedbyemail"])
 
-                distribution=dbc.distribution.split()
-                closes=dbc.closes
+                distribution = dbc.distribution.split()
+                closes = dbc.closes
 
                 fingerprint = dbc.fingerprint
                 sponsor_name = get_uid_from_fingerprint(fingerprint).name
@@ -596,10 +596,10 @@ def process_queue(queue, log, rrd_dir):
         for entry in entries:
             (source, binary, version_list, arch_list, processed, note, last_modified, _, _, _, _, _, _, _) = entry
             if processed:
-                format="%%-%ds | %%-%ds | %%-%ds | %%s\n" % (max_source_len, max_version_len, max_arch_len)
+                format = "%%-%ds | %%-%ds | %%-%ds | %%s\n" % (max_source_len, max_version_len, max_arch_len)
                 msg += format % (source, version_list, arch_list, processed)
             else:
-                format="%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
+                format = "%%-%ds | %%-%ds | %%-%ds%%s | %%s old\n" % (max_source_len, max_version_len, max_arch_len)
                 msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
