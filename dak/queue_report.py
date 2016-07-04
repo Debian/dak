@@ -577,8 +577,8 @@ def process_queue(queue, log, rrd_dir):
     if Cnf.has_key("Queue-Report::Options::New"):
         direction.append([6,1,"ao"])
         entries.sort(lambda x, y: sortfunc(x, y))
-    # Output for a html file. First table header. then table_footer.
-    # Any line between them is then a <tr> printed from subroutine table_row.
+        # Output for a html file. First table header. then table_footer.
+        # Any line between them is then a <tr> printed from subroutine table_row.
         if len(entries) > 0:
             table_header(type.upper(), source_count, total_count)
             for entry in entries:
