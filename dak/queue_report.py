@@ -559,13 +559,13 @@ def process_queue(queue, log, rrd_dir):
             (name, mail) = maint.split(":", 1)
             log.write("Maintainer: " + name + " <"+mail+">" + "\n")
             if changedby:
-               (name, mail) = changedby.split(":", 1)
-               log.write("Changed-By: " + name + " <"+mail+">" + "\n")
+                (name, mail) = changedby.split(":", 1)
+                log.write("Changed-By: " + name + " <"+mail+">" + "\n")
             if sponsor:
-               log.write("Sponsored-By: %s@debian.org\n" % sponsor)
+                log.write("Sponsored-By: %s@debian.org\n" % sponsor)
             log.write("Distribution:")
             for dist in distribution:
-               log.write(" " + dist)
+                log.write(" " + dist)
             log.write("\n")
             log.write("Fingerprint: " + fingerprint + "\n")
             if closes:
