@@ -119,7 +119,7 @@ def time_pp(x):
 def sg_compare (a, b):
     a = a[1]
     b = b[1]
-    """Sort by have pending action, have note, time of oldest upload."""
+    # Sort by have pending action, have note, time of oldest upload.
     # Sort by have pending action
     a_note_state = a["processed"]
     b_note_state = b["processed"]
