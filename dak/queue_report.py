@@ -410,11 +410,11 @@ def process_queue(queue, log, rrd_dir):
             have_note += has_new_comment(d.policy_queue, d.changes.source, d.changes.version)
         per_source[source]["oldest"] = oldest
         if not have_note:
-            per_source[source]["note_state"] = 0; # none
+            per_source[source]["note_state"] = 0 # none
         elif have_note < len(source_list):
-            per_source[source]["note_state"] = 1; # some
+            per_source[source]["note_state"] = 1 # some
         else:
-            per_source[source]["note_state"] = 2; # all
+            per_source[source]["note_state"] = 2 # all
     per_source_items = per_source.items()
     per_source_items.sort(sg_compare)
 
