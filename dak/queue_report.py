@@ -313,7 +313,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
         print "%s<br/>" % (dist)
     print "</td>"
     print "<td class=\"age\"><abbr title=\"%s\">%s</abbr></td>" % (
-        datetime.datetime.utcnow(last_mod).strftime('%a, %d %b %Y %T UTC'),
+        datetime.datetime.utcfromtimestamp(last_mod).strftime('%a, %d %b %Y %T UTC'),
         time_pp(last_mod),
     )
     (name, mail) = maint.split(":", 1)
