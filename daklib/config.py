@@ -72,7 +72,7 @@ class Config(object):
 
         # Check whether our dak.conf was the real one or
         # just a pointer to our main one
-        res = socket.gethostbyaddr(socket.gethostname())
+        res = socket.gethostbyname(socket.gethostname())
         conffile = self.Cnf.get("Config::" + res[0] + "::DakConfig")
         if conffile:
             apt_pkg.read_config_file_isc(self.Cnf, conffile)
