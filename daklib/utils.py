@@ -1095,7 +1095,7 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 
     # Ensure signer is last if present
     try:
-        recipients.pop(recipients.index('signer'))
+        recipients.remove('signer')
         recipients.append('signer')
     except ValueError:
         pass
