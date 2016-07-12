@@ -1102,7 +1102,7 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 
     # Compute the set of addresses of the recipients
     addresses = set()  # Name + email
-    emails = set()     # Email only
+    emails = set()     # Email only, used to avoid duplicates
     for recipient in recipients:
         if recipient.startswith('mail:'):  # Email hardcoded in config
             address = recipient[5:]
