@@ -1090,7 +1090,7 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
         recipients = [
             'maintainer',
             'changed_by',
-            'signer'
+            'signer',
         ]
 
     # Ensure signer is last if present
