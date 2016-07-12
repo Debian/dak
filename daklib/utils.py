@@ -1113,7 +1113,7 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
         elif recipient == 'signer':
             fpr_addresses = gpg_get_key_addresses(fingerprint)
             address = fpr_addresses[0] if len(fpr_addresses) > 0 else None
-            if any([x in emails for x in fpr_addresses]):
+            if any(x in emails for x in fpr_addresses):
                 # The signer already gets a copy via another email
                 address = None
         else:
