@@ -71,6 +71,7 @@ lintian:
     - maintainer-address-missing
     - maintainer-address-malformed
     - maintainer-address-is-on-localhost
+    - maintainer-address-causes-mail-loops-or-bounces
     - uploader-name-missing
     - uploader-address-malformed
     - uploader-address-is-on-localhost
