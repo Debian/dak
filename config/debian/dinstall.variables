@@ -3,7 +3,7 @@
 DEBUG=0
 
 # where do we want mails to go? For example log entries made with error()
-if [[ ${HOSTNAME} != franck ]]; then
+if [[ ${HOSTNAME} != franck ]] && [[ ${HOSTNAME} != fasolo ]]; then
     # Not our ftpmaster host
     MAILTO=${MAILTO:-"root"}
 else

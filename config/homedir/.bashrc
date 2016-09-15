@@ -28,7 +28,7 @@ xterm*|rxvt*)
 esac
 
 case "$HOSTNAME" in
-    franck|coccia)
+    franck|coccia|fasolo)
         export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
         ;;
     seger)
