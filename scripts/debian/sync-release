@@ -1,0 +1,52 @@
+#! /bin/bash
+
+# Copyright (C) 2016, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+set -e
+set -u
+set -E
+
+export LANG=C
+export LC_ALL=C
+
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. $SCRIPTVARS
+
+usage() {
+  echo "usage: $0 <suite>"
+  echo
+  echo "sync dists/<suite> to a location accessible by the release team"
+  echo "excluding irrelevant bits (such as installer images)"
+  exit ${1:-0}
+}
+
+if [ $# -ne 1 ]; then
+  usage
+fi
+
+suite="${1}"
+
+source="${ftpdir}/dists/${suite}"
+target="sync-release:/srv/ftp-master.debian.org/tmp-release/"
+
+rsync -aH -B8192 \
+  --exclude "/*/installer-*" \
+  --timeout 3600 \
+  -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
+  "${source}" "${target}"
+
+# command for the remote side:
+# rsync --server -lHogDtpre.iLsfx -B8192 --timeout=3600 . /srv/ftp-master.debian.org/tmp-release/
