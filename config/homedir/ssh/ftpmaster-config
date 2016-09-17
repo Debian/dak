@@ -1,3 +1,6 @@
+# Please edit the master copy in dak.git!
+#   path: config/homedir/ssh/ftpmaster-config
+
 Protocol 2
 ConnectTimeout 30
 ServerAliveInterval 30
