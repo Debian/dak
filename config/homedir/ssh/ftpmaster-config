@@ -45,6 +45,11 @@ Host dd-push-git
   User dak
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_coccia_dak
 
+Host sync-release
+  Hostname coccia.debian.org
+  User dak
+  IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_sync_release
+
 Host external-security
   Hostname seger.debian.org
   User dak
