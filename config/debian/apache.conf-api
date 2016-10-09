@@ -23,5 +23,6 @@ Use common-debian-service-https-redirect * api.ftp-master.debian.org
 <VirtualHost *:443>
   Use common-debian-service-ssl api.ftp-master.debian.org
   Use common-ssl-HSTS
+  Use http-pkp-api.ftp-master.debian.org
   Use api.ftp-master.d.o-common
 </VirtualHost>
