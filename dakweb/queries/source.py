@@ -61,6 +61,46 @@ def dsc_in_suite(suite=None, source=None):
 
 QueryRegister().register_path('/dsc_in_suite', dsc_in_suite)
 
+@bottle.route('/file_in_archive/<filepattern>')
+def file_in_archive(filepattern=None):
+    """
+    Check if a file pattern is known to the archive. Note that the
+    patterns are matched against the location of the files in the
+    pool, so for %tmux_2.3-1.dsc it will return t/tmux/tmux_2.3-1.dsc
+    as filename.
+
+    @since: October 2016
+
+    @type filepattern: string
+
+    @param filepattern: Pattern of the filenames to match. SQL LIKE
+                        statement wildcard matches are supported, that
+                        is % for zero, one or more characters, _ for a
+                        single character match.
+
+    @rtype: Dictionary, empty if nothing matched.
+    @return: A dictionary of
+             - filename
+             - sha256sum
+    """
+    if filepattern is None:
+        return bottle.HTTPError(503, 'Filepattern not specified.')
+
+    s = DBConn().session()
+    q = s.query(PoolFile)
+    q = q.filter(PoolFile.filename.like(filepattern))
+    ret = []
+
+    for p in q:
+        ret.append({'filename':  p.filename,
+                    'sha256sum': p.sha256sum})
+
+    s.close()
+
+    return json.dumps(ret)
+
+QueryRegister().register_path('/file_in_archive', file_in_archive)
+
 
 @bottle.route('/sources_in_suite/<suite>')
 def sources_in_suite(suite=None):
