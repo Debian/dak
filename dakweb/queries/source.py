@@ -61,7 +61,7 @@ def dsc_in_suite(suite=None, source=None):
 
 QueryRegister().register_path('/dsc_in_suite', dsc_in_suite)
 
-@bottle.route('/file_in_archive/<filepattern>')
+@bottle.route('/file_in_archive/<filepattern:path>')
 def file_in_archive(filepattern=None):
     """
     Check if a file pattern is known to the archive. Note that the
