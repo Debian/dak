@@ -33,6 +33,7 @@ fi
 trap cleanup EXIT
 
 old_last_changed=$(last_changed security)
+old_last_changed_build=$(last_changed build-queues)
 
 cd $unchecked
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
@@ -90,6 +91,11 @@ ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-secu
 $configdir/cron.buildd
 
 new_last_changed=$(last_changed security)
+new_last_changed_build=$(last_changed build-queues)
+
+if [[ "${old_last_changed_build}" != "${new_last_changed_build}" ]]; then
+    sudo -u archvsync /home/archvsync/signal_security-buildd-pool
+fi
 
 if [[ "${old_last_changed}" != "${new_last_changed}" ]]; then
     # We had something approved from a policy queue, push out new archive
