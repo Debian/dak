@@ -9,9 +9,6 @@ ForwardAgent no
 StrictHostKeyChecking yes
 PasswordAuthentication no
 BatchMode yes
-ControlMaster auto
-ControlPath ~/.ssh_pipe_%h_%p_%r
-ControlPersist yes
 
 Host bugs-sync
   Hostname bugs-master.debian.org
