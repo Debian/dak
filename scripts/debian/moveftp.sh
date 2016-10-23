@@ -10,8 +10,8 @@ HOST=$(hostname -s)
 if [[ ${HOST} == coccia ]]; then
     find ${FTPDIR} -type f -mmin +15 -print0 -exec mv --no-clobber --target-directory=${SSHDIR} -- "{}" +
 elif [[ ${HOST} == usper ]]; then
-    find ${FTPDIR} -maxdepth 1 -type f -mmin +15 -print0 -exec mv --no-clobber --target-directory=${SSHDIR} -- "{}" +
+    find ${FTPDIR} -maxdepth 1 -type f -mmin +5 -print0 -exec mv --no-clobber --target-directory=${SSHDIR} -- "{}" +
     for defdir in {1..15}; do
-        find ${FTPDIR}/DELAYED/${defdir}-day -maxdepth 1 -type f -mmin +15 -print0 -exec mv --no-clobber --target-directory=${SSHDIR}/DELAYED/${defdir}-day -- "{}" +
+        find ${FTPDIR}/DELAYED/${defdir}-day -maxdepth 1 -type f -mmin +5 -print0 -exec mv --no-clobber --target-directory=${SSHDIR}/DELAYED/${defdir}-day -- "{}" +
     done
 fi
