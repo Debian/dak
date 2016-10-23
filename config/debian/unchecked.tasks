@@ -4,6 +4,7 @@ punew                  stable-new                 p-u-new                    fal
 opunew                 oldstable-new              o-p-u-new                  false   false
 backports_policy       none                       backports-policy           false   false
 cleanpolicy            none                       cleanpolicy                false   false
+fetchqueuedpackages    none                       fetchqueuedpackages        false   false
 do_unchecked           none                       unchecked                  false   false
 scancontents           none                       contentsscan               false   false
 pg_timestamp           postunchecked              none                       false   false

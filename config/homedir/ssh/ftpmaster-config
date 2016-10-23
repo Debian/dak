@@ -9,6 +9,9 @@ ForwardAgent no
 StrictHostKeyChecking yes
 PasswordAuthentication no
 BatchMode yes
+ControlMaster auto
+ControlPath ~/.ssh_pipe_%h_%p_%r
+ControlPersist yes
 
 Host bugs-sync
   Hostname bugs-master.debian.org
@@ -54,3 +57,8 @@ Host external-security
   Hostname seger.debian.org
   User dak
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_external_files
+
+Host upload-master
+  Hostname usper.debian.org
+  User dak
+  IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/sync_new_uploads

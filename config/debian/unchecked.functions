@@ -12,3 +12,10 @@ function precronscript() {
     fi
     TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
 }
+
+function fetchqueuedpackages() {
+    # Sync new uploaded packages from the central upload queue host.
+    log "Sync new uploads from upload queues"
+    cd ${unchecked}
+    rsync -aq --remove-source-files upload-master:/does/not/matter . || true
+}
