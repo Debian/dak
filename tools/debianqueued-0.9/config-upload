@@ -41,7 +41,7 @@ $incoming_delayed = "/srv/queued/UploadQueue/DELAYED/%d-day";
 
 # maximum delay directory, -1 for no delayed directory,
 # incoming_delayed and target_delayed need to exist.
-$max_delayed = -1;
+$max_delayed = 15;
 
 # files not to delete in $incoming (regexp)
 $keep_files = '(status|\.message|README)$';
