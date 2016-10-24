@@ -11,7 +11,7 @@ HOST=$(hostname -s)
 # This runs on all queue hosts - merge ftp and ssh together. (The queued on usper only processes
 # the SSHDIR)
 find ${FTPDIR} -maxdepth 1 -type f -mmin +5 -print0 -exec mv --no-clobber --target-directory=${SSHDIR} -- "{}" +
-for defdir in {1..15}; do
+for defdir in {0..15}; do
     find ${FTPDIR}/DELAYED/${defdir}-day -maxdepth 1 -type f -mmin +5 -print0 -exec mv --no-clobber --target-directory=${SSHDIR}/DELAYED/${defdir}-day -- "{}" +
 done
 
