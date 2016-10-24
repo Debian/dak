@@ -1,0 +1,19 @@
+# Please edit the master copy in dak.git!
+#   path: config/homedir/ssh/usper-config
+
+Protocol 2
+ConnectTimeout 30
+ServerAliveInterval 30
+ForwardX11 no
+ForwardAgent no
+StrictHostKeyChecking yes
+PasswordAuthentication no
+BatchMode yes
+ControlMaster auto
+ControlPath ~/.ssh-pipe_%n
+ControlPersist yes
+
+Host queue-coccia
+  Hostname coccia.debian.org
+  User dak
+  IdentityFile /srv/ftp-master.debian.org/s3kr1t/ssh/sync_queuedirs
