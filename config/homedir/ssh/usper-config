@@ -10,10 +10,10 @@ StrictHostKeyChecking yes
 PasswordAuthentication no
 BatchMode yes
 ControlMaster auto
-ControlPath ~/.ssh-pipe_%n
+ControlPath /srv/upload.debian.org/s3kr1t/.ssh-pipe_%n
 ControlPersist yes
 
 Host queue-coccia
   Hostname coccia.debian.org
   User dak
-  IdentityFile /srv/upload.debian.org/s3kr1t/ssh/sync_queuedirs
+  IdentityFile /srv/upload.debian.org/s3kr1t/sync_queuedirs
