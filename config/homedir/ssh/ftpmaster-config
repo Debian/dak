@@ -59,3 +59,6 @@ Host upload-master
   Hostname usper.debian.org
   User dak
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/sync_new_uploads
+  ControlMaster auto
+  ControlPath ~/.ssh-pipe_%n
+  ControlPersist yes
