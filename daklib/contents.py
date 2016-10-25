@@ -130,21 +130,12 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         }
         return BinaryContentsFileWriter(**values)
 
-    def get_header(self):
-        '''
-        Returns the header for the Contents files as a string.
-        '''
-        filename = os.path.join(Config()['Dir::Templates'], 'contents')
-        with open(filename) as header_file:
-            return header_file.read()
-
     def write_file(self):
         '''
         Write the output file.
         '''
         writer = self.writer()
         file = writer.open()
-        file.write(self.get_header())
         for item in self.fetch():
             file.write(item)
         writer.close()
