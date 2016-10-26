@@ -62,5 +62,5 @@ function contributor() {
 # Clean up urgency log
 function cleanurgencylog() {
     log "Cleaning up urgency log"
-    find /srv/ftp.debian.org/web/britney/urgencies -type -f -mtime +15 -delete
+    find /srv/ftp.debian.org/web/britney/urgencies -type f -mtime +15 -delete
 }
