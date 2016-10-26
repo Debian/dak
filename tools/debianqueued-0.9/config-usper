@@ -37,7 +37,7 @@ $ssh_key_file = "";
 $incoming = "/srv/upload.debian.org/UploadQueue";
 
 # the delayed incoming directories
-$incoming_delayed = "/srv/upload.debian.org/ftp/pub/UploadQueue/DELAYED/%d-day";
+$incoming_delayed = "/srv/upload.debian.org/UploadQueue/DELAYED/%d-day";
 
 # maximum delay directory, -1 for no delayed directory,
 # incoming_delayed and target_delayed need to exist.
