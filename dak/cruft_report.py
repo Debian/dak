@@ -579,14 +579,7 @@ def main ():
     components = get_component_names(session)
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources.gz" % (suite.archive.path, suite_name, component)
-        # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
-        (fd, temp_filename) = utils.temp_filename()
-        (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-        if (result != 0):
-            sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
-            sys.exit(result)
-        sources = utils.open_file(temp_filename)
-        Sources = apt_pkg.TagFile(sources)
+        Sources = apt_pkg.TagFile(filename)
         while Sources.step():
             source = Sources.section.find('Package')
             source_version = Sources.section.find('Version')
@@ -612,9 +605,6 @@ def main ():
             source_binaries[source] = binaries
             source_versions[source] = source_version
 
-        sources.close()
-        os.unlink(temp_filename)
-
     # Checks based on the Packages files
     check_components = components[:]
     if suite_name != "experimental":
@@ -627,20 +617,13 @@ def main ():
         for architecture in architectures:
             if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
                 continue
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (suite.archive.path, suite_name, component, architecture)
-            # apt_pkg.TagFile needs a real file handle
-            (fd, temp_filename) = utils.temp_filename()
-            (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-            if (result != 0):
-                sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
-                sys.exit(result)
 
             if "nfu" in checks:
                 nfu_packages.setdefault(architecture,[])
                 nfu_entries = parse_nfu(architecture)
 
-            packages = utils.open_file(temp_filename)
-            Packages = apt_pkg.TagFile(packages)
+            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (suite.archive.path, suite_name, component, architecture)
+            Packages = apt_pkg.TagFile(filename)
             while Packages.step():
                 package = Packages.section.find('Package')
                 source = Packages.section.find('Source', "")
@@ -668,9 +651,6 @@ def main ():
                         if package in nfu_entries and \
                                version != source_versions[source]: # only suggest to remove out-of-date packages
                             nfu_packages[architecture].append((package,version,source_versions[source]))
-                    
-            packages.close()
-            os.unlink(temp_filename)
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
     dubious_nbs = {}

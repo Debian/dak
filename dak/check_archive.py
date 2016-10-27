@@ -383,14 +383,7 @@ def validate_sources(suite, component):
     """
     filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
     print "Processing %s..." % (filename)
-    # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
-    (fd, temp_filename) = utils.temp_filename()
-    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-    if (result != 0):
-        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
-        sys.exit(result)
-    sources = utils.open_file(temp_filename)
-    Sources = apt_pkg.TagFile(sources)
+    Sources = apt_pkg.TagFile(filename)
     while Sources.step():
         source = Sources.section.find('Package')
         directory = Sources.section.find('Directory')
@@ -413,8 +406,6 @@ def validate_sources(suite, component):
                         src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
                         print "Symlinking: %s -> %s" % (filename, src)
                         #os.symlink(src, filename)
-    sources.close()
-    os.unlink(temp_filename)
 
 ########################################
 
@@ -425,20 +416,11 @@ def validate_packages(suite, component, architecture):
     filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
                % (Cnf["Dir::Root"], suite, component, architecture)
     print "Processing %s..." % (filename)
-    # apt_pkg.TagFile needs a real file handle and can't handle a GzipFile instance...
-    (fd, temp_filename) = utils.temp_filename()
-    (result, output) = commands.getstatusoutput("gunzip -c %s > %s" % (filename, temp_filename))
-    if (result != 0):
-        sys.stderr.write("Gunzip invocation failed!\n%s\n" % (output))
-        sys.exit(result)
-    packages = utils.open_file(temp_filename)
-    Packages = apt_pkg.TagFile(packages)
+    Packages = apt_pkg.TagFile(filename)
     while Packages.step():
         filename = "%s/%s" % (Cnf["Dir::Root"], Packages.section.find('Filename'))
         if not os.path.exists(filename):
             print "W: %s missing." % (filename)
-    packages.close()
-    os.unlink(temp_filename)
 
 ########################################
 
