@@ -381,7 +381,8 @@ def validate_sources(suite, component):
     """
     Ensure files mentioned in Sources exist
     """
-    filename = "%s/dists/%s/%s/source/Sources.gz" % (Cnf["Dir::Root"], suite, component)
+    filename = "%s/dists/%s/%s/source/Sources" % (Cnf["Dir::Root"], suite, component)
+    filename = utils.find_possibly_compressed_file(filename)
     print "Processing %s..." % (filename)
     Sources = apt_pkg.TagFile(filename)
     while Sources.step():
@@ -413,8 +414,9 @@ def validate_packages(suite, component, architecture):
     """
     Ensure files mentioned in Packages exist
     """
-    filename = "%s/dists/%s/%s/binary-%s/Packages.gz" \
+    filename = "%s/dists/%s/%s/binary-%s/Packages" \
                % (Cnf["Dir::Root"], suite, component, architecture)
+    filename = utils.find_possibly_compressed_file(filename)
     print "Processing %s..." % (filename)
     Packages = apt_pkg.TagFile(filename)
     while Packages.step():

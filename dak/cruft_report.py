@@ -578,7 +578,8 @@ def main ():
     # Checks based on the Sources files
     components = get_component_names(session)
     for component in components:
-        filename = "%s/dists/%s/%s/source/Sources.gz" % (suite.archive.path, suite_name, component)
+        filename = "%s/dists/%s/%s/source/Sources" % (suite.archive.path, suite_name, component)
+        filename = utils.find_possibly_compressed_file(filename)
         Sources = apt_pkg.TagFile(filename)
         while Sources.step():
             source = Sources.section.find('Package')
@@ -622,7 +623,8 @@ def main ():
                 nfu_packages.setdefault(architecture,[])
                 nfu_entries = parse_nfu(architecture)
 
-            filename = "%s/dists/%s/%s/binary-%s/Packages.gz" % (suite.archive.path, suite_name, component, architecture)
+            filename = "%s/dists/%s/%s/binary-%s/Packages" % (suite.archive.path, suite_name, component, architecture)
+            filename = utils.find_possibly_compressed_file(filename)
             Packages = apt_pkg.TagFile(filename)
             while Packages.step():
                 package = Packages.section.find('Package')
