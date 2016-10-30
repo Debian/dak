@@ -1388,3 +1388,25 @@ def is_in_debug_section(control):
     section = control['Section'].split('/', 1)[-1]
     auto_built_package = control.get("Auto-Built-Package")
     return section == "debug" and auto_built_package == "debug-symbols"
+
+################################################################################
+
+def find_possibly_compressed_file(filename):
+    """
+
+    @type  filename: string
+    @param filename: path to a control file (Sources, Packages, etc) to
+                     look for
+
+    @rtype string
+    @return: path to the (possibly compressed) control file, or null if the
+             file doesn't exist
+    """
+    _compressions = ('', '.xz', '.gz', '.bz2')
+
+    for ext in _compressions:
+        _file = filename + ext
+        if os.path.exists(_file):
+            return _file
+
+    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
