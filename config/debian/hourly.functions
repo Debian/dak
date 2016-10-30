@@ -30,10 +30,8 @@ function queuereport() {
     do_report
     do_report ${webdir}/backports-new.html "-n -d backports-new,backports-policy"
     dak queue-report -8 -d new,byhand,stable-new,oldstable-new,backports-new -r ${webdir}/stat
-    log "Deferred queue overview"
-    sudo -u dak-unpriv dak show-deferred -r ${webdir}/stat > ${webdir}/deferred.html
     log "Graphs about the queues"
-    dak graph -n new,byhand,stable-new,oldstable-new,deferred,backports-new -r ${webdir}/stat -i ${webdir}/stat -x ${scriptsdir}/rrd-release-freeze-dates
+    dak graph -n new,byhand,stable-new,oldstable-new,backports-new -r ${webdir}/stat -i ${webdir}/stat -x ${scriptsdir}/rrd-release-freeze-dates
 }
 
 function removalstxt() {
