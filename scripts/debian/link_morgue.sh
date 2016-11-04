@@ -52,7 +52,7 @@ function log () {
 }
 
 case "$(hostname)" in
-    franck)
+    fasolo)
 	SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 	archive=ftp-master
         ;;
