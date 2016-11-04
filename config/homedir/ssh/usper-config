@@ -17,3 +17,18 @@ Host queue-coccia
   Hostname coccia.debian.org
   User dak
   IdentityFile /srv/upload.debian.org/s3kr1t/sync_queuedirs
+
+Host defsync
+  Hostname fasolo.debian.org
+  User dak
+  IdentityFile /srv/upload.debian.org/s3kr1t/sync_defdir
+
+Host deffsync
+  Hostname fasolo.debian.org
+  User dak
+  IdentityFile /srv/upload.debian.org/s3kr1t/sync_deffile
+
+Host rrdsync
+  Hostname fasolo.debian.org
+  User dak
+  IdentityFile /srv/upload.debian.org/s3kr1t/sync_rrd

@@ -94,7 +94,7 @@ def table_header():
         """
 
 def table_footer():
-    return '</table><br/><p>non-NEW uploads are <a href="/deferred/">available</a> (<a href="/deferred/status">machine readable version</a>), see the <a href="ftp://ftp-master.debian.org/pub/UploadQueue/README">UploadQueue-README</a> for more information.</p></center><br/>\n'
+    return '</table><br/><p>non-NEW uploads are <a href="/deferred/">available</a> (<a href="/deferred/status">machine readable version</a>), see the <a href="ftp://ftp.upload.debian.org/pub/UploadQueue/README">UploadQueue-README</a> for more information.</p></center><br/>\n'
 
 def table_row(changesname, delay, changed_by, closes, fingerprint):
     global row_number

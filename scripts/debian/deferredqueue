@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -e
+set -u
+
+DEFDIR="/srv/ftp-master.debian.org/deferred"
+STATDIR="/srv/ftp-master.debian.org/stat"
+DEFFILE="/srv/ftp-master.debian.org/html/deferred.html"
+
+# First generate the deferred stuff
+dak show-deferred -r ${STATDIR} > ${DEFFILE}
+
+# Now send it over to fasolo
+# The files want to change from symlinks to files.
+rsync -a -L -e "ssh -F /srv/ftp-master.debian.org/dak/config/homedir/ssh/usper-config" ${DEFDIR}/.             defsync:/does/not/matter
+rsync -a    -e "ssh -F /srv/ftp-master.debian.org/dak/config/homedir/ssh/usper-config" ${DEFFILE}              deffsync:/does/not/matter
+rsync -a    -e "ssh -F /srv/ftp-master.debian.org/dak/config/homedir/ssh/usper-config" ${STATDIR}/deferred.rrd rrdsync:/does/not/matter

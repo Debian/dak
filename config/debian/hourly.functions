@@ -31,7 +31,7 @@ function queuereport() {
     do_report ${webdir}/backports-new.html "-n -d backports-new,backports-policy"
     dak queue-report -8 -d new,byhand,stable-new,oldstable-new,backports-new -r ${webdir}/stat
     log "Graphs about the queues"
-    dak graph -n new,byhand,stable-new,oldstable-new,backports-new -r ${webdir}/stat -i ${webdir}/stat -x ${scriptsdir}/rrd-release-freeze-dates
+    dak graph -n new,byhand,stable-new,oldstable-new,deferred,backports-new -r ${webdir}/stat -i ${webdir}/stat -x ${scriptsdir}/rrd-release-freeze-dates
 }
 
 function removalstxt() {
