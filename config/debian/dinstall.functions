@@ -226,12 +226,10 @@ function mpfm() {
 }
 
 function packages() {
-    for archive in "${public_archives[@]}"; do
-        log "  Generating Packages/Sources for ${archive}"
-        dak generate-packages-sources2 -a "${archive}"
-        log "  Generating Contents for ${archive}"
-        dak contents generate -a "${archive}"
-    done
+    log "  Generating Packages/Sources for: ${public_archives[*]}"
+    dak generate-packages-sources2 -a "${public_archives[*]}"
+    log "  Generating Contents for: ${public_archives[*]}"
+    dak contents generate -a "${public_archives[*]}"
 }
 
 function pdiff() {
@@ -241,10 +239,7 @@ function pdiff() {
 
 function release() {
     log "Generating Release files"
-    for archive in "${public_archives[@]}"; do
-        log "  archive: ${archive}"
-        dak generate-releases -a "${archive}"
-    done
+    dak generate-releases -a "${public_archives[*]}"
 }
 
 function dakcleanup() {
