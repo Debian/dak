@@ -380,9 +380,11 @@ def main():
     session.execute("SELECT add_missing_description_md5()")
     session.commit()
 
+    import daklib.utils
+
     if Options.has_key("Suite"):
         suites = []
-        suite_names = Options['Suite'].split(',')
+        suite_names = daklib.utils.split_args(Options['Suite'])
         for s in suite_names:
             suite = get_suite(s.lower(), session)
             if suite:
@@ -393,7 +395,8 @@ def main():
     else:
         query = session.query(Suite).filter(Suite.untouchable == False)
         if 'Archive' in Options:
-            query = query.join(Suite.archive).filter(Archive.archive_name==Options['Archive'])
+            archive_names = daklib.utils.split_args(Options['Archive'])
+            query = query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))
         suites = query.all()
 
     force = Options.has_key("Force") and Options["Force"]

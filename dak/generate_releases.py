@@ -475,7 +475,8 @@ def main ():
     else:
         query = session.query(Suite).filter(Suite.untouchable == False)
         if 'Archive' in Options:
-            query = query.join(Suite.archive).filter(Archive.archive_name==Options['Archive'])
+            archive_names = utils.split_args(Options['Archive'])
+            query = query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))
         suites = query.all()
 
     broken=[]
