@@ -782,6 +782,7 @@ class ArchiveUpload(object):
         new = False
         source = self.changes.source
 
+        # Check binaries listed in the source package's Package-List field:
         if source is not None and not source.package_list.fallback:
             packages = source.package_list.packages_for_suite(suite)
             binaries = [ entry for entry in packages ]
@@ -790,15 +791,20 @@ class ArchiveUpload(object):
                 if override is None:
                     self.warnings.append('binary:{0} is NEW.'.format(b.name))
                     new = True
-        else:
-            binaries = self.changes.binaries
-            for b in binaries:
-                if utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
-                    continue
-                override = self._binary_override(overridesuite, b)
-                if override is None:
-                    self.warnings.append('binary:{0} is NEW.'.format(b.name))
-                    new = True
+
+        # Check all uploaded packages.
+        # This is necessary to account for packages without a Package-List
+        # field, really late binary-only uploads (where an unused override
+        # was already removed), and for debug packages uploaded to a suite
+        # without a debug suite (which are then considered as NEW).
+        binaries = self.changes.binaries
+        for b in binaries:
+            if utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
+                continue
+            override = self._binary_override(overridesuite, b)
+            if override is None:
+                self.warnings.append('binary:{0} is NEW.'.format(b.name))
+                new = True
 
         return new
 
