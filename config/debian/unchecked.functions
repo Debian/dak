@@ -17,5 +17,5 @@ function fetchqueuedpackages() {
     # Sync new uploaded packages from the central upload queue host.
     log "Sync new uploads from upload queues"
     cd ${unchecked}
-    rsync -aq --remove-source-files upload-master:/does/not/matter . || true
+    rsync -rtq --safe-links --chmod=F640,D755 --remove-source-files upload-master:/does/not/matter . || true
 }

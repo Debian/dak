@@ -101,7 +101,7 @@ function i18n1() {
     log "Synchronizing i18n package descriptions"
     # First sync their newest data
     cd ${scriptdir}/i18nsync
-    rsync -aq --delete --delete-after ddtp-sync:/does/not/matter . || true
+    rsync -rtq --safe-links --chmod=F644,D755 --delete --delete-after ddtp-sync:/does/not/matter . || true
 
     # Now check if we still know about the packages for which they created the files
     # is the timestamp signed by us?
@@ -142,7 +142,7 @@ function dep11() {
     local dep11dir="${scriptdir}/dep11"
     mkdir -p ${dep11dir}
     cd ${dep11dir}
-    rsync -aq --delete --delete-after dep11-sync:/does/not/matter . || true
+    rsync -rtq --safe-links --chmod=F644,D755 --delete --delete-after dep11-sync:/does/not/matter . || true
 
     # Lets check!
     if ${scriptsdir}/dep11-basic-validate.py . ${dep11dir}/; then
@@ -152,7 +152,7 @@ function dep11() {
                 for comp in main contrib non-free; do
                     mkdir -p ${ftpdir}/dists/${dir}/${comp}/dep11
                     cd ${dir}/${comp}
-                    rsync -aq --delete --delete-after --exclude by-hash --exclude "./*.tmp" . ${ftpdir}/dists/${dir}/${comp}/dep11/.
+                    rsync -rtq --delete --delete-after --exclude by-hash --exclude "./*.tmp" . ${ftpdir}/dists/${dir}/${comp}/dep11/.
                     cd ${dep11dir}
                 done
             fi
