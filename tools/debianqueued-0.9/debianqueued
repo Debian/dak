@@ -16,6 +16,7 @@
 require 5.002;
 no lib '.';
 use strict;
+use List::Util;
 use POSIX;
 use POSIX qw( strftime sys_stat_h sys_wait_h signal_h );
 use Net::Ping;
@@ -557,7 +558,8 @@ sub check_dir() {
       # yet-incomplete upload, with the .changes still missing.
       # Cannot send any notification, since owner unknown.
       next if !( @stats = stat($file) );
-      my $age = time - $stats[ST_MTIME];
+      my $cmtime = List::Util::max($stats[ST_CTIME], $stats[ST_MTIME]);
+      my $age = time - $cmtime;
       my ( $maint, $pattern, @job_files );
       if (    $file =~ /^junk-for-writable-test/
            || $file !~ m,$conf::valid_files,
