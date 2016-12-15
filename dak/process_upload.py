@@ -263,6 +263,7 @@ def accept(directory, upload):
     print "ACCEPT"
 
     upload.install()
+    process_buildinfos(upload)
 
     accepted_to_real_suite = False
     for suite in upload.final_suites:
@@ -492,6 +493,24 @@ def process_changes(changes_filenames):
 
     for directory, c in changes:
         process_it(directory, c, keyring_files)
+
+def process_buildinfos(upload):
+    cnf = Config()
+
+    target_dir = os.path.join(
+        cnf['Dir::BuildinfoArchive'],
+        datetime.datetime.now().strftime('%Y/%m/%d'),
+    )
+
+    for x in upload.changes.files.itervalues():
+        if not re_file_buildinfo.match(x.filename):
+            continue
+
+        src = os.path.join(upload.directory, x.filename)
+        dst = utils.find_next_free(os.path.join(target_dir, x.filename))
+
+        Logger.log(["Archiving", x.filename])
+        upload.transaction.fs.copy(src, dst, mode=0o644)
 
 ###############################################################################
 
