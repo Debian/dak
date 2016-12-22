@@ -497,6 +497,9 @@ def process_changes(changes_filenames):
 def process_buildinfos(upload):
     cnf = Config()
 
+    if not cnf.has_key('Dir::BuildinfoArchive'):
+        return
+
     target_dir = os.path.join(
         cnf['Dir::BuildinfoArchive'],
         datetime.datetime.now().strftime('%Y/%m/%d'),
