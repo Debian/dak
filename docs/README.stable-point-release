@@ -3,10 +3,13 @@ Rough Guide to doing Stable Point Releases in Debian
 
 TRY THE NEW pointrelease SCRIPT INSTEAD!
 
+- Mirror tmux session on public host:
+#   ssh ftp-master.debian.org 'tail -f -c +0 ~dak/tmuxoutput.1-0' | ssh mirror.ftp-master.debian.org 'cat > tmuxout'
+
 - sudo to dak
 - bash:
 suitename=jessie
-newrev=8.5
+newrev=8.6
 
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
@@ -69,16 +72,24 @@ fi
 
 # do r0 and propups, if any
 cd ~/${suitename}_${newrev}
-if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs ]]; then
-    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs .
+# rsync data to from-release.d.o
+#   from /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}
+control_r0=from-release.d.o/${suitename}-r0-additions.cs
+if [[ -f ${control_r0} ]]; then
+    cp ${control_r0} .
+    read -p "Please check ${control_r0##*/}"
     dak control-suite --add ${suitename}-r0 < ${suitename}-r0-additions.cs
 fi
-if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.unstable ]]; then
-    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.unstable .
+control_unstable=from-release.d.o/propups.unstable
+if [[ -f ${control_unstable} ]]; then
+    cp ${control_unstable} .
+    read -p "Please check ${control_unstable##*/}"
     dak control-suite --force --add unstable <propups.unstable
 fi
-if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.testing ]]; then
-    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.testing .
+control_testing=from-release.d.o/propups.testing
+if [[ -f ${control_testing} ]]; then
+    cp ${control_testing} .
+    read -p "Please check ${control_testing##*/}"
     dak control-suite --force --add testing <propups.testing
 fi
 
@@ -88,11 +99,11 @@ fi
 # $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
 
 - and then check if they have a d-i update. if so, bash:
-diver=20150422+deb8u4
+diver=20150422+deb8u4+b1
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
 
 # set dioldver to "empty" if there is no old to remove
-dioldver=20150422+deb8u3+b1
+dioldver=20150422+deb8u4
 if [ "${dioldver}" != "empty" ]; then
     cd $ftpdir/dists/${suite}/main
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -170,7 +181,10 @@ dak cruft-report -s ${suite}
 - Let SRM see if all is ok
 
 - then:
-dak generate-packages-sources2 --force -s ${suite},${pusuite} && dak contents generate -f -s ${suite} -a ftp-master
+dak generate-packages-sources2 --force -s ${suite},${pusuite}
+dak contents generate -f -s ${suite} -a ftp-master
+
+${scriptsdir}/sync-release ${suitename}
 
 - For wheezy: update main/i18n/Index
 if [[ ${suitename} == wheezy ]]; then
@@ -181,6 +195,8 @@ fi
 dak generate-releases -f -s ${suite} ${pusuite}
 # Remove InRelease: Release can be signed by both ftpmaster & stable release keys
 rm ${ftpdir}/dists/${suite}/InRelease
+${scriptsdir}/sync-release ${suitename}
+
 cd ${ftpdir}/dists/${suite}
 while :; do
     if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release-${newrev}.gpg ]]; then
