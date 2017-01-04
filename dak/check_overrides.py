@@ -208,11 +208,13 @@ SELECT s.source FROM source s
                             otype, package, "source", sections[i[5]], i[6], "source", sections[i[2]], i[3]])
                         if not Options["No-Action"]:
                             session.execute("""UPDATE override
-                                                 SET section = :section,
+                                                 SET priority = :priority,
+                                                     section = :section,
                                                      maintainer = :maintainer
                                                WHERE package = :package AND suite = :suite_id
                                                  AND component = :component_id AND type = :type_id""",
-                                            {'section': i[2], 'maintainer': i[3],
+                                            {'priority': i[1],
+                                             'section': i[2], 'maintainer': i[3],
                                              'package': package, 'suite_id': osuite_id,
                                              'component_id': component_id, 'type_id': dsc_type_id})
                     continue
