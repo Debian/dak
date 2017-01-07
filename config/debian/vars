@@ -2,7 +2,7 @@
 
 umask 022
 unset CDPATH
-GZIP='--rsyncable' ; export GZIP
+GZIP='--rsyncable --no-name' ; export GZIP
 
 # locations used by many scripts
 base=/srv/ftp-master.debian.org

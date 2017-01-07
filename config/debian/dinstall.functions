@@ -264,7 +264,7 @@ function mklslar() {
 
         log "Creating recursive directory listing ... "
         rm -f ${FILENAME}.gz
-        TZ=UTC ls -lR | gzip -9c --rsyncable > ${FILENAME}.gz
+        TZ=UTC ls -lR | gzip -9c --rsyncable --no-name > ${FILENAME}.gz
     done
 }
 
@@ -283,8 +283,8 @@ function mkmaintainers() {
         cd "${indices}"
 
         dak make-maintainers -a "${archive}" ${scriptdir}/masterfiles/pseudo-packages.maintainers
-        gzip -9v --rsyncable <Maintainers >Maintainers.gz
-        gzip -9v --rsyncable <Uploaders >Uploaders.gz
+        gzip -9v --rsyncable  --no-name <Maintainers >Maintainers.gz
+        gzip -9v --rsyncable  --no-name <Uploaders >Uploaders.gz
     done
 }
 
@@ -295,7 +295,7 @@ function copyoverrides() {
         shopt -s nullglob
         for ofile in ${overridedir}/override.{squeeze,wheezy,jessie,stretch,sid}.{,extra.}{main,contrib,non-free}*; do
             bname=${ofile##*/}
-            gzip -9cv --rsyncable ${ofile} > ${indices}/${bname}.gz
+            gzip -9cv --rsyncable  --no-name ${ofile} > ${indices}/${bname}.gz
             chmod g+w ${indices}/${bname}.gz
         done
     )

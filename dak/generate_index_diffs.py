@@ -319,7 +319,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
-        w = os.popen("diff --ed - %s | gzip --rsyncable -c -9 > %s.gz" %
+        w = os.popen("diff --ed - %s | gzip --rsyncable  --no-name -c -9 > %s.gz" %
                      (newfile, difffile), "w")
         pipe_file(oldf, w)
         oldf.close()
