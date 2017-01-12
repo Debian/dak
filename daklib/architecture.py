@@ -48,7 +48,7 @@ def _tupletable():
             if e.errno != errno.ENOENT:
                 raise
             tripletable = True
-            table = _load_table('/usr/share/dpkg/tripletable')
+            table = _load_table('/usr/share/dpkg/triplettable')
 
         arch2tuple = {}
         tuple2arch = {}
