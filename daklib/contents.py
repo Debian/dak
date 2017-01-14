@@ -35,6 +35,7 @@ from tempfile import mkdtemp
 
 import daklib.daksubprocess
 import os.path
+import sqlalchemy.sql as sql
 
 class BinaryContentsWriter(object):
     '''
@@ -79,7 +80,7 @@ insert into newest_binaries (id, package)
         order by package, version desc;'''
         self.session.execute(sql_create_temp, params=params)
 
-        sql = '''
+        query = sql.text('''
 with
 
 unique_override as
@@ -91,9 +92,9 @@ unique_override as
 select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package) as pkglist
     from newest_binaries b, bin_contents bc, unique_override o
     where b.id = bc.binary_id and o.package = b.package
-    group by bc.file'''
+    group by bc.file''')
 
-        return self.session.query("file", "pkglist").from_statement(sql). \
+        return self.session.query("file", "pkglist").from_statement(query). \
             params(params)
 
     def formatline(self, filename, package_list):
@@ -174,10 +175,10 @@ insert into newest_sources (id, source)
         order by source, version desc;'''
         self.session.execute(sql_create_temp, params=params)
 
-        sql = '''
+        query = sql.text('''
 select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
     from newest_sources s, src_contents sc
-    where s.id = sc.source_id group by sc.file'''
+    where s.id = sc.source_id group by sc.file''')
 
         return self.session.query("file", "pkglist").from_statement(sql). \
             params(params)
