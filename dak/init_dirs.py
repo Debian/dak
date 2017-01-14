@@ -19,6 +19,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import os, sys
 import apt_pkg
 from daklib import utils
@@ -33,10 +35,10 @@ Cnf = None
 def usage(exit_code=0):
     """Print a usage message and exit with 'exit_code'."""
 
-    print """Usage: dak init-dirs
+    print("""Usage: dak init-dirs
 Creates directories for an archive based on dak.conf configuration file.
 
-  -h, --help                show this help and exit."""
+  -h, --help                show this help and exit.""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -50,7 +52,7 @@ it."""
             utils.fubar("%s (%s) is not a directory."
                                % (target, config_name))
     else:
-        print "Creating %s ..." % (target)
+        print("Creating {} ...".format(target))
         os.makedirs(target)
 
 def process_file(config, config_name):
@@ -86,14 +88,14 @@ def process_keyring(fullpath, secret=False):
     keydir = os.path.dirname(fullpath)
 
     if not os.path.isdir(keydir):
-        print "Creating %s ..." % (keydir)
+        print("Creating {} ...".format(keydir))
         os.makedirs(keydir)
         if secret:
             # Make sure secret keyring directories are 0700
             os.chmod(keydir, 0o700)
 
     # Touch the file
-    print "Creating %s ..." % (fullpath)
+    print("Creating {} ...".format(fullpath))
     file(fullpath, 'w')
     if secret:
         os.chmod(fullpath, 0o600)

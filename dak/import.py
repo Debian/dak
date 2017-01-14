@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+
 import apt_pkg
 import os
 import sys
@@ -28,7 +30,7 @@ import daklib.upload
 import daklib.regexes
 
 def usage():
-    print """Usage:
+    print("""Usage:
 
 dak import <suite> <component> <files...>
 dak import -D|--dump <file> <suite> <component>
@@ -50,7 +52,7 @@ Options:
 File format used by --dump:
 
   <filename>:<md5>:<sha1>:<sha256>:[<fingerprint>]:[<changed-by>]
-"""
+""")
 
 def import_source(log, transaction, suite, component, directory, hashed_file,
                   fingerprint=None, changed_by=None,
@@ -129,7 +131,7 @@ def import_dump(log, transaction, suite, component, fh,
         if fpr:
             fingerprint = session.query(Fingerprint).filter_by(fingerprint=fpr).first()
             if fingerprint is None:
-                print 'W: {0}: unknown fingerprint {1}'.format(filename, fpr)
+                print('W: {0}: unknown fingerprint {1}'.format(filename, fpr))
 
         directory, filename = os.path.split(os.path.abspath(path))
         hashed_file = daklib.upload.HashedFile(filename, long(size), md5, sha1, sha256)
@@ -175,7 +177,7 @@ def export_dump(transaction, suite, component):
                             {'suite_id': suite.suite_id,
                              'component_id': component.component_id})
     for row in query:
-        print ":".join(row)
+        print(":".join(row))
 
 def main(argv=None):
     if argv is None:

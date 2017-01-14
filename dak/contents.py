@@ -35,6 +35,8 @@ Create all the contents files
 
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import apt_pkg
 
@@ -48,7 +50,7 @@ from daklib import utils
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: dak contents [options] subcommand
+    print("""Usage: dak contents [options] subcommand
 
 SUBCOMMANDS
     generate
@@ -82,7 +84,7 @@ OPTIONS for generate
 OPTIONS for scan-source and scan-binary
      -l, --limit=NUMBER
         maximum number of packages to scan
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################

@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+
 import apt_pkg
 import sys
 
@@ -23,7 +25,7 @@ from daklib.config import Config
 from daklib.dbconn import DBConn, Fingerprint, Keyring, Uid, ACL
 
 def usage():
-    print """Usage:
+    print("""Usage:
   dak acl set-fingerprints <acl-name>
   dak acl export-per-source <acl-name>
 
@@ -34,7 +36,7 @@ def usage():
 
   export-per-source:
     Export per source upload rights for ACL <acl-name>.
-"""
+""")
 
 def get_fingerprint(entry, session):
     """get fingerprint for given ACL entry
@@ -82,7 +84,7 @@ def acl_set_fingerprints(acl_name, entries):
 
         fps = get_fingerprint(entry, session)
         if len(fps) == 0:
-            print "Unknown key for '{0}'".format(entry)
+            print("Unknown key for '{0}'".format(entry))
         else:
             acl.fingerprints.update(fps)
 
@@ -112,10 +114,10 @@ def acl_export_per_source(acl_name):
       """
 
     for row in session.execute(query, {'acl_id': acl.id}):
-        print "Fingerprint:", row[0]
-        print "Uid:", row[1]
-        print "Allow:", row[2]
-        print
+        print("Fingerprint:", row[0])
+        print("Uid:", row[1])
+        print("Allow:", row[2])
+        print()
 
     session.rollback()
     session.close()

@@ -31,6 +31,8 @@ Display information about package(s) (suite, version, etc.)
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import apt_pkg
@@ -42,7 +44,7 @@ from daklib import utils
 ################################################################################
 
 def usage (exit_code=0):
-    print """Usage: dak ls [OPTION] PACKAGE[...]
+    print("""Usage: dak ls [OPTION] PACKAGE[...]
 Display information about PACKAGE(s).
 
   -a, --architecture=ARCH    only show info for ARCH(s)
@@ -57,7 +59,7 @@ Display information about PACKAGE(s).
   -f, --format=control-suite use same format as control-suite for output
 
 ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
-    --architecture=amd64,i386"""
+    --architecture=amd64,i386""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -123,7 +125,7 @@ def main ():
         kwargs['highest'] = '>>'
 
     for line in list_packages(packages, **kwargs):
-        print line
+        print(line)
 
 ######################################################################################
 
