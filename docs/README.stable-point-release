@@ -9,7 +9,7 @@ TRY THE NEW pointrelease SCRIPT INSTEAD!
 - sudo to dak
 - bash:
 suitename=jessie
-newrev=8.6
+newrev=8.7
 
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
@@ -99,11 +99,11 @@ fi
 # $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
 
 - and then check if they have a d-i update. if so, bash:
-diver=20150422+deb8u4+b1
+diver=20150422+deb8u4+b2
 dak copy-installer -s ${pusuite} -d ${suite} ${diver}
 
 # set dioldver to "empty" if there is no old to remove
-dioldver=20150422+deb8u4
+dioldver=20150422+deb8u4+b1
 if [ "${dioldver}" != "empty" ]; then
     cd $ftpdir/dists/${suite}/main
     for iarch in $(dak admin s-a list-arch ${suite}); do
@@ -209,6 +209,12 @@ while :; do
     fi
 done
 echo "Done"
+
+wget --ca-directory=/etc/ssl/ca-debian https://release.debian.org/proposed-updates/8/8.7/Release-${newrev}.gpg
+cat Release-${newrev}.gpg >> ${ftpdir}/dists/${suite}/Release.gpg
+cd ${ftpdir}/dists/${suite}
+gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
+
 
 - Check if a mirror push is needed or next dinstall is enough. for a push, bash:
 cd

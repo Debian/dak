@@ -42,7 +42,7 @@ suite="${1}"
 source="${ftpdir}/dists/${suite}"
 target="sync-release:/srv/ftp-master.debian.org/tmp-release/"
 
-rsync -aH -B8192 \
+rsync -avH --progress -B8192 \
   --exclude "/*/installer-*" \
   --timeout 3600 \
   -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
