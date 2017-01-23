@@ -24,16 +24,7 @@ Set up the dak user:
 # sudo adduser dak --disabled-login --ingroup ftpmaster --shell /bin/bash
 
 Create postgres roles and database:
-# sudo -u postgres psql
-  CREATE USER dak CREATEROLE;
-  CREATE ROLE ftpmaster WITH ROLE dak;
-  CREATE ROLE ftpteam WITH ROLE ftpmaster;
-  CREATE ROLE ftptrainee WITH ROLE ftpmaster, ftpteam;
-
-  CREATE DATABASE projectb WITH OWNER dak TEMPLATE template0 ENCODING 'SQL_ASCII';
-  \c projectb
-  CREATE EXTENSION IF NOT EXISTS plpgsql;
-  CREATE EXTENSION IF NOT EXISTS debversion;
+# sudo -u postgres ./init_db
 
 Set up the dak directory:
 # sudo mkdir /etc/dak
