@@ -29,6 +29,7 @@ httpd
 interpreters
 introspection
 java
+javascript
 kde
 kernel
 libdevel
@@ -48,6 +49,7 @@ perl
 php
 python
 ruby
+rust
 science
 shells
 sound
