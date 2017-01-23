@@ -9,7 +9,7 @@ psql <<EOT
   CREATE ROLE ftpteam WITH ROLE ftpmaster;
   CREATE ROLE ftptrainee WITH ROLE ftpmaster, ftpteam;
 
-  CREATE DATABASE projectb WITH OWNER dak TEMPLATE template0 ENCODING 'SQL_ASCII';
+  CREATE DATABASE projectb WITH OWNER dak TEMPLATE template0 ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C';
   \c projectb
   CREATE EXTENSION IF NOT EXISTS plpgsql;
   CREATE EXTENSION IF NOT EXISTS debversion;
