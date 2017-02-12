@@ -587,6 +587,7 @@ function mirrorpush() {
             esac
             mkdir -p ${webdir}/${pname}/project/trace/
             ln -sf ${mirrordir}/${archive}/project/trace/master ${webdir}/${pname}/project/trace/master
+            ln -sf ${mirrordir}/${archive}/project/trace/master ${webdir}/${pname}/project/trace/ftp-master
 
             date -u > ${webdir}/${fname}
             echo "Using dak v1" >> ${webdir}/${fname}
