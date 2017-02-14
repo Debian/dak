@@ -66,9 +66,10 @@ function mirrorlists() {
     cvs update
 
     if [[ ! -f ${ftpdir}/README.mirrors.html ]] || [[ ${masterlist} -nt ${ftpdir}/README.mirrors.html ]]; then
-	rm -f ${ftpdir}/README.mirrors.{html,txt}
-	${mldir}/mirror_list.pl -m ${masterlist} -t html > ${ftpdir}/README.mirrors.html
-	${mldir}/mirror_list.pl -m ${masterlist} -t text > ${ftpdir}/README.mirrors.txt
+	# TODO: Update mirror lists again.
+	#rm -f ${ftpdir}/README.mirrors.{html,txt}
+	#${mldir}/mirror_list.pl -m ${masterlist} -t html > ${ftpdir}/README.mirrors.html
+	#${mldir}/mirror_list.pl -m ${masterlist} -t text > ${ftpdir}/README.mirrors.txt
 	log Updated archive version of mirrors file
     fi
 }
