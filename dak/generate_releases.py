@@ -150,13 +150,6 @@ class ReleaseWriter(object):
         Absolute path where Release files are physically stored.
         This should be a path that sorts after the dists/ directory.
         """
-        # TODO: Eventually always create Release in `zzz-dists` to avoid
-        # special cases. However we don't want to move existing Release files
-        # for released suites.
-        # See `create_release_symlinks` below.
-        if not self.suite.byhash:
-            return self.suite_path()
-
         cnf = Config()
         suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
 
@@ -169,11 +162,6 @@ class ReleaseWriter(object):
         This creates the symlinks for Release files in the `suite_path`
         to the actual files in `suite_release_path`.
         """
-        # TODO: Eventually always create the links.
-        # See `suite_release_path` above.
-        if not self.suite.byhash:
-            return
-
         relpath = os.path.relpath(self.suite_release_path(), self.suite_path())
         for f in ("Release", "Release.gpg", "InRelease"):
             source = os.path.join(relpath, f)
