@@ -35,9 +35,26 @@ class GpgTest(DakTestCase):
     def test_valid(self):
         result = verify('gpg/valid.asc')
         self.assertTrue(result.valid)
+        self.assertFalse(result.weak_signature)
         self.assertEqual(result.primary_fingerprint, fpr_valid)
         self.assertEqual(result.contents, "Valid: yes\n")
         self.assertEqual(result.signature_timestamp, datetime.datetime(2014, 9, 2, 21, 24, 10))
+
+    def test_weak_sha1(self):
+        result = verify('gpg/sha1.asc')
+        self.assertTrue(result.valid)
+        self.assertTrue(result.weak_signature)
+        self.assertEqual(result.primary_fingerprint, fpr_valid)
+        self.assertEqual(result.contents, "Message generated with gpg --homedir gnupghome --digest-algo=sha1 --clearsign\n")
+        self.assertEqual(result.signature_timestamp, datetime.datetime(2017, 2, 22, 18, 59, 59))
+
+    def test_weak_ripemd160(self):
+        result = verify('gpg/ripemd160.asc')
+        self.assertTrue(result.valid)
+        self.assertTrue(result.weak_signature)
+        self.assertEqual(result.primary_fingerprint, fpr_valid)
+        self.assertEqual(result.contents, "Message generated with gpg --homedir gnupghome --digest-algo=ripemd160 --clearsign\n")
+        self.assertEqual(result.signature_timestamp, datetime.datetime(2017, 2, 22, 19, 2, 54))
 
     def test_expired(self):
         result = verify('gpg/expired.asc', False)

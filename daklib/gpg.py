@@ -64,6 +64,7 @@ class SignedFile(object):
     The following attributes are available:
       contents            - string with the content (after removing PGP armor)
       valid               - Boolean indicating a valid signature was found
+      weak_signature      - signature uses a weak algorithm (e.g. SHA-1)
       fingerprint         - fingerprint of the key used for signing
       primary_fingerprint - fingerprint of the primary key associated to the key used for signing
     """
@@ -80,6 +81,7 @@ class SignedFile(object):
         self.valid = False
         self.expired = False
         self.invalid = False
+        self.weak_signature = False
         self.fingerprints = []
         self.primary_fingerprints = []
         self.signature_ids = []
@@ -199,8 +201,15 @@ class SignedFile(object):
             # GnuPG accepted MD5 as a hash algorithm until gnupg 1.4.20,
             # which Debian 8 does not yet include.  We want to make sure
             # to not accept uploads covered by a MD5-based signature.
+            # RFC 4880, table 9.4:
+            #   1 - MD5
+            #   2 - SHA-1
+            #   3 - RIPE-MD/160
             if fields[9] == "1":
                 raise GpgException("Digest algorithm MD5 is not trusted.")
+            if fields[9] in ("2", "3"):
+                self.weak_signature = True
+
             self.valid = True
             self.fingerprints.append(fields[2])
             self.primary_fingerprints.append(fields[11])
