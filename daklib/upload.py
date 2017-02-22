@@ -302,6 +302,13 @@ class Changes(object):
         return self.signature.valid
 
     @property
+    def weak_signature(self):
+        """C{True} if the .changes was signed using a weak algorithm
+        @type: bool
+        """
+        return self.signature.weak_signature
+
+    @property
     def signature_timestamp(self):
         return self.signature.signature_timestamp
 
@@ -574,6 +581,13 @@ class Source(object):
         @type: bool
         """
         return self.signature.valid
+
+    @property
+    def weak_signature(self):
+        """C{True} if the .dsc was signed using a weak algorithm
+        @type: bool
+        """
+        return self.signature.weak_signature
 
     @property
     def component(self):
