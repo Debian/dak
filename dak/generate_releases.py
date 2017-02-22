@@ -150,13 +150,6 @@ class ReleaseWriter(object):
         Absolute path where Release files are physically stored.
         This should be a path that sorts after the dists/ directory.
         """
-        # TODO: Eventually always create Release in `zzz-dists` to avoid
-        # special cases. However we don't want to move existing Release files
-        # for released suites.
-        # See `create_release_symlinks` below.
-        if not self.suite.byhash:
-            return self.suite_path()
-
         cnf = Config()
         suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
 
@@ -169,11 +162,6 @@ class ReleaseWriter(object):
         This creates the symlinks for Release files in the `suite_path`
         to the actual files in `suite_release_path`.
         """
-        # TODO: Eventually always create the links.
-        # See `suite_release_path` above.
-        if not self.suite.byhash:
-            return
-
         relpath = os.path.relpath(self.suite_release_path(), self.suite_path())
         for f in ("Release", "Release.gpg", "InRelease"):
             source = os.path.join(relpath, f)
@@ -202,37 +190,36 @@ class ReleaseWriter(object):
             WHERE suite_id = :id AND unreferenced IS NULL"""
         session.execute(query, {'id': self.suite.suite_id})
 
-        if self.suite.byhash:
-            query = "SELECT path FROM hashfile WHERE suite_id = :id"
-            q = session.execute(query, {'id': self.suite.suite_id})
-            known_hashfiles = set(row[0] for row in q)
-            updated = set()
-            new = set()
+        query = "SELECT path FROM hashfile WHERE suite_id = :id"
+        q = session.execute(query, {'id': self.suite.suite_id})
+        known_hashfiles = set(row[0] for row in q)
+        updated = set()
+        new = set()
 
-            # Update the hashfile table with new or updated files
-            for filename in fileinfo:
-                if not os.path.exists(filename):
-                    # probably an uncompressed index we didn't generate
-                    continue
-                byhashdir = os.path.join(os.path.dirname(filename), 'by-hash')
-                for h in hashes:
-                    field = h.release_field
-                    hashfile = os.path.join(byhashdir, field, fileinfo[filename][field])
-                    if hashfile in known_hashfiles:
-                        updated.add(hashfile)
-                    else:
-                        new.add(hashfile)
+        # Update the hashfile table with new or updated files
+        for filename in fileinfo:
+            if not os.path.exists(filename):
+                # probably an uncompressed index we didn't generate
+                continue
+            byhashdir = os.path.join(os.path.dirname(filename), 'by-hash')
+            for h in hashes:
+                field = h.release_field
+                hashfile = os.path.join(byhashdir, field, fileinfo[filename][field])
+                if hashfile in known_hashfiles:
+                    updated.add(hashfile)
+                else:
+                    new.add(hashfile)
 
-            if updated:
-                session.execute("""
-                    UPDATE hashfile SET unreferenced = NULL
-                    WHERE path = ANY(:p) AND suite_id = :id""",
-                    {'p': list(updated), 'id': self.suite.suite_id})
-            if new:
-                session.execute("""
-                    INSERT INTO hashfile (path, suite_id)
-                    VALUES (:p, :id)""",
-                    [{'p': hashfile, 'id': self.suite.suite_id} for hashfile in new])
+        if updated:
+            session.execute("""
+                UPDATE hashfile SET unreferenced = NULL
+                WHERE path = ANY(:p) AND suite_id = :id""",
+                {'p': list(updated), 'id': self.suite.suite_id})
+        if new:
+            session.execute("""
+                INSERT INTO hashfile (path, suite_id)
+                VALUES (:p, :id)""",
+                [{'p': hashfile, 'id': self.suite.suite_id} for hashfile in new])
 
         session.commit()
 
@@ -426,8 +413,7 @@ class ReleaseWriter(object):
         os.rename(outfile + '.new', outfile)
 
         self._update_hashfile_table(session, fileinfo, hashes)
-        if suite.byhash:
-            self._make_byhash_links(fileinfo, hashes)
+        self._make_byhash_links(fileinfo, hashes)
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
