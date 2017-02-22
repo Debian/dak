@@ -268,8 +268,8 @@ class Changes(object):
         """
 
         data = open(self.path).read()
-        self._signed_file = SignedFile(data, keyrings, require_signature)
-        self.changes = apt_pkg.TagSection(self._signed_file.contents)
+        self.signature = SignedFile(data, keyrings, require_signature)
+        self.changes = apt_pkg.TagSection(self.signature.contents)
         """dict to access fields of the .changes file
         @type: dict-like
         """
@@ -292,22 +292,22 @@ class Changes(object):
         """fingerprint of the key used for signing the .changes file
         @type: str
         """
-        return self._signed_file.primary_fingerprint
+        return self.signature.primary_fingerprint
 
     @property
     def valid_signature(self):
         """C{True} if the .changes has a valid signature
         @type: bool
         """
-        return self._signed_file.valid
+        return self.signature.valid
 
     @property
     def signature_timestamp(self):
-        return self._signed_file.signature_timestamp
+        return self.signature.signature_timestamp
 
     @property
     def contents_sha1(self):
-        return self._signed_file.contents_sha1
+        return self.signature.contents_sha1
 
     @property
     def architectures(self):
@@ -531,8 +531,8 @@ class Source(object):
 
         dsc_file_path = os.path.join(directory, self._dsc_file.input_filename)
         data = open(dsc_file_path, 'r').read()
-        self._signed_file = SignedFile(data, keyrings, require_signature)
-        self.dsc = apt_pkg.TagSection(self._signed_file.contents)
+        self.signature = SignedFile(data, keyrings, require_signature)
+        self.dsc = apt_pkg.TagSection(self.signature.contents)
         """dict to access fields in the .dsc file
         @type: dict-like
         """
@@ -566,14 +566,14 @@ class Source(object):
         """fingerprint of the key used to sign the .dsc
         @type: str
         """
-        return self._signed_file.primary_fingerprint
+        return self.signature.primary_fingerprint
 
     @property
     def valid_signature(self):
         """C{True} if the .dsc has a valid signature
         @type: bool
         """
-        return self._signed_file.valid
+        return self.signature.valid
 
     @property
     def component(self):
