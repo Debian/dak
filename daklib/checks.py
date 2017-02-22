@@ -168,6 +168,20 @@ class SignatureAndHashesCheck(Check):
         except daklib.upload.UploadException as e:
             raise Reject('{0}: {1}'.format(filename, unicode(e)))
 
+class WeakSignatureCheck(Check):
+    """Check that .changes and .dsc are not signed using a weak algorithm"""
+    def check(self, upload):
+        changes = upload.changes
+        if changes.weak_signature:
+            raise Reject("The .changes was signed using a weak algorithm (such as SHA-1)")
+
+        source = changes.source
+        if source is not None:
+            if source.weak_signature:
+                raise Reject("The source package was signed using a weak algorithm (such as SHA-1)")
+
+        return True
+
 class SignatureTimestampCheck(Check):
     """Check timestamp of .changes signature"""
     def check(self, upload):
