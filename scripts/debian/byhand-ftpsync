@@ -1,0 +1,83 @@
+#! /bin/bash
+#
+# byhand-debian-faq - automatic BYHAND handling for debian-faq
+#
+# This file is part of dak.
+#
+# Copyright 2017, Joerg Jaspert <joerg@debian.org>
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+set -e
+set -u
+
+export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
+. ${SCRIPTVARS}
+
+scriptname=byhand-ftpsync
+
+if [ $# -lt 5 ]; then
+    echo "usage: ${scriptname} <byhand-file> <version> <arch> <changes-file> <suite>" >&2
+    exit 1
+fi
+
+byhand_path="${1}"
+byhand_file="${byhand_path##*/}"
+version="${2}"
+architecture="${3}"
+changes="${4}"
+suite="${5}"
+GNUPGHOME="${base}/s3kr1t/dot-gnupg"
+
+case "${suite}" in
+    unstable|sid)
+        : # okay
+        ;;
+    *)
+        echo "$0: not targeted at unstable" >&2
+        exit 1
+        ;;
+esac
+
+# Check validity of version number
+# Expected: YYYYMMDD
+if ! echo "$VERSION" | grep -Eq "^[0-9]{8}$"; then
+	error "Invalid version: '$VERSION'"
+fi
+
+if [[ ! "${byhand_file}" =~ ^ftpsync-20[0-9]{6}.tar.gz$ ]]; then
+    echo "$0: unknown file '${byhand_file}'" >&2
+    exit 1
+fi
+
+target="${ftpdir}/project/ftpsync/"
+if [ ! -d "${target}" ]; then
+    mkdir -p "${target}"
+fi
+
+# Use --remove-destination to avoid problems with the fact that the target may
+# be a hardlink and in that case we'd update multiple suites together
+cp --remove-destination "${byhand_path}" "${target}"
+cd ${target}
+chmod 0644 "${byhand_file}"
+ln -sf ${target} ftpsync-current.tar.gz
+echo ${version} > LATEST.VERSION
+
+for csum in md5sum sha512sum; do
+    /usr/bin/${csum} * | grep -v 'sum' > ${csum}
+    SIGNINGKEY=2B90D010
+    GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/${csum}.txt" "${TARGET}/${csum}"
+    mv "${TARGET}/${csum}.txt" "${TARGET}/${csum}"
+done
