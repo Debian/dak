@@ -52,28 +52,6 @@ function qa1() {
     ssh -n -2 -i ~dak/.ssh/push_merkel_qa  -o BatchMode=yes -o SetupTimeOut=90 -o ConnectTimeout=90 qa@qa.debian.org sleep 1
 }
 
-function mirrorlists() {
-    local mldir="${scriptdir}/mirrorlist"
-    local masterlist=${mldir}/Mirrors.masterlist
-
-    cd ${mldir}
-
-    [[ -f ${HOME}/.cvspass ]] || touch ${HOME}/.cvspass
-
-    grep -q "anonscm.debian.org:/cvs/webwml" ~/.cvspass || \
-	echo ":pserver:anonymous@anonscm.debian.org:/cvs/webwml A" >> ${HOME}/.cvspass
-
-    cvs update
-
-    if [[ ! -f ${ftpdir}/README.mirrors.html ]] || [[ ${masterlist} -nt ${ftpdir}/README.mirrors.html ]]; then
-	# TODO: Update mirror lists again.
-	#rm -f ${ftpdir}/README.mirrors.{html,txt}
-	#${mldir}/mirror_list.pl -m ${masterlist} -t html > ${ftpdir}/README.mirrors.html
-	#${mldir}/mirror_list.pl -m ${masterlist} -t text > ${ftpdir}/README.mirrors.txt
-	log Updated archive version of mirrors file
-    fi
-}
-
 function mailingliststxt() {
     cd ${ftpdir}/doc
 
