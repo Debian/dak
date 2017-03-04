@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# byhand-debian-faq - automatic BYHAND handling for debian-faq
+# byhand-ftpsync - automatic BYHAND handling for ftpsync
 #
 # This file is part of dak.
 #
