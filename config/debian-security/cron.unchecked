@@ -85,6 +85,11 @@ dak update-suite stable stable-kfreebsd
 
 # manage build queues
 dak manage-build-queues -a
+
+# clean policy and build queues to remove files from rejected uploads
+dak clean-suites -a new,policy,build-queues
+
+# publish updates build queues
 dak generate-packages-sources2 -a build-queues
 dak generate-releases -a build-queues >/dev/null
 ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
