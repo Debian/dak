@@ -380,7 +380,8 @@ def main():
     if not suites:
         query = session.query(Suite.suite_name)
         if Options.get('Archive'):
-            query = query.join(Suite.archive).filter(Archive.archive_name == Options['Archive'])
+            archives = [a.strip() for a in Options['Archive'].split(',')]
+            query = query.join(Suite.archive).filter(Archive.archive_name.in_(archives))
         suites = [ s.suite_name for s in query ]
 
     for suitename in suites:
