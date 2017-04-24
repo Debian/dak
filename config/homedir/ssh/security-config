@@ -1,0 +1,21 @@
+# Please edit the master copy in dak.git!
+#   path: config/homedir/ssh/security-config
+
+ConnectTimeout 30
+ServerAliveInterval 30
+ForwardX11 no
+ForwardAgent no
+StrictHostKeyChecking yes
+PasswordAuthentication no
+BatchMode yes
+
+Host buildd
+  IdentityFile ~/.ssh/id_buildd
+  ControlMaster auto
+  ControlPath ~/.ssh/socket-buildd.debian.org
+  ControlPersist 60
+
+Host morgue-sync
+  Hostname stabile.debian.org
+  User dak
+  IdentityFile /srv/security-master.debian.org/s3kr1t/push_morgue

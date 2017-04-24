@@ -32,13 +32,6 @@ for dist in $DISTS; do
 done
 
 if [ ! -z "${dists}" ]; then
-    # setup ssh master process
-    ssh wbadm@buildd -S $SSH_SOCKET -MN 2> /dev/null &
-    SSH_PID=$!
-    while [ ! -S $SSH_SOCKET ]; do
-        sleep 1
-    done
-    trap 'kill -TERM $SSH_PID' 0
     for d in ${dists}; do
         case ${d} in
             oldoldstable)
