@@ -8,7 +8,6 @@ set -u
 
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
-SSH_SOCKET=~/.ssh/buildd.debian.org.socket
 DISTS="oldstable stable stable-kfreebsd testing"
 
 if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
@@ -54,6 +53,6 @@ if [ ! -z "${dists}" ]; then
                 ;;
         esac
 
-        ssh wbadm@buildd -S $SSH_SOCKET trigger.security $send
+        ssh wbadm@buildd trigger.security $send
     done
 fi
