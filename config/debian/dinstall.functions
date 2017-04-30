@@ -157,6 +157,7 @@ function autocruft() {
     log "Check for obsolete binary packages"
     dak auto-decruft -s unstable
     dak auto-decruft -s experimental --if-newer-version-in unstable --if-newer-version-in-rm-msg "NVIU"
+    dak auto-decruft -s testing-proposed-updates --if-newer-version-in testing --if-newer-version-in-rm-msg "NVIT" --decruft-equal-versions
 }
 
 function fingerprints() {
