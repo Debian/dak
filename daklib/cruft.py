@@ -26,7 +26,7 @@ from daklib.dbconn import *
 from sqlalchemy import func
 from sqlalchemy.orm import object_session
 
-def newer_version(lowersuite_name, highersuite_name, session):
+def newer_version(lowersuite_name, highersuite_name, session, include_equal=False):
     '''
     Finds newer versions in lowersuite_name than in highersuite_name. Returns a
     list of tuples (source, higherversion, lowerversion) where higherversion is
@@ -42,9 +42,13 @@ def newer_version(lowersuite_name, highersuite_name, session):
 
     list = []
     for (source, higherversion) in query:
-        lowerversion = session.query(func.max(DBSource.version)). \
-            filter_by(source = source).filter(DBSource.version > higherversion). \
-            with_parent(lowersuite).group_by(DBSource.source).scalar()
+        q = session.query(func.max(DBSource.version)). \
+            filter_by(source = source)
+        if include_equal:
+            q = q.filter(DBSource.version >= higherversion)
+        else:
+            q = q.filter(DBSource.version > higherversion)
+        lowerversion = q.with_parent(lowersuite).group_by(DBSource.source).scalar()
         if lowerversion is not None:
             list.append((source, higherversion, lowerversion))
 

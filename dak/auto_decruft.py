@@ -59,6 +59,8 @@ Automatic removal of common kinds of cruft
                             unstable)
   --if-newer-version-in-rm-msg RMMSG
                             use RMMSG in the removal message (e.g. "NVIU")
+  --decruft-equal-versions  use with --if-newer-version-in to also decruft versions
+                            that are identical in both suites.
   """
     sys.exit(exit_code)
 
@@ -374,7 +376,7 @@ def sources2removals(source_list, suite_id, session):
     return to_remove
 
 
-def decruft_newer_version_in(othersuite, suite_name, suite_id, rm_msg, session, dryrun):
+def decruft_newer_version_in(othersuite, suite_name, suite_id, rm_msg, session, dryrun, decruft_equal_versions):
     """Compute removals items given a list of names of source packages
 
     @type othersuite: str
@@ -394,8 +396,11 @@ def decruft_newer_version_in(othersuite, suite_name, suite_id, rm_msg, session, 
 
     @type dryrun: bool
     @param dryrun: If True, just print the actions rather than actually doing them
+
+    @type decruft_equal_versions: bool
+    @param decruft_equal_versions: If True, use >= instead of > for finding decruftable packages.
     """
-    nvi_list = [x[0] for x in newer_version(othersuite, suite_name, session)]
+    nvi_list = [x[0] for x in newer_version(othersuite, suite_name, session, include_equal=decruft_equal_versions)]
     if nvi_list:
         message = "[auto-cruft] %s" % rm_msg
         if dryrun:
@@ -416,8 +421,10 @@ def main ():
                  ('s',"suite","Auto-Decruft::Options::Suite","HasArg"),
                  # The "\0" seems to be the only way to disable short options.
                  ("\0",'if-newer-version-in',"Auto-Decruft::Options::OtherSuite", "HasArg"),
-                 ("\0",'if-newer-version-in-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg")]
-    for i in ["help", "Dry-Run", "Debug", "OtherSuite", "OtherSuiteRMMsg"]:
+                 ("\0",'if-newer-version-in-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg"),
+                 ("\0",'decruft-equal-versions',"Auto-Decruft::Options::OtherSuiteDecruftEqual")
+                ]
+    for i in ["help", "Dry-Run", "Debug", "OtherSuite", "OtherSuiteRMMsg", "OtherSuiteDecruftEqual"]:
         if not cnf.has_key("Auto-Decruft::Options::%s" % (i)):
             cnf["Auto-Decruft::Options::%s" % (i)] = ""
 
@@ -431,10 +438,13 @@ def main ():
 
     debug = False
     dryrun = False
+    decruft_equal_versions = False
     if Options["Dry-Run"]:
         dryrun = True
     if Options["Debug"]:
         debug = True
+    if Options["OtherSuiteDecruftEqual"]:
+        decruft_equal_versions = True
 
     if Options["OtherSuite"] and not Options["OtherSuiteRMMsg"]:
         utils.fubar("--if-newer-version-in requires --if-newer-version-in-rm-msg")
@@ -452,7 +462,7 @@ def main ():
 
     if Options["OtherSuite"]:
         osuite = get_suite(Options["OtherSuite"].lower(), session).suite_name
-        decruft_newer_version_in(osuite, suite_name, suite_id, Options["OtherSuiteRMMsg"], session, dryrun)
+        decruft_newer_version_in(osuite, suite_name, suite_id, Options["OtherSuiteRMMsg"], session, dryrun, decruft_equal_versions)
 
     if not dryrun:
         session.commit()
