@@ -166,12 +166,13 @@ class ReleaseWriter(object):
         for f in ("Release", "Release.gpg", "InRelease"):
             source = os.path.join(relpath, f)
             dest = os.path.join(self.suite_path(), f)
-            if not os.path.islink(dest):
-                os.unlink(dest)
-            elif os.readlink(dest) == source:
-                continue
-            else:
-                os.unlink(dest)
+            if os.path.lexists(dest):
+                if not os.path.islink(dest):
+                    os.unlink(dest)
+                elif os.readlink(dest) == source:
+                    continue
+                else:
+                    os.unlink(dest)
             os.symlink(source, dest)
 
     def create_output_directories(self):
