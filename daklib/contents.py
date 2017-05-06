@@ -180,7 +180,7 @@ select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
     from newest_sources s, src_contents sc
     where s.id = sc.source_id group by sc.file''')
 
-        return self.session.query("file", "pkglist").from_statement(sql). \
+        return self.session.query("file", "pkglist").from_statement(query). \
             params(params)
 
     def formatline(self, filename, package_list):
