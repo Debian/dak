@@ -57,6 +57,13 @@ function usage() {
     echo "Default for suite is jessie, version defaults to last plus one"
 }
 
+confirm() {
+    local y=N
+    while [ "${y}" != "y" ]; do
+        read -p "Continue [y/N]?" y
+    done
+}
+
 # Arguments, we like
 while getopts ":hs:v:" OPTION; do
     case ${OPTION} in
@@ -113,6 +120,7 @@ dak control-suite -l ${suite} > ${suite}.list
 
 echo "Is there anything to skip in this release? If so, please enter source package names, whitespace seperated, if not just hit enter"
 read -e -p "Source packages: " skiplist
+confirm
 if [[ -n ${skiplist} ]]; then
   mv ${pusuite}.list ${pusuite}.list.ori
   grep -vFf <(dak ls -f heidi -S -s ${pusuite} ${skip}) ${pusuite}.list.ori > ${pusuite}.list
@@ -125,6 +133,7 @@ chmod 0644 ${tmpfile}
 mv ${tmpfile} ${ftpdir}/dists/${suite}/ChangeLog
 if [[ -n ${skiplist} ]]; then
     echo "Please edit to remove the changelogs for the skipped packages"
+    confirm
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
     rm -f ${ftpdir}/dists/${suite}/ChangeLog~
 fi
@@ -145,17 +154,27 @@ fi
 
 log "Checking for r0 additions and propups"
 cd ~/${suitename}_${newrev}
-if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs ]]; then
-    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/${suitename}-r0-additions.cs .
-    dak control-suite --add ${suitename}-r0 < ${suitename}-r0-additions.cs
+release_base=https://release.debian.org/${suitename}/${newrev%%.*}/${newrev}
+
+f=${suitename}-r0-additions.cs
+if wget -O "${f}" "${release_base}/${f}"; then
+    echo "Please check ${f}"
+    confirm
+    dak control-suite --add ${suitename}-r0 < ${f}
 fi
-if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.unstable ]]; then
-    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.unstable .
-    dak control-suite --force --add unstable <propups.unstable
+
+f=propups.unstable
+if wget -O "${f}" "${release_base}/${f}"; then
+    echo "Please check ${f}"
+    confirm
+    dak control-suite --force --add unstable < ${f}
 fi
-if [[ -f /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.testing ]]; then
-    cp /srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/propups.testing .
-    dak control-suite --force --add testing <propups.testing
+
+f=propups.testing
+if wget -O "${f}" "${release_base}/${f}"; then
+    echo "Please check ${f}"
+    confirm
+    dak control-suite --force --add testing < ${f}
 fi
 
 log "RM time"
@@ -177,6 +196,7 @@ done
 
 if [[ ${hadrms} -ne 0 ]]; then
     echo "You did some removals, please copy their entries into the changelog"
+    confirm
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
 fi
 
@@ -184,6 +204,7 @@ log "Checking for d-i updates"
 echo "Are there d-i updates? Empty version string, if not."
 echo "Seperate old version to move to morgue by space."
 read -e -p "d-i updates: " diver dioldver
+confirm
 
 if [[ -n ${diver} ]]; then
     log "Installing new d-i version ${diver}"
@@ -295,19 +316,14 @@ log "Release file generated, waiting for RMs checking and (hopefully) signing"
 
 # Remove InRelease: Release can be signed by both ftpmaster & stable release keys
 rm ${ftpdir}/dists/${suite}/InRelease
-cd ${ftpdir}/dists/${suite}
-releasefile=/srv/release.debian.org/www/${suitename}/${newrev%%.*}/${newrev}/Release-${newrev}.gpg
-while :; do
-    if [[ -f ${releasefile} ]]; then
-        cat ${releasefile} >> Release.gpg
-        gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
-        break
-    else
-        echo -n "."
-        sleep 10
-        continue
-    fi
+releasefile=Release-${newrev}.gpg
+cd ~/${suitename}_${newrev}
+while ! wget -O "${releasefile}" "${release_base}/${releasefile}"; do
+    sleep 10
 done
+cd ${ftpdir}/dists/${suite}
+cat ~/${suitename}_${newrev}/${releasefile} >> Release.gpg
+gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
 echo "Done. Is a mirrorpush needed? Or just one to the cd-builder?"
 read -e -p "Mirrorpush? no/cd/yes" -i "cd" mirrorpush
 
