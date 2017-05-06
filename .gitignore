@@ -1,5 +1,7 @@
 *.pyc
 *~
+.coverage
+cover/
 web/epydoc/
 web/d-i
 web/deferred.html

@@ -5,5 +5,5 @@
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	tests/test_all.py
+	pytest -v
 endif

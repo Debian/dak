@@ -7,6 +7,7 @@ Build-Depends: python-all-dev,
                python-debianbts,
                python-ldap,
                python-psycopg2,
+               python-pytest,
                python-rrdtool,
                python-sqlalchemy (<< 1.0),
                python-yaml

@@ -7,7 +7,7 @@ from daklib.dakmultiprocessing import DakProcessPool, \
                                       PROC_STATUS_EXCEPTION, PROC_STATUS_SIGNALRAISED
 import signal
 
-def test_function(num, num2):
+def async_function(num, num2):
     from os import kill, getpid
 
     if num == 1:
@@ -34,7 +34,7 @@ class DakProcessPoolTestCase(DakTestCase):
         p = DakProcessPool()
         for s in range(3):
             for j in range(4):
-                p.apply_async(test_function, [s, j])
+                p.apply_async(async_function, [s, j])
 
         p.close()
         p.join()
