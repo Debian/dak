@@ -305,14 +305,20 @@ fi
 
 log "Time to run gps/contents, RMs can check if all looks ok"
 dak generate-packages-sources2 --force -s ${suite},${pusuite}
+${scriptsdir}/sync-release ${suitename} &
 log "Contents"
 dak contents generate -f -s ${suite} -a ftp-master
+wait
+${scriptsdir}/sync-release ${suitename}
 
 if [[ ${suitename} == wheezy ]]; then
   ${scriptsdir}/generate-i18n-Index "${ftpdir}/dists/${suite}"
 fi
 
+echo "Generate release files?"
+confirm
 dak generate-releases -f -s ${suite} ${pusuite}
+${scriptsdir}/sync-release ${suitename}
 
 log "Release file generated, waiting for RMs checking and (hopefully) signing"
 
