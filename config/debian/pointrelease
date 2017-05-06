@@ -98,6 +98,8 @@ case "${suite}" in
   *)         pusuite=INVALID ;;
 esac
 
+wget="wget --ca-directory=/etc/ssl/ca-debian"
+
 # set DEBUG if you want to see a little more logs
 DEBUG=${DEBUG:-0}
 
@@ -157,21 +159,21 @@ cd ~/${suitename}_${newrev}
 release_base=https://release.debian.org/${suitename}/${newrev%%.*}/${newrev}
 
 f=${suitename}-r0-additions.cs
-if wget -O "${f}" "${release_base}/${f}"; then
+if ${wget} -O "${f}" "${release_base}/${f}"; then
     echo "Please check ${f}"
     confirm
     dak control-suite --add ${suitename}-r0 < ${f}
 fi
 
 f=propups.unstable
-if wget -O "${f}" "${release_base}/${f}"; then
+if ${wget} -O "${f}" "${release_base}/${f}"; then
     echo "Please check ${f}"
     confirm
     dak control-suite --force --add unstable < ${f}
 fi
 
 f=propups.testing
-if wget -O "${f}" "${release_base}/${f}"; then
+if ${wget} -O "${f}" "${release_base}/${f}"; then
     echo "Please check ${f}"
     confirm
     dak control-suite --force --add testing < ${f}
@@ -318,7 +320,7 @@ log "Release file generated, waiting for RMs checking and (hopefully) signing"
 rm ${ftpdir}/dists/${suite}/InRelease
 releasefile=Release-${newrev}.gpg
 cd ~/${suitename}_${newrev}
-while ! wget -O "${releasefile}" "${release_base}/${releasefile}"; do
+while ! ${wget} -O "${releasefile}" "${release_base}/${releasefile}"; do
     sleep 10
 done
 cd ${ftpdir}/dists/${suite}
