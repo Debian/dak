@@ -38,15 +38,14 @@ if [ $# -ne 1 ]; then
 fi
 
 suite="${1}"
-
-source="${ftpdir}/dists/${suite}"
 target="sync-release:/srv/ftp-master.debian.org/tmp-release/"
 
 rsync -avH --progress -B8192 \
-  --exclude "/*/installer-*" \
+  --relative \
+  --exclude "/dists/${suite}/main/installer-*" \
   --timeout 3600 \
   -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-  "${source}" "${target}"
+  "${ftpdir}/./dists/${suite}/" "${ftpdir}/./zzz-dists/${suite}/" "${target}"
 
 # command for the remote side:
-# rsync --server -lHogDtpre.iLsfx -B8192 --timeout=3600 . /srv/ftp-master.debian.org/tmp-release/
+# rsync --server -lHogDtprRe.iLsfx -B8192 --timeout=3600 . /srv/ftp-master.debian.org/tmp-release/
