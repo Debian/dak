@@ -338,7 +338,7 @@ cd ${ftpdir}/dists/${suite}
 cat ~/${suitename}_${newrev}/${releasefile} >> Release.gpg
 gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
 echo "Done. Is a mirrorpush needed? Or just one to the cd-builder?"
-read -e -p "Mirrorpush? no/cd/yes" -i "cd" mirrorpush
+read -e -p "Mirrorpush? no/cd/yes " -i "cd" mirrorpush
 
 case ${mirrorpush} in
     no)
