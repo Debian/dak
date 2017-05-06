@@ -144,6 +144,7 @@ if [[ -n ${skiplist} ]]; then
     rm -f ${ftpdir}/dists/${suite}/ChangeLog~
 fi
 
+log "Merging ${pusuite} into ${suite}"
 dak control-suite --add ${suite} < ${pusuite}.list
 dak control-suite --remove ${pusuite} < ${pusuite}.list
 
@@ -154,7 +155,7 @@ cd ${ftpdir}/dists/${pusuite}
 mv -t "${pumorguedir}" -n -- *.changes
 if [[ -n ${skiplist} ]]; then
     for pack in ${skiplist}; do
-        mv -t "${ftpdir}/dists/${pusuite}" ${pumorguedir}/${pack}*.changes
+        mv -t "${ftpdir}/dists/${pusuite}" ${pumorguedir}/${pack}_*.changes
     done
 fi
 
@@ -192,7 +193,7 @@ hadrms=0
 while :; do
     read -e -p "RM command: " -i "dak rm -s ${suite} -R -p -d ### -m '###' ###" dakrmcmd
     if [[ -n ${dakrmcmd} ]]; then
-        ${dakrmcmd}
+        eval "${dakrmcmd}"
         hadrms=1
         continue
     else
@@ -261,7 +262,7 @@ sed -e "s/Debian ${oldrev}/Debian ${newrev}/g; /Debian ${newrev}/ s/released .*\
 
 echo "Now check if it looks good"
 for f in README README.html dists/README dists/${suite}/ChangeLog; do
-  diff -u ${mirrordir}/ftp-master/${f} ${ftpdir}/${f}
+  diff -u ${mirrordir}/ftp-master/${f} ${ftpdir}/${f} || :
 done
 read -e -p "Does the diff look ok? Enter anything if not, empty if yes" diffcheck
 if [[ -n ${diffcheck} ]]; then
@@ -327,7 +328,7 @@ ${scriptsdir}/sync-release ${suitename}
 log "Release file generated, waiting for RMs checking and (hopefully) signing"
 
 # Remove InRelease: Release can be signed by both ftpmaster & stable release keys
-rm ${ftpdir}/dists/${suite}/InRelease
+rm ${ftpdir}/dists/${suite}/InRelease ${ftpdir}/zzz-dists/${suite}/InRelease
 releasefile=Release-${newrev}.gpg
 cd ~/${suitename}_${newrev}
 while ! ${wget} -O "${releasefile}" "${release_base}/${releasefile}"; do
