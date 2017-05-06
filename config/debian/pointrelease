@@ -49,6 +49,10 @@ export SCRIPTVARS=${configdir}/vars
 umask 022
 
 # Get rid of tempfiles at the end
+cleanup() {
+    echo "You have to clean up your mess on your own. Sorry." >&2
+    exit 1
+}
 trap cleanup EXIT TERM HUP INT QUIT
 
 function usage() {
