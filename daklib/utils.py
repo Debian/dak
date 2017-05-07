@@ -143,7 +143,7 @@ def our_raw_input(prompt=""):
 
 ################################################################################
 
-def extract_component_from_section(section, session=None):
+def extract_component_from_section(section):
     component = ""
 
     if section.find('/') != -1:

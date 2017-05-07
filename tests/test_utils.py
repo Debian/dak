@@ -21,7 +21,8 @@ import unittest
 from base_test import DakTestCase
 
 from daklib.utils import (arch_compare_sw, is_in_debug_section,
-                          parse_built_using)
+                          parse_built_using,
+                          extract_component_from_section)
 
 apt_pkg.init()
 
@@ -94,6 +95,20 @@ class UtilsTest(DakTestCase):
         }
         self.assertEqual(parse_built_using(ctrl), expected)
         self.assertEqual(parse_built_using({}), [])
+
+    def test_extract_component_from_section(self):
+        data = [
+            # Argument is passed through as first return value. There
+            # is a comment in docs/TODO.old suggesting that it should
+            # be changed.
+            ('utils', ('utils', 'main')),
+            ('main/utils', ('main/utils', 'main')),
+            ('non-free/libs', ('non-free/libs', 'non-free')),
+            ('contrib/net', ('contrib/net', 'contrib')),
+            ('non-free/two/slashes', ('non-free/two/slashes', 'non-free'))
+        ]
+        for v, r in data:
+            self.assertEqual(extract_component_from_section(v), r)
 
 
 if __name__ == '__main__':
