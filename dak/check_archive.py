@@ -402,7 +402,7 @@ def validate_sources(suite, component):
                 if directory.find("potato") == -1:
                     print "W: %s missing." % (filename)
                 else:
-                    pool_location = utils.poolify (source, component)
+                    pool_location = utils.poolify(source)
                     pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
                     if not os.path.exists(pool_filename):
                         print "E: %s missing (%s)." % (filename, pool_filename)

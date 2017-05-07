@@ -504,7 +504,7 @@ def send_mail (message, filename="", whitelists=None):
 
 ################################################################################
 
-def poolify (source, component=None):
+def poolify (source):
     if source[:3] == "lib":
         return source[:4] + '/' + source + '/'
     else:
