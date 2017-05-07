@@ -63,6 +63,7 @@ Write out ed-style diffs to Packages/Source lists
   -d                    name for the hardlink farm for status
   -m                    how many diffs to generate
   -n                    take no action
+  -v                    be verbose and list each file as we work on it
     """
     sys.exit(exit_code)
 
@@ -359,6 +360,7 @@ def main():
                   ('d', "tmpdir", "Generate-Index-Diffs::Options::TempDir", "hasArg"),
                   ('m', "maxdiffs", "Generate-Index-Diffs::Options::MaxDiffs", "hasArg"),
                   ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
+                  ('v', "verbose", "Generate-Index-Diffs::Options::Verbose"),
                 ]
     suites = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
     Options = Cnf.subtree("Generate-Index-Diffs::Options")
@@ -439,10 +441,12 @@ def main():
 
                 # Process Contents
                 file = "%s/%s/Contents-%s" % (tree, component, architecture)
+                if Options.has_key("Verbose"): print(file)
                 storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
                 genchanges(Options, file + ".diff", storename, file, maxcontents)
 
                 file = "%s/%s/%s/%s" % (tree, component, longarch, packages)
+                if Options.has_key("Verbose"): print(file)
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
                 genchanges(Options, file + ".diff", storename, file, maxsuite)
 
