@@ -5,5 +5,12 @@
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	pytest -v
+	mkdir -p debian/test-gnupghome
+	GNUPGHOME=$$(pwd)/debian/test-gnupghome pytest -v
 endif
+
+# Replace with "debian/test-gnupghome/" in d/clean once
+# debhelper (>= 9.20151116) can be used for dak
+override_dh_auto_clean:
+	rm -fr debian/test-gnupghome
+	dh_auto_clean
