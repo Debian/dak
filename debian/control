@@ -1,12 +1,14 @@
 Source: dak
 Section: misc
 Priority: extra
-Build-Depends: python-all-dev,
+Build-Depends: debhelper (>= 9~),
+               python-all-dev,
                python-apt,
                python-debian,
                python-debianbts,
                python-ldap,
                python-psycopg2,
+               python-pytest,
                python-rrdtool,
                python-sqlalchemy (<< 1.0),
                python-yaml

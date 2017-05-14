@@ -130,7 +130,7 @@ class Changes(object):
                     deb_fh.close()
 
             else:
-                entry["pool name"] = poolify(self.changes.get("source", ""), entry["component"])
+                entry["pool name"] = poolify(self.changes.get("source", ""))
                 destination = entry["pool name"] + name
                 summary += name + "\n  to " + destination + "\n"
 
@@ -194,7 +194,7 @@ class Changes(object):
         else:
             component = entry["component"]
 
-        poolname = poolify(entry["source"], component)
+        poolname = poolify(entry["source"])
         l = get_location(cnf["Dir::Pool"], component, session=session)
 
         found, poolfile = check_poolfile(os.path.join(poolname, filename),

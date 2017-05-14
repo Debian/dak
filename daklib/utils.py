@@ -143,7 +143,7 @@ def our_raw_input(prompt=""):
 
 ################################################################################
 
-def extract_component_from_section(section, session=None):
+def extract_component_from_section(section):
     component = ""
 
     if section.find('/') != -1:
@@ -504,7 +504,7 @@ def send_mail (message, filename="", whitelists=None):
 
 ################################################################################
 
-def poolify (source, component=None):
+def poolify (source):
     if source[:3] == "lib":
         return source[:4] + '/' + source + '/'
     else:
