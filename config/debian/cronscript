@@ -150,7 +150,7 @@ esac
     #  - TIME - The timestamp name. Can be the empty string
     #  - ERR  - if this is the string false, then the call will be surrounded by
     #           set +e ... set -e calls, so errors in the function do not exit
-    #           dinstall. Can be the empty string, meaning true.
+    #           the script. Can be the empty string, meaning true.
     #  - BG   - Background the function stage?
     #
     # ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
@@ -220,7 +220,7 @@ esac
     fi
 
     # Now, at the very (successful) end of this run, make sure we remove
-    # our stage files, so the next dinstall run will do it all again.
+    # our stage files, so the next script run will do it all again.
     rm -f ${stagedir}/*
     bzip2 -9 ${LOGFILE}
 
