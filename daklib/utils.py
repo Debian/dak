@@ -808,6 +808,9 @@ def gpg_get_key_addresses(fingerprint):
             parts = l.split(':')
             if parts[0] not in ("uid", "pub"):
                 continue
+            if parts[1] in ("i", "d", "r"):
+                # Skip uid that is invalid, disabled or revoked
+                continue
             try:
                 uid = parts[9]
             except IndexError:
