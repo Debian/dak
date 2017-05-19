@@ -3,10 +3,17 @@
 %:
 	dh $@
 
+ifneq ($(JENKINS_EXPORTS_DIR),)
+PYBUILD_EXTRA_ARGS = --junit-xml=$(JENKINS_EXPORTS_DIR)/test-results/tests.xml
+endif
+
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+ifneq ($(JENKINS_EXPORTS_DIR),)
+	mkdir -pv $(JENKINS_EXPORTS_DIR)/test-results
+endif
 	mkdir -p debian/test-gnupghome
-	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v tests
+	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v tests $(PYBUILD_EXTRA_ARGS)
 endif
 
 # Replace with "debian/test-gnupghome/" in d/clean once
