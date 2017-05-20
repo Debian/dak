@@ -11,8 +11,8 @@ set -e
 set -u
 set -o pipefail
 
-conf="${1}"
-output="${2}"
+conf=${1:-""}
+output=${2:-""}
 
 # designated revokers
 revokers=(
@@ -38,7 +38,7 @@ if [[ -f /srv/keyring.debian.org/keyrings/debian-keyring.gpg ]]; then
     keyring=/srv/keyring.debian.org/keyrings/debian-keyring.gpg
 fi
 
-if [[ ! -e ${conf} ]]; then
+if [[ -z ${conf} ]] || [[ ! -e ${conf} ]]; then
     echo "Configuration file '${conf}' does not exist" >&2
     exit 1
 fi
