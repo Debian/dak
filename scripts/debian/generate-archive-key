@@ -14,6 +14,17 @@ set -o pipefail
 conf=${1:-""}
 output=${2:-""}
 
+err=0
+for package in gnupg libgfshare-bin pinentry-tty; do
+    if ! dpkg -l ${package} >/dev/null 2>&1; then
+        echo "Missing package ${package}"
+        err=1
+    fi
+done
+if [[ ${err} -ne 0 ]]; then
+    exit 8
+fi
+
 # designated revokers
 revokers=(
     80E976F14A508A48E9CA3FE9BC372252CA1CF964
