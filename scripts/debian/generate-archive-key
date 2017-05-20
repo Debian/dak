@@ -43,6 +43,11 @@ if [[ -z ${conf} ]] || [[ ! -e ${conf} ]]; then
     exit 1
 fi
 
+if [[ -z ${output} ]] || [[ -e ${output} ]]; then
+    echo "No output directory given - or given directory ${output} exists already" >&2
+    exit 2
+fi
+
 . ${conf}
 
 for v in \
@@ -103,9 +108,6 @@ if [[ ${#backup_holders[@]} -lt ${backup_shares} ]]; then
     exit 1
 fi
 
-if [[ -e ${output} ]]; then
-    echo "Output directory already exists" >&2
-    exit 1
 fi
 
 gpghome=$(mktemp -d)
