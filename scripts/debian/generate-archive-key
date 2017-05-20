@@ -1,14 +1,18 @@
 #! /bin/bash
 #
-# usage: generate-archive-key <output-directory>
+# usage: generate-archive-key <configuration> <output-directory>
 #
 # generate a new archive key
+#
+# Required packages:
+#     gnupg libgfshare-bin pinentry-tty
 
 set -e
 set -u
 set -o pipefail
 
-output="${1}"
+conf="${1}"
+output="${2}"
 
 # designated revokers
 revokers=(
@@ -33,6 +37,25 @@ keyring=/usr/share/keyrings/debian-keyring.gpg
 if [[ -f /srv/keyring.debian.org/keyrings/debian-keyring.gpg ]]; then
     keyring=/srv/keyring.debian.org/keyrings/debian-keyring.gpg
 fi
+
+if [[ ! -e ${conf} ]]; then
+    echo "Configuration file '${conf}' does not exist" >&2
+    exit 1
+fi
+
+. ${conf}
+
+for v in \
+    revokers \
+    revocation_holders revocation_shares \
+    backup_holders backup_shares \
+    name_real name_email \
+    ; do
+    if [[ ! -v ${v} ]]; then
+        echo "Option '${v}' is not set" >&2
+        exit 1
+    fi
+done
 
 umask 077
 
@@ -104,9 +127,9 @@ cat > generate-key.conf <<EOF
 Key-Type: RSA
 Key-Length: 4096
 Key-Usage: sign
-Name-Real: Debian Archive Automatic Signing Key
-Name-Email: ftpmaster@debian.org
-Name-Comment: 9.0/stretch
+Name-Real: ${name_real:?}
+Name-Email: ${name_email:?}
+Name-Comment: ${name_comment:-}
 Expire-Date: 8y
 EOF
 
