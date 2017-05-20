@@ -50,15 +50,14 @@ fi
 
 . ${conf}
 
-for v in \
+for option in \
     revokers \
     revocation_holders revocation_shares \
     backup_holders backup_shares \
     name_real name_email \
     ; do
-    if [[ ! -v ${v} ]]; then
-        echo "Option '${v}' is not set" >&2
     if [[ ! -v ${option} ]]; then
+        echo "Option '${option}' is not set" >&2
         exit 3
     fi
 done
