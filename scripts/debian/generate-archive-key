@@ -58,7 +58,8 @@ for v in \
     ; do
     if [[ ! -v ${v} ]]; then
         echo "Option '${v}' is not set" >&2
-        exit 1
+    if [[ ! -v ${option} ]]; then
+        exit 3
     fi
 done
 
@@ -100,14 +101,12 @@ split-into-encrypted-shares() {
 
 if [[ ${#revocation_holders[@]} -lt ${revocation_shares} ]]; then
     echo "There are fewer revocation share holders than the number of required shares" >&2
-    exit 1
+    exit 4
 fi
 
 if [[ ${#backup_holders[@]} -lt ${backup_shares} ]]; then
     echo "There are fewer backup share holders than the number of required shares" >&2
-    exit 1
-fi
-
+    exit 5
 fi
 
 gpghome=$(mktemp -d)
@@ -116,7 +115,7 @@ trap 'rm -rf -- "${gpghome:?}"' EXIT
 
 if [[ $(stat --file-system -c "%T" -- "${gpghome}") != tmpfs ]]; then
     echo "This script refuses to work with temporary files not on a tmpfs!" >&2
-    exit 1
+    exit 6
 fi
 
 pushd "${gpghome}"
@@ -143,7 +142,7 @@ gpg --batch --pinentry-mode loopback --passphrase "" --full-generate-key generat
 key=$(gpg --with-colon --list-secret-keys | awk -F: '$1 == "fpr" { print $10 }')
 if [[ ${#key} -ne 40 ]]; then
    echo "Unexpected length of key id: ${#key} (expected: 40)" >&2
-   exit 1
+   exit 7
 fi
 
 echo "Secret key is ${key}"
