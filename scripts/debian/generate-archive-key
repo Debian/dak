@@ -27,20 +27,21 @@ fi
 
 # designated revokers
 revokers=(
-    80E976F14A508A48E9CA3FE9BC372252CA1CF964
-    FBFABDB541B5DC955BD9BA6EDB16CF5BB12525C4
-    309911BEA966D0613053045711B4E5FF15B0FD82
+    80E976F14A508A48E9CA3FE9BC372252CA1CF964 # Ansgar Burchardt <ansgar@debian.org>
+    FBFABDB541B5DC955BD9BA6EDB16CF5BB12525C4 # Joerg Jaspert <joerg@debian.org>
+    309911BEA966D0613053045711B4E5FF15B0FD82 # Mark Hymers <mhy@debian.org>
 )
 
 # holders of revocation shares and number of required shares
 revocation_holders=(
-    ${revokers[@]}
 )
-revocation_shares=2
+revocation_shares=0
 
 # holders of backup shares and number of required shares
 backup_holders=(
     ${revokers[@]}
+    AB41C1C68AFD668CA045EBF8673A03E4C1DB921F # Gunnar Eyal Wolf Iszaevich <gwolf@debian.org>
+    7B27A3F1A6E18CD9588B4AE8310180050905E40C # Julien Cristau <jcristau@debian.org>
 )
 backup_shares=3
 
