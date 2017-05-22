@@ -138,6 +138,9 @@ cat > generate-key.conf <<EOF
 Key-Type: RSA
 Key-Length: 4096
 Key-Usage: sign
+Subkey-Type: RSA
+Subkey-Length: 4096
+Subkey-Usage: sign
 Name-Real: ${name_real:?}
 Name-Email: ${name_email:?}
 Name-Comment: ${name_comment:-}
@@ -149,7 +152,7 @@ show-file generate-key.conf
 # The exported secret key shares must be without a passphrase.
 # So we only set the passphrase at the end.
 gpg --batch --pinentry-mode loopback --passphrase "" --full-generate-key generate-key.conf
-key=$(gpg --with-colon --list-secret-keys | awk -F: '$1 == "fpr" { print $10 }')
+key=$(gpg --with-colon --list-secret-keys | awk -F: '$1 == "fpr" { print $10; exit 0; }')
 if [[ ${#key} -ne 40 ]]; then
    echo "Unexpected length of key id: ${#key} (expected: 40)" >&2
    exit 7
@@ -184,12 +187,13 @@ fi
 
 gpg --change-passphrase ${key}
 gpg -a --export ${key} > public-${key}.asc
-gpg -a --export-secret-key ${key} > private-${key}.asc
+gpg -a --export-secret-key ${key} > private-key-${key}.asc
+gpg -a --export-secret-subkeys ${key} > private-subkey-${key}.asc
 
 popd
 
 mkdir -- ${output}
-cp -t ${output} -- ${gpghome}/public-${key}.asc ${gpghome}/private-${key}.asc ${gpghome}/revoke-${key}
+cp -t ${output} -- ${gpghome}/public-${key}.asc ${gpghome}/private-key-${key}.asc ${gpghome}/private-subkey-${key}.asc ${gpghome}/revoke-${key}
 if [[ ${#revocation_holders[@]} -gt 0 ]]; then
     cp -t ${output} -- ${gpghome}/revoke-${key}-share.*
 fi
