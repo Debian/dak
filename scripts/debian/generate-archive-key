@@ -86,6 +86,7 @@ split-into-encrypted-shares() {
     local output="${2}"
     local -n holders="${3}"
     local shares="${4}"
+    local description="${5:-}"
 
     gfsplit -n ${shares} -m ${#holders[@]} ${input}
 
@@ -94,6 +95,7 @@ split-into-encrypted-shares() {
         local holder=${holders[$i]}
         i=$((i + 1))
         {
+            echo "${description}"
             echo "Share name: ${share}"
             echo
             echo "To recombine:"
@@ -153,12 +155,13 @@ show-file generate-key.conf
 # So we only set the passphrase at the end.
 gpg --batch --pinentry-mode loopback --passphrase "" --full-generate-key generate-key.conf
 key=$(gpg --with-colon --list-secret-keys | awk -F: '$1 == "fpr" { print $10; exit 0; }')
+key_uid=$(gpg --with-colon --list-secret-keys | awk -F: '$1 == "uid" { print $10; exit 0; }')
 if [[ ${#key} -ne 40 ]]; then
    echo "Unexpected length of key id: ${#key} (expected: 40)" >&2
    exit 7
 fi
 
-echo "Secret key is ${key}"
+echo "Secret key is ${key} (${key_uid})"
 
 if [[ ${#revokers[@]} -gt 0 ]]; then
     {
@@ -176,12 +179,20 @@ fi
 
 cp openpgp-revocs.d/${key}.rev revoke-${key}
 if [[ ${#revocation_holders[@]} -gt 0 ]]; then
-    split-into-encrypted-shares revoke-${key} revoke-${key}-share revocation_holders ${revocation_shares}
+    description="This is a share of the REVOCATION CERTIFICATE for
+the key: ${key}
+    uid: ${key_uid}
+"
+    split-into-encrypted-shares revoke-${key} revoke-${key}-share revocation_holders ${revocation_shares} "${description}"
 fi
 
 if [[ ${#backup_holders[@]} -gt 0 ]]; then
     gpg --export-secret-key ${key} > backup-${key}
-    split-into-encrypted-shares backup-${key} backup-${key}-share backup_holders ${backup_shares}
+    description="This is a share of the PRIVATE KEY for
+the key: ${key}
+    uid: ${key_uid}
+"
+    split-into-encrypted-shares backup-${key} backup-${key}-share backup_holders ${backup_shares} "${description}"
     rm -f -- backup-${key} backup-${key}.???
 fi
 
