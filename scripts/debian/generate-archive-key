@@ -64,8 +64,8 @@ fi
 
 for option in \
     revokers \
-    revocation_holders revocation_shares \
-    backup_holders backup_shares \
+    revocation_shares \
+    backup_shares \
     name_real name_email \
     ; do
     if [[ ! -v ${option} ]]; then
