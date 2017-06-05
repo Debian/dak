@@ -27,11 +27,14 @@ function do_report() {
 
 function queuereport() {
     log "Creating queue reports, new/backports-new, 822 format"
+    local queues="new,byhand,stable-new,oldstable-new"
+    local bpqueues="backports-new,backports-policy"
+    local gqueues="${queues},${bpqueues},deferred"
     do_report
-    do_report ${webdir}/backports-new.html "-n -d backports-new,backports-policy"
-    dak queue-report -8 -d new,byhand,stable-new,oldstable-new,backports-new -r ${webdir}/stat
+    do_report ${webdir}/backports-new.html "-n -d ${bpqueues}"
+    dak queue-report -8 -d ${queues},${bpqueues} -r ${webdir}/stat
     log "Graphs about the queues"
-    dak graph -n new,byhand,stable-new,oldstable-new,deferred,backports-new -r ${webdir}/stat -i ${webdir}/stat -x ${scriptsdir}/rrd-release-freeze-dates
+    dak graph -n ${gqueues} -r ${webdir}/stat -i ${webdir}/stat -x ${scriptsdir}/rrd-release-freeze-dates
 }
 
 function removalstxt() {
