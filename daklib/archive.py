@@ -1125,8 +1125,12 @@ class ArchiveUpload(object):
         self.transaction.session.add(u)
         self.transaction.session.flush()
 
-        dst = os.path.join(policy_queue.path, self.changes.filename)
-        self.transaction.fs.copy(self.changes.path, dst, mode=policy_queue.change_perms)
+        queue_files = [self.changes.filename]
+        queue_files.extend(f.filename for f in self.changes.buildinfo_files)
+        for fn in queue_files:
+            src = os.path.join(self.changes.directory, fn)
+            dst = os.path.join(policy_queue.path, fn)
+            self.transaction.fs.copy(src, dst, mode=policy_queue.change_perms)
 
         return u
 

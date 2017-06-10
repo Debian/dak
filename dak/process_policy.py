@@ -50,6 +50,7 @@ from daklib.urgencylog import UrgencyLog
 from daklib.packagelist import PackageList
 
 import daklib.announce
+import daklib.upload
 import daklib.utils
 
 # Globals
@@ -240,10 +241,16 @@ def comment_accept(upload, srcqueue, comments, transaction):
             if not os.path.exists(dst):
                 fs.copy(f.fullpath, dst, mode=mode)
 
-        src = os.path.join(upload.policy_queue.path, upload.changes.changesname)
-        dst = os.path.join(copydir, upload.changes.changesname)
-        if not os.path.exists(dst):
-            fs.copy(src, dst, mode=mode)
+        queue_files = [upload.changes.changesname]
+        chg = daklib.upload.Changes(upload.policy_queue.path, upload.changes.changesname, keyrings=[], require_signature=False)
+        queue_files.extend(f.filename for f in chg.buildinfo_files)
+        for fn in queue_files:
+            src = os.path.join(upload.policy_queue.path, fn)
+            dst = os.path.join(copydir, fn)
+            # We check for `src` to exist as old uploads in policy queues
+            # might still miss the `.buildinfo` files.
+            if os.path.exists(src) and not os.path.exists(dst):
+                fs.copy(src, dst, mode=mode)
 
     if upload.source is not None and not Options['No-Action']:
         urgency = upload.changes.urgency
@@ -350,7 +357,12 @@ def remove_upload(upload, transaction):
         if os.path.exists(path):
             fs.unlink(path)
         session.delete(byhand)
-    fs.unlink(os.path.join(queuedir, upload.changes.changesname))
+
+    chg = daklib.upload.Changes(queuedir, upload.changes.changesname, keyrings=[], require_signature=False)
+    queue_files = [upload.changes.changesname]
+    queue_files.extend(f.filename for f in chg.buildinfo_files)
+    for fn in queue_files:
+        fs.unlink(os.path.join(queuedir, fn))
 
     session.delete(upload)
     session.flush()
