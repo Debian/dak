@@ -38,6 +38,7 @@ import sys
 import traceback
 import apt_pkg
 from sqlalchemy.orm.exc import NoResultFound
+import sqlalchemy.sql as sql
 
 from daklib.dbconn import *
 from daklib import daklog
@@ -391,7 +392,7 @@ def remove_unreferenced_binaries(policy_queue, transaction):
     session = transaction.session
     suite = policy_queue.suite
 
-    query = """
+    query = sql.text("""
        SELECT b.*
          FROM binaries b
          JOIN bin_associations ba ON b.id = ba.bin
@@ -399,7 +400,7 @@ def remove_unreferenced_binaries(policy_queue, transaction):
           AND NOT EXISTS (SELECT 1 FROM policy_queue_upload_binaries_map pqubm
                                    JOIN policy_queue_upload pqu ON pqubm.policy_queue_upload_id = pqu.id
                                   WHERE pqu.policy_queue_id = :policy_queue_id
-                                    AND pqubm.binary_id = b.id)"""
+                                    AND pqubm.binary_id = b.id)""")
     binaries = session.query(DBBinary).from_statement(query) \
         .params({'suite_id': policy_queue.suite_id, 'policy_queue_id': policy_queue.policy_queue_id})
 
@@ -417,7 +418,7 @@ def remove_unreferenced_sources(policy_queue, transaction):
     session = transaction.session
     suite = policy_queue.suite
 
-    query = """
+    query = sql.text("""
        SELECT s.*
          FROM source s
          JOIN src_associations sa ON s.id = sa.source
@@ -428,7 +429,7 @@ def remove_unreferenced_sources(policy_queue, transaction):
           AND NOT EXISTS (SELECT 1 FROM binaries b
                                    JOIN bin_associations ba ON b.id = ba.bin
                                   WHERE b.source = s.id
-                                    AND ba.suite = :suite_id)"""
+                                    AND ba.suite = :suite_id)""")
     sources = session.query(DBSource).from_statement(query) \
         .params({'suite_id': policy_queue.suite_id, 'policy_queue_id': policy_queue.policy_queue_id})
 
