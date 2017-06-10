@@ -505,14 +505,11 @@ def process_buildinfos(upload):
         datetime.datetime.now().strftime('%Y/%m/%d'),
     )
 
-    for x in upload.changes.files.itervalues():
-        if not re_file_buildinfo.match(x.filename):
-            continue
+    for f in upload.changes.buildinfo_files:
+        src = os.path.join(upload.directory, f.filename)
+        dst = utils.find_next_free(os.path.join(target_dir, f.filename))
 
-        src = os.path.join(upload.directory, x.filename)
-        dst = utils.find_next_free(os.path.join(target_dir, x.filename))
-
-        Logger.log(["Archiving", x.filename])
+        Logger.log(["Archiving", f.filename])
         upload.transaction.fs.copy(src, dst, mode=0o644)
 
 ###############################################################################
