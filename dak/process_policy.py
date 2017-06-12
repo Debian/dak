@@ -362,7 +362,11 @@ def remove_upload(upload, transaction):
     queue_files = [upload.changes.changesname]
     queue_files.extend(f.filename for f in chg.buildinfo_files)
     for fn in queue_files:
-        fs.unlink(os.path.join(queuedir, fn))
+        # We check for `path` to exist as old uploads in policy queues
+        # might still miss the `.buildinfo` files.
+        path = os.path.join(queuedir, fn)
+        if os.path.exists(path):
+            fs.unlink(path)
 
     session.delete(upload)
     session.flush()
