@@ -305,6 +305,11 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, ma
         path = os.path.join(queuedir, byhand.filename)
         if os.path.exists(path):
             files.append(path)
+    chg = daklib.upload.Changes(queuedir, changesname, keyrings=[], require_signature=False)
+    for f in chg.buildinfo_files:
+        path = os.path.join(queuedir, f.filename)
+        if os.path.exists(path):
+            files.append(path)
     files.append(os.path.join(queuedir, changesname))
 
     for fn in files:
