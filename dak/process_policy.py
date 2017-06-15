@@ -223,6 +223,11 @@ def comment_accept(upload, srcqueue, comments, transaction):
         dst = os.path.join(upload.target_suite.path, upload.changes.changesname)
         fs.copy(src, dst, mode=upload.target_suite.archive.mode)
 
+    # List of files in the queue directory
+    queue_files = [changesname]
+    chg = daklib.upload.Changes(upload.policy_queue.path, changesname, keyrings=[], require_signature=False)
+    queue_files.extend(f.filename for f in chg.buildinfo_files)
+
     # Copy upload to Process-Policy::CopyDir
     # Used on security.d.o to sync accepted packages to ftp-master, but this
     # should eventually be replaced by something else.
@@ -241,9 +246,6 @@ def comment_accept(upload, srcqueue, comments, transaction):
             if not os.path.exists(dst):
                 fs.copy(f.fullpath, dst, mode=mode)
 
-        queue_files = [upload.changes.changesname]
-        chg = daklib.upload.Changes(upload.policy_queue.path, upload.changes.changesname, keyrings=[], require_signature=False)
-        queue_files.extend(f.filename for f in chg.buildinfo_files)
         for fn in queue_files:
             src = os.path.join(upload.policy_queue.path, fn)
             dst = os.path.join(copydir, fn)
@@ -267,12 +269,14 @@ def comment_accept(upload, srcqueue, comments, transaction):
 
     # TODO: code duplication. Similar code is in process-upload.
     # Move .changes to done
-    src = os.path.join(upload.policy_queue.path, upload.changes.changesname)
     now = datetime.datetime.now()
     donedir = os.path.join(cnf['Dir::Done'], now.strftime('%Y/%m/%d'))
-    dst = os.path.join(donedir, upload.changes.changesname)
-    dst = utils.find_next_free(dst)
-    fs.copy(src, dst, mode=0o644)
+    for fn in queue_files:
+        src = os.path.join(upload.policy_queue.path, fn)
+        if os.path.exists(src):
+            dst = os.path.join(donedir, fn)
+            dst = utils.find_next_free(dst)
+            fs.copy(src, dst, mode=0o644)
 
     remove_upload(upload, transaction)
 
