@@ -8,7 +8,7 @@ bugdoctxt              none                       External\ Updates          fal
 mailingliststxt        none                       none                       false   true
 pseudopackages         none                       none                       false   true
 i18n1                  none                       i18n\ 1                    false   false
-dep11                  none                       dep11\ 1                   false   false
+dep11                  none                       dep11\ 1                   false   true
 NOSTAGE                lockaccepted               none                       false   false
 punew                  stable-new                 p-u-new                    false   false
 opunew                 oldstable-new              o-p-u-new                  false   false
@@ -17,7 +17,7 @@ cruft                  none                       cruft                      tru
 STATE                  indices                    none                       false   false
 dominate               none                       dominate                   true    false
 autocruft              none                       autocruft                  true    false
-fingerprints           none                       import-keyring             false   false
+fingerprints           none                       import-keyring             false   true
 overrides              none                       overrides                  true    false
 mpfm                   none                       pkg-file-mapping           false   false
 STATE                  packages/contents          none                       true    false
