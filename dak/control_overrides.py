@@ -149,7 +149,7 @@ def process_file(file, suite, component, otype, mode, action, session):
                 utils.warn("'%s' does not break into 'package section [maintainer-override]'." % (line))
                 c_error += 1
                 continue
-            priority = "source"
+            priority = "extra"
         else: # binary or udeb
             split_line = line.split(None, 3)
             if len(split_line) == 3:
