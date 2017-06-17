@@ -38,6 +38,7 @@ if [ $# -ne 1 ]; then
 fi
 
 suite="${1}"
+archive_path=$(psql -qAtc "SELECT path FROM archive WHERE id = (SELECT archive_id FROM suite WHERE suite_name='${suite}')")
 target="sync-release:/srv/ftp-master.debian.org/tmp-release/"
 
 rsync -avH --progress -B8192 \
@@ -45,7 +46,7 @@ rsync -avH --progress -B8192 \
   --exclude "/dists/${suite}/main/installer-*" \
   --timeout 3600 \
   -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
-  "${ftpdir}/./dists/${suite}/" "${ftpdir}/./zzz-dists/${suite}/" "${target}"
+  "${archive_path:?}/./dists/${suite}/" "${archive_path:?}/./zzz-dists/${suite}/" "${target}"
 
 # command for the remote side:
 # rsync --server -lHogDtprRe.iLsfx -B8192 --timeout=3600 . /srv/ftp-master.debian.org/tmp-release/
