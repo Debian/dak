@@ -718,7 +718,7 @@ class NoSourceOnlyCheck(Check):
         allow_source_only_uploads = Config().find_b('Dinstall::AllowSourceOnlyUploads')
         allow_source_only_uploads_without_package_list = Config().find_b('Dinstall::AllowSourceOnlyUploadsWithoutPackageList')
         allow_source_only_new = Config().find_b('Dinstall::AllowSourceOnlyNew')
-        allow_no_arch_indep_uploads = Config().find_b('Dinstall::AllowNoArchIndepUploads')
+        allow_no_arch_indep_uploads = Config().find_b('Dinstall::AllowNoArchIndepUploads', True)
         changes = upload.changes
 
         if not allow_source_only_uploads:
@@ -729,13 +729,15 @@ class NoSourceOnlyCheck(Check):
         if not allow_source_only_new and upload.new:
             raise Reject('Source-only uploads to NEW are not allowed.')
 
-        if not allow_no_arch_indep_uploads \
-           and 'all' not in changes.architectures \
-           and 'experimental' not in changes.distributions \
-           and 'unstable' not in changes.distributions \
-           and 'sid' not in changes.distributions \
-           and changes.source.package_list.has_arch_indep_packages():
-            raise Reject('Uploads must include architecture-independent packages.')
+        if 'all' not in changes.architectures and changes.source.package_list.has_arch_indep_packages():
+            if not allow_no_arch_indep_uploads:
+                raise Reject('Uploads must include architecture-independent packages.')
+            for suite in ('oldstable', 'oldstable-proposed-updates', 'oldstable-security',
+                          'jessie', 'jessie-proposed-updates', 'jessie-security',
+                          'oldoldstable', 'oldoldstable-security',
+                          'wheezy', 'wheezy-security'):
+                if suite in changes.distributions:
+                    raise Reject('Suite {} is not configured to build arch:all packages. Please include them in your upload')
 
         return True
 
