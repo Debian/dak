@@ -234,6 +234,16 @@ class ReleaseWriter(object):
             for h in hashes:
                 field = h.release_field
                 hashfile = os.path.join(os.path.dirname(filename), 'by-hash', field, fileinfo[filename][field])
+
+                # if the hash is known to exist, re-use the old file
+                if os.path.exists(hashfile):
+                    os.unlink(filename)
+                    os.link(hashfile, filename)
+                    break
+
+            for h in hashes:
+                field = h.release_field
+                hashfile = os.path.join(os.path.dirname(filename), 'by-hash', field, fileinfo[filename][field])
                 try:
                     os.makedirs(os.path.dirname(hashfile))
                 except OSError as exc:
