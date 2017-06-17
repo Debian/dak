@@ -735,7 +735,7 @@ class NoSourceOnlyCheck(Check):
            and 'unstable' not in changes.distributions \
            and 'sid' not in changes.distributions \
            and changes.source.package_list.has_arch_indep_packages():
-            raise Reject('Uploads not including architecture-independent packages are not allowed.')
+            raise Reject('Uploads must include architecture-independent packages.')
 
         return True
 
