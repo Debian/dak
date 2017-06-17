@@ -34,19 +34,19 @@ if [ ! -z "${dists}" ]; then
     for d in ${dists}; do
         case ${d} in
             oldoldstable)
-                send=squeeze
-                ;;
-            oldstable)
                 send=wheezy
                 ;;
-            stable)
+            oldstable)
                 send=jessie
                 ;;
-            stable-kfreebsd)
+            oldstable-kfreebsd)
                 send=jessie-kfreebsd
                 ;;
-            testing)
+            stable)
                 send=stretch
+                ;;
+            testing)
+                send=buster
                 ;;
             *)
                 send=unknown

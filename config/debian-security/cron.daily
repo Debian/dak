@@ -23,9 +23,9 @@ find . -maxdepth 1 -mindepth 1 -type l -delete
 
 for suite in oldstable stable testing; do
     case $suite in
-        oldstable) override_suite=wheezy  ;;
-        stable)    override_suite=jessie  ;;
-        testing)   override_suite=stretch ;;
+        oldstable) override_suite=jessie  ;;
+        stable)    override_suite=stretch  ;;
+        testing)   override_suite=buster ;;
         *) echo "Unknown suite type ($suite)"; exit 1;;
     esac
     for component in $components; do

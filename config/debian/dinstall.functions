@@ -272,7 +272,7 @@ function copyoverrides() {
 
     (
         shopt -s nullglob
-        for ofile in ${overridedir}/override.{squeeze,wheezy,jessie,stretch,sid}.{,extra.}{main,contrib,non-free}*; do
+        for ofile in ${overridedir}/override.{wheezy,jessie,stretch,buster,sid}.{,extra.}{main,contrib,non-free}*; do
             bname=${ofile##*/}
             gzip -9cv --rsyncable  --no-name ${ofile} > ${indices}/${bname}.gz
             chmod g+w ${indices}/${bname}.gz
@@ -404,12 +404,12 @@ function mkfilesindices() {
     done
 
     (cd $base/ftp/
-     for dist in sid jessie stretch; do
+     for dist in sid jessie stretch buster; do
 	 find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
      done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz ; zcat translation-stretch.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz ; zcat translation-stretch.list.gz ; zcat translation-buster.list.gz) |
         sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
