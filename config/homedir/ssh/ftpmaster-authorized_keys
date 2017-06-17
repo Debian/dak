@@ -14,3 +14,13 @@ command="/srv/ftp-master.debian.org/dak/scripts/debian/release_team_removals.sh"
 
 # release team p-u comment files
 command="/srv/ftp-master.debian.org/dak/scripts/debian/p-u-comment.sh",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,from="138.16.160.12,franck.debian.org,5.153.231.29,2001:41c8:1000:21::21:29,respighi.debian.org,5.153.231.11,2001:41c8:1000:21::21:11,coccia.deban.org" ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCvamon5WR/xOOHk9T+wzwVIe5cGH90ivLg94kpFcF0Wkmp7vbh7TSdBtjy5w9YbPG4r6sAMna74dLcgPSDiEpWf56ubSDmGKgKf40EgfC7qOO31aWqRNmyuYMmxWZmbRKQ16LdajFfDEGV1Tdy1a5KdU4HgFlHoucuG7p4VHGO7ZJo0t7CQv5C/hF4gSzK+gjcI1uR1N+jUHxW+3yv75XiQpaLyWgaLYF0x4XYwcDJVcqILaySs8MllJcfyPMNvOyvrhGdHIhei8bnACOkfJ9Eeyv7tOj8Rp8ECMgzYE8AUjv5sR4zkKs7KP5MwoAuCdXvE8OMzyu4ZBa37x+yADWd release@franck
+
+# sync deferred queue overview
+## html file
+command="rsync --server -logDtpre.iLsfx . /srv/ftp.debian.org/web/deferred.html",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,from="128.31.0.69,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGvxeT80rDP/lOqfVAiLRGb32o+2XgiheujPbJS6nm74 sync deferred html file
+
+## deferred dir
+command="rsync --server --delete -vvlogDtpre.iLsfx . /srv/ftp.debian.org/web/deferred/",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,from="128.31.0.69,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPWdzoLnQJ0Zlp5DDKcPOPk5kIYxb9P2XIwcWZk9Nx9d sync deferred html dir
+
+## rrd file
+command="rsync --server -vlogDtpre.iLsfx . /srv/ftp.debian.org/web/stat/deferred.rrd",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,from="128.31.0.69,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyX7qEexkQ7YW6nskVxwF2zGAX8oJB56Tb7DlxM46Pu sync deferred rrd file
