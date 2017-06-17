@@ -45,6 +45,7 @@ configdir=${configdir:-"/srv/ftp-master.debian.org/dak/config/debian"}
 # it is expected to have the same value)
 export SCRIPTVARS=${configdir}/vars
 . "${SCRIPTVARS}"
+. "${configdir}/common"
 . "${configdir}/dinstall.functions"
 umask 022
 
