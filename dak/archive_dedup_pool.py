@@ -86,24 +86,25 @@ def dedup(session):
     results = session.execute("""
 SELECT DISTINCT *
     FROM (
-        SELECT DISTINCT ON (id) filenames, size
-            FROM (
-                SELECT
-                    f1.id,
-                    f1.size,
-                    array_agg(av.path || '/pool/' || c.name || '/' || f2.filename) OVER (PARTITION BY f1.id, a1.archive_id ORDER by f2.created) AS filenames
-                    FROM
-                        files AS f1 INNER JOIN
-                        files_archive_map AS a1 ON f1.id = a1.file_id INNER JOIN
-                        files AS f2 ON f1.size = f2.size AND f1.sha256sum = f2.sha256sum INNER JOIN
-                        files_archive_map AS a2 ON f2.id = a2.file_id INNER JOIN
-                        component c ON a2.component_id = c.id INNER JOIN
-                        archive av ON a1.archive_id = a2.archive_id AND a2.archive_id = av.id
-            ) AS f
-            WHERE array_length(filenames, 1) > 1
-            ORDER BY id, array_length(filenames, 1) DESC
+        SELECT
+            f.size,
+            array_agg(a.path || '/pool/' || c.name || '/' || f.filename) OVER (
+                -- we aggregate all files with the same size, sha256sum and archive
+                PARTITION BY f.size, f.sha256sum, a.id
+                -- the oldest should be first
+                ORDER by f.created
+                -- we always want to see all rows
+                ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+            )
+            AS filenames
+            FROM
+                files AS f INNER JOIN
+                files_archive_map AS fa ON f.id = fa.file_id INNER JOIN
+                component c ON fa.component_id = c.id INNER JOIN
+                archive a ON fa.archive_id = a.id
     ) AS f
-    ORDER by filenames;
+    -- we only care about entries with more than one filename
+    WHERE array_length(filenames, 1) > 1
     """)
 
     for i in results:
