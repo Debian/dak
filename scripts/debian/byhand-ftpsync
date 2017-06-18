@@ -58,8 +58,8 @@ error() {
 
 # Check validity of version number
 # Expected: YYYYMMDD
-if ! echo "$VERSION" | grep -Eq "^[0-9]{8}$"; then
-    error "Invalid version: '$VERSION'"
+if ! echo "$version" | grep -Eq "^[0-9]{8}$"; then
+    error "Invalid version: '$version"
 fi
 
 if [[ ! "${byhand_file}" =~ ^ftpsync_[0-9]{8}_all.tar.gz$ ]]; then
