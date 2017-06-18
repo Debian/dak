@@ -155,6 +155,8 @@ def init():
          "Generate a list of override disparities"),
         ("external-overrides",
          "Modify external overrides"),
+        ("archive-dedup-pool",
+         "De-duplicates files in the pool directory"),
         ]
     return functionality
 
