@@ -32,6 +32,7 @@ copyoverrides          none                       copyoverrides              tru
 mklslar                none                       mklslar                    true    false
 mkfilesindices         none                       mkfilesindices             true    false
 mkchecksums            none                       mkchecksums                true    false
+dedup                  none                       dedup                      true    false
 signotherfiles         none                       signotherfiles             true    false
 mirror                 none                       mirror\ hardlinks          true    false
 NOSTAGE                remove_locks               none                       false   false

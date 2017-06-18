@@ -227,6 +227,20 @@ function dakcleanup() {
     dak clean-queues -i "$unchecked"
 }
 
+function dedup() {
+    log "Dedupe archive"
+    dak archive-dedup-pool
+    for archive in "${public_archives[@]}"; do
+        archiveroot="$(get_archiveroot "${archive}")"
+        cd "${archiveroot}"
+        for dir in doc indices project tools; do
+            if [[ -d ${dir} ]]; then
+                jdupes --hardlink --noempty --quiet --summarize --recurse ${dir}
+            fi
+        done
+    done
+}
+
 function mklslar() {
     local archiveroot
     local FILENAME=ls-lR
@@ -431,7 +445,6 @@ function mkchecksums() {
         ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
         ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
     done
-    dak archive-dedup-pool
 }
 
 function mirror() {
