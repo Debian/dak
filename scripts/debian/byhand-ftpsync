@@ -71,12 +71,15 @@ if [ ! -d "${target}" ]; then
     mkdir -p "${target}"
 fi
 
+target_filename="ftpsync-$version.tar.gz"
+target_file="${target}/${target_filename}"
+
 # Use --remove-destination to avoid problems with the fact that the target may
 # be a hardlink and in that case we'd update multiple suites together
-cp --remove-destination "${byhand_path}" "${target}"
+cp --remove-destination "${byhand_path}" "${target_file}"
 cd ${target}
-chmod 0644 "${byhand_file}"
-ln -sf ${target} ftpsync-current.tar.gz
+chmod 0644 "${target_file}"
+ln -sf "${target_filename}" ftpsync-current.tar.gz
 echo ${version} > LATEST.VERSION
 
 for csum in md5sum sha512sum; do
