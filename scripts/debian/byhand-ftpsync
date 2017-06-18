@@ -62,7 +62,7 @@ if ! echo "$VERSION" | grep -Eq "^[0-9]{8}$"; then
     error "Invalid version: '$VERSION'"
 fi
 
-if [[ ! "${byhand_file}" =~ ^ftpsync-[0-9]{8}.tar.gz$ ]]; then
+if [[ ! "${byhand_file}" =~ ^ftpsync_[0-9]{8}_all.tar.gz$ ]]; then
     error "unknown file '${byhand_file}'"
 fi
 
