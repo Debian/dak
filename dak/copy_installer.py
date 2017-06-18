@@ -20,8 +20,9 @@
 ################################################################################
 
 from daklib.config import Config
+import daklib.daksubprocess
 
-import apt_pkg, glob, os.path, re, shutil, sys
+import apt_pkg, glob, os.path, re, sys
 
 def usage(exit_code = 0):
     print """Usage: dak copy-installer [OPTION]... VERSION
@@ -126,7 +127,7 @@ Architectures to skip: %(skip_arch_list)s""" % {
             if not os.path.exists(dest):
                 os.makedirs(dest)
         for source, dest in self.trees_to_copy:
-            shutil.copytree(source, dest, symlinks=True)
+            daklib.daksubprocess.check_call(['cp', '-al', source, dest])
         for source, dest in self.symlinks_to_create:
             if os.path.lexists(dest):
                 os.unlink(dest)
