@@ -86,6 +86,7 @@ class InstallerCopier:
         self.skip_architectures = []
         self.trees_to_copy = []
         self.symlinks_to_create = []
+        self.dirs_to_create = []
         arch_pattern = os.path.join(self.source_dir, 'installer-*', self.version)
         for arch_dir in glob.glob(arch_pattern):
             self.check_architecture(arch_dir)
@@ -104,6 +105,7 @@ class InstallerCopier:
         else:
             self.architectures.append(architecture)
             self.trees_to_copy.append((arch_dir, dest_dir))
+            self.dirs_to_create.append(dest_basedir)
             symlink_target = os.path.join(dest_basedir, 'current')
             self.symlinks_to_create.append((self.version, symlink_target))
 
@@ -120,6 +122,9 @@ Architectures to skip: %(skip_arch_list)s""" % {
             'skip_arch_list': ', '.join(self.skip_architectures)}
 
     def do_copy(self):
+        for dest in self.dirs_to_create:
+            if not os.path.exists(dest):
+                os.makedirs(dest)
         for source, dest in self.trees_to_copy:
             shutil.copytree(source, dest, symlinks=True)
         for source, dest in self.symlinks_to_create:
