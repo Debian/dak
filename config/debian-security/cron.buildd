@@ -8,7 +8,7 @@ set -u
 
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
-DISTS="oldstable stable stable-kfreebsd testing"
+DISTS="oldoldstable oldstable oldstable-kfreebsd stable testing"
 
 if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
     exit 0

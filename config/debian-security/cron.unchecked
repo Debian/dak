@@ -81,7 +81,7 @@ if [ "${doanything}" = "false" ] && [ "${dopolicy}" = "false" ]; then
 fi
 
 # Update stable-kfreebsd
-dak update-suite stable stable-kfreebsd
+dak update-suite oldstable oldstable-kfreebsd
 
 # manage build queues
 dak manage-build-queues -a
