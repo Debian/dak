@@ -37,7 +37,7 @@ case "${IMPORTSUITE}" in
     testing)
         DO_CHANGELOG="true"
         ;;
-    testing-debug|squeeze-updates|wheezy-updates|jessie-updates)
+    testing-debug|wheezy-updates|jessie-updates|stretch-updates)
         DO_CHANGELOG="false"
         ;;
     *)
