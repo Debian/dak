@@ -85,6 +85,6 @@ echo ${version} > LATEST.VERSION
 for csum in md5sum sha512sum; do
     /usr/bin/${csum} * | grep -v 'sum' > ${csum}
     SIGNINGKEY=2B90D010
-    GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${TARGET}/${csum}.txt" "${TARGET}/${csum}"
-    mv "${TARGET}/${csum}.txt" "${TARGET}/${csum}"
+    GNUPGHOME=${GNUPGHOME} gpg --no-options  --batch --no-tty --armour --default-key ${SIGNINGKEY} --clearsign -o "${target}/${csum}.txt" "${target}/${csum}"
+    mv "${target}/${csum}.txt" "${target}/${csum}"
 done
