@@ -430,8 +430,8 @@ function mkchecksums() {
         cd "$archiveroot"
         ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
         ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
-        ${bindir}/dsync-flist -q link-dups $dsynclist || true
     done
+    dak archive-dedup-pool
 }
 
 function mirror() {

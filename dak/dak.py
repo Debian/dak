@@ -102,6 +102,8 @@ def init():
          "Clean obsolete packages from debug suites"),
         ("clean-queues",
          "Clean cruft from incoming"),
+        ("archive-dedup-pool",
+         "De-duplicates files in the pool directory"),
 
         ("transitions",
          "Manage the release transition file"),
