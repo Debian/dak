@@ -51,15 +51,19 @@ case "${suite}" in
         ;;
 esac
 
+error() {
+    echo "$0:" "$@" >&2
+    exit 1
+}
+
 # Check validity of version number
 # Expected: YYYYMMDD
 if ! echo "$VERSION" | grep -Eq "^[0-9]{8}$"; then
-	error "Invalid version: '$VERSION'"
+    error "Invalid version: '$VERSION'"
 fi
 
 if [[ ! "${byhand_file}" =~ ^ftpsync-20[0-9]{6}.tar.gz$ ]]; then
-    echo "$0: unknown file '${byhand_file}'" >&2
-    exit 1
+    error "unknown file '${byhand_file}'"
 fi
 
 target="${ftpdir}/project/ftpsync/"
