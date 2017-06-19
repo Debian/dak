@@ -299,6 +299,10 @@ function copyoverrides() {
 function mkfilesindices() {
     set +o pipefail
     umask 002
+
+    rm -f $base/ftp/indices/files/*.files
+    rm -f $base/ftp/indices/files/components/*.list.gz
+
     cd $base/ftp/indices/files/components
 
     ARCHLIST=$(tempfile)
