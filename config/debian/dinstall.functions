@@ -276,6 +276,7 @@ function mkmaintainers() {
 	fi
         cd "${indices}"
 
+        rm -f Maintainers Maintainers.gz Uploaders Uploaders.gz
         dak make-maintainers -a "${archive}" ${scriptdir}/masterfiles/pseudo-packages.maintainers
         gzip -9v --rsyncable  --no-name <Maintainers >Maintainers.gz
         gzip -9v --rsyncable  --no-name <Uploaders >Uploaders.gz
