@@ -24,6 +24,7 @@
 ################################################################################
 
 import apt_pkg
+import errno
 import os
 import stat
 import sys
