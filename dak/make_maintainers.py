@@ -40,6 +40,8 @@ from daklib.regexes import re_comments
 import apt_pkg
 import sys
 
+from sqlalchemy.sql import text
+
 ################################################################################
 
 def usage (exit_code=0):
@@ -58,12 +60,6 @@ Generate an index of packages <=> Maintainers / Uploaders.
 def format(package, person):
     '''Return a string nicely formatted for writing to the output file.'''
     return '%-20s %s\n' % (package, person)
-
-################################################################################
-
-def uploader_list(source):
-    '''Return a sorted list of uploader names for source package.'''
-    return sorted([uploader.name for uploader in source.uploaders])
 
 ################################################################################
 
@@ -94,33 +90,61 @@ def main():
     # dictionary packages to list of uploader names
     uploaders = dict()
 
-    source_query = session.query(DBSource).from_statement('''
-        select distinct on (source.source) source.* from source
-            join src_associations sa on source.id = sa.source
-            join suite on sa.suite = suite.id
-            where suite.archive_id = :archive_id
-            order by source.source, source.version desc''') \
-        .params(archive_id=archive.archive_id)
+    query = session.execute(text('''
+SELECT
+    bs.package,
+    bs.name AS maintainer,
+    array_agg(mu.name) OVER (
+        PARTITION BY bs.source, bs.id
+        ORDER BY mu.name
+        ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) AS uploaders
+    FROM (
+        SELECT DISTINCT ON (package)
+            *
+            FROM (
+                SELECT
+                    s.id AS source,
+                    0 AS id,
+                    s.source AS package,
+                    s.version,
+                    m.name
+                    FROM
+                        source AS s INNER JOIN
+                        maintainer AS m ON s.maintainer = m.id INNER JOIN
+                        src_associations AS sa ON s.id = sa.source INNER JOIN
+                        suite on sa.suite = suite.id
+                    WHERE
+                        suite.archive_id = :archive_id
+                UNION SELECT
+                    b.source,
+                    b.id,
+                    b.package,
+                    b.version,
+                    m.name
+                    FROM
+                        binaries AS b INNER JOIN
+                        maintainer AS m ON b.maintainer = m.id INNER JOIN
+                        bin_associations AS ba ON b.id = ba.bin INNER JOIN
+                        suite on ba.suite = suite.id
+                    WHERE
+                        NOT :source_only AND
+                        suite.archive_id = :archive_id
+                ) AS bs
+            ORDER BY package, version desc
+        ) AS bs LEFT OUTER JOIN
+        -- find all uploaders for a given source
+        src_uploaders AS su ON bs.source = su.source LEFT OUTER JOIN
+        maintainer AS mu ON su.maintainer = mu.id
+''').params(
+    archive_id=archive.archive_id,
+    source_only=Options["Source"]
+))
 
-    binary_query = session.query(DBBinary).from_statement('''
-        select distinct on (binaries.package) binaries.* from binaries
-            join bin_associations ba on binaries.id = ba.bin
-            join suite on ba.suite = suite.id
-            where suite.archive_id = :archive_id
-            order by binaries.package, binaries.version desc''') \
-        .params(archive_id=archive.archive_id)
-
-    Logger.log(['sources'])
-    for source in source_query:
-        maintainers[source.source] = source.maintainer.name
-        uploaders[source.source] = uploader_list(source)
-
-    if not Options["Source"]:
-        Logger.log(['binaries'])
-        for binary in binary_query:
-                if binary.package not in maintainers:
-                    maintainers[binary.package] = binary.maintainer.name
-                    uploaders[binary.package] = uploader_list(binary.source)
+    Logger.log(['database'])
+    for entry in query:
+        maintainers[entry['package']] = entry['maintainer']
+        uploaders[entry['package']] = entry['uploaders']
 
     Logger.log(['files'])
     # Process any additional Maintainer files (e.g. from pseudo
