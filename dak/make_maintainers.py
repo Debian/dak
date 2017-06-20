@@ -138,7 +138,7 @@ SELECT
         maintainer AS mu ON su.maintainer = mu.id
 ''').params(
     archive_id=archive.archive_id,
-    source_only=Options["Source"]
+    source_only="True" if Options["Source"] else "False"
 ))
 
     Logger.log(['database'])
