@@ -55,9 +55,6 @@ def test_custom_objects(lines):
             ret = False
     return ret
 
-def is_quoted(s):
-        return (s.startswith("\"") and s.endswith("\"")) or (s.startswith("\'") and s.endswith("\'"))
-
 def test_localized_dict(doc, ldict, id_string):
     ret = True
     for lang, value in ldict.items():
@@ -67,8 +64,6 @@ def test_localized_dict(doc, ldict, id_string):
             add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "Found cruft locale: xx"))
         if lang.endswith('.UTF-8'):
             add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "AppStream locale names should not specify encoding (ends with .UTF-8)"))
-        if is_quoted(value):
-            add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "String is quoted: '%s' @ %s" % (value, lang)))
         if " " in lang:
             add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "Locale name contains space: '%s'" % (lang)))
             # this - as opposed to the other issues - is an error
