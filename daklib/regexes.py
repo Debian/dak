@@ -103,7 +103,8 @@ re_parse_lintian = re.compile(r"^(?P<level>W|E|O): (?P<package>.*?): (?P<tag>[^ 
 
 # in generate-releases
 re_gensubrelease = re.compile (r".*/(binary-[0-9a-z-]+|source)$")
-re_includeinrelease = re.compile (r"(Translation-[a-zA-Z_]+\.(?:bz2|xz)|Contents-[0-9a-z-]+.gz|Index|Packages(.gz|.bz2|.xz)?|Sources(.gz|.bz2|.xz)?|Components-[0-9a-z-]+.yml(.gz|.xz)|icons-[0-9x-]+.tar(.gz|.xz)|MD5SUMS|SHA256SUMS|Release)$")
+re_includeinrelease_byhash = re.compile (r"(Translation-[a-zA-Z_]+\.(?:bz2|xz)|Contents-[0-9a-z-]+.gz|Index|Packages(.gz|.bz2|.xz)?|Sources(.gz|.bz2|.xz)?|Components-[0-9a-z-]+.yml(.gz|.xz)|icons-[0-9x-]+.tar(.gz|.xz)|Release)$")
+re_includeinrelease_plain = re.compile (r"(MD5SUMS|SHA256SUMS)$")
 
 # in generate_index_diffs
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")

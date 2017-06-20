@@ -45,7 +45,7 @@ import commands
 from sqlalchemy.orm import object_session
 
 from daklib import utils, daklog
-from daklib.regexes import re_gensubrelease, re_includeinrelease
+from daklib.regexes import re_gensubrelease, re_includeinrelease_byhash, re_includeinrelease_plain
 from daklib.dak_exceptions import *
 from daklib.dbconn import *
 from daklib.config import Config
@@ -367,20 +367,25 @@ class ReleaseWriter(object):
         hashes = [x for x in RELEASE_HASHES if x.db_name in suite.checksums]
 
         fileinfo = {}
+        fileinfo_byhash = {}
 
         uncompnotseen = {}
 
         for dirpath, dirnames, filenames in os.walk(".", followlinks=True, topdown=True):
             for entry in filenames:
-                # Skip things we don't want to include
-                if not re_includeinrelease.match(entry):
-                    continue
-
                 if dirpath == '.' and entry in ["Release", "Release.gpg", "InRelease"]:
                     continue
 
                 filename = os.path.join(dirpath.lstrip('./'), entry)
-                fileinfo[filename] = {}
+
+                if re_includeinrelease_byhash.match(entry):
+                    fileinfo[filename] = fileinfo_byhash[filename] = {}
+                elif re_includeinrelease_plain.match(entry):
+                    fileinfo[filename] = {}
+                # Skip things we don't want to include
+                else:
+                    continue
+
                 contents = open(filename, 'r').read()
 
                 # If we find a file for which we have a compressed version and
@@ -423,8 +428,8 @@ class ReleaseWriter(object):
         out.close()
         os.rename(outfile + '.new', outfile)
 
-        self._update_hashfile_table(session, fileinfo, hashes)
-        self._make_byhash_links(fileinfo, hashes)
+        self._update_hashfile_table(session, fileinfo_byhash, hashes)
+        self._make_byhash_links(fileinfo_byhash, hashes)
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
