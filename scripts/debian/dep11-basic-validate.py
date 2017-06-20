@@ -22,6 +22,7 @@ import gzip
 import lzma
 from voluptuous import Schema, Required, All, Any, Length, Range, Match, Url
 from optparse import OptionParser
+import multiprocessing as mp
 
 schema_header = Schema({
     Required('File'): All(str, 'DEP-11', msg="Must be \"DEP-11\""),
@@ -162,6 +163,9 @@ def validate_file(fname):
 
 def validate_dir(dirname):
     ret = True
+    asfiles = []
+
+    # find interesting files
     for root, subfolders, files in os.walk(dirname):
         for fname in files:
             fpath = os.path.join(root, fname)
@@ -169,8 +173,14 @@ def validate_dir(dirname):
                 add_issue("FATAL: Symlinks are not allowed")
                 return False
             if fname.endswith(".yml.gz") or fname.endswith(".yml.xz"):
-                if not validate_file(fpath):
-                    ret = False
+                asfiles.append(fpath)
+
+    # validate the files, use multiprocessing to speed up the validation
+    with mp.Pool() as pool:
+        results = [pool.apply_async(validate_file, (fname,)) for fname in asfiles]
+        for res in results:
+            if not res.get():
+                ret = False
 
     return ret
 
