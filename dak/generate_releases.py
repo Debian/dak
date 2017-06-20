@@ -199,7 +199,7 @@ class ReleaseWriter(object):
 
         # Update the hashfile table with new or updated files
         for filename in fileinfo:
-            if not os.path.exists(filename):
+            if not os.path.lexists(filename):
                 # probably an uncompressed index we didn't generate
                 continue
             byhashdir = os.path.join(os.path.dirname(filename), 'by-hash')
@@ -227,19 +227,9 @@ class ReleaseWriter(object):
     def _make_byhash_links(self, fileinfo, hashes):
         # Create hardlinks in by-hash directories
         for filename in fileinfo:
-            if not os.path.exists(filename):
+            if not os.path.lexists(filename):
                 # probably an uncompressed index we didn't generate
                 continue
-
-            for h in hashes:
-                field = h.release_field
-                hashfile = os.path.join(os.path.dirname(filename), 'by-hash', field, fileinfo[filename][field])
-
-                # if the hash is known to exist, re-use the old file
-                if os.path.exists(hashfile):
-                    os.unlink(filename)
-                    os.link(hashfile, filename)
-                    break
 
             for h in hashes:
                 field = h.release_field
@@ -254,6 +244,23 @@ class ReleaseWriter(object):
                 except OSError as exc:
                     if exc.errno != errno.EEXIST:
                         raise
+
+    def _make_byhash_base_symlink(self, fileinfo, hashes):
+        # Create symlinks to files in by-hash directories
+        for filename in fileinfo:
+            if not os.path.lexists(filename):
+                # probably an uncompressed index we didn't generate
+                continue
+
+            besthash = hashes[-1]
+            field = besthash.release_field
+            hashfilebase = os.path.join('by-hash', field, fileinfo[filename][field])
+            hashfile = os.path.join(os.path.dirname(filename), hashfilebase)
+
+            assert os.path.exists(hashfile), 'by-hash file {} is missing'.format(hashfile)
+
+            os.unlink(filename)
+            os.symlink(hashfilebase, filename)
 
     def generate_release_files(self):
         """
@@ -430,6 +437,7 @@ class ReleaseWriter(object):
 
         self._update_hashfile_table(session, fileinfo_byhash, hashes)
         self._make_byhash_links(fileinfo_byhash, hashes)
+        self._make_byhash_base_symlink(fileinfo_byhash, hashes)
 
         sign_release_dir(suite, os.path.dirname(outfile))
 
