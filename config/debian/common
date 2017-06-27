@@ -106,7 +106,7 @@ function make_buildd_dir () {
 
     # Tell the mirrors that we've updated
     log "Pushing static for incoming.d.o"
-    chronic /usr/local/bin/static-update-component incoming.debian.org < /dev/null
+    chronic timeout -k 600 480 /usr/local/bin/static-update-component incoming.debian.org < /dev/null
 }
 
 # Process (oldstable)-proposed-updates "NEW" queue
