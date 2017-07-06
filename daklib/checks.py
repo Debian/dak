@@ -260,6 +260,37 @@ class ChangesCheck(Check):
 
         return True
 
+class SuffixCheck(Check):
+    """Checks suffix of .changes and .buildinfo files.
+
+    buildd uploads will include _${arch}.changes and _${arch}.buildinfo, so such endings
+    should be reserved for uploads including binaries for ${arch} to avoid conflicts
+    (for example in policy queues where dak stores the .changes and .buildinfo for later
+    processing)
+    """
+    def check(self, upload):
+        session = upload.session
+        changes = upload.changes
+
+        suffixes = []
+
+        changes_match = re_file_changes.match(changes.filename)
+        assert(changes_match)
+        suffixes.append((changes.filename, changes_match.group('suffix')))
+
+        for bi in changes.buildinfo_files:
+            bi_match = re_file_buildinfo.match(bi.filename)
+            assert(bi_match)
+            suffixes.append((bi.filename, bi_match.group('suffix')))
+
+        for fn, suffix in suffixes:
+            if suffix in changes.architectures:
+                continue
+            if session.query(Architecture).filter_by(arch_string=suffix).first():
+                raise Reject("The upload includes '{}' whose filename includes the architecture name {}, but does not include binaries for {}. It is rejected to avoid filename conflicts with later buildd uploads.".format(fn, suffix, suffix))
+
+        return True
+
 class ExternalHashesCheck(Check):
     """Checks hashes in .changes and .dsc against an external database."""
     def check_single(self, session, f):
