@@ -786,7 +786,7 @@ class NoSourceOnlyCheck(Check):
                           'oldoldstable-backports', 'oldoldstable-backports-sloppy',
                           'wheezy-backports', 'wheezy-backports-sloppy'):
                 if suite in changes.distributions:
-                    raise Reject('Suite {} is not configured to build arch:all packages. Please include them in your upload')
+                    raise Reject('Suite {} is not configured to build arch:all packages. Please include them in your upload'.format(suite))
 
         return True
 
