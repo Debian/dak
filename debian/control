@@ -32,7 +32,7 @@ Depends: binutils-multiarch,
          python-psycopg2,
          python-pyrss2gen,
          python-rrdtool,
-         python-sqlalchemy (<< 1.0),
+         python-sqlalchemy,
          python-yaml,
          symlinks,
          ${python:Depends}
