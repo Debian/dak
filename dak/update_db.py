@@ -56,7 +56,8 @@ class UpdateDB:
         print """Usage: dak update-db
 Updates dak's database schema to the lastest version. You should disable crontabs while this is running
 
-  -h, --help                show this help and exit."""
+  -h, --help                show this help and exit.
+  -y, --yes                 do not ask for confirmation"""
         sys.exit(exit_code)
 
 
@@ -171,10 +172,11 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 update_module = getattr(dakdb, "update"+str(i))
                 print "Update %d: %s" % (i, next(s for s in update_module.__doc__.split("\n") if s))
                 modules.append((update_module, i))
-            prompt = "\nUpdate database? (y/N) "
-            answer = utils.our_raw_input(prompt)
-            if answer.upper() != 'Y':
-                sys.exit(0)
+            if not Config().find_b("Update-DB::Options::Yes", False):
+                prompt = "\nUpdate database? (y/N) "
+                answer = utils.our_raw_input(prompt)
+                if answer.upper() != 'Y':
+                    sys.exit(0)
         else:
             print "no updates required"
             logger.log(["no updates required"])
@@ -201,7 +203,8 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
     def init (self):
         cnf = Config()
-        arguments = [('h', "help", "Update-DB::Options::Help")]
+        arguments = [('h', "help", "Update-DB::Options::Help"),
+                     ("y", "yes", "Update-DB::Options::Yes")]
         for i in [ "help" ]:
             if not cnf.has_key("Update-DB::Options::%s" % (i)):
                 cnf["Update-DB::Options::%s" % (i)] = ""
