@@ -21,6 +21,7 @@ dak-setup() {
 
   export DAK_CONFIG="${DAKBASE}/etc/dak.conf"
   (cd ${setupdir}; ./init_minimal_conf) > ${DAK_CONFIG}
+  echo 'DB::Role "dak";' >> ${DAK_CONFIG}
 
   export PATH="${DAKBASE}/bin:${PATH}"
   ln -s ${DAK_ROOT}/dak/dak.py ${DAKBASE}/bin/dak

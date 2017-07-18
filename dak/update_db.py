@@ -137,6 +137,10 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
             self.db = psycopg2.connect(connect_str)
 
+            db_role = cnf.get("DB::Role")
+            if db_role is not None:
+                self.db.cursor().execute('SET ROLE "{}"'.format(db_role))
+
         except Exception as e:
             print "FATAL: Failed connect to database (%s)" % str(e)
             sys.exit(1)
