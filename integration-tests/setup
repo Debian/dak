@@ -11,7 +11,7 @@ dak-setup() {
 
   (cd ${setupdir}; ./init_db)
   if [[ ${PGUSER:-} != dak ]]; then
-    psql -c "GRANT dak TO ${PGUSER}"
+    psql -c "GRANT dak TO \"${PGUSER}\""
   fi
   psql -f ${setupdir}/current_schema.sql -d projectb >/dev/null
   unset PGDATABASE
