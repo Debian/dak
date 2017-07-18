@@ -1,0 +1,34 @@
+#! /bin/bash
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+
+# add a unstable suite with amd64
+dak admin architecture add amd64 AMD64
+dak admin suite add unstable "" codename=sid
+dak admin suite-architecture add unstable all amd64
+dak admin suite-component add unstable main contrib non-free
+
+(
+  suites="$(dak admin suite list | sort | xargs)"
+  suites_e="byhand new unstable"
+  assert-equal "dak admin suite list" "${suites}" "${suites_e}"
+)
+
+(
+  unstable_archs="$(dak admin s-a list-arch unstable | sort | xargs)"
+  assert-equal "dak admin s-a list-arch unstable" "${unstable_archs}" "amd64"
+)
+
+(
+  cs_unstable="$(dak control-suite -l unstable)"
+  assert-equal "dak control-suite -l unstable" "${cs_unstable}" ""
+)
+
+(
+  co_unstable="$(dak control-override -l unstable)"
+  assert-equal "dak control-override -l unstable" "${co_unstable}" ""
+)

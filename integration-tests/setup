@@ -1,0 +1,34 @@
+# -*- mode: sh -*-
+
+if [[ ! -v DAK_INTEGRATION_TEST || ! -v DAK_ROOT ]]; then
+  exit 1
+fi
+
+dak-setup() {
+  local setupdir="${DAK_ROOT}/setup"
+
+  export DAKBASE=$(mktemp -d)
+
+  (cd ${setupdir}; ./init_db)
+  if [[ ${PGUSER:-} != dak ]]; then
+    psql -c "GRANT dak TO ${PGUSER}"
+  fi
+  psql -f ${setupdir}/current_schema.sql -d projectb >/dev/null
+  unset PGDATABASE
+  (cd ${setupdir}; ./init_core)
+
+  export DAK_CONFIG="${DAKBASE}/etc/dak.conf"
+  mkdir ${DAKBASE}/etc
+  (cd ${setupdir}; ./init_minimal_conf) > ${DAK_CONFIG}
+
+  dak update-db --yes
+}
+
+dak-cleanup() {
+  if [[ -v DAKBASE ]]; then
+    rm -rf -- "${DAKBASE}"
+  fi
+}
+
+trap dak-cleanup EXIT
+dak-setup

@@ -1,0 +1,29 @@
+#! /bin/bash
+
+set -e
+set -u
+
+# find-postgresql-version: () -> str
+#   locate postgresql version for which both server and debversion
+#   extension are installed.  exits with error if no version is found.
+#   returns: version, e.g. "9.6"
+find-postgresql-version() {
+  local status
+  for v in 9.6 9.4; do
+    status=$(dpkg-query \
+             -f'${db:Status-Status} ' \
+             -W postgresql-${v} postgresql-${v}-debversion 2>/dev/null || :)
+    if [ "${status}" = "installed installed " ]; then
+      echo ${v}
+      exit 0
+    fi
+  done
+  echo "No PostgreSQL version with server and debversion extension found." >&2
+  exit 1
+}
+
+pgversion=$(find-postgresql-version)
+export DAK_INTEGRATION_TEST=1
+export DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
+
+pg_virtualenv -v "${pgversion}" -t "${DAK_ROOT}/integration-tests/tests/0001-basic"
