@@ -14,6 +14,7 @@ ifneq ($(JENKINS_EXPORTS_DIR),)
 endif
 	mkdir -p debian/test-gnupghome
 	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v tests $(PYBUILD_EXTRA_ARGS)
+	./integration-tests/run-tests
 endif
 
 # Replace with "debian/test-gnupghome/" in d/clean once
