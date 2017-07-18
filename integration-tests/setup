@@ -17,9 +17,13 @@ dak-setup() {
   unset PGDATABASE
   (cd ${setupdir}; ./init_core)
 
+  mkdir ${DAKBASE}/etc ${DAKBASE}/bin
+
   export DAK_CONFIG="${DAKBASE}/etc/dak.conf"
-  mkdir ${DAKBASE}/etc
   (cd ${setupdir}; ./init_minimal_conf) > ${DAK_CONFIG}
+
+  export PATH="${DAKBASE}/bin:${PATH}"
+  ln -s ${DAK_ROOT}/dak/dak.py ${DAKBASE}/bin/dak
 
   dak update-db --yes
 }
