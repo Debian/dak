@@ -50,7 +50,6 @@ $junk = $conf::upload_delay_1;
 $junk = $conf::upload_delay_2;
 $junk = $conf::check_md5sum;
 
-#$junk = $conf::ls;
 $junk         = $conf::ftpdebug;
 $junk         = $conf::ftptimeout;
 $junk         = @conf::nonus_packages;
