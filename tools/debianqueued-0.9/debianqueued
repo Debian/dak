@@ -53,7 +53,6 @@ $junk = $conf::check_md5sum;
 $junk         = $conf::ftpdebug;
 $junk         = $conf::ftptimeout;
 $junk         = @conf::nonus_packages;
-$junk         = @conf::test_binaries;
 $junk         = @conf::maintainer_mail;
 $junk         = @conf::targetdir_delayed;
 $junk         = $conf::mail ||= '/usr/sbin/sendmail';
@@ -445,18 +444,6 @@ sub check_dir() {
   debug("starting checkdir");
   $main::dstat = "c";
   write_status_file() if $conf::statusdelay;
-
-  # test if needed binaries are available; this is if they're on maybe
-  # slow-mounted NFS filesystems
-  foreach (@conf::test_binaries) {
-    next if -f $_;
-
-    # maybe the mount succeeds now
-    sleep 5;
-    next if -f $_;
-    msg( "log", "binary test failed for $_; delaying queue run\n" );
-    goto end_run;
-  } ## end foreach (@conf::test_binaries)
 
   for ( $adelay = -1 ; $adelay <= $conf::max_delayed ; $adelay++ ) {
     if ( $adelay == -1 ) {

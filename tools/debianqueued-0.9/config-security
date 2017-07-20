@@ -16,9 +16,6 @@ $mail      = "/usr/sbin/sendmail";
 $gzip      = "/bin/gzip";
 $cp        = "/bin/cp";
 
-# binaries which existance should be tested before each queue run
-#@test_binaries = ();
-
 # general options to ssh/scp
 $ssh_options = "-o'BatchMode yes' -o'FallBackToRsh no' ".
                "-o'ForwardAgent no' -o'ForwardX11 no' ".
