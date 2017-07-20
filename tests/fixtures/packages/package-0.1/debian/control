@@ -2,6 +2,7 @@ Source: package
 Section: misc
 Priority: extra
 Maintainer: A Maintainer <maint@example.com>
+Uploaders: An Uploader <uploader@example.com>
 Build-Depends: debhelper (>= 7)
 
 Package: package
