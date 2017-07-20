@@ -179,7 +179,7 @@ do {
 # check if all programs exist
 my $prg;
 foreach $prg ( $conf::gpg, $conf::ssh, $conf::scp, $conf::ssh_agent,
-               $conf::ssh_add, $conf::mail, $conf::mkfifo )
+               $conf::ssh_add, $conf::mail )
 {
   die "Required program $prg doesn't exist or isn't executable\n"
     if !-x $prg;
@@ -1737,9 +1737,8 @@ sub fork_statusd() {
   $SIG{"CHLD"} = "DEFAULT";
 
   rm($conf::statusfile);
-  $errs = `$conf::mkfifo $conf::statusfile`;
-  die "$main::progname: cannot create named pipe $conf::statusfile: $errs"
-    if $?;
+  POSIX::mkfifo($conf::statusfile, 0644)
+    or die "Cannot create named pipe $conf::statusfile: $!\n";
   chmod( 0644, $conf::statusfile )
     or die "Cannot set modes of $conf::statusfile: $!\n";
 
