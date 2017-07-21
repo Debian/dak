@@ -124,13 +124,22 @@ mkdir -p ${suitename}_${newrev}
 cd ${suitename}_${newrev}
 dak control-suite -l ${pusuite} > ${pusuite}.list
 dak control-suite -l ${suite} > ${suite}.list
+if [[ ${suitename} != jessie ]]; then
+    dak control-suite -l ${suite}-debug > ${suite}-debug.list
+    dak control-suite -l ${pusuite}-debug > ${pusuite}-debug.list
+fi
 
 echo "Is there anything to skip in this release? If so, please enter source package names, whitespace seperated, if not just hit enter"
 read -e -p "Source packages: " skiplist
 confirm
 if [[ -n ${skiplist} ]]; then
-  mv ${pusuite}.list ${pusuite}.list.ori
-  grep -vFf <(dak ls -f heidi -S -s ${pusuite} ${skip}) ${pusuite}.list.ori > ${pusuite}.list
+  for s in ${pusuite} ${pusuite}-debug; do
+    if [[ ${s} = ${pusuite}-debug && ${suitename} = jessie ]]; then
+      continue
+    fi
+    mv ${s}.list ${s}.list.ori
+    grep -vFf <(dak ls -f heidi -S -s ${s} ${skip}) ${s}.list.ori > ${s}.list
+  done
 fi
 
 log "Creating changelog"
@@ -147,7 +156,13 @@ fi
 
 log "Merging ${pusuite} into ${suite}"
 dak control-suite --add ${suite} < ${pusuite}.list
+if [[ ${suitename} != jessie ]]; then
+    dak control-suite --add ${suite}-debug < ${pusuite}-debug.list
+fi
 dak control-suite --remove ${pusuite} < ${pusuite}.list
+if [[ ${suitename} != jessie ]]; then
+    dak control-suite --remove ${pusuite}-debug < ${pusuite}-debug.list
+fi
 
 log "Cleaning changelogs from proposed-updates"
 pumorguedir="${base}/morgue/queues/$(date +%Y/%m)"
@@ -309,8 +324,17 @@ if [[ ${hadremove} -ne 0 ]]; then
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
 fi
 
+if [[ ${suitename} != jessie ]]; then
+    log "Cleaning up debug suite"
+    dak manage-debug-suites ${suite}-debug
+fi
+
 log "Time to run gps/contents, RMs can check if all looks ok"
-dak generate-packages-sources2 --force -s ${suite},${pusuite}
+gps_suites=${suite},${pusuite}
+if [[ ${suitename} != jessie ]]; then
+    gps_suites=${gps_suites},${suite}-debug,${pusuite}-debug
+fi
+dak generate-packages-sources2 --force -s ${gps_suites}
 ${scriptsdir}/sync-release ${suitename} &
 log "Contents"
 dak contents generate -f -s ${suite} -a ftp-master
