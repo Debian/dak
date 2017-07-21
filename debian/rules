@@ -13,6 +13,7 @@ ifneq ($(JENKINS_EXPORTS_DIR),)
 	mkdir -pv $(JENKINS_EXPORTS_DIR)/test-results
 endif
 	mkdir -p debian/test-gnupghome
+	make -C tests/fixtures/packages
 	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v tests $(PYBUILD_EXTRA_ARGS)
 	./integration-tests/run-tests
 endif
@@ -20,5 +21,6 @@ endif
 # Replace with "debian/test-gnupghome/" in d/clean once
 # debhelper (>= 9.20151116) can be used for dak
 override_dh_auto_clean:
+	make -C tests/fixtures/packages clean
 	rm -fr debian/test-gnupghome
 	dh_auto_clean

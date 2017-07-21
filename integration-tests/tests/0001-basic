@@ -9,7 +9,7 @@ set -u
 # add a unstable suite with amd64
 dak admin architecture add amd64 AMD64
 dak admin suite add unstable "" codename=sid
-dak admin suite-architecture add unstable all amd64
+dak admin suite-architecture add unstable source all amd64
 dak admin suite-component add unstable main contrib non-free
 
 (
@@ -31,4 +31,13 @@ dak admin suite-component add unstable main contrib non-free
 (
   co_unstable="$(dak control-override -l unstable)"
   assert-equal "dak control-override -l unstable" "${co_unstable}" ""
+)
+
+(
+  packages=${DAK_ROOT:?}/tests/fixtures/packages
+  ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
+  dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
+  cp ${packages:?}/nonfree-package_* ${packages:?}/package_* ${DAKBASE}/tmp
+
+  dak process-upload -d ${DAKBASE}/tmp --automatic
 )

@@ -17,7 +17,8 @@ dak-setup() {
   unset PGDATABASE
   (cd ${setupdir}; ./init_core)
 
-  mkdir ${DAKBASE}/etc ${DAKBASE}/bin
+  mkdir ${DAKBASE}/etc ${DAKBASE}/bin ${DAKBASE}/keyrings ${DAKBASE}/tmp
+  ln -s ${DAK_ROOT}/templates ${DAKBASE}/
 
   export DAK_CONFIG="${DAKBASE}/etc/dak.conf"
   (cd ${setupdir}; ./init_minimal_conf) > ${DAK_CONFIG}
@@ -27,6 +28,7 @@ dak-setup() {
   ln -s ${DAK_ROOT}/dak/dak.py ${DAKBASE}/bin/dak
 
   dak update-db --yes
+  dak init-dirs
 }
 
 dak-cleanup() {
