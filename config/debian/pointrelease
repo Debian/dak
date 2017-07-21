@@ -122,12 +122,13 @@ pg_timestamp pre_${suite}_${newrev}
 cd ~
 mkdir -p ${suitename}_${newrev}
 cd ${suitename}_${newrev}
-dak control-suite -l ${pusuite} > ${pusuite}.list
-dak control-suite -l ${suite} > ${suite}.list
+dak control-suite -l ${pusuite} > ${pusuite}.list &
+dak control-suite -l ${suite} > ${suite}.list &
 if [[ ${suitename} != jessie ]]; then
-    dak control-suite -l ${suite}-debug > ${suite}-debug.list
-    dak control-suite -l ${pusuite}-debug > ${pusuite}-debug.list
+    dak control-suite -l ${suite}-debug > ${suite}-debug.list &
+    dak control-suite -l ${pusuite}-debug > ${pusuite}-debug.list &
 fi
+wait
 
 echo "Is there anything to skip in this release? If so, please enter source package names, whitespace seperated, if not just hit enter"
 read -e -p "Source packages: " skiplist
