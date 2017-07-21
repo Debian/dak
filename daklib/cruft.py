@@ -178,30 +178,21 @@ def queryNBS(suite_id, session):
     """
 
     query = """
-create temp table unique_binaries (
-    package text not null,
-    architecture integer not null,
-    source integer not null);
-
-insert into unique_binaries
-    select bab.package, bab.architecture, max(bab.source)
+with
+    unique_binaries as
+    (select
+        bab.package,
+        bab.architecture,
+        max(bab.source) as source
         from bin_associations_binaries bab
         where bab.suite = :suite_id and bab.architecture > 2
-        group by package, architecture having count(*) = 1;
-
-create temp table newest_binaries (
-    package text not null,
-    architecture integer not null,
-    source text not null,
-    version debversion not null);
-
-insert into newest_binaries
-    select ub.package, ub.architecture, nsa.source, nsa.version
+        group by package, architecture having count(*) = 1),
+    newest_binaries as
+    (select ub.package, ub.architecture, nsa.source, nsa.version
         from unique_binaries ub
         join newest_src_association nsa
-            on ub.source = nsa.src and nsa.suite = :suite_id;
-
-with uptodate_arch as
+            on ub.source = nsa.src and nsa.suite = :suite_id),
+    uptodate_arch as
     (select architecture, source, version
         from newest_binaries
         group by architecture, source, version),
