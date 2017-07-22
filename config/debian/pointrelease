@@ -335,11 +335,11 @@ if [[ ${suitename} != jessie ]]; then
     gps_suites=${gps_suites},${suite}-debug,${pusuite}-debug
 fi
 dak generate-packages-sources2 --force -s ${gps_suites}
-${scriptsdir}/sync-release ${suitename} &
+${scriptsdir}/sync-release ${suite} &
 log "Contents"
 dak contents generate -f -s ${suite} -a ftp-master
 wait
-${scriptsdir}/sync-release ${suitename}
+${scriptsdir}/sync-release ${suite}
 
 if [[ ${suitename} == wheezy ]]; then
   ${scriptsdir}/generate-i18n-Index "${ftpdir}/dists/${suite}"
@@ -348,7 +348,7 @@ fi
 echo "Generate release files?"
 confirm
 dak generate-releases -f -s ${suite} ${pusuite}
-${scriptsdir}/sync-release ${suitename}
+${scriptsdir}/sync-release ${suite}
 
 log "Release file generated, waiting for RMs checking and (hopefully) signing"
 
