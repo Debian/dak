@@ -117,11 +117,16 @@ NOW=$(date "+%Y.%m.%d-%H:%M:%S")
 log "Point release for ${suite} (${suitename}); old version: ${oldrev}, new: ${newrev}"
 log "Updates come from ${pusuite}"
 
-log "Preparing"
-pg_timestamp pre_${suite}_${newrev}
 cd ~
 mkdir -p ${suitename}_${newrev}
 cd ${suitename}_${newrev}
+
+echo "Is there anything to skip in this release? If so, please enter source package names, whitespace seperated, if not just hit enter"
+read -e -p "Source packages: " skiplist
+confirm
+
+log "Preparing"
+pg_timestamp pre_${suite}_${newrev}
 dak control-suite -l ${pusuite} > ${pusuite}.list &
 dak control-suite -l ${suite} > ${suite}.list &
 if [[ ${suitename} != jessie ]]; then
@@ -130,9 +135,6 @@ if [[ ${suitename} != jessie ]]; then
 fi
 wait
 
-echo "Is there anything to skip in this release? If so, please enter source package names, whitespace seperated, if not just hit enter"
-read -e -p "Source packages: " skiplist
-confirm
 if [[ -n ${skiplist} ]]; then
   for s in ${pusuite} ${pusuite}-debug; do
     if [[ ${s} = ${pusuite}-debug && ${suitename} = jessie ]]; then
