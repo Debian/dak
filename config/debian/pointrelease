@@ -93,7 +93,7 @@ done
 suitename=${suitename:-"jessie"}
 suite=$(psql -qAtc "SELECT suite_name FROM suite WHERE codename='${suitename}'")
 oldrev=$(psql -qAtc "SELECT version FROM suite WHERE codename='${suitename}'")
-newrev=${newrev:-$(( ${oldrev##*.} + 1 ))}
+newrev=${newrev:-${oldrev%.*}.$(( ${oldrev##*.} + 1 ))}
 PROGRAM="pointrelease_${suitename}"
 
 # Set some variables
