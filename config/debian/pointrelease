@@ -368,21 +368,22 @@ log "Release file generated, waiting for RMs checking and (hopefully) signing"
 
 # Remove InRelease: Release can be signed by both ftpmaster & stable release keys
 merge-release-signatures() {
-    local s="${1}"
-    local releasefile="${2}"
-    rm -f ${ftpdir}/dists/${s}/InRelease ${ftpdir}/zzz-dists/${s}/InRelease
+    local archiveroot="${1}"
+    local s="${2}"
+    local releasefile="${3}"
+    rm -f ${archiveroot}/dists/${s}/InRelease ${archiveroot}/zzz-dists/${s}/InRelease
     cd ~/${suitename}_${newrev}
     while ! ${wget} -O "${releasefile}" "${release_base}/${releasefile}"; do
         sleep 10
     done
-    cd ${ftpdir}/dists/${s}
+    cd ${archiveroot}/dists/${s}
     cat ~/${suitename}_${newrev}/${releasefile} >> Release.gpg
     gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
 }
 
-merge-release-signatures ${suite} Release-${newrev}.gpg
+merge-release-signatures $(get_archiveroot ftp-master) ${suite} Release-${newrev}.gpg
 if [[ ${suitename} != jessie ]]; then
-    merge-release-signatures ${suite}-debug Release-${newrev}-debug.gpg
+    merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug Release-${newrev}-debug.gpg
 fi
 
 echo "Done. Is a mirrorpush needed? Or just one to the cd-builder?"
