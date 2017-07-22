@@ -235,6 +235,14 @@ confirm
 if [[ -n ${diver} ]]; then
     log "Installing new d-i version ${diver}"
     dak copy-installer -s ${pusuite} -d ${suite} ${diver}
+    # Remove new version from proposed-updates
+    cd $ftpdir/dists/${pusuite}/main
+    for iarch in $(dak admin s-a list-arch ${suite}); do
+        rm -rf -- "installer-${iarch}/${diver}"
+        if [[ -L install-${iarch}/current && "$(readlink install-${iarch}/current)" = "${diver}" ]]; then
+            rm install-${iarch}/current
+        fi
+    done
 
     if [[ -n ${dioldver} ]]; then
         log "Moving old d-i version ${dioldver} to morgue"
