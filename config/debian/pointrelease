@@ -94,7 +94,6 @@ suitename=${suitename:-"jessie"}
 suite=$(psql -qAtc "SELECT suite_name FROM suite WHERE codename='${suitename}'")
 oldrev=$(psql -qAtc "SELECT version FROM suite WHERE codename='${suitename}'")
 newrev=${newrev:-$(( ${oldrev##*.} + 1 ))}
-release_base=https://release.debian.org/${pusuite}/${newrev%%.*}/${newrev}
 PROGRAM="pointrelease_${suitename}"
 
 # Set some variables
@@ -103,6 +102,8 @@ case "${suite}" in
   oldstable) pusuite=oldstable-proposed-updates ;;
   *)         pusuite=INVALID ;;
 esac
+
+release_base=https://release.debian.org/${pusuite}/${newrev%%.*}/${newrev}
 
 wget="wget --ca-directory=/etc/ssl/ca-debian"
 
