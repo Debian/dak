@@ -355,10 +355,6 @@ if [[ ${suitename} != jessie ]]; then
     ${scriptsdir}/sync-release ${suite}-debug
 fi
 
-if [[ ${suitename} == wheezy ]]; then
-  ${scriptsdir}/generate-i18n-Index "${ftpdir}/dists/${suite}"
-fi
-
 echo "Generate release files?"
 confirm
 release_suites="${suite} ${pusuite}"
