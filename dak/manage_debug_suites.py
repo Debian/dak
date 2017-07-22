@@ -76,7 +76,7 @@ def clean(debug_suite, transaction):
      USING binaries b
      WHERE ba.suite = :debugsuite_id
        AND ba.bin = b.id
-       AND b.source IN (SELECT source FROM sources_removed)
+       AND b.source NOT IN (SELECT source FROM sources_to_keep)
     RETURNING
       b.package,
       b.version,
