@@ -180,16 +180,9 @@ log "Checking for r0 additions and propups"
 cd ~/${suitename}_${newrev}
 release_base=https://release.debian.org/${pusuite}/${newrev%%.*}/${newrev}
 
-f=${suitename}-r0-additions.cs
-if ${wget} -O "${f}" "${release_base}/${f}"; then
-    echo "Please check ${f}"
-    confirm
-    dak control-suite --add ${suitename}-r0 < ${f}
-fi
-
 propups() {
     local target_suite="${1}"
-    local f=propups.${target_suite}
+    local f="${2:-propups.${target_suite}}"
     if ${wget} -O "${f}" "${release_base}/${f}"; then
         echo "Please check ${f}"
         confirm
@@ -197,6 +190,7 @@ propups() {
     fi
 }
 
+propups ${suitename}-r0 ${suitename}-r0-additions.cs
 propups unstable
 if [[ ${suitename} != jessie ]]; then
     propups unstable-debug
