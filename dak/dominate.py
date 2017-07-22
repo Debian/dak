@@ -27,6 +27,9 @@ from daklib.config import Config
 from daklib import daklog, utils
 import apt_pkg, sys
 
+from sqlalchemy.sql import exists
+
+
 Options = None
 Logger = None
 
@@ -136,26 +139,24 @@ def main():
     Options = cnf.subtree("Obsolete::Options")
     if Options['Help']:
         usage()
-    if 'Suite' not in Options:
-        query_suites = DBConn().session().query(Suite)
-        suites = [suite.suite_name for suite in query_suites]
-        cnf['Obsolete::Options::Suite'] = str(','.join(suites))
 
     if not Options['No-Action']:
        Logger = daklog.Logger("dominate")
     session = DBConn().session()
 
+    suites_query = (session
+            .query(Suite)
+            .order_by(Suite.suite_name)
+            .filter(~exists().where(Suite.suite_id == PolicyQueue.suite_id)))
+    if 'Suite' in Options:
+        suites_query = suites_query.filter(Suite.suite_name.in_(utils.split_args(Options['Suite'])))
+    if not Options['Force']:
+        suites_query = suites_query.filter_by(untouchable = False)
+    suites = suites_query.all()
+
     if not Options['No-Action']:
-        for suite_name in utils.split_args(Options['Suite']):
-            suite = session.query(Suite).filter_by(suite_name = suite_name).one()
-
-            # Skip policy queues. We don't want to remove obsolete packages from those.
-            policy_queue = session.query(PolicyQueue).filter_by(suite=suite).first()
-            if policy_queue is not None:
-                continue
-
-            if not suite.untouchable or Options['Force']:
-                doDaDoDa(suite.suite_id, session)
+        for suite in suites:
+            doDaDoDa(suite.suite_id, session)
 
     if Options['No-Action']:
         session.rollback()
