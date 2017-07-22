@@ -320,7 +320,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
             # Take action
             if action == "add":
                 if association_id:
-                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
+                    utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite.suite_name))
                     continue
                 else:
                     transaction.copy_source(pkg, suite, component)
