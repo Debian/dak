@@ -94,6 +94,7 @@ suitename=${suitename:-"jessie"}
 suite=$(psql -qAtc "SELECT suite_name FROM suite WHERE codename='${suitename}'")
 oldrev=$(psql -qAtc "SELECT version FROM suite WHERE codename='${suitename}'")
 newrev=${newrev:-$(( ${oldrev##*.} + 1 ))}
+release_base=https://release.debian.org/${pusuite}/${newrev%%.*}/${newrev}
 PROGRAM="pointrelease_${suitename}"
 
 # Set some variables
@@ -180,7 +181,6 @@ fi
 
 log "Checking for r0 additions and propups"
 cd ~/${suitename}_${newrev}
-release_base=https://release.debian.org/${pusuite}/${newrev%%.*}/${newrev}
 
 propups() {
     local target_suite="${1}"
