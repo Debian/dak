@@ -299,8 +299,9 @@ log "Updating suite table in postgres"
 mdate=$(date +"%d %B %Y")
 psql projectb <<EOF
 begin;
-update suite set version = '${newrev}' where suite_name = '${suite}';
+update suite set version = '${newrev}' where suite_name = '${suite}' or suite_name = '${suite}-debug';
 update suite set description = 'Debian ${newrev} Released ${mdate}' where suite_name = '${suite}';
+update suite set description = 'Debian ${newrev} Released ${mdate} - Debug Information' where suite_name = '${suite}-debug';
 commit;
 EOF
 
