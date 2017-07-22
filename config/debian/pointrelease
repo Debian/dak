@@ -332,7 +332,7 @@ fi
 
 if [[ ${suitename} != jessie ]]; then
     log "Cleaning up debug suite"
-    dak manage-debug-suites ${suite}-debug
+    dak manage-debug-suites ${suite}-debug ${pusuite}-debug
 fi
 
 log "Time to run gps/contents, RMs can check if all looks ok"
