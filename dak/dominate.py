@@ -99,18 +99,21 @@ def deleteAssociations(table, idList, session):
     params = {'idList': tuple(idList)}
     session.execute(query, params)
 
-def doDaDoDa(suite, session):
+def doDaDoDa(suite, session, ids_bin, ids_src):
     # keep this part disabled because it is too dangerous
     #idList = obsoleteAnyByAllAssociations(suite, session)
     #deleteAssociations('bin_associations', idList, session)
 
     idList = obsoleteAnyAssociations(suite, session)
+    ids_bin.update(idList)
     deleteAssociations('bin_associations', idList, session)
 
     idList = obsoleteSrcAssociations(suite, session)
+    ids_src.update(idList)
     deleteAssociations('src_associations', idList, session)
 
     idList = obsoleteAllAssociations(suite, session)
+    ids_bin.update(idList)
     deleteAssociations('bin_associations', idList, session)
 
 
@@ -338,8 +341,36 @@ def main():
         print(tabulate(assocs, headers, tablefmt="orgtbl"))
 
     else:
+        ids_bin = set()
+        ids_src = set()
+
         for suite in suites:
-            doDaDoDa(suite.suite_id, session)
+            doDaDoDa(suite.suite_id, session, ids_bin, ids_src)
+
+        # List differences in selection algorithm
+        assocs_diff = []
+        for assoc in assocs:
+            if assoc['arch'] == 'source':
+                try:
+                    ids_src.remove(assoc['assoc_id'])
+                except KeyError:
+                    assocs_diff.append(assoc)
+            if assoc['arch'] != 'source':
+                try:
+                    ids_bin.remove(assoc['assoc_id'])
+                except KeyError:
+                    assocs_diff.append(assoc)
+
+        if assocs_diff:
+            print('additional removals:')
+            headers = ('source package', 'source version', 'package', 'version', 'arch', 'suite', 'id')
+            print(tabulate(assocs_diff, headers, tablefmt="orgtbl"))
+
+        if ids_bin or ids_src:
+            print('missing removals:')
+            headers = ('arch', 'id')
+            a = [('source', i) for i in sorted(ids_src)] + [('!source', i) for i in sorted(ids_bin)]
+            print(tabulate(a, headers, tablefmt="orgtbl"))
 
     if Options['No-Action']:
         session.rollback()
