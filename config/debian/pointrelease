@@ -369,7 +369,7 @@ log "Release file generated, waiting for RMs checking and (hopefully) signing"
 merge-release-signatures() {
     local s="${1}"
     local releasefile="${2}"
-    rm ${ftpdir}/dists/${s}/InRelease ${ftpdir}/zzz-dists/${s}/InRelease
+    rm -f ${ftpdir}/dists/${s}/InRelease ${ftpdir}/zzz-dists/${s}/InRelease
     cd ~/${suitename}_${newrev}
     while ! ${wget} -O "${releasefile}" "${release_base}/${releasefile}"; do
         sleep 10
