@@ -187,18 +187,23 @@ if ${wget} -O "${f}" "${release_base}/${f}"; then
     dak control-suite --add ${suitename}-r0 < ${f}
 fi
 
-f=propups.unstable
-if ${wget} -O "${f}" "${release_base}/${f}"; then
-    echo "Please check ${f}"
-    confirm
-    dak control-suite --force --add unstable < ${f}
-fi
+propups() {
+    local target_suite="${1}"
+    local f=propups.${target_suite}
+    if ${wget} -O "${f}" "${release_base}/${f}"; then
+        echo "Please check ${f}"
+        confirm
+        dak control-suite --force --add unstable < ${f}
+    fi
+}
 
-f=propups.testing
-if ${wget} -O "${f}" "${release_base}/${f}"; then
-    echo "Please check ${f}"
-    confirm
-    dak control-suite --force --add testing < ${f}
+propups unstable
+if [[ ${suitename} != jessie ]]; then
+    propups unstable-debug
+fi
+propups testing
+if [[ ${suitename} != jessie ]]; then
+    propups testing-debug
 fi
 
 log "RM time"
