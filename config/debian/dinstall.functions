@@ -485,7 +485,11 @@ function mirror() {
 
         mkdir -p ${targetpath}
         cd ${targetpath}
-        rsync -aH --link-dest ${archiveroot} --delete --delete-after --delete-excluded --exclude "Packages.*.new" --exclude "Sources.*.new"  --ignore-errors ${archiveroot}/. .
+        rsync -aH --link-dest ${archiveroot} \
+            --delete --delete-after --delete-excluded \
+            --exclude "Packages.*.new" --exclude "Sources.*.new" \
+            --ignore-errors \
+            ${archiveroot}/. .
     done
 }
 
