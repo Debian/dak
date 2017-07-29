@@ -458,6 +458,8 @@ function mirror() {
     local archiveroot targetpath TRACEFILE
 
     CREATOR_VERSION="g$(git rev-parse --short HEAD)"
+    DATE=$(LC_ALL=POSIX LANG=POSIX date -u)
+    RFC822DATE=$(LC_ALL=POSIX LANG=POSIX date -u -R)
 
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
@@ -484,15 +486,14 @@ function mirror() {
         else
             SERIAL="${FILESOAPLUS1}"
         fi
-        RFC822DATE=$(LC_ALL=POSIX LANG=POSIX date -u -R)
-        date -u > ${TRACEFILE}
         {
+            echo "${DATE}"
             echo "Creator: dak ${CREATOR_VERSION}"
             echo "Running on host: $(hostname -f)"
             echo "Archive serial: ${SERIAL}"
             echo "Date: ${RFC822DATE}"
             echo "Architectures: ${archs%* } source"
-        } >> ${TRACEFILE}
+        } > ${TRACEFILE}
         # Now make it accessible via one name, no matter on which host we run
         cd ${targetpath}/project/trace/
         ln -sf ftp-master.debian.org master
