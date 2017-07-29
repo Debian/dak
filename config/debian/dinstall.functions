@@ -457,6 +457,8 @@ function mkchecksums() {
 function mirror() {
     local archiveroot targetpath TRACEFILE
 
+    CREATOR_VERSION="g$(git rev-parse --short HEAD)"
+
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
         targetpath="${mirrordir}/${archive}"
@@ -485,7 +487,7 @@ function mirror() {
         RFC822DATE=$(LC_ALL=POSIX LANG=POSIX date -u -R)
         date -u > ${TRACEFILE}
         {
-            echo "Using dak v1"
+            echo "Creator: dak ${CREATOR_VERSION}"
             echo "Running on host: $(hostname -f)"
             echo "Archive serial: ${SERIAL}"
             echo "Date: ${RFC822DATE}"
