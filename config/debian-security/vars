@@ -53,7 +53,7 @@ LOCK_UNCHECKED="${lockdir}/unchecked.lock"
 LOCK_STOP="${lockdir}/archive.stop"
 
 # And the following types of cronscripts exists
-declare -lr POSSIBLEARGS='+(unchecked-dinstall)'
+declare -lr POSSIBLEARGS='+(unchecked-dinstall|mirror)'
 declare -r HOSTNAME=$(hostname -s)
 
 # Set the database variables
