@@ -45,6 +45,10 @@ PATH=$masterdir:$PATH
 umask 022
 unset CDPATH
 
+# And the following types of cronscripts exists
+declare -lr POSSIBLEARGS='+'
+declare -r HOSTNAME=$(hostname -s)
+
 # Set the database variables
 eval $(dak admin config db-shell)
 
