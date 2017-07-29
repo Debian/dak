@@ -1,6 +1,7 @@
 # locations used by many scripts
 
-base=/srv/security-master.debian.org
+functionname=security-master.debian.org
+base=/srv/${functionname}
 public=/srv/security.debian.org
 bindir=$base/bin
 ftpdir=$base/ftp/
@@ -34,6 +35,7 @@ uploadhost=ftp-master.debian.org
 uploaddir=/pub/UploadQueue/
 
 ftpgroup=debadmin
+public_archives=(security debian-security-debug)
 
 components="main non-free contrib"
 suites=$(dak admin s list)
@@ -45,8 +47,13 @@ PATH=$masterdir:$PATH
 umask 022
 unset CDPATH
 
+# Various lockfiles used by multiple cron scripts
+LOCK_DAILY="${lockdir}/daily.lock"
+LOCK_UNCHECKED="${lockdir}/unchecked.lock"
+LOCK_STOP="${lockdir}/archive.stop"
+
 # And the following types of cronscripts exists
-declare -lr POSSIBLEARGS='+'
+declare -lr POSSIBLEARGS='+(unchecked-dinstall)'
 declare -r HOSTNAME=$(hostname -s)
 
 # Set the database variables

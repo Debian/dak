@@ -564,8 +564,16 @@ function mirrorpush() {
                     pusharg=""
                     pname="debian"
                     ;;
+                security)
+                    fname="mirrorstart"
+                    pusharg="-a security"
+                    pname="debian-security"
+                    ;;
                 debian-debug)
                     pusharg="-a debug"
+                    ;;&
+                debian-security-debug)
+                    pusharg="-a security-debug"
                     ;;&
                 backports)
                     pusharg="-a backports"
