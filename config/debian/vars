@@ -5,7 +5,8 @@ unset CDPATH
 GZIP='--rsyncable --no-name' ; export GZIP
 
 # locations used by many scripts
-base=/srv/ftp-master.debian.org
+functionname=ftp-master.debian.org
+base=/srv/${functionname}
 bindir=${base}/bin
 masterdir=${base}/dak/
 queuedir=${base}/queue/

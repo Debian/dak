@@ -465,7 +465,7 @@ function mirror() {
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
         targetpath="${mirrordir}/${archive}"
-        TRACEFILE="${targetpath}/project/trace/ftp-master.debian.org"
+        TRACEFILE="${targetpath}/project/trace/${functionname}"
         TRACEFILE_MASTER="${targetpath}/project/trace/master"
         HIERFILE="${targetpath}/project/trace/_hierarchy"
 
@@ -499,7 +499,7 @@ Architectures: ${archs%* } source
 EOF
 
         cat <<EOF > ${HIERFILE}
-ftp-master.debian.org ftp-master.debian.org ${HOST} ${HOST}
+${functionname} ${functionname} ${HOST} ${HOST}
 EOF
         cp ${HIERFILE} ${HIERFILE}.mirror
 
