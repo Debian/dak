@@ -81,3 +81,18 @@ function builddautosigning() {
 
     rm -f "${BUILDDFUN}"
 }
+
+function builddautosigning_security() {
+    BUILDDFUN=$( gettempfile )
+    exec >> "${BUILDDFUN}" 2>&1
+
+    for keyring in $(dak admin k list-binary); do
+        dak import-keyring --generate-users "%s" ${keyring}
+    done
+    exec >>/dev/null 2>&1
+
+    DATE=$(date -Is)
+    mail -a "X-Debian: DAK" -e -s "[${HOSTNAME}] Buildd key changes ${DATE}" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" buildd-keys@ftp-master.debian.org < "${BUILDDFUN}"
+
+    rm -f "${BUILDDFUN}"
+}
