@@ -460,12 +460,14 @@ function mirror() {
     CREATOR_VERSION="g$(git rev-parse --short HEAD)"
     DATE=$(LC_ALL=POSIX LANG=POSIX date -u)
     RFC822DATE=$(LC_ALL=POSIX LANG=POSIX date -u -R)
+    HOST=$(hostname -f)
 
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
         targetpath="${mirrordir}/${archive}"
         TRACEFILE="${targetpath}/project/trace/ftp-master.debian.org"
         TRACEFILE_MASTER="${targetpath}/project/trace/master"
+        HIERFILE="${targetpath}/project/trace/_hierarchy"
 
         mkdir -p "${targetpath}/project/trace/"
         rsync -aH --link-dest ${archiveroot} \
@@ -490,11 +492,16 @@ function mirror() {
         cat <<EOF > ${TRACEFILE}
 ${DATE}
 Creator: dak ${CREATOR_VERSION}
-Running on host: $(hostname -f)
+Running on host: ${HOST}
 Archive serial: ${SERIAL}
 Date: ${RFC822DATE}
 Architectures: ${archs%* } source
 EOF
+
+        cat <<EOF > ${HIERFILE}
+ftp-master.debian.org ftp-master.debian.org ${HOST} ${HOST}
+EOF
+        cp ${HIERFILE} ${HIERFILE}.mirror
 
         # Now make it accessible via one name, no matter on which host we run
         ln -sf $(basename ${TRACEFILE}) ${TRACEFILE_MASTER}
