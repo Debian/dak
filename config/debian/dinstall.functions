@@ -486,14 +486,16 @@ function mirror() {
         else
             SERIAL="${FILESOAPLUS1}"
         fi
-        {
-            echo "${DATE}"
-            echo "Creator: dak ${CREATOR_VERSION}"
-            echo "Running on host: $(hostname -f)"
-            echo "Archive serial: ${SERIAL}"
-            echo "Date: ${RFC822DATE}"
-            echo "Architectures: ${archs%* } source"
-        } > ${TRACEFILE}
+
+        cat <<EOF > ${TRACEFILE}
+${DATE}
+Creator: dak ${CREATOR_VERSION}
+Running on host: $(hostname -f)
+Archive serial: ${SERIAL}
+Date: ${RFC822DATE}
+Architectures: ${archs%* } source
+EOF
+
         # Now make it accessible via one name, no matter on which host we run
         cd ${targetpath}/project/trace/
         ln -sf ftp-master.debian.org master
