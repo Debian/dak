@@ -465,9 +465,9 @@ function mirror() {
         archiveroot="$(get_archiveroot "${archive}")"
         targetpath="${mirrordir}/${archive}"
         TRACEFILE="${targetpath}/project/trace/ftp-master.debian.org"
+        TRACEFILE_MASTER="${targetpath}/project/trace/master"
 
         mkdir -p "${targetpath}/project/trace/"
-        cd ${targetpath}
         rsync -aH --link-dest ${archiveroot} \
             --delete --delete-after --delete-excluded \
             --exclude "Packages.*.new" --exclude "Sources.*.new" \
@@ -476,7 +476,7 @@ function mirror() {
             --filter 'protect /project/trace/' \
             --filter 'protect /project/trace/*' \
             --ignore-errors \
-            ${archiveroot}/. .
+            ${archiveroot}/. ${targetpath}/.
 
         log "Regenerating \"public\" mirror/${archive} hardlink fun"
         DATE_SERIAL=$(date +"%Y%m%d01")
@@ -497,8 +497,7 @@ Architectures: ${archs%* } source
 EOF
 
         # Now make it accessible via one name, no matter on which host we run
-        cd ${targetpath}/project/trace/
-        ln -sf ftp-master.debian.org master
+        ln -sf $(basename ${TRACEFILE}) ${TRACEFILE_MASTER}
     done
 }
 
