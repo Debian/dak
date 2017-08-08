@@ -6,5 +6,6 @@ backports_policy       none                       backports-policy           fal
 cleanpolicy            none                       cleanpolicy                false   false
 fetchqueuedpackages    none                       fetchqueuedpackages        false   false
 do_unchecked           none                       unchecked                  false   false
+ddaccess               none                       none                       false   true
 scancontents           none                       contentsscan               false   false
 pg_timestamp           postunchecked              none                       false   false
