@@ -1,0 +1,12 @@
+Source: linux
+Section: kernel
+Priority: optional
+Maintainer: A Maintainer <maint@example.com>
+Build-Depends: debhelper (>= 9)
+
+Package: linux-image-42-1-amd64
+Architecture: all
+Depends: ${misc:Depends}
+Description: GNU Emacs editor (kernel)
+ GNU Emacs is the extensible self-documenting text editor.
+ This package contains the kernel component, formerly known as Linux.

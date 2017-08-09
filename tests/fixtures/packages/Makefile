@@ -1,7 +1,7 @@
 export GNUPGHOME = $(CURDIR)/gpg
 SHELL = /bin/bash
 
-TAR = nonfree-package_0.1 package_0.1 package-built-using_0.1
+TAR = linux_42.0 nonfree-package_0.1 package_0.1 package-built-using_0.1
 PACKAGES = $(TAR)
 
 all: packages
@@ -26,6 +26,6 @@ clean:
 	set -e; for p in $(PACKAGES); do \
 	  make -C $${p/_/-} -f debian/rules clean; \
 	done
-	rm -f *.tar.gz *.buildinfo *.dsc *.changes *.diff.gz *.deb
+	rm -f *.tar.gz *.tar.xz *.buildinfo *.dsc *.changes *.diff.gz *.deb
 	rm -f gpg/*~
 	rm -f stamp-*

@@ -1,0 +1,16 @@
+#! /usr/bin/make -f
+
+include /usr/share/dpkg/pkg-info.mk
+
+byhand=linux-modules_$(DEB_VERSION).tar.xz
+
+%:
+	dh $@
+
+override_dh_builddeb:
+	dh_builddeb
+	tar -cJf ../$(byhand) -C modules .
+
+override_dh_gencontrol:
+	dh_gencontrol
+	echo "$(byhand) byhand -" >> debian/files
