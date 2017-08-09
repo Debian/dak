@@ -5,6 +5,5 @@ set -u
 
 echo "Setting up source formats"
 
-psql -c "INSERT INTO src_format (format_name) VALUES ('1.0')" >/dev/null
-psql -c "INSERT INTO src_format (format_name) VALUES ('3.0 (quilt)')" >/dev/null
-psql -c "INSERT INTO src_format (format_name) VALUES ('3.0 (native)')" >/dev/null
+psql -c "INSERT INTO src_format (format_name)
+                         VALUES ('1.0'), ('3.0 (quilt)'), ('3.0 (native)')" >/dev/null

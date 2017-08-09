@@ -5,7 +5,4 @@ set -u
 
 echo "Creating override types"
 
-psql -c "INSERT INTO override_type (type) VALUES ('deb')" >/dev/null
-psql -c "INSERT INTO override_type (type) VALUES ('udeb')" >/dev/null
-psql -c "INSERT INTO override_type (type) VALUES ('dsc')" >/dev/null
-
+psql -c "INSERT INTO override_type (type) VALUES ('deb'), ('udeb'), ('dsc')" >/dev/null

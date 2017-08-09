@@ -64,8 +64,11 @@ x11
 xfce
 zope"
 
+values=""
 for prefix in "" "contrib/" "non-free/"; do
     for section in ${SECTIONS}; do
-        psql -c "INSERT INTO section (section) VALUES ('$prefix$section')" >/dev/null
+        values="${values:+${values},} ('${prefix}${section}')"
     done
 done
+
+psql -c "INSERT INTO section (section) VALUES ${values}" >/dev/null

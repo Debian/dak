@@ -10,19 +10,10 @@ QUEUEBASE="${DAKBASE}/queue"
 psql -c "INSERT INTO policy_queue (queue_name, path, perms, change_perms,
                                    generate_metadata, stay_of_execution, send_to_build_queues)
                            VALUES ('unchecked', '${QUEUEBASE}/unchecked', '0660', '0660',
-                                   FALSE, 86400, FALSE)" >/dev/null
-
-psql -c "INSERT INTO policy_queue (queue_name, path, perms, change_perms,
-                                   generate_metadata, stay_of_execution, send_to_build_queues)
-                           VALUES ('new', '${QUEUEBASE}/new', '0660', '0660',
-                                   FALSE, 86400, FALSE)" >/dev/null
-
-psql -c "INSERT INTO policy_queue (queue_name, path, perms, change_perms,
-                                   generate_metadata, stay_of_execution, send_to_build_queues)
-                           VALUES ('newstage', '${QUEUEBASE}/newstage', '0660', '0660',
-                                   FALSE, 86400, FALSE)" >/dev/null
-
-psql -c "INSERT INTO policy_queue (queue_name, path, perms, change_perms,
-                                   generate_metadata, stay_of_execution, send_to_build_queues)
-                           VALUES ('byhand', '${QUEUEBASE}/byhand', '0660', '0660',
+                                   FALSE, 86400, FALSE),
+                                  ('new', '${QUEUEBASE}/new', '0660', '0660',
+                                   FALSE, 86400, FALSE),
+                                  ('newstage', '${QUEUEBASE}/newstage', '0660', '0660',
+                                   FALSE, 86400, FALSE),
+                                  ('byhand', '${QUEUEBASE}/byhand', '0660', '0660',
                                    FALSE, 86400, FALSE)" >/dev/null
