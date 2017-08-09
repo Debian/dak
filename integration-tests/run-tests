@@ -26,4 +26,7 @@ pgversion=$(find-postgresql-version)
 export DAK_INTEGRATION_TEST=1
 export DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
 
-pg_virtualenv -v "${pgversion}" "${DAK_ROOT}/integration-tests/tests/0001-basic"
+for t in "${DAK_ROOT}/integration-tests/tests/"[0-9]*[^~]; do
+  echo "=== Running ${t##*/}"
+  pg_virtualenv -v "${pgversion}" "${t}"
+done
