@@ -26,6 +26,16 @@ lintian:
     - license-problem-json-evil
     - gzip-file-is-not-multi-arch-same-safe
     - empty-binary-package
+    - license-problem-nvidia-intellectual
+    - license-problem-gfdl-invariants
+    - license-problem-non-free-RFC
+    - source-contains-prebuilt-ms-help-file
+    - source-contains-prebuilt-silverlight-object
+    - copyright-contains-dh_make-todo-boilerplate
+    - pkg-config-multi-arch-wrong-dir
+    - file-name-is-not-valid-UTF-8
+    - pkg-config-bad-directive
+    - quilt-series-without-trailing-newline
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
