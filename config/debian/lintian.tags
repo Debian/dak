@@ -26,6 +26,7 @@ lintian:
     - license-problem-json-evil
     - gzip-file-is-not-multi-arch-same-safe
     - empty-binary-package
+    - dir-or-file-in-etc-opt
     - license-problem-nvidia-intellectual
     - license-problem-gfdl-invariants
     - license-problem-non-free-RFC
@@ -98,7 +99,6 @@ lintian:
     - dir-or-file-in-var-lock
     - dir-or-file-in-var-run
     - dir-or-file-in-build-tree
-    - dir-or-file-in-etc-opt
     - dir-or-file-in-home
     - conflicting-negation-in-source-relation
     - license-problem-md5sum-non-distributable-file
