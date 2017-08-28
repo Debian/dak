@@ -26,13 +26,6 @@ function wbdump() {
     ${masterdir}/scripts/nfu/get-w-b-db
 }
 
-
-# Generate list of override disparities
-function overridedisp() {
-    log "Generating list of override disparities"
-    dak override-disparity | gzip -9 > ${webdir}/override-disparity.gz
-}
-
 # Generate stats about the new queue
 function newstats() {
     log "Generating stats about the new queue"

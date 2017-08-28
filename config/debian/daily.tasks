@@ -4,7 +4,6 @@ pushfilesdb            none                       none                       fal
 wbdump                 none                       none                       false   false
 reports                none                       none                       false   false
 clean_debbugs          none                       none                       false   false
-overridedisp           none                       none                       false   false
 newstats               none                       none                       false   false
 contributor            none                       none                       false   false
 cleanurgencylog        none                       none                       false   false
