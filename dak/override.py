@@ -49,65 +49,12 @@ def usage (exit_code=0):
 Make microchanges or microqueries of the binary overrides
 
   -h, --help                 show this help and exit
-  -c, --check                check override compliance
+  -c, --check                check override compliance (deprecated)
   -d, --done=BUG#            send priority/section change as closure to bug#
   -n, --no-action            don't do anything
   -s, --suite                specify the suite to use
 """
     sys.exit(exit_code)
-
-def check_override_compliance(package, priority, archive_path, suite_name, cnf, session):
-    print "Checking compliance with related overrides..."
-
-    depends = set()
-    rdepends = set()
-    components = get_component_names(session)
-    arches = set([x.arch_string for x in get_suite_architectures(suite_name)])
-    arches -= set(["source", "all"])
-    for arch in arches:
-        for component in components:
-            Packages = utils.get_packages_from_ftp(archive_path, suite_name, component, arch)
-            while Packages.step():
-                package_name = Packages.section.find("Package")
-                dep_list = Packages.section.find("Depends")
-                if dep_list:
-                    if package_name == package:
-                        for d in apt_pkg.parse_depends(dep_list):
-                            for i in d:
-                                depends.add(i[0])
-                    else:
-                        for d in apt_pkg.parse_depends(dep_list):
-                            for i in d:
-                                if i[0] == package:
-                                    rdepends.add(package_name)
-
-    query = """SELECT o.package, p.level, p.priority
-               FROM override o
-               JOIN suite s ON s.id = o.suite
-               JOIN priority p ON p.id = o.priority
-               WHERE s.suite_name = '%s'
-               AND o.package in ('%s')""" \
-               % (suite_name, "', '".join(depends.union(rdepends)))
-    packages = session.execute(query)
-
-    excuses = []
-    for p in packages:
-        if p[0] == package or not p[1]:
-            continue
-        if p[0] in depends:
-            if priority.level < p[1]:
-                excuses.append("%s would have priority %s, its dependency %s has priority %s" \
-                      % (package, priority.priority, p[0], p[2]))
-        if p[0] in rdepends:
-            if priority.level > p[1]:
-                excuses.append("%s would have priority %s, its reverse dependency %s has priority %s" \
-                      % (package, priority.priority, p[0], p[2]))
-
-    if excuses:
-        for ex in excuses:
-            print ex
-    else:
-        print "Proposed override change complies with Debian Policy"
 
 def main ():
     cnf = Config()
@@ -230,8 +177,8 @@ def main ():
     if oldpriority == 'source' and newpriority != 'source':
         utils.fubar("Trying to change priority of a source-only package")
 
-    if Options["Check"] and newpriority != oldpriority:
-        check_override_compliance(package, p, suite.archive.path, suite_name, cnf, session)
+    if Options["Check"]:
+        print "WARNING: Check option is deprecated by Debian Policy 4.0.1"
 
     # If we're in no-action mode
     if Options["No-Action"]:
