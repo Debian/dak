@@ -93,3 +93,4 @@ lintian:
     - conflicting-negation-in-source-relation
     - license-problem-md5sum-non-distributable-file
     - license-problem-md5sum-non-free-file
+    - latest-debian-changelog-entry-without-new-date
