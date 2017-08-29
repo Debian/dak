@@ -163,6 +163,7 @@ function autocruft() {
 function fingerprints() {
     log "Updating fingerprints"
     dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
+    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-nonupload.gpg
 
     OUTFILE=$( gettempfile )
     dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
