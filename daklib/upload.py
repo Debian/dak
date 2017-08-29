@@ -548,6 +548,9 @@ class Source(object):
                 else:
                     self._dsc_file = f
 
+        if self._dsc_file is None:
+            raise InvalidSourceException("No .dsc included in source files")
+
         # make sure the hash for the dsc is valid before we use it
         self._dsc_file.check(directory)
 
