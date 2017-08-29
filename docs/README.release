@@ -1,3 +1,63 @@
+Notes from the Debian Stretch release
+=====================================
+
+configdir=${configdir:-"/srv/ftp-master.debian.org/dak/config/debian"}
+export SCRIPTVARS=${configdir}/vars
+. "${SCRIPTVARS}"
+. "${configdir}/dinstall.functions"
+umask 022
+
+sql() {(
+  set -eu
+  psql -qAt "${@}"
+)}
+
+rename-suite() {(
+  set -eu
+
+  local oldsuite="${1}"
+  local newsuite="${2}"
+  archive_path=$(sql -c "SELECT path FROM archive WHERE id=(SELECT archive_id FROM suite WHERE suite_name='${oldsuite}')")
+
+  cd ${archive_path:?}/dists
+  if [[ -L ${newsuite} || -e ${newsuite} ]]; then
+    echo "E: ${newsuite} already exists" >&2
+    exit 1
+  fi
+
+  mv -- ${oldsuite} ${newsuite}
+
+  sql -1 <<-EOT
+	UPDATE suite
+	SET
+	  suite_name='${newsuite}',
+	  copychanges = CASE WHEN copychanges IS NULL THEN NULL ELSE 'dists/${newsuite}' END
+	WHERE suite_name='${oldsuite}'
+	;
+	UPDATE suite
+	SET overridesuite='${newsuite}'
+	WHERE overridesuite='${oldsuite}'
+	;
+	EOT
+)}
+
+rename-policy-queue() {(
+  set -eu
+  oldqueue="${1}"
+  newqueue="${2}"
+  newpath="${3}"
+  oldpath=$(sql -c "SELECT path FROM policy_queue WHERE queue_name='${oldqueue}'")
+  if [[ -L ${newpath} || -e ${newpath} ]]; then
+    echo "E: ${newpath} already exists" >&2
+    exit 1
+  fi
+  mv -- ${oldpath:?} ${newpath}
+  sql -c "UPDATE policy_queue SET queue_name='${newqueue}', path='${newpath}' WHERE queue_name='${oldqueue}'"
+)}
+
+# After new testing is setup:
+dak external-overrides copy unstable testing
+
 Notes from the Debian Jessie release
 ====================================
 
