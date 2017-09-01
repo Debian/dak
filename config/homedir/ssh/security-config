@@ -19,3 +19,11 @@ Host morgue-sync
   Hostname stabile.debian.org
   User dak
   IdentityFile /srv/security-master.debian.org/s3kr1t/push_morgue
+
+Host rsync-from-security-upload-master
+  Hostname suchon.debian.org
+  User dak
+  IdentityFile /srv/security-master.debian.org/s3kr1t/rsync-from-security-upload-master
+  ControlMaster auto
+  ControlPath ~/.ssh/socket-%n
+  ControlPersist yes

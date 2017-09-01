@@ -36,6 +36,7 @@ old_last_changed=$(last_changed security)
 old_last_changed_build=$(last_changed build-queues)
 
 cd $unchecked
+rsync -rtq --safe-links --chmod=F640,D755 --remove-source-files rsync-from-security-upload-master:/does/not/matter . || true
 changes=$(find . -maxdepth 1 -mindepth 1 -type f -name \*.changes | sed -e "s,./,," | xargs)
 if [ -n "$changes" ]; then
     doanything=true
