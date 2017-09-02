@@ -37,6 +37,15 @@ $ENV{"LC_ALL"} = "C";
 package conf;
 ( $conf::queued_dir = ( ( $0 !~ m,^/, ) ? POSIX::getcwd() . "/" : "" ) . $0 )
   =~ s,/[^/]+$,,;
+
+# various programs:
+our $gpg       = "/usr/bin/gpg";
+our $ssh       = "/usr/bin/ssh";
+our $scp       = "/usr/bin/scp";
+our $ssh_agent = "/usr/bin/ssh-agent";
+our $ssh_add   = "/usr/bin/ssh-add";
+our $mail      = "/usr/sbin/sendmail";
+
 require "$conf::queued_dir/config";
 my $junk = $conf::debug;    # avoid spurious warnings about unused vars
 $junk = $conf::ssh_key_file;
