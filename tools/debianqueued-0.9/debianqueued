@@ -46,6 +46,11 @@ our $ssh_agent = "/usr/bin/ssh-agent";
 our $ssh_add   = "/usr/bin/ssh-add";
 our $mail      = "/usr/sbin/sendmail";
 
+# default umask:
+#   This is mostly for the "copy" upload method.  Logs, pidfile get
+#   explicit permissions via `chmod`.
+our $umask     = 0022;
+
 require "$conf::queued_dir/config";
 my $junk = $conf::debug;    # avoid spurious warnings about unused vars
 $junk = $conf::ssh_key_file;
@@ -69,6 +74,10 @@ $junk         = $conf::overridemail;
 $conf::target = "localhost" if $conf::upload_method eq "copy";
 
 package main;
+
+if (defined $conf::umask) {
+  umask $conf::umask;
+}
 
 ( $main::progname = $0 ) =~ s,.*/,,;
 

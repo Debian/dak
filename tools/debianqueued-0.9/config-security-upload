@@ -72,6 +72,10 @@ $pidfile = "$queued_dir/run/pid";
 # upload method (ssh, copy, ftp)
 $upload_method = "copy";
 
+# default umask:
+#   copied files should *not* be world-readable for security uploads
+$umask = 0027;
+
 # name of target host (ignored on copy method)
 $target = "localhost";
 
