@@ -741,26 +741,34 @@ class ArchiveUpload(object):
         return sourcedir
 
     def _map_suite(self, suite_name):
+        suite_names = set((suite_name, ))
         for rule in Config().value_list("SuiteMappings"):
             fields = rule.split()
             rtype = fields[0]
             if rtype == "map" or rtype == "silent-map":
                 (src, dst) = fields[1:3]
-                if src == suite_name:
-                    suite_name = dst
+                if src in suite_names:
+                    suite_names.remove(src)
+                    suite_names.add(dst)
                     if rtype != "silent-map":
                         self.warnings.append('Mapping {0} to {1}.'.format(src, dst))
+            elif rtype == "copy" or rtype == "silent-copy":
+                (src, dst) = fields[1:3]
+                if src in suite_names:
+                    suite_names.add(dst)
+                    if rtype != "silent-copy":
+                        self.warnings.append('Copy {0} to {1}.'.format(src, dst))
             elif rtype == "ignore":
                 ignored = fields[1]
-                if suite_name == ignored:
+                if ignored in suite_names:
+                    suite_names.remove(ignored)
                     self.warnings.append('Ignoring target suite {0}.'.format(ignored))
-                    suite_name = None
             elif rtype == "reject":
                 rejected = fields[1]
-                if suite_name == rejected:
+                if rejected in suite_names:
                     raise checks.Reject('Uploads to {0} are not accepted.'.format(rejected))
             ## XXX: propup-version and map-unreleased not yet implemented
-        return suite_name
+        return suite_names
 
     def _mapped_suites(self):
         """Get target suites after mappings
@@ -770,11 +778,9 @@ class ArchiveUpload(object):
         """
         session = self.session
 
-        suite_names = []
+        suite_names = set()
         for dist in self.changes.distributions:
-            suite_name = self._map_suite(dist)
-            if suite_name is not None:
-                suite_names.append(suite_name)
+            suite_names.update(self._map_suite(dist))
 
         suites = session.query(Suite).filter(Suite.suite_name.in_(suite_names))
         return suites
