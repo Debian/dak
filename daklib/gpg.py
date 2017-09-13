@@ -230,7 +230,10 @@ class SignedFile(object):
         elif fields[1] == "SIG_ID":
             self.signature_ids.append(fields[2])
 
-        elif fields[1] in ('PLAINTEXT', 'GOODSIG', 'KEY_CONSIDERED', 'NEWSIG', 'NOTATION_NAME', 'NOTATION_DATA', 'SIGEXPIRED', 'KEYEXPIRED', 'POLICY_URL', 'PROGRESS'):
+        elif fields[1] in ('PLAINTEXT', 'GOODSIG', 'KEY_CONSIDERED',
+                           'NEWSIG', 'NOTATION_NAME', 'NOTATION_FLAGS',
+                           'NOTATION_DATA', 'SIGEXPIRED', 'KEYEXPIRED',
+                           'POLICY_URL', 'PROGRESS'):
             pass
 
         elif fields[1] in ('EXPSIG', 'EXPKEYSIG'):
