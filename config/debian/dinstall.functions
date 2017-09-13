@@ -456,21 +456,14 @@ function mkchecksums() {
 }
 
 function mirror() {
-    local archiveroot targetpath TRACEFILE
-
-    CREATOR_VERSION="g$(git rev-parse --short HEAD)"
-    DATE=$(LC_ALL=POSIX LANG=POSIX date -u)
-    RFC822DATE=$(LC_ALL=POSIX LANG=POSIX date -u -R)
-    HOST=$(hostname -f)
+    local archiveroot targetpath
+    local -a tracepaths
 
     for archive in "${public_archives[@]}"; do
         archiveroot="$(get_archiveroot "${archive}")"
         targetpath="${mirrordir}/${archive}"
-        TRACEFILE="${targetpath}/project/trace/${functionname}"
-        TRACEFILE_MASTER="${targetpath}/project/trace/master"
-        HIERFILE="${targetpath}/project/trace/_hierarchy"
 
-        mkdir -p "${targetpath}/project/trace/"
+        log "Regenerating \"public\" mirror/${archive} hardlink fun"
         rsync -aH --link-dest ${archiveroot} \
             --delete --delete-after --delete-excluded \
             --exclude "Packages.*.new" --exclude "Sources.*.new" \
@@ -481,32 +474,10 @@ function mirror() {
             --ignore-errors \
             ${archiveroot}/. ${targetpath}/.
 
-        log "Regenerating \"public\" mirror/${archive} hardlink fun"
-        DATE_SERIAL=$(date +"%Y%m%d01")
-        FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} || echo ${DATE_SERIAL} )
-        if [[ ${DATE_SERIAL} -gt ${FILESOAPLUS1}  ]]; then
-            SERIAL="${DATE_SERIAL}"
-        else
-            SERIAL="${FILESOAPLUS1}"
-        fi
-
-        cat <<EOF > ${TRACEFILE}
-${DATE}
-Creator: dak ${CREATOR_VERSION}
-Running on host: ${HOST}
-Archive serial: ${SERIAL}
-Date: ${RFC822DATE}
-Architectures: ${archs%* } source
-EOF
-
-        cat <<EOF > ${HIERFILE}
-${functionname} ${functionname} ${HOST} ${HOST}
-EOF
-        cp ${HIERFILE} ${HIERFILE}.mirror
-
-        # Now make it accessible via one name, no matter on which host we run
-        ln -sf $(basename ${TRACEFILE}) ${TRACEFILE_MASTER}
+        tracepaths+=("${targetpath}")
     done
+
+    write_project_trace "${tracepaths[@]}"
 }
 
 function expire() {

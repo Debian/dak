@@ -273,7 +273,59 @@ function ddaccess() {
     ${scriptsdir}/sync-dd dd-sync dd-sync1 dd-sync2 sync
 }
 
+# Write ${path}/project/trace for given path
+#   Note: use `write_project_trace` which sets version and date variables
+function write_project_trace1() {
+    local path="${1}"
 
+    local tracedir="${path}/project/trace}"
+    local TRACEFILE="${tracedir}/${functionname}"
+    local TRACEFILE_MASTER="${tracedir}/master}"
+    local HIERFILE="${tracedir}/_hierarchy"
+
+    mkdir -p -- "${tracedir}"
+
+    local DATE_SERIAL=$(date +"%Y%m%d01")
+    local FILESOAPLUS1=$(awk '/serial/ { print $3+1 }' ${TRACEFILE} || echo ${DATE_SERIAL} )
+    local SERIAL
+    if [[ ${DATE_SERIAL} -gt ${FILESOAPLUS1}  ]]; then
+        SERIAL="${DATE_SERIAL}"
+    else
+        SERIAL="${FILESOAPLUS1}"
+    fi
+
+    cat <<EOF > ${TRACEFILE}
+${DATE}
+Creator: dak ${CREATOR_VERSION}
+Running on host: ${HOST}
+Archive serial: ${SERIAL}
+Date: ${RFC822DATE}
+Architectures: ${archs%* } source
+EOF
+
+    cat <<EOF > ${HIERFILE}
+${functionname} ${functionname} ${HOST} ${HOST}
+EOF
+    cp ${HIERFILE} ${HIERFILE}.mirror
+
+    # Now make it accessible via one name, no matter on which host we run
+    ln -sf $(basename ${TRACEFILE}) ${TRACEFILE_MASTER}
+}
+
+# Write ${path}/project/trace for given paths
+function write_project_trace() {
+    cd ${configdir}
+
+    local CREATOR_VERSION="g$(git rev-parse --short HEAD)"
+    local DATE=$(LC_ALL=POSIX LANG=POSIX date -u)
+    local RFC822DATE=$(LC_ALL=POSIX LANG=POSIX date -u -R)
+    local HOST=$(hostname -f)
+
+    local path
+    for path in "${@}"; do
+        write_project_trace1 "${path}"
+    done
+}
 
 ########################################################################
 ########################################################################
