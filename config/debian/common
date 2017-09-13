@@ -104,6 +104,8 @@ function make_buildd_dir () {
     # Stick a last modified date in the page footer
     echo "<p>Last updated: $(date -u)</p>" > ${incoming}/web/README.html
 
+    write_project_trace "${incoming}/web/debian-buildd"
+
     # Tell the mirrors that we've updated
     log "Pushing static for incoming.d.o"
     chronic timeout -k 600 480 /usr/local/bin/static-update-component incoming.debian.org < /dev/null
