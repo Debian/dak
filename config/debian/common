@@ -280,9 +280,9 @@ function ddaccess() {
 function write_project_trace1() {
     local path="${1}"
 
-    local tracedir="${path}/project/trace}"
+    local tracedir="${path}/project/trace"
     local TRACEFILE="${tracedir}/${functionname}"
-    local TRACEFILE_MASTER="${tracedir}/master}"
+    local TRACEFILE_MASTER="${tracedir}/master"
     local HIERFILE="${tracedir}/_hierarchy"
 
     mkdir -p -- "${tracedir}"
