@@ -527,10 +527,8 @@ def do_new(upload, upload_copy, handler, session):
             print "NEW\n"
 
         for i, package in enumerate(missing):
-            if package["type"] == "deb":
-                if package["priority"] == "extra":
-                    package["priority"] = "optional"
-                    missing[i] = package
+            if package["type"] == "deb" and package["priority"] == "extra":
+                package["priority"] = "optional"
 
         answer = "XXX"
         if Options["No-Action"] or Options["Automatic"]:
