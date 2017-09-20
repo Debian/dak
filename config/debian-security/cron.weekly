@@ -39,5 +39,6 @@ trap - EXIT
 /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh >/dev/null
 sudo -u archvsync -H /home/archvsync/signal_security
 
+${scriptsdir}/link_morgue.sh
 
 ################################################################################
