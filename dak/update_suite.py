@@ -22,6 +22,7 @@ import daklib.daklog
 import daklib.utils
 
 from sqlalchemy.orm.exc import NoResultFound
+import sqlalchemy.sql as sql
 import sys
 
 """
@@ -134,7 +135,7 @@ class SuiteUpdater(object):
             'additional_sources': additional_sources,
         }
 
-        return self.transaction.session.query(DBBinary).from_statement(query).params(params)
+        return self.transaction.session.query(DBBinary).from_statement(sql.text(query)).params(params)
 
     def query_new_sources(self):
         # Candidates are source packages in the origin suite, and optionally in its policy queue.
@@ -177,7 +178,7 @@ class SuiteUpdater(object):
 
         params = {'origin': self.origin.suite_id, 'target': self.target.suite_id}
 
-        return self.transaction.session.query(DBSource).from_statement(query).params(params)
+        return self.transaction.session.query(DBSource).from_statement(sql.text(query)).params(params)
 
     def _components_for_binary(self, binary, suite):
         session = self.transaction.session

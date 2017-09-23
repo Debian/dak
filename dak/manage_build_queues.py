@@ -28,6 +28,7 @@
 import apt_pkg
 from datetime import datetime, timedelta
 import sys
+import sqlalchemy.sql as sql
 
 from daklib import daklog
 from daklib.archive import ArchiveTransaction
@@ -65,7 +66,7 @@ def clean(build_queue, transaction, now=None):
     # 1. Keep binaries that are in policy queues.
     # 2. Remove binaries that are not in suites.
     # 3. Remove binaries that have been in the build queue for some time.
-    query = """
+    query = sql.text("""
         SELECT b.*
           FROM binaries b
           JOIN bin_associations ba ON b.id = ba.bin
@@ -82,7 +83,7 @@ def clean(build_queue, transaction, now=None):
                 OR NOT EXISTS
                    (SELECT 1 FROM bin_associations ba2
                              JOIN suite_build_queue_copy sbqc ON sbqc.suite = ba2.suite
-                            WHERE ba2.bin = ba.bin AND sbqc.build_queue_id = :build_queue_id))"""
+                            WHERE ba2.bin = ba.bin AND sbqc.build_queue_id = :build_queue_id))""")
     binaries = session.query(DBBinary).from_statement(query) \
         .params({'build_queue_id': build_queue.queue_id, 'suite_id': suite.suite_id, 'delete_before': delete_before})
     for binary in binaries:
@@ -92,7 +93,7 @@ def clean(build_queue, transaction, now=None):
     # Remove sources
     # Conditions are similar as for binaries, but we also keep sources
     # if there is a binary in the build queue that uses it.
-    query = """
+    query = sql.text("""
         SELECT s.*
           FROM source s
           JOIN src_associations sa ON s.id = sa.source
@@ -114,7 +115,7 @@ def clean(build_queue, transaction, now=None):
                (SELECT 1 FROM bin_associations ba
                          JOIN binaries b ON ba.bin = b.id
                         WHERE ba.suite = :suite_id
-                          AND b.source = s.id)"""
+                          AND b.source = s.id)""")
     sources = session.query(DBSource).from_statement(query) \
         .params({'build_queue_id': build_queue.queue_id, 'suite_id': suite.suite_id, 'delete_before': delete_before})
     for source in sources:
