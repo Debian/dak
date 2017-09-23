@@ -609,7 +609,7 @@ function i18n2() {
         dak control-suite -l ${suite} >${codename}
     done
     echo "${STAMP}" > timestamp
-    gpg --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o timestamp.gpg timestamp
+    gpg --homedir /srv/ftp-master.debian.org/s3kr1t/dot-gnupg --no-options --batch --no-tty --armour --default-key 473041FA --detach-sign -o timestamp.gpg timestamp
     rm -f md5sum
     md5sum * > md5sum
     cd ${webdir}/
@@ -701,7 +701,7 @@ function signotherfiles() {
         cd ${archiveroot}
         rm -f extrafiles
         sha256sum $(find * -type f | egrep -v '(pool|i18n|dep11|source)/|Contents-.*\.(gz|diff)|installer|binary-|(In)?Release(.gpg)?|\.changes' | sort) > ${TMPLO}
-        gpg --no-options --batch --no-tty --armour --personal-digest-preferences=SHA256 --secret-keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/ftp-master.debian.org/s3kr1t/dot-gnupg/pubring.gpg --no-options --batch --no-tty --armour --default-key 2B90D010 --clearsign --output ${archiveroot}/extrafiles ${TMPLO}
+        gpg --no-options --batch --no-tty --armour --personal-digest-preferences=SHA256 --homedir /srv/ftp-master.debian.org/s3kr1t/dot-gnupg --no-options --batch --no-tty --armour --default-key 2B90D010 --clearsign --output ${archiveroot}/extrafiles ${TMPLO}
         rm -f ${TMPLO}
     done
 }
