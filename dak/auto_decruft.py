@@ -33,6 +33,7 @@ Check for obsolete binary packages
 
 ################################################################################
 
+import sqlalchemy.sql as sql
 import sys
 import apt_pkg
 from itertools import chain, product
@@ -134,14 +135,14 @@ def remove_groups(groups, suite_id, suite_name, session):
             "packages": group["packages"],
             "suite_id": suite_id
         }
-        q = session.execute("""
+        q = session.execute(sql.text("""
             SELECT b.package, b.version, a.arch_string, b.id
             FROM binaries b
                 JOIN bin_associations ba ON b.id = ba.bin
                 JOIN architecture a ON b.architecture = a.id
                 JOIN suite su ON ba.suite = su.id
             WHERE a.id IN :architecture_ids AND b.package IN :packages AND su.id = :suite_id
-            """, params)
+            """), params)
 
         remove(session, message, [suite_name], list(q), partial=True, whoami="DAK's auto-decrufter")
 
@@ -359,19 +360,19 @@ def sources2removals(source_list, suite_id, session):
     """
     to_remove = []
     params = {"suite_id": suite_id, "sources": tuple(source_list)}
-    q = session.execute("""
+    q = session.execute(sql.text("""
                     SELECT s.source, s.version, 'source', s.id
                     FROM source s
                          JOIN src_associations sa ON sa.source = s.id
-                    WHERE sa.suite = :suite_id AND s.source IN :sources""", params)
+                    WHERE sa.suite = :suite_id AND s.source IN :sources"""), params)
     to_remove.extend(q)
-    q = session.execute("""
+    q = session.execute(sql.text("""
                     SELECT b.package, b.version, a.arch_string, b.id
                     FROM binaries b
                          JOIN bin_associations ba ON b.id = ba.bin
                          JOIN architecture a ON b.architecture = a.id
                          JOIN source s ON b.source = s.id
-                    WHERE ba.suite = :suite_id AND s.source IN :sources""", params)
+                    WHERE ba.suite = :suite_id AND s.source IN :sources"""), params)
     to_remove.extend(q)
     return to_remove
 
