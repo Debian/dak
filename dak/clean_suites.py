@@ -36,6 +36,7 @@
 
 import errno
 import os
+import sqlalchemy.sql as sql
 import stat
 import sys
 import time
@@ -269,7 +270,7 @@ def clean(now_date, archives, max_delete, session):
         session.commit()
 
     # Delete files from the pool
-    old_files = session.query(ArchiveFile).filter('files_archive_map.last_used <= (SELECT delete_date FROM archive_delete_date ad WHERE ad.archive_id = files_archive_map.archive_id)').join(Archive)
+    old_files = session.query(ArchiveFile).filter(sql.text('files_archive_map.last_used <= (SELECT delete_date FROM archive_delete_date ad WHERE ad.archive_id = files_archive_map.archive_id)')).join(Archive)
     if max_delete is not None:
         old_files = old_files.limit(max_delete)
         Logger.log(["Limiting removals to %d" % max_delete])
