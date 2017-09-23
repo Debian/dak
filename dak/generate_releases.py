@@ -81,12 +81,20 @@ SUITE can be a space separated list, e.g.
 def sign_release_dir(suite, dirname):
     cnf = Config()
 
-    if cnf.has_key("Dinstall::SigningKeyring"):
-        keyring = "--secret-keyring \"%s\"" % cnf["Dinstall::SigningKeyring"]
-        if cnf.has_key("Dinstall::SigningPubKeyring"):
-            keyring += " --keyring \"%s\"" % cnf["Dinstall::SigningPubKeyring"]
-
-        arguments = "--no-options --batch --no-tty --armour --personal-digest-preferences=SHA256"
+    if 'Dinstall::SigningKeyring' in cnf or 'Dinstall::SigningHomedir' in cnf:
+        arguments = ['/usr/bin/gpg',
+                     '--no-options', '--no-tty', '--batch', '--armour',
+                     '--personal-digest-preferences', 'SHA256',
+        ]
+        if 'Dinstall::SigningHomedir' in cnf:
+            arguments.extend(['--homedir', cnf['Dinstall::SigningHomedir']])
+        if 'Dinstall::SigningPassphraseFile' in cnf:
+            arguments.extend(['--pinentry-mode', 'loopback',
+                              '--passphrase-file', cnf['Dinstall::SigningPassphraseFile']])
+        if 'Dinstall::SigningKeyring' in cnf:
+            arguments.extend(['--secret-keyring', cnf['Dinstall::SigningKeyring']])
+        if 'Dinstall::SigningPubKeyring' in cnf:
+            arguments.extend(['--keyring', cnf['Dinstall::SigningKeyring']])
 
         relname = os.path.join(dirname, 'Release')
 
@@ -98,14 +106,17 @@ def sign_release_dir(suite, dirname):
         if os.path.exists(inlinedest):
             os.unlink(inlinedest)
 
-        defkeyid=""
         for keyid in suite.signingkeys or []:
-            defkeyid += "--local-user %s " % keyid
+            arguments.extend(['--local-user', keyid])
 
-        os.system("gpg %s %s %s --detach-sign <%s >>%s" %
-                  (keyring, defkeyid, arguments, relname, dest))
-        os.system("gpg %s %s %s --clearsign <%s >>%s" %
-                  (keyring, defkeyid, arguments, relname, inlinedest))
+        with open(relname, 'r') as stdin:
+            with open(dest, 'w') as stdout:
+                arguments_sign = arguments + ['--detach-sign']
+                subprocess.check_call(arguments_sign, stdin=stdin, stdout=stdout)
+            stdin.seek(0)
+            with open(inlinedest, 'w') as stdout:
+                arguments_sign = arguments + ['--clearsign']
+                subprocess.check_call(arguments_sign, stdin=stdin, stdout=stdout)
 
 class XzFile(object):
     def __init__(self, filename, mode='r'):
