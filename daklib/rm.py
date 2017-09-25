@@ -42,6 +42,7 @@
 import commands
 import apt_pkg
 import fcntl
+import sqlalchemy.sql as sql
 from re import sub
 from collections import defaultdict
 from regexes import re_build_dep_arch
@@ -115,13 +116,13 @@ class ReverseDependencyChecker(object):
 
             params['arch_id'] = suite_archs2id[architecture]
 
-            statement = '''
+            statement = sql.text('''
                     SELECT b.package,
                         (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
                         (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
                         FROM binaries b
                         JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
-                        WHERE b.architecture = :arch_id OR b.architecture = :arch_all_id'''
+                        WHERE b.architecture = :arch_id OR b.architecture = :arch_all_id''')
             query = session.query('package', 'depends', 'provides'). \
                 from_statement(statement).params(params)
             for package, depends, provides in query:
@@ -155,7 +156,7 @@ class ReverseDependencyChecker(object):
             'suite_id':    suite_id,
             'metakey_ids': (metakey_bd.key_id, metakey_bdi.key_id),
         }
-        statement = '''
+        statement = sql.text('''
             SELECT s.source, string_agg(sm.value, ', ') as build_dep
                FROM source s
                JOIN source_metadata sm ON s.id = sm.src_id
@@ -163,7 +164,7 @@ class ReverseDependencyChecker(object):
                    (SELECT source FROM src_associations
                        WHERE suite = :suite_id)
                    AND sm.key_id in :metakey_ids
-               GROUP BY s.id, s.source'''
+               GROUP BY s.id, s.source''')
         query = session.query('source', 'build_dep').from_statement(statement). \
             params(params)
         for source, build_dep in query:

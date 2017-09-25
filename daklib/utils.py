@@ -32,6 +32,7 @@ import grp
 import select
 import socket
 import shutil
+import sqlalchemy.sql as sql
 import sys
 import tempfile
 import traceback
@@ -1189,7 +1190,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         virtual_packages = {}
         params['arch_id'] = get_architecture(architecture, session).arch_id
 
-        statement = '''
+        statement = sql.text('''
             SELECT b.package, s.source, c.name as component,
                 (SELECT bmd.value FROM binaries_metadata bmd WHERE bmd.bin_id = b.id AND bmd.key_id = :metakey_d_id) AS depends,
                 (SELECT bmp.value FROM binaries_metadata bmp WHERE bmp.bin_id = b.id AND bmp.key_id = :metakey_p_id) AS provides
@@ -1198,7 +1199,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 JOIN source s ON b.source = s.id
                 JOIN files_archive_map af ON b.file = af.file_id
                 JOIN component c ON af.component_id = c.id
-                WHERE b.architecture = :arch_id'''
+                WHERE b.architecture = :arch_id''')
         query = session.query('package', 'source', 'component', 'depends', 'provides'). \
             from_statement(statement).params(params)
         for package, source, component, depends, provides in query:
@@ -1286,7 +1287,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         'suite_id':    dbsuite.suite_id,
         'metakey_ids': metakey_ids,
     }
-    statement = '''
+    statement = sql.text('''
         SELECT s.source, string_agg(sm.value, ', ') as build_dep
            FROM source s
            JOIN source_metadata sm ON s.id = sm.src_id
@@ -1294,7 +1295,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                (SELECT src FROM newest_src_association
                    WHERE suite = :suite_id)
                AND sm.key_id in :metakey_ids
-           GROUP BY s.id, s.source'''
+           GROUP BY s.id, s.source''')
     query = session.query('source', 'build_dep').from_statement(statement). \
         params(params)
     for source, build_dep in query:
