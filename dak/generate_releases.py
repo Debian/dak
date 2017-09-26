@@ -94,7 +94,7 @@ def sign_release_dir(suite, dirname):
         if 'Dinstall::SigningKeyring' in cnf:
             arguments.extend(['--secret-keyring', cnf['Dinstall::SigningKeyring']])
         if 'Dinstall::SigningPubKeyring' in cnf:
-            arguments.extend(['--keyring', cnf['Dinstall::SigningKeyring']])
+            arguments.extend(['--keyring', cnf['Dinstall::SigningPubKeyring']])
 
         relname = os.path.join(dirname, 'Release')
 
