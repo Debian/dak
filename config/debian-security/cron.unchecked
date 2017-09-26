@@ -62,8 +62,14 @@ if [ -n "${accepted}" ]; then
 fi
 
 # sync accepted files to ftpmaster
-cd ${base}
-find ${queuedir}/accepted -type f -exec mv -t /srv/queued/ftpmaster '{}' +
+sync-accepted() {
+    cd ${base}
+    rsync --recursive --times --partial --remove-source-files \
+          ${queuedir}/accepted/ rsync-to-ssh.upload.debian.org:/does/not/matter
+}
+if [ -n "${accepted}" ]; then
+    sync-accepted || :
+fi
 
 # export policy queues
 for queue in embargoed; do
