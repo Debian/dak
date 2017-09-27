@@ -1,0 +1,57 @@
+#! /bin/bash
+
+# Copyright (C) 2017, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+set -e
+set -u
+
+usage() {
+  cat >&2 <<-EOF
+	usage: $0 <stagedir> <targetdir> -- <rsync-options...>
+	Handle incoming rsync to <stagedir>.  Once all files are synced,
+	move them to <targetdir> (with *.changes moved last).
+	EOF
+  exit ${1:-0}
+}
+
+if [ $# -lt 3 ]; then
+  usage
+fi
+
+stagedir="${1}"
+targetdir="${2}"
+
+if [[ ! -d "${stagedir}" ]]; then
+  echo >&2 "E: staging directory ${stagedir} is not a directory"
+  exit 1
+fi
+if [[ ! -d "${targetdir}" ]]; then
+  echo >&2 "E: target directory ${targetdir} is not a directory"
+  exit 1
+fi
+if [[ "${3}" != "--" ]]; then
+  echo >&2 "E: unexpected third parameter (${3})"
+  exit 1
+fi
+
+shift 3
+
+rsync "${@}" . "${stagedir}" || exit $?
+
+find_common=(-maxdepth 1 -type f)
+find_exec=(-execdir mv --no-clobber -t "${targetdir}" -- "{}" +)
+find "${stagedir}" "${find_common[@]}" "!" -name "*.changes" "${find_exec[@]}"
+find "${stagedir}" "${find_common[@]}" -name "*.changes" "${find_exec[@]}"
