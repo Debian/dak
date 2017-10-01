@@ -1,10 +1,10 @@
-# FUNC                 ARGS                       TIME                       ERR     BG
-wnppbugs               none                       none                       false   false
-pushfilesdb            none                       none                       false   false
-wbdump                 none                       none                       false   false
-reports                none                       none                       false   false
-clean_debbugs          none                       none                       false   false
-newstats               none                       none                       false   false
-contributor            none                       none                       false   false
-cleanurgencylog        none                       none                       false   false
+# FUNC                      ARGS                       TIME                       ERR     BG
+wnppbugs                    none                       none                       false   false
+pushfilesdb                 none                       none                       false   false
+wbdump                      none                       none                       false   false
+reports                     none                       none                       false   false
+clean_debbugs               none                       none                       false   false
+newstats                    none                       none                       false   false
+contributor                 none                       none                       false   false
+cleanurgencylog             none                       none                       false   false
 update-buildd-admin-keyring none                       none                       false   false
