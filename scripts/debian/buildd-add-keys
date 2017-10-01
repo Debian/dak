@@ -257,8 +257,9 @@ for file in ${KEYS}; do
     # Easiest to compare in epoch, so lets see, 365 days midnight from now,
     # compared with their set expiration date at midnight
     # maxdate should turn out higher. just in case we make it 366 for this check
+    mindate=$(date +%s)
     maxdate=$(date -d '366 day 00:00:00' +%s)
-    if [ ${KEYEXPIRE} -gt ${maxdate} ]; then
+    if [ ${KEYEXPIRE} -gt ${maxdate} -o ${KEYEXPIRE} -le ${mindate} ]; then
         log "Key expiry ${KEYEXPIRE} wrong"
         DATE=$(date -Is)
         mv "${INCOMING}/${file}" "${ERRORS}/keyexpire.${file}.${DATE}"
