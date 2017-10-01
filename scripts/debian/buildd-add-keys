@@ -206,8 +206,8 @@ for file in ${KEYS}; do
     # - the UID
     # - that the key does have an expiration date (or it wont match, the second date
     #   field would be empty
-    regex="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-9]{4}-[0-9]{2}-[0-9]{2})::-:(buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>):$"
-    regex2="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]{4}-[0-9]{2}-[0-9]{2}):([0-9]{4}-[0-9]{2}-[0-9]{2})::-:$"
+    regex="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]+):([0-9]+)::-:(buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>):$"
+    regex2="^pub:-:([0-9]{4}):1:([0-9A-F]{16}):([0-9]+):([0-9]+)::-:$"
     regex3="^uid:::::::::(buildd autosigning key ${BUILDD} <buildd_${ARCH}-${BUILDD}@buildd.debian.org>):$"
     while read line <&4; do
         if [[ $line =~ $regex ]]; then
@@ -258,8 +258,7 @@ for file in ${KEYS}; do
     # compared with their set expiration date at midnight
     # maxdate should turn out higher. just in case we make it 366 for this check
     maxdate=$(date -d '366 day 00:00:00' +%s)
-    theirexpire=$(date -d "${KEYEXPIRE} 00:00:00" +%s)
-    if [ ${theirexpire} -gt ${maxdate} ]; then
+    if [ ${KEYEXPIRE} -gt ${maxdate} ]; then
         log "Key expiry ${KEYEXPIRE} wrong"
         DATE=$(date -Is)
         mv "${INCOMING}/${file}" "${ERRORS}/keyexpire.${file}.${DATE}"
@@ -289,7 +288,8 @@ for file in ${KEYS}; do
     # the keyring
     KEYSUBMITTER=$(cat "${GPGSTATUS}"|grep GOODSIG)
     KEYSUBMITTER=${KEYSUBMITTER##*GOODSIG}
-    log "${KEYSUBMITTER} added key ${KEYID} for ${ARCH} buildd ${BUILDD}, expire ${KEYEXPIRE}"
+    keyexpire_iso=$(date -I --date="@${KEYEXPIRE}")
+    log "${KEYSUBMITTER} added key ${KEYID} for ${ARCH} buildd ${BUILDD}, expire ${keyexpire_iso}"
     gpg ${DEFGPGOPT} --status-fd 4 --logger-fd 5 --keyring "${ARCHKEYRING}" --import "${GPGOUTF}" 2>/dev/null
 
     mv "${INCOMING}/${file}" "${base}/${ARCH}"
