@@ -57,3 +57,13 @@ function cleanurgencylog() {
     log "Cleaning up urgency log"
     find /srv/ftp.debian.org/web/britney/urgencies -type f -mtime +15 -delete
 }
+
+# Update keyring for buildd-add-keys, buildd-remove-keys:
+function update-buildd-admin-keyring() {
+    log "Updateing buildd admin keyring"
+    . ${configdir}/buildd-keyrings.conf
+    cd ${scriptdir}/builddkeyrings
+    gpg --no-default-keyring --keyring /srv/keyring.debian.org/keyrings/debian-keyring.gpg --export "${buildd_admin_keys[@]}" |
+        gpg --no-default-keyring --keyring ./adminkeys.gpg.new
+    mv adminkeys.gpg.new adminkeys.gpg
+}

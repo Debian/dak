@@ -7,3 +7,4 @@ clean_debbugs          none                       none                       fal
 newstats               none                       none                       false   false
 contributor            none                       none                       false   false
 cleanurgencylog        none                       none                       false   false
+update-buildd-admin-keyring none                       none                       false   false
