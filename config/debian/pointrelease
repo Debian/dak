@@ -142,7 +142,7 @@ if [[ -n ${skiplist} ]]; then
       continue
     fi
     mv ${s}.list ${s}.list.ori
-    grep -vFf <(dak ls -f heidi -S -s ${s} ${skip}) ${s}.list.ori > ${s}.list
+    grep -vFf <(dak ls -f heidi -S -s ${s} ${skiplist}) ${s}.list.ori > ${s}.list
   done
 fi
 
@@ -268,9 +268,9 @@ echo "If anything for win32-loader, enter any string, otherwise empty"
 read -e -p "win32-loader?" win32loader
 if [[ -n ${win32loader} ]]; then
     cd ${ftpdir}/tools/win32-loader
-    if [ -d ${suitename}-proposed-updates ]; then
+    if [ -d ${pusuite} ]; then
         rm -r ${suite}
-        mv ${suitename}-proposed-updates ${suite}
+        mv ${pusuite} ${suite}
     fi
     cd ${ftpdir}
 fi
