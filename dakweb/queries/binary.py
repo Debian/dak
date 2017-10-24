@@ -1,6 +1,7 @@
 """Debian binary package related queries.
 
 @copyright: 2017 Michael Stapelberg <stapelberg@debian.org>
+@copyright: 2017 Joerg Jaspert <joerg@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -9,6 +10,26 @@ import json
 
 from daklib.dbconn import DBConn, DBBinary, DBSource, SourceMetadata, MetadataKey
 from dakweb.webregister import QueryRegister
+
+@bottle.route('/binary/metadata_keys/')
+def binary_metadata_keys():
+    """
+    List all possible metadata keys
+
+    @rtype: dictionary
+    @return: A list of metadata keys
+    """
+    s = DBConn().session()
+    q = s.query(MetadataKey)
+    ret = []
+    for p in q:
+        ret.append( p.key)
+
+    s.close()
+
+    return json.dumps(ret)
+
+QueryRegister().register_path('/metadata_keys', binary_metadata_keys)
 
 
 @bottle.route('/binary/by_metadata/<key>')
