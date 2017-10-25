@@ -14,16 +14,17 @@ Here are a few tips to help you get started on creating a dakweb patch:
    http://www.sqlalchemy.org/
 
    When browsing upstream documentation, keep in mind that we are using the
-   versions installed on coccia.debian.org, which is usually running Debian
-   stable. In other words: the latest documentation might not be applicable yet.
+   versions installed on mirror.ftp-master.debian.org, which is usually running
+   Debian stable. In other words: the latest documentation might not be
+   applicable yet.
 
 2. The bulk of adding a new query is coming up with the actual database query
    (as opposed to the plumbing). To get fast turn-around times while developing,
    you can use the ipython REPL:
 
-   % ssh coccia.debian.org
-   coccia % cd /srv/ftp-master.debian.org/dak/
-   coccia % PYTHONPATH=. ipython
+   % ssh mirror.ftp-master.debian.org
+   mirror % cd /srv/ftp-master.debian.org/dak/
+   mirror % PYTHONPATH=. ipython
    ipython % from daklib.dbconn import *
    ipython % s = DBConn().session()
 
