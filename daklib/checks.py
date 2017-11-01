@@ -294,7 +294,7 @@ class SuffixCheck(Check):
 class ExternalHashesCheck(Check):
     """Checks hashes in .changes and .dsc against an external database."""
     def check_single(self, session, f):
-        q = session.execute("SELECT size, md5sum, sha1sum, sha256sum FROM external_files WHERE filename LIKE '%%/%s'" % f.filename)
+        q = session.execute("SELECT size, md5sum, sha1sum, sha256sum FROM external_files WHERE filename LIKE :pattern", {'pattern': '%/{}'.format(f.filename)})
         (ext_size, ext_md5sum, ext_sha1sum, ext_sha256sum) = q.fetchone() or (None, None, None, None)
 
         if not ext_size:
