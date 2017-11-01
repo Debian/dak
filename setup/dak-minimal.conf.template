@@ -16,8 +16,7 @@ DB
 
 Dinstall
 {
-   SigningKeyring "__DAKBASE__/keyrings/s3kr1t/dot-gnupg/secring.gpg";
-   SigningPubKeyring "__DAKBASE__/keyrings/s3kr1t/dot-gnupg/pubring.gpg";
+   SigningHomedir "__DAKBASE__/keyrings/s3kr1t/dot-gnupg";
 
    Options
    {
