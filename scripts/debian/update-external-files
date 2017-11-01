@@ -1,0 +1,49 @@
+#! /bin/bash
+
+# Copyright (C) 2017, Ansgar Burchardt <ansgar@debian.org>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; version 2.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+set -e
+set -u
+set -o pipefail
+
+usage() {
+  cat >&2 <<-EOF
+	usage: $0 --update
+	Update `external_files` table with data from standard input.
+
+	The input should be the xz-compressed output of the
+	    COPY files (id, filename, size, md5sum, last_used, sha1sum,
+            sha256sum, created, modified) TO STDOUT
+	query.  See config/debian/daily.functions's pushfilesdb.
+	EOF
+  exit ${1:-0}
+}
+
+if [ "$#" -eq 0 ]; then
+  usage
+fi
+
+if [ "$#" -ne 1 -o "${1}" != "--update" ]; then
+  usage 1
+fi
+
+/usr/bin/xzcat |
+  /usr/bin/psql -1 -d obscurity -c '
+    CREATE TEMPORARY TABLE external_files_tmp AS SELECT * FROM external_files WITH NO DATA;
+    COPY external_files_tmp (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) FROM STDIN;
+    DELETE FROM external_files WHERE id NOT IN (SELECT id FROM external_files_tmp);
+    INSERT INTO external_files SELECT * FROM external_files_tmp WHERE id NOT IN (SELECT id FROM external_files);
+    '

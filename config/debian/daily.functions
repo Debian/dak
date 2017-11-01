@@ -13,7 +13,7 @@ function wnppbugs() {
 function pushfilesdb() {
     log "Pushing files table to security"
     # The key over there should have the following set for the ssh key:
-    #  command="/usr/bin/xzcat | /usr/bin/psql -1 -c 'DELETE FROM external_files; COPY external_files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) FROM STDIN' obscurity"
+    #  command="/srv/security-master.debian.org/dak/scripts/debian/update-external-files --update"
     psql -c 'COPY files (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) TO STDOUT' projectb | \
         xz -3 | \
         ssh -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=30 -2 \
