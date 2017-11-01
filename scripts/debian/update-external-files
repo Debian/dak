@@ -44,6 +44,6 @@ fi
   /usr/bin/psql -1 -d obscurity -c '
     CREATE TEMPORARY TABLE external_files_tmp AS SELECT * FROM external_files WITH NO DATA;
     COPY external_files_tmp (id, filename, size, md5sum, last_used, sha1sum, sha256sum, created, modified) FROM STDIN;
-    DELETE FROM external_files WHERE id NOT IN (SELECT id FROM external_files_tmp);
-    INSERT INTO external_files SELECT * FROM external_files_tmp WHERE id NOT IN (SELECT id FROM external_files);
+    DELETE FROM external_files ef WHERE NOT EXISTS (SELECT 1 FROM external_files_tmp tmp WHERE tmp.id = ef.id);
+    INSERT INTO external_files SELECT * FROM external_files_tmp tmp WHERE NOT EXISTS (SELECT 1 FROM external_files ef WHERE ef.id = tmp.id);
     '
