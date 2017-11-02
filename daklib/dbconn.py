@@ -108,12 +108,8 @@ class DebVersion(UserDefinedType):
     def result_processor(self, dialect, coltype = None):
         return None
 
-sa_major_version = sqlalchemy.__version__[0:3]
-if sa_major_version in ["0.5", "0.6", "0.7", "0.8", "0.9", "1.0"]:
-    from sqlalchemy.databases import postgres
-    postgres.ischema_names['debversion'] = DebVersion
-else:
-    raise Exception("dak only ported to SQLA versions 0.5 to 1.0 (%s installed).  See daklib/dbconn.py" % sa_major_version)
+from sqlalchemy.databases import postgres
+postgres.ischema_names['debversion'] = DebVersion
 
 ################################################################################
 
@@ -2633,8 +2629,7 @@ class DBConn(object):
             engine_args['pool_size'] = int(cnf['DB::PoolSize'])
         if cnf.has_key('DB::MaxOverflow'):
             engine_args['max_overflow'] = int(cnf['DB::MaxOverflow'])
-        if sa_major_version != '0.5' and cnf.has_key('DB::Unicode') and \
-            cnf['DB::Unicode'] == 'false':
+        if cnf.get('DB::Unicode') == 'false':
             engine_args['use_native_unicode'] = False
 
         # Monkey patch a new dialect in in order to support service= syntax
