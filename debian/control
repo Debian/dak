@@ -2,8 +2,8 @@ Source: dak
 Section: misc
 Priority: extra
 Build-Depends: debhelper (>= 9~),
-               postgresql-9.6 | postgresql-9.4,
-               postgresql-9.6-debversion | postgresql-9.4-debversion,
+               postgresql-10 | postgresql-9.6 | postgresql-9.4,
+               postgresql-10-debversion | postgresql-9.6-debversion | postgresql-9.4-debversion,
                python-all-dev,
                python-apt,
                python-debian,
