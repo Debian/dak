@@ -61,7 +61,7 @@ from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc, \
     Text, ForeignKey
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
     backref, MapperExtension, EXT_CONTINUE, object_mapper, clear_mappers
-from sqlalchemy import types as sqltypes
+import sqlalchemy.types
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.associationproxy import association_proxy
 
@@ -90,22 +90,14 @@ warnings.filterwarnings('ignore', \
 # Patch in support for the debversion field type so that it works during
 # reflection
 
-try:
-    # that is for sqlalchemy 0.6
-    UserDefinedType = sqltypes.UserDefinedType
-except:
-    # this one for sqlalchemy 0.5
-    UserDefinedType = sqltypes.TypeEngine
-
-class DebVersion(UserDefinedType):
+class DebVersion(sqlalchemy.types.UserDefinedType):
     def get_col_spec(self):
         return "DEBVERSION"
 
     def bind_processor(self, dialect):
         return None
 
-    # ' = None' is needed for sqlalchemy 0.5:
-    def result_processor(self, dialect, coltype = None):
+    def result_processor(self, dialect, coltype):
         return None
 
 from sqlalchemy.databases import postgres
