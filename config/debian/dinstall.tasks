@@ -8,7 +8,7 @@ bugdoctxt              none                       External\ Updates          fal
 mailingliststxt        none                       none                       false   true
 pseudopackages         none                       none                       false   true
 i18n1                  none                       i18n\ 1                    false   false
-dep11                  none                       dep11\ 1                   false   true
+#dep11                  none                       dep11\ 1                   false   true
 NOSTAGE                lockaccepted               none                       false   false
 punew                  stable-new                 p-u-new                    false   false
 opunew                 oldstable-new              o-p-u-new                  false   false
