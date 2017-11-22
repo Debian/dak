@@ -677,7 +677,7 @@ def lock_package(package):
     path = os.path.join(cnf.get("Process-New::LockDir", cnf['Dir::Lock']), package)
 
     try:
-        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY, mode=0o644)
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY, 0o644)
     except OSError as e:
         if e.errno == errno.EEXIST or e.errno == errno.EACCES:
             user = pwd.getpwuid(os.stat(path)[stat.ST_UID])[4].split(',')[0].replace('.', '')
