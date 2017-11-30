@@ -582,7 +582,7 @@ function mirrorpush() {
             date -u > ${webdir}/${fname}
             echo "Using dak v1" >> ${webdir}/${fname}
             echo "Running on host $(hostname -f)" >> ${webdir}/${fname}
-            sudo -H -u archvsync runmirrors ${pusharg} > ~dak/runmirrors-${archive}.log 2>&1 &
+            sudo -H -u archvsync runmirrors -a ${pusharg} > ~dak/runmirrors-${archive}.log 2>&1 &
         fi
     done
 }
@@ -594,7 +594,7 @@ function mirrorpush-backports() {
 
 function mirrorpush-release() {
     log "Pushing cdbuilder host"
-    sudo -H -u archvsync runmirrors release > ~dak/runmirrors-release.log 2>&1 &
+    sudo -H -u archvsync runmirrors -a release > ~dak/runmirrors-release.log 2>&1 &
 }
 
 function i18n2() {
