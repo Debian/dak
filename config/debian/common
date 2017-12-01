@@ -108,7 +108,7 @@ function make_buildd_dir () {
 
     # Tell the mirrors that we've updated
     log "Pushing static for incoming.d.o"
-    sudo -H -u archvsync /home/archvsync/runmirrors buildd > ~dak/runmirrors-buildd.log 2>&1 &
+    sudo -u archvsync runmirrors -a buildd > ~dak/runmirrors-buildd.log 2>&1 &
     chronic timeout -k 600 480 /usr/local/bin/static-update-component incoming.debian.org < /dev/null
     wait
 }

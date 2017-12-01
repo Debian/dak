@@ -106,7 +106,7 @@ new_last_changed=$(last_changed security)
 new_last_changed_build=$(last_changed build-queues)
 
 if [[ "${old_last_changed_build}" != "${new_last_changed_build}" ]]; then
-    sudo -u archvsync /home/archvsync/signal_security-buildd-pool
+    sudo -u archvsync runmirrors -a security-buildd-pool
 fi
 
 if [[ "${old_last_changed}" != "${new_last_changed}" ]]; then
@@ -117,7 +117,7 @@ if [[ "${old_last_changed}" != "${new_last_changed}" ]]; then
     dak generate-packages-sources2 -a security
     dak generate-releases -a security >/dev/null
     /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh >/dev/null
-    sudo -u archvsync -H /home/archvsync/signal_security
+    sudo -u archvsync runmirrors -a security
 fi
 
 cleanup

@@ -23,7 +23,7 @@ function changelogs() {
     mkdir -p ${exportpublic}/changelogs
     cd ${exportpublic}/changelogs
     rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
-    sudo -H -u archvsync /home/archvsync/runmirrors metasdo > ~dak/runmirrors-metadata.log 2>&1 &
+    sudo -u archvsync runmirrors -a metasdo > ~dak/runmirrors-metadata.log 2>&1 &
 }
 
 changelogs
