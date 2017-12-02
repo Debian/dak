@@ -582,7 +582,7 @@ function mirrorpush() {
             date -u > ${webdir}/${fname}
             echo "Using dak v1" >> ${webdir}/${fname}
             echo "Running on host $(hostname -f)" >> ${webdir}/${fname}
-            sudo -u archvsync runmirrors -a ${pusharg} > ~dak/runmirrors-${archive}.log 2>&1 &
+            sudo -u archvsync runmirrors ${pusharg} > ~dak/runmirrors-${archive}.log 2>&1 &
         fi
     done
 }
