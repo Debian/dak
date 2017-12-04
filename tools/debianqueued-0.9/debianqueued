@@ -675,6 +675,9 @@ outer_loop: while (<CHANGES>) {
       $extralines++ if length $_ > 1;
       next;
     }
+    if ($pgplines != 1) {
+      next;
+    }
     if (/^Maintainer:\s*/i) {
       chomp( $main::mail_addr = $' );
       $main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
@@ -1110,7 +1113,12 @@ sub process_commands($) {
 outer_loop: while (<COMMANDS>) {
     if (/^---+(BEGIN|END) PGP .*---+$/) {
       ++$pgplines;
-    } elsif (/^Uploader:\s*/i) {
+      next;
+    }
+    if ($pgplines != 1) {
+      next;
+    }
+    if (/^Uploader:\s*/i) {
       chomp( $main::mail_addr = $' );
       $main::mail_addr = $1 if $main::mail_addr =~ /<([^>]*)>/;
     } elsif (/^Commands:/i) {
