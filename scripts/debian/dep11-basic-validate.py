@@ -42,7 +42,7 @@ schema_component = Schema({
     Required('Type'): All(str, Length(min=1)),
     Required('ID'): All(str, Length(min=1)),
     Required('Name'): All(dict, Length(min=1), schema_translated),
-    Required('Package'): All(str, Length(min=1)),
+    Required('Summary'): All(dict, Length(min=1)),
 }, extra = True)
 
 def add_issue(msg):
@@ -99,35 +99,39 @@ def validate_data(data):
             ret = False
 
         for doc in docs:
-            docid = doc.get('ID')
+            cptid = doc.get('ID')
             pkgname = doc.get('Package')
-            if not pkgname:
-                pkgname = "?unknown?"
+            cpttype = doc.get('Type')
             if not doc:
                 add_issue("FATAL: Empty document found.")
                 ret = False
                 continue
-            if not docid:
+            if not cptid:
                 add_issue("FATAL: Component without ID found.")
                 ret = False
                 continue
+            if not pkgname:
+                if cpttype != "web-application":
+                    add_issue("[%s]: %s" % (cptid, "Component is missing a 'Package' key."))
+                    ret = False
+                    continue
 
             try:
                 schema_component(doc)
             except Exception as e:
-                add_issue("[%s]: %s" % (docid, str(e)))
+                add_issue("[%s]: %s" % (cptid, str(e)))
                 ret = False
                 continue
 
             # more tests for the icon key
             icon = doc.get('Icon')
-            if (doc['Type'] == "desktop-app") or (doc['Type'] == "web-app"):
+            if (cpttype == "desktop-application") or (cpttype == "web-application"):
                 if not doc.get('Icon'):
-                    add_issue("[%s]: %s" % (docid, "Components containing an application must have an 'Icon' key."))
+                    add_issue("[%s]: %s" % (cptid, "Components containing an application must have an 'Icon' key."))
                     ret = False
             if icon:
                 if (not icon.get('stock')) and (not icon.get('cached')) and (not icon.get('local')):
-                    add_issue("[%s]: %s" % (docid, "A 'stock', 'cached' or 'local' icon must at least be provided. @ data['Icon']"))
+                    add_issue("[%s]: %s" % (cptid, "A 'stock', 'cached' or 'local' icon must at least be provided. @ data['Icon']"))
                     ret = False
 
             if not test_localized(doc, 'Name'):
