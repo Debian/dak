@@ -23,7 +23,7 @@ Output override files for apt-ftparchive and indices/
 
 ################################################################################
 
-# This is seperate because it's horribly Debian specific and I don't
+# This is separate because it's horribly Debian specific and I don't
 # want that kind of horribleness in the otherwise generic 'dak
 # make-overrides'.  It does duplicate code tho.
 

@@ -43,7 +43,7 @@ Graphs the number of packages in queue directories (usually new and byhand).
   -r, --rrd=key             Directory where rrd files to be updated are stored
   -x, --extra-rrd=key       File containing extra options to rrdtool graphing
   -i, --images=key          Directory where image graphs to be updated are stored
-  -n, --names=key           A comma seperated list of rrd files to be scanned
+  -n, --names=key           A comma separated list of rrd files to be scanned
 
 """
     sys.exit(exit_code)

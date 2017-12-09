@@ -40,7 +40,7 @@ dak control-suite -l ${suite} > ${suite}.list
 - ask SRMs if there is anything to be skipped from this release. If so
   edit ${pusuite}.list (and later the Changelog too)
 - bash:
-# skip: list of *source* packages to skip, whitespace seperated
+# skip: list of *source* packages to skip, whitespace separated
 skip=""
 if [ -n "${skip}" ]; then
   mv ${pusuite}.list ${pusuite}.list.ori

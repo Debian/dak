@@ -19,7 +19,7 @@ def madison():
 
     @since: December 2014
 
-    @keyword package: Space seperated list of packages.
+    @keyword package: Space separated list of packages.
     @keyword a: only show info for specified architectures.
     @keyword b: only show info for a binary type. I{deb/udeb/dsc}
     @keyword c: only show info for specified component(s). I{main/contrib/non-free}

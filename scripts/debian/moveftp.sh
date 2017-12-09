@@ -9,7 +9,7 @@ SSHDIR="/srv/upload.debian.org/UploadQueue/"
 PROCESSDELAYED=1
 HOST=$(hostname -s)
 
-# For usper, targetdir is the sshdir, everywhere else, its a seperate
+# For usper, targetdir is the sshdir, everywhere else, its a separate
 # one, so we avoid fetching partial uploads from their sshdir.
 if [[ ${HOST} == usper ]]; then
     TARGETDIR="${SSHDIR}"

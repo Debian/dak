@@ -140,7 +140,7 @@ bool ParseQuoteWord(const char *&String,string &Res)
 									/*}}}*/
 // ParseCWord - Parses a string like a C "" expression			/*{{{*/
 // ---------------------------------------------------------------------
-/* This expects a series of space seperated strings enclosed in ""'s. 
+/* This expects a series of space separated strings enclosed in ""'s. 
    It concatenates the ""'s into a single string. */
 bool ParseCWord(const char *String,string &Res)
 {
@@ -742,7 +742,7 @@ void URI::CopyFrom(string U)
 {
    string::const_iterator I = U.begin();
 
-   // Locate the first colon, this seperates the scheme
+   // Locate the first colon, this separates the scheme
    for (; I < U.end() && *I != ':' ; I++);
    string::const_iterator FirstColon = I;
 

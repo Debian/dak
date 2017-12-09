@@ -69,7 +69,7 @@ Prints a report of packages in queues (usually new and byhand).
   -a, --age=key             if using sort by age, how should time be treated?
                             If not given a default of hours will be used.
   -r, --rrd=key             Directory where rrd files to be updated are stored
-  -d, --directories=key     A comma seperated list of queues to be scanned
+  -d, --directories=key     A comma separated list of queues to be scanned
 
      Sorting Keys: ao=age,   oldest first.   an=age,   newest first.
                    na=name,  ascending       nd=name,  descending

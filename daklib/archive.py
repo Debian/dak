@@ -816,7 +816,7 @@ class ArchiveUpload(object):
         tainted archive (eg. when it references files in NEW).
 
         Debug packages (*-dbgsym in Section: debug) are not considered as NEW
-        if C{suite} has a seperate debug suite.
+        if C{suite} has a separate debug suite.
 
         @rtype:  bool
         @return: C{True} if the upload is NEW, C{False} otherwise

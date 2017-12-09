@@ -41,7 +41,7 @@ Generate the Packages/Sources files
                                CAREFUL: Only to be used at point release time!
   -h, --help                   show this help and exit
 
-SUITE can be a space seperated list, e.g.
+SUITE can be a space separated list, e.g.
    --suite=unstable testing
 """
     sys.exit()
