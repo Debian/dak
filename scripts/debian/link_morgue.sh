@@ -85,8 +85,9 @@ cd "${PROCESSDIR}"
 log "Processing ${PROCESSDIR}"
 find ${PROCESSDIR} -type f |
 while read mfile; do
-    if [[ -e ${mfile}.nosnapshot ]]; then
+    if [[ -e ${mfile}.nosnapshot ]] || [[ ${mfile} == .nobackup ]]; then
         # We know this file does not exist on snapshot, don't check again
+        # Also ignore .nobackup files
         continue
     fi
 
