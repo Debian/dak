@@ -155,6 +155,8 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
             package = m['package']
         section = m['section']
         priority = m['priority']
+        if m["type"] == 'deb' and priority != 'optional':
+            priority = '\033[31m' + priority + '\033[0m'
         included = "" if m['included'] else "NOT UPLOADED"
         if indexed:
             line = "(%s): %-20s %-20s %-20s %s" % (index, package, priority, section, included)
