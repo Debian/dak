@@ -67,7 +67,7 @@ class ParseDscTestCase(ParseChangesTestCase):
         changes = self.assertParse('dsc/10.dsc', -1, 1)
         files = build_file_list(changes, 1)
         rejmsg = check_dsc_files('10.dsc', changes, files.keys())
-        self.assertEqual(rejmsg, ['10.dsc: contains source files not allowed in format 1.0'])
+        self.assertEqual(rejmsg, [])
 
 
 class ParseChangesTestCase(ParseChangesTestCase):

@@ -56,12 +56,6 @@ class FormatOneTestCase(SourceFormatTestCase):
             'native_tar_gz': 1,
             'debian_diff': 1,
         })
-        self.assertRejected({
-            'orig_tar': 1,
-            'orig_tar_gz': 1,
-            'debian_diff': 1,
-            'orig_tar_sig': 1,
-        })
 
 class FormatTreeTestCase(SourceFormatTestCase):
     fmt = srcformats.FormatThree
@@ -129,5 +123,4 @@ class FormatFromStringTestCase(DakTestCase):
         self.assertInvalid('8.4 (hardy)')
 
 if __name__ == '__main__':
-    import unittest
     unittest.main()

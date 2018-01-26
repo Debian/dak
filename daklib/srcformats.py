@@ -88,8 +88,7 @@ class FormatOne(SourceFormat):
         if has['native_tar_gz'] and has['debian_diff']:
             yield "native package with diff makes no sense"
         if (has['orig_tar_gz'] != has['orig_tar']) or \
-           (has['native_tar_gz'] != has['native_tar']) or \
-           has['orig_tar_sig']:
+           (has['native_tar_gz'] != has['native_tar']):
             yield "contains source files not allowed in format %s" % cls.name
 
         for msg in super(FormatOne, cls).reject_msgs(has):
