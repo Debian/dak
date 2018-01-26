@@ -9,6 +9,7 @@ Use common-debian-service-https-redirect * ftp-master.debian.org
 
   Use common-debian-service-ssl ftp-master.debian.org
   Use common-ssl-HSTS
+  Use http-pkp-ftp-master.debian.org
 
   Redirect permanent /proposed-updates.html https://release.debian.org/proposed-updates/stable.html
   Redirect permanent /oldstable-proposed-updates.html https://release.debian.org/proposed-updates/oldstable.html
