@@ -252,8 +252,8 @@ class Upload(object):
                     self.Subst["__MAINTAINER_TO__"] += ", %s" % self.pkg.changes["sponsoremail"]
             session.close()
 
-        if cnf.has_key("Dinstall::TrackingServer") and self.pkg.changes.has_key("source"):
-            self.Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::TrackingServer"])
+        if cnf.has_key("Dinstall::PackagesServer") and self.pkg.changes.has_key("source"):
+            self.Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::PackagesServer"])
 
         # Apply any global override of the Maintainer field
         if cnf.get("Dinstall::OverrideMaintainer"):
@@ -342,9 +342,9 @@ class Upload(object):
             if action:
                 self.update_subst()
                 self.Subst["__ANNOUNCE_LIST_ADDRESS__"] = announce_list
-                if cnf.get("Dinstall::TrackingServer") and \
+                if cnf.get("Dinstall::PackagesServer") and \
                    self.pkg.changes["architecture"].has_key("source"):
-                    trackingsendto = "Bcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::TrackingServer"])
+                    trackingsendto = "Bcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::PackagesServer"])
                     self.Subst["__ANNOUNCE_LIST_ADDRESS__"] += "\n" + trackingsendto
 
                 mail_message = utils.TemplateSubst(self.Subst, announcetemplate)

@@ -132,7 +132,7 @@ def announce_accept(upload):
     send_mail(message, whitelists=whitelists)
 
     if accepted_to_real_suite and upload.sourceful:
-        # senf mail to announce lists and tracking server
+        # senf mail to announce lists and packages server
         announce = set()
         for suite in upload.suites:
             if suite.policy_queue is None or suite in upload.from_policy_suites:
@@ -140,9 +140,9 @@ def announce_accept(upload):
 
         announce_list_address = ", ".join(announce)
 
-        tracking = cnf.get('Dinstall::TrackingServer')
-        if tracking:
-            announce_list_address = "{0}\nBcc: {1}@{2}".format(announce_list_address, upload.source, tracking)
+        packages = cnf.get('Dinstall::PackagesServer')
+        if packages:
+            announce_list_address = "{0}\nBcc: {1}@{2}".format(announce_list_address, upload.source, packages)
 
         if len(announce_list_address) != 0:
             my_subst = subst.copy()

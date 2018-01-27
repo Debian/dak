@@ -195,11 +195,9 @@ def main ():
             else:
                 utils.fubar("Asked to send mail to #%s in BTS but Dinstall::BugServer is not configured" % copy_to)
         elif copy_to == 'package':
-            for package in arguments:
+            for package in set(arguments):
                 if cnf.has_key("Dinstall::PackagesServer"):
                     carbon_copy.append(package + "@" + cnf["Dinstall::PackagesServer"])
-                if cnf.has_key("Dinstall::TrackingServer"):
-                    carbon_copy.append(package + "@" + cnf["Dinstall::TrackingServer"])
         elif '@' in copy_to:
             carbon_copy.append(copy_to)
         else:
