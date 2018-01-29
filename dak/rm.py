@@ -253,12 +253,32 @@ def main ():
 
     if Options["Binary"]:
         # Removal by binary package name
-        q = session.execute("SELECT b.package, b.version, a.arch_string, b.id, b.maintainer FROM binaries b, bin_associations ba, architecture a, suite su, files f, files_archive_map af, component c WHERE ba.bin = b.id AND ba.suite = su.id AND b.architecture = a.id AND b.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s %s" % (con_packages, con_suites, con_components, con_architectures))
+        q = session.execute("""
+                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer
+                FROM binaries b
+                     JOIN bin_associations ba ON ba.bin = b.id
+                     JOIN architecture a ON a.id = b.architecture
+                     JOIN suite su ON su.id = ba.suite
+                     JOIN files f ON f.id = b.file
+                     JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
+                     JOIN component c ON c.id = af.component_id
+                WHERE TRUE %s %s %s %s
+        """ % (con_packages, con_suites, con_components, con_architectures))
         to_remove.extend(q)
     else:
         # Source-only
         if not Options["Binary-Only"]:
-            q = session.execute("SELECT s.source, s.version, 'source', s.id, s.maintainer FROM source s, src_associations sa, suite su, archive, files f, files_archive_map af, component c WHERE sa.source = s.id AND sa.suite = su.id AND archive.id = su.archive_id AND s.file = f.id AND af.file_id = f.id AND af.archive_id = su.archive_id AND af.component_id = c.id %s %s %s" % (con_packages, con_suites, con_components))
+            q = session.execute("""
+                    SELECT s.source, s.version, 'source', s.id, s.maintainer
+                    FROM source s
+                         JOIN src_associations sa ON sa.source = s.id
+                         JOIN suite su ON su.id = sa.suite
+                         JOIN archive ON archive.id = su.archive_id
+                         JOIN files f ON f.id = s.file
+                         JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
+                         JOIN component c ON c.id = af.component_id
+                    WHERE TRUE %s %s %s
+            """ % (con_packages, con_suites, con_components))
             to_remove.extend(q)
         if not Options["Source-Only"]:
             # Source + Binary
