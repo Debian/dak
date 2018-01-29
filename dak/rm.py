@@ -254,8 +254,9 @@ def main ():
     if Options["Binary"]:
         # Removal by binary package name
         q = session.execute("""
-                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer
+                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
                 FROM binaries b
+                     JOIN source s ON s.id = b.source
                      JOIN bin_associations ba ON ba.bin = b.id
                      JOIN architecture a ON a.id = b.architecture
                      JOIN suite su ON su.id = ba.suite
@@ -269,7 +270,7 @@ def main ():
         # Source-only
         if not Options["Binary-Only"]:
             q = session.execute("""
-                    SELECT s.source, s.version, 'source', s.id, s.maintainer
+                    SELECT s.source, s.version, 'source', s.id, s.maintainer, s.source
                     FROM source s
                          JOIN src_associations sa ON sa.source = s.id
                          JOIN suite su ON su.id = sa.suite
@@ -283,7 +284,7 @@ def main ():
         if not Options["Source-Only"]:
             # Source + Binary
             q = session.execute("""
-                    SELECT b.package, b.version, a.arch_string, b.id, b.maintainer
+                    SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
                     FROM binaries b
                          JOIN bin_associations ba ON b.id = ba.bin
                          JOIN architecture a ON b.architecture = a.id
