@@ -180,29 +180,6 @@ def main ():
            and not Options["Done"] and Options["Reason"].find("[auto-cruft]") == -1:
         utils.fubar("Need a -C/--carbon-copy if not closing a bug and not doing a cruft removal.")
 
-    # Process -C/--carbon-copy
-    #
-    # Accept 3 types of arguments (space separated):
-    #  1) a number - assumed to be a bug number, i.e. nnnnn@bugs.debian.org
-    #  2) the keyword 'package' - cc's $package@packages.debian.org for every argument
-    #  3) contains a '@' - assumed to be an email address, used unmodified
-    #
-    carbon_copy = []
-    for copy_to in utils.split_args(Options.get("Carbon-Copy")):
-        if copy_to.isdigit():
-            if cnf.has_key("Dinstall::BugServer"):
-                carbon_copy.append(copy_to + "@" + cnf["Dinstall::BugServer"])
-            else:
-                utils.fubar("Asked to send mail to #%s in BTS but Dinstall::BugServer is not configured" % copy_to)
-        elif copy_to == 'package':
-            for package in set(arguments):
-                if cnf.has_key("Dinstall::PackagesServer"):
-                    carbon_copy.append(package + "@" + cnf["Dinstall::PackagesServer"])
-        elif '@' in copy_to:
-            carbon_copy.append(copy_to)
-        else:
-            utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to))
-
     if Options["Binary"]:
         field = "b.package"
     else:
@@ -300,6 +277,29 @@ def main ():
     if not to_remove:
         print "Nothing to do."
         sys.exit(0)
+
+    # Process -C/--carbon-copy
+    #
+    # Accept 3 types of arguments (space separated):
+    #  1) a number - assumed to be a bug number, i.e. nnnnn@bugs.debian.org
+    #  2) the keyword 'package' - cc's $package@packages.debian.org for every argument
+    #  3) contains a '@' - assumed to be an email address, used unmodified
+    #
+    carbon_copy = []
+    for copy_to in utils.split_args(Options.get("Carbon-Copy")):
+        if copy_to.isdigit():
+            if cnf.has_key("Dinstall::BugServer"):
+                carbon_copy.append(copy_to + "@" + cnf["Dinstall::BugServer"])
+            else:
+                utils.fubar("Asked to send mail to #%s in BTS but Dinstall::BugServer is not configured" % copy_to)
+        elif copy_to == 'package':
+            for package in set([s[5] for s in to_remove]):
+                if cnf.has_key("Dinstall::PackagesServer"):
+                    carbon_copy.append(package + "@" + cnf["Dinstall::PackagesServer"])
+        elif '@' in copy_to:
+            carbon_copy.append(copy_to)
+        else:
+            utils.fubar("Invalid -C/--carbon-copy argument '%s'; not a bug number, 'package' or email address." % (copy_to))
 
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
