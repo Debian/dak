@@ -1188,7 +1188,10 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
         deps = {}
         sources = {}
         virtual_packages = {}
-        params['arch_id'] = get_architecture(architecture, session).arch_id
+        try:
+            params['arch_id'] = get_architecture(architecture, session).arch_id
+        except AttributeError:
+            continue
 
         statement = sql.text('''
             SELECT b.package, s.source, c.name as component,
