@@ -117,4 +117,7 @@ def fix_maintainer(maintainer):
 def split_uploaders(field):
     import re
     for u in re.sub(">[ ]*,", ">\t", field).split("\t"):
-        yield u.strip()
+        u = u.strip()
+        # Trailing commas will give an empty final uploader
+        if u:
+            yield u
