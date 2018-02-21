@@ -140,9 +140,12 @@ def announce_accept(upload):
 
         announce_list_address = ", ".join(announce)
 
+        # according to #890944 this email shall be sent to dispatch@<PackagesServer> to avoid
+        # bouncing emails
+        # the package email alias is not yet created shortly after accepting the package
         packages = cnf.get('Dinstall::PackagesServer')
         if packages:
-            announce_list_address = "{0}\nBcc: {1}@{2}".format(announce_list_address, upload.source, packages)
+            announce_list_address = "{0}\nBcc: dispatch@{1}".format(announce_list_address, packages)
 
         if len(announce_list_address) != 0:
             my_subst = subst.copy()
