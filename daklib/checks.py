@@ -251,6 +251,11 @@ class ChangesCheck(Check):
         except ParseMaintError as e:
             raise Reject('{0}: Failed to parse Changed-By field: {1}'.format(changes.filename, e))
 
+        try:
+            changes.byhand_files
+        except daklib.upload.InvalidChangesException as e:
+            raise Reject('{0}'.format(e))
+
         if len(changes.files) == 0:
             raise Reject("Changes includes no files.")
 
