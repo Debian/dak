@@ -144,7 +144,10 @@ SELECT
     Logger.log(['database'])
     for entry in query:
         maintainers[entry['package']] = entry['maintainer']
-        uploaders[entry['package']] = entry['uploaders']
+        if all(x is None for x in entry['uploaders']):
+            uploaders[entry['package']] = ['']
+        else:
+            uploaders[entry['package']] = entry['uploaders']
 
     Logger.log(['files'])
     # Process any additional Maintainer files (e.g. from pseudo
