@@ -9,6 +9,10 @@ SSHDIR="/srv/upload.debian.org/UploadQueue/"
 PROCESSDELAYED=1
 HOST=$(hostname -s)
 
+# Only one of me should ever run.
+FLOCKER=${FLOCKER:-""}
+[[ ${FLOCKER} != $0 ]] && exec env FLOCKER="$0" flock -E 0 -en "$0" "$0" "$@" || :
+
 # For usper, targetdir is the sshdir, everywhere else, its a separate
 # one, so we avoid fetching partial uploads from their sshdir.
 if [[ ${HOST} == usper ]]; then
