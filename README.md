@@ -5,8 +5,8 @@ project's archives. It is highly optimized for the Debian project,
 though can be used by others too.
 
 ## More reading
-There are some manual pages and READMEs in the [doc](doc) sub-directory.  The
-[TODO](doc/TODO) file is an incomplete list of things needing to be done.
+There are some manual pages and READMEs in the [docs](docs) sub-directory.  The
+[TODO](docs/TODO) file is an incomplete list of things needing to be done.
 
 There's a mailing list for discussion, development of and help with
 dak.  See:
