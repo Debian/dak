@@ -2165,6 +2165,7 @@ class DBConn(object):
             'config',
             'dsc_files',
             'external_overrides',
+            'external_signature_requests',
             'extra_src_references',
             'files',
             'files_archive_map',

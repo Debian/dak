@@ -22,6 +22,7 @@ This module provides classes to manipulate the archive.
 from daklib.dbconn import *
 import daklib.checks as checks
 from daklib.config import Config
+from daklib.externalsignature import check_upload_for_external_signature_request
 import daklib.upload as upload
 import daklib.utils as utils
 from daklib.fstransactions import FilesystemTransaction
@@ -1070,6 +1071,8 @@ class ArchiveUpload(object):
                 extra_source_archives=extra_source_archives
             )
             db_binaries.append(db_binary)
+
+            check_upload_for_external_signature_request(self.session, suite, copy_to_suite, db_binary)
 
         if suite.copychanges:
             src = os.path.join(self.directory, self.changes.filename)
