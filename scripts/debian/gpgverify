@@ -1,0 +1,30 @@
+#!/bin/bash
+
+set -e
+set -u
+
+TMPDIR=${TMPDIR:-"/tmp"}
+
+GPGSTATUS=$(mktemp -p "${TMPDIR}" GPGSTATUS.XXXXXX)
+trap 'rm -f -- "${GPGSTATUS:?}"' EXIT
+GPGLOGS=$(mktemp -p "${TMPDIR}" GPGLOGS.XXXXXX)
+trap 'rm -f -- "${GPGLOGS:?}"' EXIT
+
+DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting --with-colons --keyring /srv/keyring.debian.org/keyrings/debian-keyring.gpg"
+/usr/bin/gpg ${DEFGPGOPT} --status-file ${GPGSTATUS} --logger-file ${GPGLOGS} $3 $4 -
+
+declare -A TOKENS
+while read gpgtag TOKEN something; do
+    TOKENS[$TOKEN]=1
+done < <(cat ${GPGSTATUS})
+
+# Heyho, we just verified, but git verify-commit is silly and wants to redo our work...
+cat ${GPGSTATUS}
+rm -f ${GPGSTATUS}
+rm -f ${GPGLOGS}
+
+if [[ ${TOKENS[VALIDSIG]} == 1 ]] && [[ ${TOKENS[GOODSIG]} == 1 ]]; then
+    exit 0
+else
+    exit 1
+fi

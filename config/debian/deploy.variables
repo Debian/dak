@@ -1,0 +1,43 @@
+# -*- mode:sh -*-
+
+# Checking for DB updates, only really done on some hosts
+case ${HOSTNAME} in
+    fasolo|seger)
+        declare -r NEEDDB="yes, we need to check for DB updates"
+        ;;
+    *)
+        declare -r NEEDDB=""
+esac
+# Whats the last db update revision before update
+OLDDBVER=0
+# Whats the last db update revision after update
+NEWDBVER=0
+
+# Where is our code
+declare -r GITURL="https://salsa.debian.org/ftp-team/dak.git"
+
+# Where to send error log messages to
+declare -r MAILTO=${MAILTO:-"ftpmaster@debian.org"}
+
+# Store at which DB update we are in live system
+if [[ -n ${NEEDDB} ]]; then
+    OLDDBVER=$(ls -1 ${masterdir}/dak/dakdb/update*py|sort -V|tail -n 1)
+    OLDDBVER=${OLDDBVER##*update}
+    declare -r OLDDBVER=${OLDDBVER%%.py}
+fi
+
+# Used for checking new commits before deploying them
+declare -r DEPLOYDIR=${scriptdir}/deploy
+
+# GPG options for verifying stuff
+DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting --with-colons --keyring /srv/keyring.debian.org/keyrings/debian-keyring.gpg"
+
+# Which key is allowed to sign commits for a deploy
+# Only keys count, values are just for fun.
+declare -A DEPLOY_KEYS=(
+  ["309911BEA966D0613053045711B4E5FF15B0FD82"]="mhy"
+  ["80E976F14A508A48E9CA3FE9BC372252CA1CF964"]="ansgar"
+  ["FBFABDB541B5DC955BD9BA6EDB16CF5BB12525C4"]="joerg"
+  ["C74F6AC9E933B3067F52F33FA459EC6715B0705F"]="alteholz"
+  ["8C823DED10AA8041639E12105ACE8D6E0C14A470"]="lfaraone"
+)
