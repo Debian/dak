@@ -19,6 +19,8 @@
 from __future__ import print_function
 
 import apt_pkg
+import os
+import sqlalchemy as sql
 import sys
 
 from daklib.config import Config
@@ -28,6 +30,8 @@ def usage():
     print("""Usage:
   dak acl set-fingerprints <acl-name>
   dak acl export-per-source <acl-name>
+  dak acl allow <acl-name> <fingerprint> <source>...
+  dak acl deny <acl-name> <fingerprint> <source>...
 
   set-fingerprints:
     Reads list of fingerprints from stdin and sets the ACL <acl-name> to these.
@@ -36,6 +40,9 @@ def usage():
 
   export-per-source:
     Export per source upload rights for ACL <acl-name>.
+
+  allow, deny:
+    Grant (revoke) per-source upload rights for ACL <acl-name>.
 """)
 
 def get_fingerprint(entry, session):
@@ -122,11 +129,53 @@ def acl_export_per_source(acl_name):
     session.rollback()
     session.close()
 
+def acl_allow(acl_name, fingerprint, sources):
+    tbl = DBConn().tbl_acl_per_source
+
+    session = DBConn().session()
+
+    acl_id = session.query(ACL).filter_by(name=acl_name).one().id
+    fingerprint_id = session.query(Fingerprint).filter_by(fingerprint=fingerprint).one().fingerprint_id
+
+    # TODO: check that fpr is in ACL
+
+    data = [
+        {
+            'acl_id': acl_id,
+            'fingerprint_id': fingerprint_id,
+            'source': source,
+            'reason': 'set by {} via CLI'.format(os.environ.get('USER', '(unknown)')),
+        }
+        for source in sources
+    ]
+
+    session.execute(tbl.insert(), data)
+
+    session.commit()
+
+def acl_deny(acl_name, fingerprint, sources):
+    tbl = DBConn().tbl_acl_per_source
+
+    session = DBConn().session()
+
+    acl_id = session.query(ACL).filter_by(name=acl_name).one().id
+    fingerprint_id = session.query(Fingerprint).filter_by(fingerprint=fingerprint).one().fingerprint_id
+
+    # TODO: check that fpr is in ACL
+
+    for source in sources:
+        result = session.execute(tbl.delete().where(tbl.c.acl_id == acl_id).where(tbl.c.fingerprint_id == fingerprint_id).where(tbl.c.source == source))
+        if result.rowcount != 1:
+            # TODO: Nicer error message?
+            raise Exception("Tried to deny uploads of '{}', but was not allowed before.".format(source))
+
+    session.commit()
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
-    if len(argv) != 3:
+    if len(argv) < 3:
         usage()
         sys.exit(1)
 
@@ -134,6 +183,10 @@ def main(argv=None):
         acl_set_fingerprints(argv[2], sys.stdin)
     elif argv[1] == 'export-per-source':
         acl_export_per_source(argv[2])
+    elif argv[1] == 'allow':
+        acl_allow(argv[2], argv[3], argv[4:])
+    elif argv[1] == 'deny':
+        acl_deny(argv[2], argv[3], argv[4:])
     else:
         usage()
         sys.exit(1)
