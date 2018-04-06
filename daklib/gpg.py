@@ -271,7 +271,7 @@ class SignedFile(object):
                     "--trust-model", "always",
                     "--fixed-list-mode"]
             for k in self.keyrings:
-                args.append("--keyring=%s" % k)
+                args.extend(["--keyring", k])
             args.extend(["--decrypt", "-"])
 
             os.execvp(self.gpg, args)
