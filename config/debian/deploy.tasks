@@ -1,5 +1,5 @@
 # FUNC                 ARGS                       TIME           ERR     BG
-prepare_playground     none                       none           true    false
+fetch_updates          none                       none           true    false
 NOSTAGE                find_commitids             none           true    false
 check_commit_signature none                       none           true    false
 NOSTAGE                check_for_db_update        none           true    false

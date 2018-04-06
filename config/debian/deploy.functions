@@ -1,33 +1,32 @@
 # -*- mode:sh -*-
 
-function prepare_playground() {
-    if [[ -d ${DEPLOYDIR}/.git ]]; then
-        # Git clone exists, lets get latest and hopefully greatest content
-        cd ${DEPLOYDIR}
-        # Don't be bad, don't play in here manually, we get rid of that
-        git reset --hard
-        git clean -fd
-        git pull
-    else
-        # Not yet there, or not a git yet, lets see
-        if [[ -d ${DEPLOYDIR} ]]; then
-            # Hey fun, our DEPLOYDIR exists, but is not a git checkout?
-            # Complain loudly, let a human master see who fucked up here,
-            # so they can be properly kicked.
-            log_error "BIG BAD PROBLEM, ${DEPLOYDIR} EXISTS BUT IS NOT A CHECKOUT. SOMEONE FUCKED UP, PLEASE KICK THEM"
-            exit 42
-        fi
+function fetch_updates() {
+    GIT_TREE=${masterdir}/.git git fetch origin
+}
 
-        # Get it fresh
-        git clone ${GITURL} ${DEPLOYDIR}
-        git config --local gpg.program "${scriptsdir}/gpgverify"
+function find_commitids() {
+    cd ${masterdir}
+    OLDHEAD=$(git rev-parse HEAD)
+    NEWHEAD=$(git rev-parse origin/master)
+}
+
+function check_commit_signature() {
+    cd ${masterdir}
+    git config --local gpg.program "${scriptsdir}/gpgverify"
+    if ! SIGNKEY=$(git verify-commit --raw ${NEWHEAD} 2>&1 | awk '/VALIDSIG/ {print $NF}'); then
+        log_error "{NEWHEAD} is not signed correctly"
+        exit 3
+    fi
+    if [[ -z ${DEPLOY_KEYS[${SIGNKEY}]} ]]; then
+        log_error "{NEWHEAD} signed by ${SIGNKEY} which is not allowed to deploy code"
+        exit 4
     fi
 }
 
 function check_for_db_update() {
     # Check: Do we have a DB Upgrade?
     if [[ -n ${NEEDDB} ]]; then
-        NEWDBVER=$(ls -1 ${deploydir}/dak/dakdb/update*py|sort -V|tail -n 1)
+        NEWDBVER=$(GIT_TREE=${masterdir}/.git git ls-tree origin/master dak/dakdb/update*.py|sort -V -k 4|tail -n 1)
         NEWDBVER=${NEWDBVER##*update}
         declare -r NEWDBVER=${NEWDBVER%%.py}
     fi
@@ -39,28 +38,11 @@ function check_for_db_update() {
     fi
 }
 
-function find_commitids() {
-    OLDHEAD=$(GIT_DIR=${masterdir}/.git git rev-parse HEAD)
-    NEWHEAD=$(GIT_DIR=${DEPLOYDIR}/.git git rev-parse HEAD)
-}
-
 function check_ancestor() {
-    cd ${DEPLOYDIR}
+    cd ${masterdir}
     if ! git merge-base --is-ancestor ${OLDHEAD} ${NEWHEAD}; then
         log_error "Running code HEAD ${OLDHEAD} is not an ancestor of newly-to-deploy HEAD ${NEWHEAD}, refusing to update"
         exit 2
-    fi
-}
-
-function check_commit_signature() {
-    cd ${DEPLOYDIR}
-    if ! SIGNKEY=$(git verify-commit --raw ${NEWHEAD} 2>&1 | awk '/VALIDSIG/ {print $NF}'); then
-        log_error "{NEWHEAD} is not signed correctly"
-        exit 3
-    fi
-    if [[ -z ${DEPLOY_KEYS[${SIGNKEY}]} ]]; then
-        log_error "{NEWHEAD} signed by ${SIGNKEY} which is not allowed to deploy code"
-        exit 4
     fi
 }
 
@@ -68,8 +50,6 @@ function update_masterdir() {
     cd ${masterdir}
     # We do not want local changes
     git stash save --include-untracked --all "Update for commitid ${NEWHEAD}"
-    # Now fetch stuff from remote
-    git fetch origin
     # And switch to the commit we just verified
     git checkout ${NEWHEAD}
 }
