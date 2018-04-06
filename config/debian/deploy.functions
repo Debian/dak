@@ -32,9 +32,9 @@ function check_for_db_update() {
         declare -r NEWDBVER=${NEWDBVER%%.py}
     fi
 
-    if [[ ${OLDDBVER} -ne ${NEWDBVER} ]] && [[ -z ${DODB:-""} ]]; then
-        # Differing versions and no DODB variable, break
-        log_error "Database update from ${OLDDBVER} to ${NEWDBVER} required, will not update dak code on ${HOSTNAME} unless told with DODB=1 in the environment"
+    if [[ ${OLDDBVER} -ne ${NEWDBVER} ]] && [[ -z ${FORCETHISDAMNUPGRADEIKNOWWHATIDOIHOPE:-""} ]]; then
+        # Differing versions and no FORCETHISDAMNUPGRADEIKNOWWHATIDOIHOPE variable, break
+        log_error "Database update from ${OLDDBVER} to ${NEWDBVER} required, will not update dak code on ${HOSTNAME} unless told with FORCETHISDAMNUPGRADEIKNOWWHATIDOIHOPE=1 in the environment"
         exit 21
     fi
 }
