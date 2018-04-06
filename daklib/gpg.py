@@ -1,7 +1,7 @@
 """Utilities for signed files
 
 @contact: Debian FTP Master <ftpmaster@debian.org>
-@copyright: 2011  Ansgar Burchardt <ansgar@debian.org>
+@copyright: 2011-2018  Ansgar Burchardt <ansgar@debian.org>
 @license: GNU General Public License version 2 or later
 """
 
@@ -25,6 +25,8 @@ import errno
 import fcntl
 import os
 import select
+
+import daklib.daksubprocess
 
 try:
     _MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -278,5 +280,28 @@ class SignedFile(object):
 
     def contents_sha1(self):
         return apt_pkg.sha1sum(self.contents)
+
+def sign(infile, outfile, keyids=[], inline=False, pubring=None, secring=None, homedir=None, passphrase_file=None):
+    args = [
+        '/usr/bin/gpg',
+        '--no-options', '--no-tty', '--batch', '--armour',
+        '--personal-digest-preferences', 'SHA256',
+    ]
+
+    for keyid in keyids:
+        args.extend(['--local-user', keyid])
+    if pubring is not None:
+        args.extend(['--keyring', pubring])
+    if secring is not None:
+        args.extend(['--secret-keyring', secring])
+    if homedir is not None:
+        args.extend(['--homedir', homedir])
+    if passphrase_file is not None:
+        args.extend(['--pinentry-mode', 'loopback',
+                     '--passphrase-file', passphrase_file])
+
+    args.append('--clearsign' if inline else '--detach-sign')
+
+    daklib.daksubprocess.check_call(args, stdin=infile, stdout=outfile)
 
 # vim: set sw=4 et:

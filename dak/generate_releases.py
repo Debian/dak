@@ -82,19 +82,13 @@ def sign_release_dir(suite, dirname):
     cnf = Config()
 
     if 'Dinstall::SigningKeyring' in cnf or 'Dinstall::SigningHomedir' in cnf:
-        arguments = ['/usr/bin/gpg',
-                     '--no-options', '--no-tty', '--batch', '--armour',
-                     '--personal-digest-preferences', 'SHA256',
-        ]
-        if 'Dinstall::SigningHomedir' in cnf:
-            arguments.extend(['--homedir', cnf['Dinstall::SigningHomedir']])
-        if 'Dinstall::SigningPassphraseFile' in cnf:
-            arguments.extend(['--pinentry-mode', 'loopback',
-                              '--passphrase-file', cnf['Dinstall::SigningPassphraseFile']])
-        if 'Dinstall::SigningKeyring' in cnf:
-            arguments.extend(['--secret-keyring', cnf['Dinstall::SigningKeyring']])
-        if 'Dinstall::SigningPubKeyring' in cnf:
-            arguments.extend(['--keyring', cnf['Dinstall::SigningPubKeyring']])
+        args = {
+            'keyids': suite.signingkeys or [],
+            'pubring': cnf.get('Dinstall::SigningPubKeyring') or None,
+            'secring': cnf.get('Dinstall::SigningKeyring') or None,
+            'homedir': cnf.get('Dinstall::SigningHomedir') or None,
+            'passphrase_file': cnf.get('Dinstall::SigningPassphraseFile') or None,
+        }
 
         relname = os.path.join(dirname, 'Release')
 
@@ -106,17 +100,12 @@ def sign_release_dir(suite, dirname):
         if os.path.exists(inlinedest):
             os.unlink(inlinedest)
 
-        for keyid in suite.signingkeys or []:
-            arguments.extend(['--local-user', keyid])
-
         with open(relname, 'r') as stdin:
             with open(dest, 'w') as stdout:
-                arguments_sign = arguments + ['--detach-sign']
-                subprocess.check_call(arguments_sign, stdin=stdin, stdout=stdout)
+                daklib.gpg.sign(stdin, stdout, inline=False, **args)
             stdin.seek(0)
             with open(inlinedest, 'w') as stdout:
-                arguments_sign = arguments + ['--clearsign']
-                subprocess.check_call(arguments_sign, stdin=stdin, stdout=stdout)
+                daklib.gpg.sign(stdin, stdout, inline=True, **args)
 
 class XzFile(object):
     def __init__(self, filename, mode='r'):
