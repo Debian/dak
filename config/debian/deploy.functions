@@ -7,7 +7,7 @@ function fetch_updates() {
 function find_commitids() {
     cd ${masterdir}
     OLDHEAD=$(git rev-parse HEAD)
-    NEWHEAD=$(git rev-parse origin/master)
+    NEWHEAD=$(git rev-parse origin/deploy)
 }
 
 function check_commit_signature() {
@@ -26,7 +26,7 @@ function check_commit_signature() {
 function check_for_db_update() {
     # Check: Do we have a DB Upgrade?
     if [[ -n ${NEEDDB} ]]; then
-        NEWDBVER=$(GIT_TREE=${masterdir}/.git git ls-tree origin/master dak/dakdb/update*.py|sort -V -k 4|tail -n 1)
+        NEWDBVER=$(GIT_TREE=${masterdir}/.git git ls-tree origin/deploy dak/dakdb/update*.py|sort -V -k 4|tail -n 1)
         NEWDBVER=${NEWDBVER##*update}
         declare -r NEWDBVER=${NEWDBVER%%.py}
     fi
