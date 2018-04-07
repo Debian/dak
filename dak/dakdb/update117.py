@@ -31,7 +31,9 @@ from daklib.config import Config
 statements = [
 """
 CREATE TABLE external_signature_requests (
-  association_id INTEGER NOT NULL PRIMARY KEY REFERENCES bin_associations(id) ON DELETE CASCADE
+  association_id INTEGER NOT NULL REFERENCES bin_associations(id) ON DELETE CASCADE,
+  suite_id INTEGER NOT NULL REFERENCES suite(id) ON DELETE CASCADE,
+  PRIMARY KEY (association_id, suite_id)
 )
 """
 ]
