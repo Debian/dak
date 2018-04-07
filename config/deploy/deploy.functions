@@ -26,7 +26,7 @@ function check_commit_signature() {
 function check_for_db_update() {
     # Check: Do we have a DB Upgrade?
     if [[ -n ${NEEDDB} ]]; then
-        NEWDBVER=$(GIT_DIR=${masterdir}/.git git ls-tree origin/deploy dak/dakdb/update*.py|sort -V -k 4|tail -n 1)
+        NEWDBVER=$(GIT_DIR=${masterdir}/.git git ls-tree origin/deploy dak/dakdb/|grep -v '__init__.py'|sort -V -k 4|tail -n 1)
         NEWDBVER=${NEWDBVER##*update}
         declare -r NEWDBVER=${NEWDBVER%%.py}
     fi
