@@ -12,15 +12,15 @@ masterdir=${base}/dak/
 queuedir=${base}/queue/
 scriptdir=${base}/scripts
 
-configdir=${masterdir}/config/debian/
+export configdir=${configdir:-${masterdir}/config/debian/}
 dbdir=${base}/database/
 exportdir=${base}/export/
 extoverridedir=${scriptdir}/external-overrides
 ftpdir=${base}/ftp
 incoming=${base}/public/incoming.debian.org/
 indices=${ftpdir}/indices
-lockdir=${base}/lock/
-logdir=${base}/log/cron/
+export lockdir=${lockdir:-${base}/lock/}
+export logdir=${logdir:-${base}/log/cron/}
 mirrordir=${base}/mirror/
 
 accepted=${queuedir}/accepted/
