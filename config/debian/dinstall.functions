@@ -622,8 +622,8 @@ function i18n2() {
 function stats() {
     log "Updating stats data"
     cd ${configdir}
-    ${scriptsdir}/update-ftpstats ${base}/log/* > ${base}/misc/ftpstats.data
-    R --slave --vanilla < ${base}/misc/ftpstats.R
+    #${scriptsdir}/update-ftpstats ${base}/log/* > ${base}/misc/ftpstats.data
+    #R --slave --vanilla < ${base}/misc/ftpstats.R
     dak stats arch-space > ${webdir}/arch-space
     dak stats pkg-nums > ${webdir}/pkg-nums
 }
