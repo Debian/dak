@@ -2,32 +2,32 @@
 DEBIAN-SPECIFIC NOTES
 *********************
 
+------------------------------------------------------------------------
 security archive
-================
+------------------------------------------------------------------------
 
 NEW processing
---------------
-
-- cronoff
-- dak process-new, accept
-- cd /srv/security-master.debian.org/queue/new/COMMENTS
-- Change first line to NOTOK, add comment "Moving back to unchecked."
+========================================================================
+- ``cronoff``
+- ``CHANGES=FILENAME.changes``
+- ``dak process-new``, ACCEPT
+- ``cd /srv/security-master.debian.org/queue/new/COMMENTS``
+- Change first line to **NOTOK**, add comment "Moving back to unchecked."
 - Rename ACCEPT.* to REJECT.*
-- dak process-policy new; dak clean-suites
-- cd /srv/security-master.debian.org/queue/reject
-- dak admin forget-signature bla.changes
-- dcmd mv -n bla.changes ../unchecked
-- /srv/security-master.debian.org/dak/config/debian-security/cron.unchecked
-- cronon
+- ``dak process-policy new; dak clean-suites``
+- ``cd /srv/security-master.debian.org/queue/reject``
+- ``dak admin forget-signature ${CHANGES}``
+- ``dcmd mv -n ${CHANGES} ../unchecked``
+- ``/srv/security-master.debian.org/dak/config/debian-security/cron.unchecked``
+- ``cronon``
 
 Built-Using
------------
-
+========================================================================
 Source packages referred to via Built-Using need to be included in the
 security archive:
 
 - Obtain & verify .dsc
-- dak import built-using updates/<component> <.dsc...>
+- ``dak import built-using updates/<component> <.dsc...>``
 
 If the .dsc is signed by an old key no longer in the keyring, use
---ignore-signature. Make extra sure the .dsc is correct.
+``--ignore-signature``. Make **extra sure** the .dsc is *correct*.
