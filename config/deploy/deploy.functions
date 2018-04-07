@@ -1,7 +1,13 @@
 # -*- mode:sh -*-
 
 function fetch_updates() {
-    GIT_DIR=${masterdir}/.git git fetch origin
+    cd ${masterdir}/
+    local beforefetch=$(git rev-parse origin/deploy)
+    git fetch origin
+    local afterfetch=$(git rev-parse origin/deploy)
+    if [[ ${beforefetch} == ${afterfetch} ]]; then
+        exit 0
+    fi
 }
 
 function find_commitids() {
