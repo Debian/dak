@@ -1,7 +1,7 @@
 #!/bin/bash
 # No way I try to deal with a crippled sh just for POSIX foo.
 
-# Copyright (C) 2009-2016 Joerg Jaspert <joerg@debian.org>
+# Copyright (C) 2009-2016, 2018 Joerg Jaspert <joerg@debian.org>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -155,11 +155,16 @@ esac
     #
     # ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
     #
-    # NOTE 1: There are two special values for the first column (FUNC).
+    # NOTE 1: There are special values for the first column (FUNC).
     #         STATE   - do not call stage function, call the state
     #                   function to update the public statefile "where is dinstall"
     #         NOSTAGE - do not call stage function, call the command directly.
-    #
+    #         RMSTAGE - clean out the stages directory, and as such
+    #                   the recording what already ran in an earlier cronscript.
+    #                   Note: Only really makes sense at beginning of a tasks file,
+    #                   the stages directory gets cleared at successful exit anyways.
+    #                   RMSTAGE simply ensures that ALL of the crons tasks ALWAYS run.
+
     # Note 2: If you want to hand an empty value to the stage function,
     #         use the word "none" in the list below.
     while read FUNC ARGS TIME ERR BACKGROUND; do
@@ -187,6 +192,11 @@ esac
                 ;;
             NOSTAGE)
                 ${ARGS}
+                ;;
+            RMSTAGE)
+                # Make sure we remove our stage files, so all the
+                # actions will be done again.
+                rm -f ${stagedir}/*
                 ;;
             *)
                 GO=(
