@@ -1,7 +1,13 @@
-DEBIAN-SPECIFIC NOTES                                  -*- mode: Org -*-
+*********************
+DEBIAN-SPECIFIC NOTES
+*********************
 
-* security archive
-** NEW processing
+security archive
+================
+
+NEW processing
+--------------
+
 - cronoff
 - dak process-new, accept
 - cd /srv/security-master.debian.org/queue/new/COMMENTS
@@ -13,7 +19,10 @@ DEBIAN-SPECIFIC NOTES                                  -*- mode: Org -*-
 - dcmd mv -n bla.changes ../unchecked
 - /srv/security-master.debian.org/dak/config/debian-security/cron.unchecked
 - cronon
-** Built-Using
+
+Built-Using
+-----------
+
 Source packages referred to via Built-Using need to be included in the
 security archive:
 
