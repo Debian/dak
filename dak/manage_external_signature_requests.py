@@ -41,7 +41,7 @@ Logger = None
 def usage (exit_code=0):
     print("""Usage: dak manage-external-signature-requests [OPTIONS]
 Manage external signature requests such as requests to sign EFI binaries or
-kernel module.
+kernel modules.
 
   -h, --help                 show this help and exit""")
 
