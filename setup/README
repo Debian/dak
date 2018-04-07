@@ -69,7 +69,7 @@ Set up a private signing key: don't set a passphrase as dak will not
 pass one through to gpg.  Guard this key carefully!
 The key only needs to be able to sign, it doesn't need to be able
 to encrypt.
-# gpg --no-default-keyring --secret-keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/secring.gpg --keyring /srv/dak/keyrings/s3kr1t/dot-gnupg/pubring.gpg --gen-key
+# gpg --homedir /srv/dak/keyrings/s3kr1t/dot-gnupg --gen-key
 Remember the signing key id for when creating the suite below.
 Here we'll pretend it is DDDDDDDD for convenience
 
