@@ -8,6 +8,7 @@ dak-setup() {
   local setupdir="${DAK_ROOT}/setup"
 
   export DAKBASE=$(mktemp -d)
+  export DAKHOST=dak-master
 
   (cd ${setupdir}; ./init_db)
   if [[ ${PGUSER:-} != dak ]]; then
