@@ -768,6 +768,7 @@ class NoSourceOnlyCheck(Check):
         allow_source_only_uploads = Config().find_b('Dinstall::AllowSourceOnlyUploads')
         allow_source_only_uploads_without_package_list = Config().find_b('Dinstall::AllowSourceOnlyUploadsWithoutPackageList')
         allow_source_only_new = Config().find_b('Dinstall::AllowSourceOnlyNew')
+        allow_source_only_new_keys = Config().value_list('Dinstall::AllowSourceOnlyNewKeys')
         allow_no_arch_indep_uploads = Config().find_b('Dinstall::AllowNoArchIndepUploads', True)
         changes = upload.changes
 
@@ -776,7 +777,7 @@ class NoSourceOnlyCheck(Check):
         if not allow_source_only_uploads_without_package_list \
            and changes.source.package_list.fallback:
             raise Reject('Source-only uploads are only allowed if a Package-List field that also list architectures is included in the source package. dpkg (>= 1.17.7) includes this information.')
-        if not allow_source_only_new and upload.new:
+        if not allow_source_only_new and changes.primary_fingerprint not in allow_source_only_new_keys and upload.new:
             raise Reject('Source-only uploads to NEW are not allowed.')
 
         if 'all' not in changes.architectures and changes.source.package_list.has_arch_indep_packages():

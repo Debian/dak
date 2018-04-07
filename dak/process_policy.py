@@ -44,6 +44,7 @@ from daklib.dbconn import *
 from daklib import daklog
 from daklib import utils
 from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
+from daklib.externalsignature import check_upload_for_external_signature_request
 from daklib.config import Config
 from daklib.archive import ArchiveTransaction, source_component_from_package_list
 from daklib.urgencylog import UrgencyLog
@@ -214,6 +215,8 @@ def comment_accept(upload, srcqueue, comments, transaction):
                 allow_tainted=allow_tainted,
                 extra_archives=[upload.target_suite.archive],
             )
+
+            check_upload_for_external_signature_request(session, suite, copy_to_suite, db_binary)
 
         suite.update_last_changed()
 

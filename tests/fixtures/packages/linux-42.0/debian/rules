@@ -1,16 +1,4 @@
 #! /usr/bin/make -f
 
-include /usr/share/dpkg/pkg-info.mk
-
-byhand=linux-code-sign_$(DEB_VERSION)_all.tar.xz
-
 %:
 	dh $@
-
-override_dh_builddeb:
-	dh_builddeb
-	tar -cJf ../$(byhand) -C linux-code-sign .
-
-override_dh_gencontrol:
-	dh_gencontrol
-	echo "$(byhand) byhand -" >> debian/files

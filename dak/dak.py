@@ -100,6 +100,8 @@ def init():
          "Clean and update metadata for build queues"),
         ("manage-debug-suites",
          "Clean obsolete packages from debug suites"),
+        ("manage-external-signature-requests",
+         "Maintain external signature requests"),
         ("clean-queues",
          "Clean cruft from incoming"),
         ("archive-dedup-pool",
