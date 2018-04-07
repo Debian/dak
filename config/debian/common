@@ -174,7 +174,6 @@ function do_unchecked () {
             dak process-upload -a -d "$unchecked"
             dak process-commands -d "$unchecked"
         } >> ${report}
-        dak manage-external-signature-requests
 
         sync_debbugs
         do_buildd
