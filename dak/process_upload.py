@@ -265,10 +265,7 @@ def accept(directory, upload):
     upload.install()
     process_buildinfos(upload)
 
-    accepted_to_real_suite = False
-    for suite in upload.final_suites:
-        accepted_to_real_suite = accepted_to_real_suite or suite.policy_queue is None
-
+    accepted_to_real_suite = any(suite.policy_queue is None for suite in upload.final_suites)
     sourceful_upload = 'source' in upload.changes.architectures
 
     control = upload.changes.changes
