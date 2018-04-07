@@ -196,9 +196,6 @@ class ORMObject(object):
                     # list
                     value = len(value)
                 elif hasattr(value, 'count'):
-                    # query (but not during validation)
-                    if self.in_validation:
-                        continue
                     value = value.count()
                 else:
                     raise KeyError('Do not understand property %s.' % property)
@@ -241,38 +238,6 @@ class ORMObject(object):
         method.
         '''
         return '<%s %s>' % (self.classname(), self.json())
-
-    def not_null_constraints(self):
-        '''
-        Returns a list of properties that must be not NULL. Derived classes
-        should override this method if needed.
-        '''
-        return []
-
-    validation_message = \
-        "Validation failed because property '%s' must not be empty in object\n%s"
-
-    in_validation = False
-
-    def validate(self):
-        '''
-        This function validates the not NULL constraints as returned by
-        not_null_constraints(). It raises the DBUpdateError exception if
-        validation fails.
-        '''
-        for property in self.not_null_constraints():
-            # TODO: It is a bit awkward that the mapper configuration allow
-            # directly setting the numeric _id columns. We should get rid of it
-            # in the long run.
-            if hasattr(self, property + '_id') and \
-                getattr(self, property + '_id') is not None:
-                continue
-            if not hasattr(self, property) or getattr(self, property) is None:
-                # str() might lead to races due to a 2nd flush
-                self.in_validation = True
-                message = self.validation_message % (property, str(self))
-                self.in_validation = False
-                raise DBUpdateError(message)
 
     @classmethod
     @session_wrapper
@@ -337,25 +302,6 @@ __all__.append('ORMObject')
 
 ################################################################################
 
-class Validator(MapperExtension):
-    '''
-    This class calls the validate() method for each instance for the
-    'before_update' and 'before_insert' events. A global object validator is
-    used for configuring the individual mappers.
-    '''
-
-    def before_update(self, mapper, connection, instance):
-        instance.validate()
-        return EXT_CONTINUE
-
-    def before_insert(self, mapper, connection, instance):
-        instance.validate()
-        return EXT_CONTINUE
-
-validator = Validator()
-
-################################################################################
-
 class ACL(ORMObject):
     def __repr__(self):
         return "<ACL {0}>".format(self.name)
@@ -389,9 +335,6 @@ class Architecture(ORMObject):
 
     def properties(self):
         return ['arch_string', 'arch_id', 'suites_count']
-
-    def not_null_constraints(self):
-        return ['arch_string']
 
 __all__.append('Architecture')
 
@@ -506,10 +449,6 @@ class DBBinary(ORMObject):
         return ['package', 'version', 'maintainer', 'source', 'architecture', \
             'poolfile', 'binarytype', 'fingerprint', 'install_date', \
             'suites_count', 'binary_id', 'contents_count', 'extra_sources']
-
-    def not_null_constraints(self):
-        return ['package', 'version', 'maintainer', 'source',  'poolfile', \
-            'binarytype']
 
     metadata = association_proxy('key', 'value')
 
@@ -649,10 +588,6 @@ class Component(ORMObject):
     def properties(self):
         return ['component_name', 'component_id', 'description', \
             'meets_dfsg', 'overrides_count']
-
-    def not_null_constraints(self):
-        return ['component_name']
-
 
 __all__.append('Component')
 
@@ -827,9 +762,6 @@ class PoolFile(ORMObject):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
             'sha256sum', 'source', 'binary', 'last_used']
 
-    def not_null_constraints(self):
-        return ['filename', 'md5sum']
-
     def identical_to(self, filename):
         """
         compare size and hash with the given file
@@ -859,9 +791,6 @@ class Fingerprint(ORMObject):
     def properties(self):
         return ['fingerprint', 'fingerprint_id', 'keyring', 'uid', \
             'binary_reject']
-
-    def not_null_constraints(self):
-        return ['fingerprint']
 
 __all__.append('Fingerprint')
 
@@ -1149,9 +1078,6 @@ class Maintainer(ORMObject):
     def properties(self):
         return ['name', 'maintainer_id']
 
-    def not_null_constraints(self):
-        return ['name']
-
     def get_split_maintainer(self):
         if not hasattr(self, 'name') or self.name is None:
             return ('', '', '', '')
@@ -1297,9 +1223,6 @@ class Override(ORMObject):
         return ['package', 'suite', 'component', 'overridetype', 'section', \
             'priority']
 
-    def not_null_constraints(self):
-        return ['package', 'suite', 'component', 'overridetype', 'section']
-
 __all__.append('Override')
 
 @session_wrapper
@@ -1358,9 +1281,6 @@ class OverrideType(ORMObject):
 
     def properties(self):
         return ['overridetype', 'overridetype_id', 'overrides_count']
-
-    def not_null_constraints(self):
-        return ['overridetype']
 
 __all__.append('OverrideType')
 
@@ -1460,9 +1380,6 @@ class Priority(ORMObject):
     def properties(self):
         return ['priority', 'priority_id', 'level', 'overrides_count']
 
-    def not_null_constraints(self):
-        return ['priority', 'level']
-
     def __eq__(self, val):
         if isinstance(val, str):
             return (self.priority == val)
@@ -1532,9 +1449,6 @@ class Section(ORMObject):
 
     def properties(self):
         return ['section', 'section_id', 'overrides_count']
-
-    def not_null_constraints(self):
-        return ['section']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -1708,10 +1622,6 @@ class DBSource(ORMObject):
             'fingerprint', 'poolfile', 'version', 'suites_count', \
             'install_date', 'binaries_count', 'uploaders_count']
 
-    def not_null_constraints(self):
-        return ['source', 'version', 'maintainer', \
-            'changedby', 'poolfile']
-
     def read_control_fields(self):
         '''
         Reads the control information from a dsc
@@ -1864,9 +1774,6 @@ class Suite(ORMObject):
     def properties(self):
         return ['suite_name', 'version', 'sources_count', 'binaries_count', \
             'overrides_count']
-
-    def not_null_constraints(self):
-        return ['suite_name']
 
     def __eq__(self, val):
         if isinstance(val, str):
@@ -2046,9 +1953,6 @@ class Uid(ORMObject):
     def properties(self):
         return ['uid', 'name', 'fingerprint']
 
-    def not_null_constraints(self):
-        return ['uid']
-
 __all__.append('Uid')
 
 @session_wrapper
@@ -2106,9 +2010,6 @@ class MetadataKey(ORMObject):
     def properties(self):
         return ['key']
 
-    def not_null_constraints(self):
-        return ['key']
-
 __all__.append('MetadataKey')
 
 @session_wrapper
@@ -2155,9 +2056,6 @@ class BinaryMetadata(ORMObject):
     def properties(self):
         return ['binary', 'key', 'value']
 
-    def not_null_constraints(self):
-        return ['value']
-
 __all__.append('BinaryMetadata')
 
 ################################################################################
@@ -2171,9 +2069,6 @@ class SourceMetadata(ORMObject):
 
     def properties(self):
         return ['source', 'key', 'value']
-
-    def not_null_constraints(self):
-        return ['value']
 
 __all__.append('SourceMetadata')
 
@@ -2217,9 +2112,6 @@ class VersionCheck(ORMObject):
     def properties(self):
         #return ['suite_id', 'check', 'reference_id']
         return ['check']
-
-    def not_null_constraints(self):
-        return ['suite', 'check', 'reference']
 
 __all__.append('VersionCheck')
 
@@ -2344,7 +2236,7 @@ class DBConn(object):
                suites = relation(Suite, secondary=self.tbl_suite_architectures,
                    order_by=self.tbl_suite.c.suite_name,
                    backref=backref('architectures', order_by=self.tbl_architecture.c.arch_string))),
-            extension = validator)
+            )
 
         mapper(ACL, self.tbl_acl,
                properties = dict(
@@ -2396,12 +2288,12 @@ class DBConn(object):
                                      backref=backref('extra_binary_references', lazy='dynamic')),
                                  key = relation(BinaryMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
-                extension = validator)
+        )
 
         mapper(Component, self.tbl_component,
                properties = dict(component_id = self.tbl_component.c.id,
                                  component_name = self.tbl_component.c.name),
-               extension = validator)
+        )
 
         mapper(DBConfig, self.tbl_config,
                properties = dict(config_id = self.tbl_config.c.id))
@@ -2423,7 +2315,7 @@ class DBConn(object):
         mapper(PoolFile, self.tbl_files,
                properties = dict(file_id = self.tbl_files.c.id,
                                  filesize = self.tbl_files.c.size),
-                extension = validator)
+        )
 
         mapper(Fingerprint, self.tbl_fingerprint,
                properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
@@ -2432,7 +2324,7 @@ class DBConn(object):
                                  keyring_id = self.tbl_fingerprint.c.keyring,
                                  keyring = relation(Keyring),
                                  acl = relation(ACL)),
-               extension = validator)
+        )
 
         mapper(Keyring, self.tbl_keyrings,
                properties = dict(keyring_name = self.tbl_keyrings.c.name,
@@ -2458,7 +2350,7 @@ class DBConn(object):
                        primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.maintainer)),
                    changed_sources = relation(DBSource, backref='changedby',
                        primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))),
-                extension = validator)
+        )
 
         mapper(NewComment, self.tbl_new_comments,
                properties = dict(comment_id = self.tbl_new_comments.c.id,
@@ -2531,7 +2423,7 @@ class DBConn(object):
                                      secondary=self.tbl_src_uploaders),
                                  key = relation(SourceMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
-               extension = validator)
+        )
 
         mapper(SrcFormat, self.tbl_src_format,
                properties = dict(src_format_id = self.tbl_src_format.c.id,
@@ -2551,12 +2443,12 @@ class DBConn(object):
                                  components = relation(Component, secondary=self.tbl_component_suite,
                                                    order_by=self.tbl_component.c.ordering,
                                                    backref=backref('suites'))),
-                extension = validator)
+        )
 
         mapper(Uid, self.tbl_uid,
                properties = dict(uid_id = self.tbl_uid.c.id,
                                  fingerprint = relation(Fingerprint)),
-               extension = validator)
+        )
 
         mapper(BinContents, self.tbl_bin_contents,
             properties = dict(
