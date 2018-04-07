@@ -165,9 +165,8 @@ def acl_deny(acl_name, fingerprint, sources):
 
     for source in sources:
         result = session.execute(tbl.delete().where(tbl.c.acl_id == acl_id).where(tbl.c.fingerprint_id == fingerprint_id).where(tbl.c.source == source))
-        if result.rowcount != 1:
-            # TODO: Nicer error message?
-            raise Exception("Tried to deny uploads of '{}', but was not allowed before.".format(source))
+        if result.rowcount < 1:
+            print("W: Tried to deny uploads of '{}', but was not allowed before.".format(source))
 
     session.commit()
 
