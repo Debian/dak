@@ -98,6 +98,7 @@ def _do_Approve():
 
         # 3. Run all the steps that are needed to publish the changed archive
         print "Doing loadsa stuff in the archive, will take time, please be patient"
+        os.environ['configdir'] = '/srv/security-master.debian.org/dak/config/debian-security'
         spawn("/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked-dinstall")
 
         print "Triggering metadata export for packages.d.o and other consumers"
