@@ -1,60 +1,18 @@
 # -*- mode:sh -*-
 
-umask 022
-unset CDPATH
-GZIP='--rsyncable --no-name' ; export GZIP
+declare -r functionname=ftp-master.debian.org
+declare -r confpart=debian
 
-# locations used by many scripts
-functionname=ftp-master.debian.org
-base=/srv/${functionname}
-bindir=${base}/bin
-masterdir=${base}/dak/
-queuedir=${base}/queue/
-scriptdir=${base}/scripts
+declare -r ftpgroup=debadmin
+declare -r public_archives=(ftp-master debian-debug)
 
-export configdir=${configdir:-${masterdir}/config/debian/}
-dbdir=${base}/database/
-exportdir=${base}/export/
-extoverridedir=${scriptdir}/external-overrides
-ftpdir=${base}/ftp
-incoming=${base}/public/incoming.debian.org/
-indices=${ftpdir}/indices
-export lockdir=${lockdir:-${base}/lock/}
-export logdir=${logdir:-${base}/log/cron/}
-mirrordir=${base}/mirror/
-
-accepted=${queuedir}/accepted/
-newstage=${queuedir}/newstage/
-overridedir=${scriptdir}/override
-scriptsdir=${masterdir}/scripts/debian/
-stagedir=${lockdir}/stages
-unchecked=${queuedir}/unchecked/
-
-public=/srv/ftp.debian.org
-webdir=${public}/web
-exportpublic=${public}/rsync/export/
-
-ftpgroup=debadmin
-public_archives=(ftp-master debian-debug)
-
-TMPDIR=${base}/tmp
-PATH=${masterdir}:${PATH}
-
-# Various lockfiles used by multiple cron scripts
-LOCK_DAILY="${lockdir}/daily.lock"
-LOCK_UNCHECKED="${lockdir}/unchecked.lock"
-LOCK_STOP="${lockdir}/archive.stop"
-
-# By default, add no timestamps to stage logs
-TIMESTAMP=false
+declare -r base=/srv/${functionname}
+declare -r incoming=${base}/public/incoming.debian.org/
+declare -r masterdir=${base}/dak/
+export configdir=${configdir:-${masterdir}/config/${confpart}/}
 
 # And the following types of cronscripts exists
 declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly|mirror|deploy)'
-declare -r HOSTNAME=$(hostname -s)
 
-if [[ ${ARG} != deploy ]]; then
-    archs=$(dak admin a list | tr '\n' ' ')
-
-    # Set the database variables
-    eval $(dak admin config db-shell)
-fi
+# And get all the tons of other variables
+source ${configdir}/../common/variables

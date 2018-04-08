@@ -1,66 +1,26 @@
-# locations used by many scripts
+# -*- mode:sh -*-
 
-functionname=security-master.debian.org
-base=/srv/${functionname}
-public=/srv/security.debian.org
-bindir=$base/bin
-ftpdir=$base/ftp/
-masterdir=$base/dak/
-configdir=$masterdir/config/debian-security/
-webdir=$masterdir/web
-indices=$ftpdir/indices
-archs=$(dak admin a list | tr '\n' ' ')
+declare -r functionname=security-master.debian.org
+declare -r confpart=debian-security
 
-scriptdir=$base/scripts
-scriptsdir=$masterdir/scripts/debian/
-dbdir=$base/dak-database/
-lockdir=$base/lock
-stagedir=$lockdir/stages
-overridedir=$base/override
-extoverridedir=$scriptdir/external-overrides
-logdir=$base/log/cron/
+declare -r ftpgroup=debadmin
+declare -r public_archives=(security debian-security-debug)
 
-queuedir=$base/queue/
-unchecked=$queuedir/unchecked/
-newstage=$queuedir/newstage/
-disembargo=$queuedir/unchecked-disembargo/
-done=$queuedir/done/
-
-mirrordir=$base/mirror/
-incoming=${base}/buildd
-exportdir=$base/export/
-exportpublic=$public/rsync/export/
-
-uploadhost=ftp-master.debian.org
-uploaddir=/pub/UploadQueue/
-
-ftpgroup=debadmin
-public_archives=(security debian-security-debug)
-
-components="main non-free contrib"
-suites=$(dak admin s list)
-override_types="deb dsc udeb"
-
-TMPDIR=${base}/tmp
-
-PATH=$masterdir:$PATH
-umask 022
-unset CDPATH
-
-# Various lockfiles used by multiple cron scripts
-LOCK_DAILY="${lockdir}/daily.lock"
-LOCK_UNCHECKED="${lockdir}/unchecked.lock"
-LOCK_STOP="${lockdir}/archive.stop"
-
-# By default, add no timestamps to stage logs
-TIMESTAMP=false
+declare -r base=/srv/${functionname}
+declare -r incoming=${base}/buildd
+declare -r masterdir=${base}/dak/
+export configdir=${configdir:-${masterdir}/config/${confpart}/}
 
 # And the following types of cronscripts exists
-declare -lr POSSIBLEARGS='+(unchecked-dinstall|hourly|mirror)'
-declare -r HOSTNAME=$(hostname -s)
+declare -r POSSIBLEARGS='+(unchecked-dinstall|hourly|mirror|deploy)'
 
-# Set the database variables
-eval $(dak admin config db-shell)
+# And get all the tons of other variables
+source ${configdir}/../common/variables
 
-PATH=$masterdir:$PATH
-umask 022
+# Stuff for old cron scripts not yet switched to new style
+declare -r uploadhost=ftp-master.debian.org
+declare -r uploaddir=/pub/UploadQueue/
+
+components="main non-free contrib"
+override_types="deb dsc udeb"
+declare -r suites=$(dak admin s list)

@@ -1,1 +1,16 @@
-../debian/vars
+# -*- mode:sh -*-
+
+if [[ -d /srv/security-master.debian.org ]]; then
+    functionname=security-master.debian.org
+    confpart=debian-security
+else
+    functionname=ftp-master.debian.org
+    confpart=debian
+fi
+
+base=/srv/${functionname}
+masterdir=${base}/dak/
+export configdir=${configdir:-${masterdir}/config/${confpart}/}
+
+# And get all the tons of other variables
+source ${configdir}/../${confpart}/vars
