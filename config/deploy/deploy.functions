@@ -2,7 +2,7 @@
 
 function fetch_updates() {
     cd ${masterdir}/
-    local beforefetch=$(git rev-parse origin/deploy)
+    local beforefetch=$(git rev-parse HEAD)
     git fetch origin
     local afterfetch=$(git rev-parse origin/deploy)
     if [[ ${beforefetch} == ${afterfetch} ]]; then
