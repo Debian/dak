@@ -160,35 +160,6 @@ function autocruft() {
     dak auto-decruft -s testing-proposed-updates --if-newer-version-in testing --if-newer-version-in-rm-msg "NVIT" --decruft-equal-versions
 }
 
-function fingerprints() {
-    log "Updating fingerprints"
-    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
-    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-nonupload.gpg
-
-    OUTFILE=$( gettempfile )
-    dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
-
-    if [[ -s ${OUTFILE} ]]; then
-        /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
-From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
-To: <debian-project@lists.debian.org>
-Subject: Debian Maintainers Keyring changes
-Content-Type: text/plain; charset=utf-8
-X-Debian: DAK
-MIME-Version: 1.0
-
-The following changes to the debian-maintainers keyring have just been activated:
-
-$(cat $OUTFILE)
-
-Debian distribution maintenance software,
-on behalf of the Keyring maintainers
-
-EOF
-    fi
-    rm -f "$OUTFILE"
-}
-
 function overrides() {
     log "Writing overrides into text files"
     cd $overridedir
@@ -223,12 +194,6 @@ function release() {
     dak generate-releases -a "${public_archives[*]}"
 }
 
-function dakcleanup() {
-    log "Cleanup old packages/files"
-    dak clean-suites -m 10000
-    dak clean-queues -i "$unchecked"
-}
-
 function dedup() {
     log "Dedupe archive"
     dak archive-dedup-pool
@@ -240,26 +205,6 @@ function dedup() {
                 jdupes --hardlink --noempty --quiet --summarize --recurse ${dir}
             fi
         done
-    done
-}
-
-function mklslar() {
-    local archiveroot
-    local FILENAME=ls-lR
-
-    for archive in "${public_archives[@]}"; do
-        archiveroot="$(get_archiveroot "${archive}")"
-        cd "${archiveroot}"
-
-        log "Removing any core files ..."
-        find -type f -name core -print -delete
-
-        log "Checking symlinks ..."
-        symlinks -rd .
-
-        log "Creating recursive directory listing ... "
-        rm -f ${FILENAME}.gz
-        TZ=UTC ls -lR | gzip -9c --rsyncable --no-name > ${FILENAME}.gz
     done
 }
 

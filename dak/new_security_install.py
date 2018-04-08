@@ -97,16 +97,10 @@ def _do_Approve():
             spawn("dak process-policy {0}".format(queue))
 
         # 3. Run all the steps that are needed to publish the changed archive
-        print "Domination"
-        spawn("dak dominate")
-        print "Updating Packages and Sources files... This may take a while, be patient"
-        spawn("/srv/security-master.debian.org/dak/config/debian-security/map.sh")
-        spawn("dak generate-packages-sources2 -a security")
-        print "Updating Release files..."
-        spawn("dak generate-releases -a security")
-        print "Triggering security mirrors... (this may take a while)"
-        spawn("/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh")
-        spawn("sudo -u archvsync -H /home/archvsync/signal_security")
+        print "Doing loadsa stuff in the archive, will take time, please be patient"
+        os.environ['configdir'] = '/srv/security-master.debian.org/dak/config/debian-security'
+        spawn("/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked-dinstall")
+
         print "Triggering metadata export for packages.d.o and other consumers"
         spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
     finally:

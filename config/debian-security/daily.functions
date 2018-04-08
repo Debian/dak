@@ -1,0 +1,49 @@
+# -*- mode:sh -*-
+
+function precronscript() {
+    # only run one cron.unchecked
+    if ! lockfile -r8 ${LOCK_UNCHECKED} 2> /dev/null; then
+        # log "aborting cron.unchecked because $LOCK_UNCHECKED has already been locked"
+        exit 0
+    fi
+    TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
+}
+
+function fix_overrides() {
+    rsync --delete -r --include=override\* --exclude=\* --password-file /srv/security-master.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
+
+    cd $overridedir
+    for file in override*.gz; do
+        zcat -- "$file" > "${file%.gz}"
+    done
+    find . -maxdepth 1 -mindepth 1 -type l -delete
+
+    for suite in oldstable stable testing; do
+        case $suite in
+            oldstable) override_suite=jessie  ;;
+            stable)    override_suite=stretch  ;;
+            testing)   override_suite=buster ;;
+            *) echo "Unknown suite type ($suite)"; exit 1;;
+        esac
+        for component in $components; do
+            for override_type in $override_types; do
+                case $override_type in
+                    deb) type="" ;;
+                    dsc) type=".src" ;;
+                    udeb) type=".debian-installer" ;;
+                esac
+
+                if [ "$override_type" = "udeb" ]; then
+                    if [ ! "$component" = "main" ]; then
+                        continue
+                    fi
+                fi
+
+                OFILE="override.$override_suite.$component$type.gz"
+                if [ -r "$OFILE" ]; then
+                    zcat "$OFILE" | dak control-overrides -q -a -t $override_type -s $suite -c updates/$component
+                fi
+            done
+        done
+    done
+}
