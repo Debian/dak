@@ -1,15 +1,15 @@
 # -*- mode:sh -*-
 
 if [[ -d /srv/security-master.debian.org ]]; then
-    declare -r functionname=security-master.debian.org
-    declare -r confpart=debian-security
+    functionname=security-master.debian.org
+    confpart=debian-security
 else
-    declare -r functionname=ftp-master.debian.org
-    declare -r confpart=debian
+    functionname=ftp-master.debian.org
+    confpart=debian
 fi
 
-declare -r base=/srv/${functionname}
-declare -r masterdir=${base}/dak/
+base=/srv/${functionname}
+masterdir=${base}/dak/
 export configdir=${configdir:-${masterdir}/config/${confpart}/}
 
 # And get all the tons of other variables
