@@ -635,6 +635,7 @@ function cleantransactions() {
 }
 
 function logstats() {
+    cd ${TMPDIR}
     ${masterdir}/tools/logs.py "$1"
 }
 
