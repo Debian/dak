@@ -1,5 +1,17 @@
 # -*- mode:sh -*-
 
+function precronscript() {
+    # Do not run when those locks exist
+    if [[ -e ${LOCK_DAILY} ]] || [[ -e ${LOCK_STOP} ]]; then
+        exit 0;
+    fi
+
+    if ! lockfile -r 64 ${LOCK_UNCHECKED} 2> /dev/null; then
+        exit 0
+    fi
+    TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
+}
+
 function fetch_updates() {
     cd ${masterdir}/
     local beforefetch=$(git rev-parse HEAD)
