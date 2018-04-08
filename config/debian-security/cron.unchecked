@@ -50,6 +50,7 @@ if [ -n "$changes" ]; then
     doanything=true
     echo "$timestamp": ${changes:-"Nothing to do in disembargo"}  >> $reportdis
     dak process-upload -a -d "$disembargo" >> $reportdis
+    dak manage-external-signature-requests
 fi
 
 for queue in embargoed unembargoed; do
