@@ -26,9 +26,6 @@ if [[ -n ${NEEDDB} ]]; then
     declare -r OLDDBVER=${OLDDBVER%%.py}
 fi
 
-# Used for checking new commits before deploying them
-declare -r DEPLOYDIR=${scriptdir}/deploy
-
 # GPG options for verifying stuff
 DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting --with-colons --keyring /srv/keyring.debian.org/keyrings/debian-keyring.gpg"
 

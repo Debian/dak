@@ -52,7 +52,9 @@ TIMESTAMP=false
 declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly|mirror|deploy)'
 declare -r HOSTNAME=$(hostname -s)
 
-archs=$(dak admin a list | tr '\n' ' ')
+if [[ ${ARG} != deploy ]]; then
+    archs=$(dak admin a list | tr '\n' ' ')
 
-# Set the database variables
-eval $(dak admin config db-shell)
+    # Set the database variables
+    eval $(dak admin config db-shell)
+fi

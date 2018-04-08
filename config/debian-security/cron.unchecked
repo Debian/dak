@@ -111,13 +111,7 @@ fi
 
 if [[ "${old_last_changed}" != "${new_last_changed}" ]]; then
     # We had something approved from a policy queue, push out new archive
-    dak dominate
-    cd $configdir
-    $configdir/map.sh
-    dak generate-packages-sources2 -a security
-    dak generate-releases -a security >/dev/null
-    /srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh >/dev/null
-    sudo -u archvsync runmirrors -a security
+    $configdir/cronscript unchecked-dinstall
 fi
 
 cleanup
