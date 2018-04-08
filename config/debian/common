@@ -78,7 +78,7 @@ TEMPFILES=${TEMPFILES:-""}
 TMPFILES=${TMPFILES:-""}
 
 # Timestamp. Used for dinstall stat graphs
-function ts() {
+function log_timestamp() {
     echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
 }
 
@@ -488,7 +488,7 @@ function stage() {
     touch "${STAGEFILE}"
 
     if [[ -n ${TIME} ]]; then
-        ts "${TIME}"
+        log_timestamp "${TIME}"
     fi
 
     # And the output goes back to the normal logfile
