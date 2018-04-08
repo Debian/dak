@@ -1,0 +1,19 @@
+# -*- mode:sh -*-
+
+function precronscript() {
+    # only run one cron.unchecked
+    if ! lockfile -r8 ${LOCK_UNCHECKED} 2> /dev/null; then
+        # log "aborting cron.unchecked because $LOCK_UNCHECKED has already been locked"
+        exit 0
+    fi
+    TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
+}
+
+function update_releases() {
+    # Update Release for main archive
+    dak generate-releases -a security >/dev/null
+
+    # Update Release for buildd archive and publish it
+    dak generate-releases -a build-queues >/dev/null
+    ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
+}

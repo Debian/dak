@@ -35,7 +35,3 @@ function fixsymlinks() {
         symlinks -d -r ${archiveroot}
     done
 }
-
-function linkmorgue() {
-    ${scriptsdir}/link_morgue.sh
-}

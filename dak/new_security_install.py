@@ -105,8 +105,7 @@ def _do_Approve():
         print "Updating Release files..."
         spawn("dak generate-releases -a security")
         print "Triggering security mirrors... (this may take a while)"
-        spawn("/srv/security-master.debian.org/dak/config/debian-security/make-mirror.sh")
-        spawn("sudo -u archvsync -H /home/archvsync/signal_security")
+        spawn("/srv/security-master.debian.org/dak/config/debian-security/cronscript mirror")
         print "Triggering metadata export for packages.d.o and other consumers"
         spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
     finally:
