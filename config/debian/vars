@@ -15,4 +15,4 @@ export configdir=${configdir:-${masterdir}/config/${confpart}/}
 declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly|mirror|deploy)'
 
 # And get all the tons of other variables
-source ${masterdir}/config/common/variables
+source ${configdir}/../common/variables
