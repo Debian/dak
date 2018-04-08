@@ -43,7 +43,7 @@ declare -r LOCK_STOP="${lockdir}/archive.stop"
 # By default, add no timestamps to stage logs
 TIMESTAMP=false
 
-if [[ ${ARG} != deploy ]]; then
+if [[ ${ARG:-none} != deploy ]]; then
     declare -r archs=$(dak admin a list | tr '\n' ' ')
 
     # Set the database variables
