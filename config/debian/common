@@ -127,11 +127,11 @@ function punew_do() {
 
     STAMP=${STAMP:-$(date "+%Y%m%d%H%M")}
 
-    local exportdir="${qdir}/tree/${STAMP}"
+    local ppexportdir="${qdir}/tree/${STAMP}"
     local targetdir="${qdir}/export"
-    mkdir -p -- ${exportdir}
-    dak export -q "${queue}" -d "${exportdir}" --all
-    ln -sfT ${exportdir} ${targetdir}
+    mkdir -p -- ${ppexportdir}
+    dak export -q "${queue}" -d "${ppexportdir}" --all
+    ln -sfT ${ppexportdir} ${targetdir}
     find "${qdir}/tree" -mindepth 1 -maxdepth 1 -not -name "${STAMP}" -type d -print0 | xargs --no-run-if-empty -0 rm -rf
 }
 
