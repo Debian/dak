@@ -51,12 +51,12 @@ function cleanup() {
     exit $ERRVAL
 }
 
-base="${base}/scripts/builddkeyrings"
-INCOMING="${base}/incoming"
-ERRORS="${base}/errors"
-ADMINS="${base}/adminkeys.gpg"
-ARCHADMINS="${base}/archadminkeys"
-STAMPFILE="${base}/updatedkeyring"
+buildkeybase="${base}/scripts/builddkeyrings"
+INCOMING="${buildkeybase}/incoming"
+ERRORS="${buildkeybase}/errors"
+ADMINS="${buildkeybase}/adminkeys.gpg"
+ARCHADMINS="${buildkeybase}/archadminkeys"
+STAMPFILE="${buildkeybase}/updatedkeyring"
 
 # Default options for our gpg calls
 DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting"
@@ -114,7 +114,7 @@ for file in ${KEYS}; do
     fi
 
     # If we did have a file with this name already somethings wrong
-    if [ -f "${base}/${ARCH}/${file}" ]; then
+    if [ -f "${buildkeybase}/${ARCH}/${file}" ]; then
         log "Already processed this file"
         mv "${INCOMING}/${file}" "${ERRORS}/duplicate.${file}.$(date -Is)"
         continue
@@ -272,7 +272,7 @@ for file in ${KEYS}; do
     # And now lets check how many keys this buildd already has. 2 is the maximum, so key
     # rollover works. 3 won't, they have to rm one first
     # We need to check for the amount of keys
-    ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
+    ARCHKEYRING="${buildkeybase}/${ARCH}/keyring.gpg"
 
     KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys "buildd_${ARCH}-${BUILDD}@buildd.debian.org" 2>/dev/null | grep -c '^pub:' || /bin/true )
     if [ ${KEYNO} -gt 2 ]; then
@@ -293,5 +293,5 @@ for file in ${KEYS}; do
     log "${KEYSUBMITTER} added key ${KEYID} for ${ARCH} buildd ${BUILDD}, expire ${keyexpire_iso}"
     gpg ${DEFGPGOPT} --status-fd 4 --logger-fd 5 --keyring "${ARCHKEYRING}" --import "${GPGOUTF}" 2>/dev/null
 
-    mv "${INCOMING}/${file}" "${base}/${ARCH}"
+    mv "${INCOMING}/${file}" "${buildkeybase}/${ARCH}"
 done

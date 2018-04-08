@@ -39,18 +39,18 @@ PROGRAM="buildd-prepare-dir"
 # should be relative to the general base dir later
 COPYTARGET="${base}/keyrings"
 GNUPGHOME="${base}/s3kr1t/dot-gnupg"
-base="${base}/scripts/builddkeyrings"
-TARGET="${base}/keyrings"
-REMOVED="${base}/removed-buildd-keys.gpg"
-STAMPFILE="${base}/updatedkeyring"
+buildkeybase="${base}/scripts/builddkeyrings"
+TARGET="${buildkeybase}/keyrings"
+REMOVED="${buildkeybase}/removed-buildd-keys.gpg"
+STAMPFILE="${buildkeybase}/updatedkeyring"
 
 mkdir -p "${TARGET}/buildd-keyrings"
 
 if [ -f "${STAMPFILE}" ]; then
     rm -f "${STAMPFILE}"
     for arch in $archs; do
-        if [ -f ${base}/${arch}/keyring.gpg ]; then
-            cp -afl ${base}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
+        if [ -f ${buildkeybase}/${arch}/keyring.gpg ]; then
+            cp -afl ${buildkeybase}/${arch}/keyring.gpg ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
             chmod 0644 ${TARGET}/buildd-keyrings/buildd-${arch}-keyring.gpg
         fi
     done

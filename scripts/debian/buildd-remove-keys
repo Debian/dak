@@ -51,12 +51,12 @@ function cleanup() {
     exit $ERRVAL
 }
 
-base="${base}/scripts/builddkeyrings"
-INCOMING="${base}/incoming"
-ERRORS="${base}/errors"
-ADMINS="${base}/adminkeys.gpg"
-REMOVED="${base}/removed-buildd-keys.gpg"
-STAMPFILE="${base}/updatedkeyring"
+buildkeybase="${base}/scripts/builddkeyrings"
+INCOMING="${buildkeybase}/incoming"
+ERRORS="${buildkeybase}/errors"
+ADMINS="${buildkeybase}/adminkeys.gpg"
+REMOVED="${buildkeybase}/removed-buildd-keys.gpg"
+STAMPFILE="${buildkeybase}/updatedkeyring"
 
 # Default options for our gpg calls
 DEFGPGOPT="--no-default-keyring --batch --no-tty --no-options --exit-on-status-write-error --no-greeting"
@@ -114,7 +114,7 @@ for file in ${KEYS}; do
     fi
 
     # If we did have a file with this name already somethings wrong
-    if [ -f "${base}/${ARCH}/${file}" ]; then
+    if [ -f "${buildkeybase}/${ARCH}/${file}" ]; then
         log "Already processed this file"
         mv "${INCOMING}/${file}" "${ERRORS}/duplicate.${file}.$(date -Is)"
         continue
@@ -181,7 +181,7 @@ for file in ${KEYS}; do
     COMMENT=${COMMENT:-"The bad ${KEYSUBMITTER} hasn't supplied a comment"}
 
     # Right, we have the keyid, know the arch, lets see if we can remove it
-    ARCHKEYRING="${base}/${ARCH}/keyring.gpg"
+    ARCHKEYRING="${buildkeybase}/${ARCH}/keyring.gpg"
 
     # Is the key in there?
     KEYNO=$(gpg ${DEFGPGOPT} --keyring "${ARCHKEYRING}" --with-colons --list-keys ${KEYID} | grep -c '^pub:' || /bin/true )
@@ -194,7 +194,7 @@ for file in ${KEYS}; do
             KEYSUBMITTER=$(cat "${GPGSTATUS}"|grep GOODSIG)
             KEYSUBMITTER=${KEYSUBMITTER##*GOODSIG}
             log "${KEYSUBMITTER} removed key ${KEYID} for ${ARCH} buildd ${BUILDD}, reason: ${COMMENT}"
-            mv "${INCOMING}/${file}" "${base}/${ARCH}"
+            mv "${INCOMING}/${file}" "${buildkeybase}/${ARCH}"
             continue
         fi
     else
