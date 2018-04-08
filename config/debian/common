@@ -332,6 +332,69 @@ function write_project_trace() {
     done
 }
 
+function fingerprints() {
+    log "Updating fingerprints"
+
+    local todo=${1:-all}
+    dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-keyring.gpg
+
+    if [[ ${todo} == all ]]; then
+        dak import-keyring -L /srv/keyring.debian.org/keyrings/debian-nonupload.gpg
+
+        OUTFILE=$( gettempfile )
+        dak import-keyring --generate-users "%s" /srv/keyring.debian.org/keyrings/debian-maintainers.gpg >"${OUTFILE}"
+
+        if [[ -s ${OUTFILE} ]]; then
+            /usr/sbin/sendmail -odq -oi -t -f envelope@ftp-master.debian.org <<EOF
+From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>
+To: <debian-project@lists.debian.org>
+Subject: Debian Maintainers Keyring changes
+Content-Type: text/plain; charset=utf-8
+X-Debian: DAK
+MIME-Version: 1.0
+
+The following changes to the debian-maintainers keyring have just been activated:
+
+$(cat $OUTFILE)
+
+Debian distribution maintenance software,
+on behalf of the Keyring maintainers
+
+EOF
+        fi
+        rm -f "$OUTFILE"
+    fi
+}
+
+function dakcleanup() {
+    log "Cleanup old packages/files"
+    local queuevarnames=${1:-unchecked}
+    dak clean-suites -m 10000
+    for queue in ${queuevarnames}; do
+        dak clean-queues -i ${!queue}
+    done
+}
+
+function mklslar() {
+    local archiveroot
+    local FILENAME=ls-lR
+
+    for archive in "${public_archives[@]}"; do
+        archiveroot="$(get_archiveroot "${archive}")"
+        cd "${archiveroot}"
+
+        log "Removing any core files ..."
+        find -type f -name core -print -delete
+
+        log "Checking symlinks ..."
+        symlinks -rd .
+
+        log "Creating recursive directory listing ... "
+        rm -f ${FILENAME}.gz
+        TZ=UTC ls -lR | gzip -9c --rsyncable --no-name > ${FILENAME}.gz
+    done
+}
+
 ########################################################################
 ########################################################################
 ########################################################################
