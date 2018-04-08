@@ -12,7 +12,7 @@ declare -r masterdir=${base}/dak/
 export configdir=${configdir:-${masterdir}/config/${confpart}/}
 
 # And the following types of cronscripts exists
-declare -r POSSIBLEARGS='+(unchecked-dinstall|hourly|mirror)'
+declare -r POSSIBLEARGS='+(unchecked-dinstall|hourly|mirror|deploy)'
 
 # And get all the tons of other variables
 source ${configdir}/../common/variables
