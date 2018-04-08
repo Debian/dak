@@ -1,5 +1,0 @@
-#! /bin/bash
-#
-# Executed hourly via cron, out of dak's crontab.
-
-exec /srv/security-master.debian.org/dak/config/debian-security/cronscript hourly
