@@ -50,14 +50,14 @@ if [ ! -e "${dest}/pool" ]; then
   ln -s "${source}/pool" "${dest}/pool"
 fi
 
-for subdir in dists zzz-dists; do
+for subdir in dists zzz-dists project/external-signatures; do
   if [ ! -d "${source}/${subdir}" ]; then
     continue
   fi
 
   # Make sure ${dest}/${subdir} exists to avoid a special case later
   if [ ! -d "${dest}/${subdir}" ]; then
-    mkdir "${dest}/${subdir}"
+    mkdir -p "${dest}/${subdir}"
   fi
   for olddir in ${subdir}.new ${subdir}.old; do
     if [ -e "${dest}/${olddir}" ]; then

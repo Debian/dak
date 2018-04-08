@@ -90,6 +90,10 @@ class Config(object):
                         apt_pkg.read_config_file_isc(self.Cnf, bygroup[group])
                     break
 
+        if 'Include' in self.Cnf:
+            for filename in self.Cnf.value_list('Include'):
+                apt_pkg.read_config_file_isc(self.Cnf, filename)
+
         # Rebind some functions
         # TODO: Clean this up
         self.get = self.Cnf.get

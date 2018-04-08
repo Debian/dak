@@ -1,0 +1,146 @@
+#! /bin/bash
+
+set -e
+set -u
+shopt -s extglob
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+
+# add a unstable suite with amd64
+dak admin architecture add amd64 AMD64
+dak admin suite add unstable "" codename=sid
+dak admin suite-architecture add unstable source all amd64
+dak admin suite-component add unstable main contrib non-free
+dak admin suite add-build-queue unstable buildd-unstable buildd-sid ${DAKHOST}
+psql -d projectb -c "UPDATE suite SET allowcsset=true WHERE suite_name='unstable'"
+
+packages=${DAK_ROOT:?}/tests/fixtures/packages
+ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
+dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
+
+cat >> ${DAKBASE}/etc/dak.conf <<-EOT
+External-Signature-Requests {
+  Sources {
+    linux {
+      Packages { "linux-image-all-signed-template"; };
+      Architectures { "all"; } ;
+    };
+  };
+
+  Default-Suites { "unstable"; "proposed-updates"; };
+
+  Export "${DAKBASE}/ftp/external-signature-requests.json";
+};
+EOT
+
+expected='
+{
+  "packages": [
+    {
+      "suite": "unstable",
+      "version": "42.0-1",
+      "architecture": "all",
+      "package": "linux-image-all-signed-template"
+    }
+  ]
+}
+'
+
+expected_empty='
+{
+  "packages": []
+}
+'
+
+# try NEW upload
+(
+  cp ${packages:?}/linux@(_|-image)* ${DAKBASE}/tmp
+  dak process-upload -d ${DAKBASE}/tmp --automatic
+
+  # TODO: test upload is in NEW
+
+  dak control-override -s unstable --add <<-EOT
+	linux-image-all-signed-template optional misc
+	linux-image-all optional misc
+	EOT
+  dak control-override -s unstable -t dsc --add <<-EOT
+	linux misc
+	EOT
+
+  dak process-new --automatic
+  dak process-policy new
+
+  dak manage-external-signature-requests
+  if ! diff -u <(jq -S . <<< "${expected}") <(jq -S . ${DAKBASE}/ftp/external-signature-requests.json); then
+    echo >&2 "E: external-signature-requests.json differs from expected value"
+    exit 1
+  fi
+)
+
+# remove upload, should go away from external-signature-requests
+(
+  dak control-suite --set unstable </dev/null
+  dak manage-build-queues
+  dak manage-external-signature-requests
+  if ! diff -u <(jq -S . <<< "${expected_empty}") <(jq -S . ${DAKBASE}/ftp/external-signature-requests.json); then
+    echo >&2 "E: external-signature-requests.json differs from expected value"
+    exit 1
+  fi
+)
+
+# try non-NEW upload
+(
+  cp ${packages:?}/linux@(_|-image)* ${DAKBASE}/tmp
+  dak admin forget-signature ${DAKBASE}/tmp/linux_*.changes
+  dak process-upload -d ${DAKBASE}/tmp --automatic
+
+  dak manage-external-signature-requests
+  if ! diff -u <(jq -S . <<< "${expected}") <(jq -S . ${DAKBASE}/ftp/external-signature-requests.json); then
+    echo >&2 "E: external-signature-requests.json differs from expected value"
+    exit 1
+  fi
+)
+
+# try upload to policy queue w/ build queue (like on security-master)
+(
+  # configure a policy queue first...
+  dak admin suite add embargoed "" codename=embargoed
+  dak admin suite-architecture add unstable source all amd64
+  dak admin suite-component add unstable main contrib non-free
+  psql -1 -d projectb <<-EOT
+	\set ON_ERROR_STOP
+	INSERT INTO policy_queue (queue_name, path, send_to_build_queues, suite_id)
+	VALUES ('embargoed',
+	        '${DAKBASE}/queue/embargoed',
+	        TRUE,
+	        (SELECT id FROM suite WHERE suite_name = 'embargoed'));
+	UPDATE suite
+	SET policy_queue_id = (SELECT id FROM policy_queue WHERE queue_name = 'embargoed')
+	WHERE suite_name = 'unstable';
+	EOT
+
+  dak control-suite --set unstable </dev/null
+  dak manage-build-queues
+  cp ${packages:?}/linux@(_|-image)* ${DAKBASE}/tmp
+  dak admin forget-signature ${DAKBASE}/tmp/linux_*.changes
+  dak process-upload -d ${DAKBASE}/tmp --automatic
+
+  dak manage-external-signature-requests
+  if ! diff -u <(jq -S . <<< "${expected}") <(jq -S . ${DAKBASE}/ftp/external-signature-requests.json); then
+    echo >&2 "E: external-signature-requests.json differs from expected value"
+    exit 1
+  fi
+
+
+  commentdir=${DAKBASE}/queue/embargoed/COMMENTS
+  mkdir -p ${commentdir}
+  echo OK > ${commentdir}/ACCEPT.linux_42.0-1
+  dak process-policy embargoed
+
+  dak manage-external-signature-requests
+  if ! diff -u <(jq -S . <<< "${expected}") <(jq -S . ${DAKBASE}/ftp/external-signature-requests.json); then
+    echo >&2 "E: external-signature-requests.json differs from expected value"
+    exit 1
+  fi
+)

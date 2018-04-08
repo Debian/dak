@@ -28,7 +28,7 @@ function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
 
     subject="ATTENTION ATTENTION!"
-    if [[ ${error} = false  ]]; then
+    if [[ ${error:-false} = false  ]]; then
         subject="${subject} (continued)"
     else
         subject="${subject} (interrupted)"
@@ -635,6 +635,7 @@ function cleantransactions() {
 }
 
 function logstats() {
+    cd ${TMPDIR}
     ${masterdir}/tools/logs.py "$1"
 }
 
