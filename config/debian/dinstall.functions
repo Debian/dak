@@ -14,7 +14,7 @@ function remove_all_locks() {
 function remove_locks {
     remove_all_locks
     trap - EXIT TERM HUP INT QUIT
-    ts "locked part finished"
+    log_timestamp "locked part finished"
 }
 
 # Lock accepted
@@ -662,7 +662,7 @@ function signotherfiles() {
 
 function startup() {
     touch "${DINSTALLSTART}"
-    ts "startup"
+    log_timestamp "startup"
     lockfile -l 3600 "${LOCK_DAILY}"
     trap onerror ERR
     touch "${LOCK_BRITNEY}"

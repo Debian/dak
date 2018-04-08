@@ -78,7 +78,7 @@ TEMPFILES=${TEMPFILES:-""}
 TMPFILES=${TMPFILES:-""}
 
 # Timestamp. Used for dinstall stat graphs
-function ts() {
+function log_timestamp() {
     echo "Archive maintenance timestamp ($1): $(date +%H:%M:%S)"
 }
 
@@ -457,12 +457,6 @@ function stage() {
     # to be elsewhere, it has to cd first!
     cd ${configdir}
 
-    # Now redirect the output into $STAGEFILE.log. In case it errors
-    # out somewhere our errorhandler trap can then mail the contents
-    # of $STAGEFILE.log only, instead of a whole ${PROGRAM} logfile.
-    # Short error mails ftw!
-    exec >> "${STAGEFILE}.log" 2>&1
-
     if [[ -f ${LOCK_STOP} ]]; then
         log "${LOCK_STOP} exists, exiting immediately"
         exit 42
@@ -472,7 +466,16 @@ function stage() {
     if [[ ${error} == false ]]; then
         set +e
     fi
-    ${FUNC} ${ARGS}
+
+    # Now redirect the output into $STAGEFILE.log. In case it errors
+    # out somewhere our errorhandler trap can then mail the contents
+    # of $STAGEFILE.log only, instead of a whole ${PROGRAM} logfile.
+    # Short error mails ftw!
+    if [[ ${TIMESTAMP} == true ]]; then
+      ${FUNC} ${ARGS} 2>&1 | tee -a "${STAGEFILE}.log" | ts "%b %d %H:%M:%S ${HOSTNAME} ${PROGRAM}[$$]: ${FUNC} "
+    else
+      ${FUNC} ${ARGS} 2>&1 | tee -a "${STAGEFILE}.log"
+    fi
 
     # No matter what happened in the function, we make sure we have
     # set -e default state back
@@ -488,19 +491,9 @@ function stage() {
     touch "${STAGEFILE}"
 
     if [[ -n ${TIME} ]]; then
-        ts "${TIME}"
+        log_timestamp "${TIME}"
     fi
 
-    # And the output goes back to the normal logfile
-    exec >> "${LOGFILE}" 2>&1
-
-    # Now we should make sure that we have a usable ${PROGRAM}.log, so
-    # append the $STAGEFILE.log to it.
-    if [[ ${TIMESTAMP} == true ]]; then
-        /usr/bin/ts "%b %d %H:%M:%S ${HOSTNAME} ${PROGRAM}[$$]: ${FUNC} " < "${STAGEFILE}.log"
-    else
-        cat "${STAGEFILE}.log"
-    fi
     rm -f "${STAGEFILE}.log"
 
     log "########## ${PROGRAM} END: ${FUNC} ##########"
