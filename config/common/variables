@@ -38,6 +38,9 @@ declare -r HOSTNAME=$(hostname -s)
 # Various lockfiles used by multiple cron scripts
 declare -r LOCK_DAILY="${lockdir}/daily.lock"
 declare -r LOCK_UNCHECKED="${lockdir}/unchecked.lock"
+
+# If this file exists we exit immediately after the currently running
+# function is done
 declare -r LOCK_STOP="${lockdir}/archive.stop"
 
 # By default, add no timestamps to stage logs

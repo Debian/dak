@@ -30,10 +30,6 @@ LOCK_ACCEPTED="$lockdir/unchecked.lock"
 # from our point of view
 LOCK_BRITNEY="$lockdir/britney.lock"
 
-# If this file exists we exit immediately after the currently running
-# function is done
-LOCK_STOP="$lockdir/archive.stop"
-
 # Lock buildd updates
 LOCK_BUILDD="$lockdir/buildd.lock"
 
