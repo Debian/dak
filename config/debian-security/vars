@@ -8,12 +8,14 @@ declare -r public_archives=(security debian-security-debug)
 
 declare -r base=/srv/${functionname}
 declare -r incoming=${base}/buildd
+declare -r masterdir=${base}/dak/
+export configdir=${configdir:-${masterdir}/config/${confpart}/}
 
 # And the following types of cronscripts exists
 declare -r POSSIBLEARGS='+(unchecked-dinstall|hourly|mirror)'
 
 # And get all the tons of other variables
-source ../variables
+source ${masterdir}/config/common/variables
 
 # Stuff for old cron scripts not yet switched to new style
 declare -r uploadhost=ftp-master.debian.org
