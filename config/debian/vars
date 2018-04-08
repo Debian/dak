@@ -8,9 +8,11 @@ declare -r public_archives=(ftp-master debian-debug)
 
 declare -r base=/srv/${functionname}
 declare -r incoming=${base}/public/incoming.debian.org/
+declare -r masterdir=${base}/dak/
+export configdir=${configdir:-${masterdir}/config/${confpart}/}
 
 # And the following types of cronscripts exists
 declare -lr POSSIBLEARGS='+(unchecked|dinstall|hourly|daily|weekly|monthly|yearly|mirror|deploy)'
 
 # And get all the tons of other variables
-source ../variables
+source ${masterdir}/config/common/variables

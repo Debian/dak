@@ -4,9 +4,6 @@ umask 022
 unset CDPATH
 GZIP='--rsyncable --no-name' ; export GZIP
 
-declare -r masterdir=${base}/dak/
-
-export configdir=${configdir:-${masterdir}/config/${confpart}/}
 export lockdir=${lockdir:-${base}/lock/}
 export logdir=${logdir:-${base}/log/cron/}
 
