@@ -1,4 +1,4 @@
-# locations used by many scripts
+# -*- mode:sh -*-
 
 declare -r functionname=security-master.debian.org
 declare -r confpart=debian-security
@@ -15,7 +15,7 @@ export configdir=${configdir:-${masterdir}/config/${confpart}/}
 declare -r POSSIBLEARGS='+(unchecked-dinstall|hourly|mirror)'
 
 # And get all the tons of other variables
-source ${masterdir}/config/common/variables
+source ${configdir}/../common/variables
 
 # Stuff for old cron scripts not yet switched to new style
 declare -r uploadhost=ftp-master.debian.org
