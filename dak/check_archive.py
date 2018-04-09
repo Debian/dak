@@ -384,29 +384,29 @@ def validate_sources(suite, component):
     filename = "%s/dists/%s/%s/source/Sources" % (Cnf["Dir::Root"], suite, component)
     filename = utils.find_possibly_compressed_file(filename)
     print "Processing %s..." % (filename)
-    Sources = apt_pkg.TagFile(filename)
-    while Sources.step():
-        source = Sources.section.find('Package')
-        directory = Sources.section.find('Directory')
-        files = Sources.section.find('Files')
-        for i in files.split('\n'):
-            (md5, size, name) = i.split()
-            filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name)
-            if not os.path.exists(filename):
-                if directory.find("potato") == -1:
-                    print "W: %s missing." % (filename)
-                else:
-                    pool_location = utils.poolify(source)
-                    pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
-                    if not os.path.exists(pool_filename):
-                        print "E: %s missing (%s)." % (filename, pool_filename)
+    with apt_pkg.TagFile(filename) as Sources:
+        while Sources.step():
+            source = Sources.section.find('Package')
+            directory = Sources.section.find('Directory')
+            files = Sources.section.find('Files')
+            for i in files.split('\n'):
+                (md5, size, name) = i.split()
+                filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name)
+                if not os.path.exists(filename):
+                    if directory.find("potato") == -1:
+                        print "W: %s missing." % (filename)
                     else:
-                        # Create symlink
-                        pool_filename = os.path.normpath(pool_filename)
-                        filename = os.path.normpath(filename)
-                        src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
-                        print "Symlinking: %s -> %s" % (filename, src)
-                        #os.symlink(src, filename)
+                        pool_location = utils.poolify(source)
+                        pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
+                        if not os.path.exists(pool_filename):
+                            print "E: %s missing (%s)." % (filename, pool_filename)
+                        else:
+                            # Create symlink
+                            pool_filename = os.path.normpath(pool_filename)
+                            filename = os.path.normpath(filename)
+                            src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
+                            print "Symlinking: %s -> %s" % (filename, src)
+                            #os.symlink(src, filename)
 
 ########################################
 
@@ -418,11 +418,11 @@ def validate_packages(suite, component, architecture):
                % (Cnf["Dir::Root"], suite, component, architecture)
     filename = utils.find_possibly_compressed_file(filename)
     print "Processing %s..." % (filename)
-    Packages = apt_pkg.TagFile(filename)
-    while Packages.step():
-        filename = "%s/%s" % (Cnf["Dir::Root"], Packages.section.find('Filename'))
-        if not os.path.exists(filename):
-            print "W: %s missing." % (filename)
+    with apt_pkg.TagFile(filename) as Packages:
+        while Packages.step():
+            filename = "%s/%s" % (Cnf["Dir::Root"], Packages.section.find('Filename'))
+            if not os.path.exists(filename):
+                print "W: %s missing." % (filename)
 
 ########################################
 

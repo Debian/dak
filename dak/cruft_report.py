@@ -580,31 +580,31 @@ def main ():
     for component in components:
         filename = "%s/dists/%s/%s/source/Sources" % (suite.archive.path, suite_name, component)
         filename = utils.find_possibly_compressed_file(filename)
-        Sources = apt_pkg.TagFile(filename)
-        while Sources.step():
-            source = Sources.section.find('Package')
-            source_version = Sources.section.find('Version')
-            architecture = Sources.section.find('Architecture')
-            binaries = Sources.section.find('Binary')
-            binaries_list = [ i.strip() for i in  binaries.split(',') ]
+        with apt_pkg.TagFile(filename) as Sources:
+            while Sources.step():
+                source = Sources.section.find('Package')
+                source_version = Sources.section.find('Version')
+                architecture = Sources.section.find('Architecture')
+                binaries = Sources.section.find('Binary')
+                binaries_list = [ i.strip() for i in  binaries.split(',') ]
 
-            if "bnb" in checks:
-                # Check for binaries not built on any architecture.
+                if "bnb" in checks:
+                    # Check for binaries not built on any architecture.
+                    for binary in binaries_list:
+                        if not bins_in_suite.has_key(binary):
+                            bin_not_built.setdefault(source, {})
+                            bin_not_built[source][binary] = ""
+
+                if "anais" in checks:
+                    anais_output += do_anais(architecture, binaries_list, source, session)
+
+                # build indices for checking "no source" later
+                source_index = component + '/' + source
+                src_pkgs[source] = source_index
                 for binary in binaries_list:
-                    if not bins_in_suite.has_key(binary):
-                        bin_not_built.setdefault(source, {})
-                        bin_not_built[source][binary] = ""
-
-            if "anais" in checks:
-                anais_output += do_anais(architecture, binaries_list, source, session)
-
-            # build indices for checking "no source" later
-            source_index = component + '/' + source
-            src_pkgs[source] = source_index
-            for binary in binaries_list:
-                bin_pkgs[binary] = source
-            source_binaries[source] = binaries
-            source_versions[source] = source_version
+                    bin_pkgs[binary] = source
+                source_binaries[source] = binaries
+                source_versions[source] = source_version
 
     # Checks based on the Packages files
     check_components = components[:]
@@ -625,34 +625,34 @@ def main ():
 
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (suite.archive.path, suite_name, component, architecture)
             filename = utils.find_possibly_compressed_file(filename)
-            Packages = apt_pkg.TagFile(filename)
-            while Packages.step():
-                package = Packages.section.find('Package')
-                source = Packages.section.find('Source', "")
-                version = Packages.section.find('Version')
-                if source == "":
-                    source = package
-                if bin2source.has_key(package) and \
-                       apt_pkg.version_compare(version, bin2source[package]["version"]) > 0:
-                    bin2source[package]["version"] = version
-                    bin2source[package]["source"] = source
-                else:
-                    bin2source[package] = {}
-                    bin2source[package]["version"] = version
-                    bin2source[package]["source"] = source
-                if source.find("(") != -1:
-                    m = re_extract_src_version.match(source)
-                    source = m.group(1)
-                    version = m.group(2)
-                if not bin_pkgs.has_key(package):
-                    nbs.setdefault(source,{})
-                    nbs[source].setdefault(package, {})
-                    nbs[source][package][version] = ""
-                else:
-                    if "nfu" in checks:
-                        if package in nfu_entries and \
-                               version != source_versions[source]: # only suggest to remove out-of-date packages
-                            nfu_packages[architecture].append((package,version,source_versions[source]))
+            with apt_pkg.TagFile(filename) as Packages:
+                while Packages.step():
+                    package = Packages.section.find('Package')
+                    source = Packages.section.find('Source', "")
+                    version = Packages.section.find('Version')
+                    if source == "":
+                        source = package
+                    if bin2source.has_key(package) and \
+                           apt_pkg.version_compare(version, bin2source[package]["version"]) > 0:
+                        bin2source[package]["version"] = version
+                        bin2source[package]["source"] = source
+                    else:
+                        bin2source[package] = {}
+                        bin2source[package]["version"] = version
+                        bin2source[package]["source"] = source
+                    if source.find("(") != -1:
+                        m = re_extract_src_version.match(source)
+                        source = m.group(1)
+                        version = m.group(2)
+                    if not bin_pkgs.has_key(package):
+                        nbs.setdefault(source,{})
+                        nbs[source].setdefault(package, {})
+                        nbs[source][package][version] = ""
+                    else:
+                        if "nfu" in checks:
+                            if package in nfu_entries and \
+                                   version != source_versions[source]: # only suggest to remove out-of-date packages
+                                nfu_packages[architecture].append((package,version,source_versions[source]))
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
     dubious_nbs = {}
