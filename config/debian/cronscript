@@ -96,6 +96,9 @@ esac
         exit 1
     fi
 
+    # Where we store lockfile filehandles
+    declare -a LOCKFD
+
     # common functions are "outsourced"
     . "${configdir}/common"
 
@@ -194,6 +197,37 @@ esac
                 # Make sure we remove our stage files, so all the
                 # actions will be done again.
                 rm -f ${stagedir}/*
+                ;;
+            LOCK)
+                # We are asked to set a lock, so try to get it.
+                # For this we redefine what the columns mean.
+                # ARGS: Name of the lockfile
+                # TIME: How long to wait for getting the (exclusive) lock
+                # ERR: true == shared lock, false == exclusive lock
+
+                # Get filehandle
+                exec {randomstring}<>${!ARGS}
+                # Store filehandle for later
+                LOCKFD[${ARGS}]=${randomstring}
+                # Now try to get the lock
+                case ${ERR} in
+                    true)
+                        flockparm="--shared"
+                        ;;
+                    *)
+                        flockparm="--exclusive"
+                        ;;
+                esac
+                # Deal with time being special, usually false/true,
+                # take 3oo then.
+                if [[ ${TIME} == true ]] || [[ ${TIME} == false ]]; then
+                    TIME=300
+                fi
+                flock ${flockparm} --timeout ${TIME} LOCKFD[${!ARGS}]
+                ;;
+            UNLOCK)
+                randomstring=${LOCKFD[${ARGS}]}
+                exec {randomstring}>&-
                 ;;
             *)
                 GO=(
