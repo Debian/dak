@@ -4,7 +4,7 @@ declare -r functionname=security-master.debian.org
 declare -r confpart=debian-security
 
 declare -r ftpgroup=debadmin
-declare -r public_archives=(security debian-security-debug)
+declare -r public_archives=(security) #debian-security-debug
 
 declare -r base=/srv/${functionname}
 declare -r incoming=${base}/buildd
