@@ -43,7 +43,7 @@ DINSTALLSTATE="${webdir}/dinstall.status"
 # as thats usually testing and unstable, but we need codenames,
 # get em out of the db.
 extimportdists=""
-if [ "${archive}" = ftp-master ]; then
+if [ "${functionname}" = ftp-master.debian.org ]; then
   for suite in testing unstable; do
     codename=$(dak admin s show ${suite}|grep '^Codename')
     codename=${codename##* }
