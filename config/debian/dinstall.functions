@@ -588,8 +588,10 @@ function cleantransactions() {
 }
 
 function logstats() {
-    cd ${TMPDIR}
-    ${masterdir}/tools/logs.py "$1"
+    if [ "${functionname}" = ftp-master.debian.org ]; then
+        cd ${TMPDIR}
+        ${masterdir}/tools/logs.py "$1"
+    fi
 }
 
 # save timestamp when we start
