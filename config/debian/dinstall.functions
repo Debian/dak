@@ -33,12 +33,12 @@ function onerror() {
     else
         subject="${subject} (interrupted)"
     fi
-    subject="${subject} dinstall error at ${ERRDATE} in ${STAGEFILE} - (Be quiet, Brain, or I'll stab you with a Q-tip)"
+    subject="${subject} dinstall error at ${ERRDATE} in ${STAGEFILE:-} - (Be quiet, Brain, or I'll stab you with a Q-tip)"
 
-    if [[ -r ${STAGEFILE}.log  ]]; then
+    if [[ -r ${STAGEFILE:-/nonexistant}.log  ]]; then
         cat "${STAGEFILE}.log"
     else
-        echo "file ${STAGEFILE}.log does not exist, sorry"
+        echo "file ${STAGEFILE:-}.log does not exist, sorry"
     fi | mail -s "${subject}" -a "X-Debian: DAK" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" cron@ftp-master.debian.org
 }
 
