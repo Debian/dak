@@ -255,9 +255,10 @@ function get_archiveroot() {
 # Prepare the trees for buildds, then push wanna-build
 function do_buildd() {
     if lockfile -r3 ${LOCK_DAILY}; then
-        TMPFILES="${TMPFILES} ${LOCK_DAILY}"
+        #TMPFILES="${TMPFILES} ${LOCK_DAILY}"
         make_buildd_dir
         wbtrigger
+        rm -f -- "${LOCK_DAILY}"
     fi
 }
 
