@@ -205,11 +205,17 @@ esac
                 # TIME: How long to wait for getting the (exclusive) lock
                 # ERR: true == shared lock, false == exclusive lock
 
+                # Prepend LOCK_ to lock name to get to variable name,
+                # kind of namespace
+                lvar="LOCK_${ARGS}"
+
                 # Get filehandle
-                exec {randomstring}<>${!ARGS}
+                exec {randomstring}<>${!lvar}
                 # Store filehandle for later
                 LOCKFD[${ARGS}]=${randomstring}
-                # Now try to get the lock
+
+                # Do we take a shared lock or not? Abusing the "may it error out or not", but
+                # logic is "could error -> shared, multiple can run", "cant error -> exclusive"
                 case ${ERR} in
                     true)
                         flockparm="--shared"
@@ -218,12 +224,15 @@ esac
                         flockparm="--exclusive"
                         ;;
                 esac
-                # Deal with time being special, usually false/true,
-                # take 3oo then.
+
+                # Deal with time being special, usually it means false or true,
+                # but for locks we want a timeout. So if its set to one of the usuals,
+                # assume 300
                 if [[ ${TIME} == true ]] || [[ ${TIME} == false ]]; then
                     TIME=300
                 fi
-                flock ${flockparm} --timeout ${TIME} LOCKFD[${!ARGS}]
+                # Now try to get the lock
+                flock ${flockparm} --timeout ${TIME} LOCKFD[${ARGS}]
                 ;;
             UNLOCK)
                 randomstring=${LOCKFD[${ARGS}]}
