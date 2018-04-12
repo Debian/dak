@@ -1,4 +1,6 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
+LOCK                   DAILY                      600                        true    false
+LOCK                   UNCHECKED                  600                        false   false
 pg_timestamp           preunchecked               none                       true    false
 punew                  stable-new                 p-u-new                    false   false
 opunew                 oldstable-new              o-p-u-new                  false   false

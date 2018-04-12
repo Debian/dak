@@ -1,18 +1,5 @@
 # -*- mode:sh -*-
 
-function precronscript() {
-    # Do not run during dinstall
-    if [[ -e ${LOCK_DAILY} ]]; then
-        exit 0;
-    fi
-    # only run one cron.unchecked and also lock against hourly (newoverview)
-    if ! lockfile -r8 ${LOCK_UNCHECKED} 2> /dev/null; then
-        # log "aborting cron.unchecked because $LOCK_UNCHECKED has already been locked"
-        exit 0
-    fi
-    TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
-}
-
 function fetchqueuedpackages() {
     # Sync new uploaded packages from the central upload queue host.
     log "Sync new uploads from upload queues"

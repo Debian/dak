@@ -1,5 +1,6 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
 STATE                  startup                    none                       false   false
+LOCK                   DAILY                      3600                       false   false
 NOSTAGE                startup                    none                       false   false
 savetimestamp          none                       none                       false   false
 qa1                    none                       init                       false   true
@@ -9,7 +10,7 @@ mailingliststxt        none                       none                       fal
 pseudopackages         none                       none                       false   true
 i18n1                  none                       i18n\ 1                    false   false
 dep11                  none                       dep11\ 1                   false   true
-NOSTAGE                lockaccepted               none                       false   false
+LOCK                   ACCEPTED                   1200                       false   false
 punew                  stable-new                 p-u-new                    false   false
 opunew                 oldstable-new              o-p-u-new                  false   false
 backports_policy       none                       backports-policy           false   false
@@ -35,6 +36,8 @@ mkchecksums            none                       mkchecksums                tru
 dedup                  none                       dedup                      true    false
 signotherfiles         none                       signotherfiles             true    false
 mirror                 none                       mirror\ hardlinks          true    false
+UNLOCK                 ACCEPTED                   none                       false   false
+UNLOCK                 DAILY                      none                       false   false
 NOSTAGE                remove_locks               none                       false   false
 STATE                  postlock                   none                       false   false
 ddaccess               none                       ddaccessible\ sync         false   true

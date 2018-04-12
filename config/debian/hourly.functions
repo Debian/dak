@@ -5,14 +5,9 @@ function importusers() {
 }
 
 function newoverview() {
-    # do not run show-new and other stuff in parallel
-    if lockfile -r16 ${LOCK_UNCHECKED} 2> /dev/null; then
-        TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
-        do_new
-        log "Output html for packages in NEW"
-        dak show-new > /dev/null || true
-        cleantempfiles
-    fi
+    do_new
+    log "Output html for packages in NEW"
+    dak show-new > /dev/null || true
 }
 
 function do_report() {

@@ -1,28 +1,5 @@
 # -*- mode:sh -*-
 
-# Remove changelog lock
-function remove_changelog_lock() {
-    rm -f $LOCK_CHANGELOG
-}
-
-# Remove all locks
-function remove_all_locks() {
-    rm -f $LOCK_DAILY $LOCK_ACCEPTED
-}
-
-# Get rid of all locks and unset the trap
-function remove_locks {
-    remove_all_locks
-    trap - EXIT TERM HUP INT QUIT
-    log_timestamp "locked part finished"
-}
-
-# Lock accepted
-function lockaccepted {
-    lockfile "$LOCK_ACCEPTED"
-    trap remove_all_locks EXIT TERM HUP INT QUIT
-}
-
 # If we error out this one is called, *FOLLOWED* by cleanup in common
 function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
@@ -622,6 +599,11 @@ Action start: ${RIGHTNOW}
 EOF
 }
 
+# Remove changelog lock
+function remove_changelog_lock() {
+    rm -f $LOCK_CHANGELOG
+}
+
 # extract changelogs and stuff
 function changelogs() {
     if lockfile -r3 ${LOCK_CHANGELOG}; then
@@ -665,10 +647,7 @@ function signotherfiles() {
 function startup() {
     touch "${DINSTALLSTART}"
     log_timestamp "startup"
-    lockfile -l 3600 "${LOCK_DAILY}"
     trap onerror ERR
-    touch "${LOCK_BRITNEY}"
-    TMPFILES="${TMPFILES} ${LOCK_DAILY} ${LOCK_BRITNEY}"
 }
 
 function postcronscript() {
