@@ -1,14 +1,5 @@
 # -*- mode:sh -*-
 
-function precronscript() {
-    # only run one cron.unchecked
-    if ! lockfile -r8 ${LOCK_UNCHECKED} 2> /dev/null; then
-        # log "aborting cron.unchecked because $LOCK_UNCHECKED has already been locked"
-        exit 0
-    fi
-    TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
-}
-
 function fix_overrides() {
     rsync --delete -r --include=override\* --exclude=\* --password-file /srv/security-master.debian.org/s3kr1t/rsync-password -ql security-master@ftp-master::indices/ $overridedir
 
