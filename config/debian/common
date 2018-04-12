@@ -85,14 +85,6 @@ function log_timestamp() {
 ########################################################################
 ########################################################################
 
-function wbtrigger() {
-    SSHOPT="-n -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
-    if lockfile -r 3 -l 3600 "${LOCK_BUILDD}"; then
-        ssh -q -q ${SSHOPT} wbadm@buildd /srv/wanna-build/trigger.often
-    fi
-    rm -f "${LOCK_BUILDD}"
-}
-
 # used by cron.dinstall *and* cron.unchecked.
 function make_buildd_dir () {
     # We generate straight into the static mirror location for incoming
@@ -177,7 +169,9 @@ function do_unchecked () {
         dak manage-external-signature-requests
 
         sync_debbugs
-        do_buildd
+        make_buildd_dir
+        SSHOPT="-n -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
+        ssh -q -q ${SSHOPT} wbadm@buildd /srv/wanna-build/trigger.often
     else
         log "Nothing to do"
         echo "Nothing to do" >> ${report}
@@ -250,16 +244,6 @@ function get_archiveroot() {
         return 1
     fi
     echo "${archiveroot}"
-}
-
-# Prepare the trees for buildds, then push wanna-build
-function do_buildd() {
-    if lockfile -r3 ${LOCK_DAILY}; then
-        #TMPFILES="${TMPFILES} ${LOCK_DAILY}"
-        make_buildd_dir
-        wbtrigger
-        rm -f -- "${LOCK_DAILY}"
-    fi
 }
 
 # Cleanup policy queues
