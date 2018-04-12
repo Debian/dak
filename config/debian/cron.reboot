@@ -77,6 +77,6 @@ else
 	# dinstall got started
 	if [ -f "${stagedir}/savetimestamp" ]; then
 		log "Seems we have to restart a dinstall run after reboot"
-		${configdir}/cron.dinstall
+		${configdir}/cronscript dinstall
 	fi
 fi
