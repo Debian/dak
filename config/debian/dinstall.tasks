@@ -41,6 +41,7 @@ UNLOCK                 DAILY                      none                       fal
 NOSTAGE                remove_locks               none                       false   false
 STATE                  postlock                   none                       false   false
 ddaccess               none                       ddaccessible\ sync         false   true
+LOCK                   CHANGELOG                  300                        false   false
 changelogs             none                       changelogs                 false   true
 pg_timestamp           postdinstall               pg_dump2                   true    false
 expire                 none                       expire_dumps               false   true
@@ -52,3 +53,4 @@ i18n2                  none                       i18n\ 2                    fal
 stats                  none                       stats                      false   true
 testingsourcelist      none                       none                       false   true
 cleantransactions      none                       none                       false   false
+UNLOCK                 CHANGELOG                  none                       false   false

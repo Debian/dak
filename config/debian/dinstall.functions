@@ -599,30 +599,21 @@ Action start: ${RIGHTNOW}
 EOF
 }
 
-# Remove changelog lock
-function remove_changelog_lock() {
-    rm -f $LOCK_CHANGELOG
-}
-
 # extract changelogs and stuff
 function changelogs() {
-    if lockfile -r3 ${LOCK_CHANGELOG}; then
-        trap remove_changelog_lock EXIT TERM HUP INT QUIT
-        log "Extracting changelogs"
-        dak make-changelog -e -a ftp-master
-        [[ -f ${exportdir}/changelogs/filelist.yaml ]] && xz -f ${exportdir}/changelogs/filelist.yaml
-        mkdir -p ${exportpublic}/changelogs
-        cd ${exportpublic}/changelogs
-        rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
-        sudo -H -u staticsync /usr/local/bin/static-update-component metadata.ftp-master.debian.org >/dev/null 2>&1 &
+    log "Extracting changelogs"
+    dak make-changelog -e -a ftp-master
+    [[ -f ${exportdir}/changelogs/filelist.yaml ]] && xz -f ${exportdir}/changelogs/filelist.yaml
+    mkdir -p ${exportpublic}/changelogs
+    cd ${exportpublic}/changelogs
+    rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
+    sudo -H -u staticsync /usr/local/bin/static-update-component metadata.ftp-master.debian.org >/dev/null 2>&1 &
 
-        # dak make-changelog -e -a backports
-        # [[ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml  ]] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
-        # mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
-        # cd /srv/backports-master.debian.org/rsync/export/changelogs
-        # rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
-        remove_changelog_lock
-    fi
+    # dak make-changelog -e -a backports
+    # [[ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml  ]] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
+    # mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
+    # cd /srv/backports-master.debian.org/rsync/export/changelogs
+    # rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
 }
 
 # Generate a list of extra mirror files, sha256sum em and sign that
