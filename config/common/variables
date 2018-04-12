@@ -53,8 +53,6 @@ fi
 declare -r LOCK_DAILY="${lockdir}/daily.lock"
 # Lock unchecked queue processing
 declare -r LOCK_UNCHECKED="${lockdir}/unchecked.lock"
-# FIXME: The same, unify,
-declare -r LOCK_ACCEPTED="$lockdir/unchecked.lock"
 
 # This file is simply used to indicate to britney whether or not
 # the Packages file updates completed sucessfully.  It's not a lock
