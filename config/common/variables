@@ -35,14 +35,6 @@ PATH=${masterdir}:${PATH}
 
 declare -r HOSTNAME=$(hostname -s)
 
-# Various lockfiles used by multiple cron scripts
-declare -r LOCK_DAILY="${lockdir}/daily.lock"
-declare -r LOCK_UNCHECKED="${lockdir}/unchecked.lock"
-
-# If this file exists we exit immediately after the currently running
-# function is done
-declare -r LOCK_STOP="${lockdir}/archive.stop"
-
 # By default, add no timestamps to stage logs
 TIMESTAMP=false
 
@@ -52,3 +44,29 @@ if [[ ${ARG:-none} != deploy ]]; then
     # Set the database variables
     eval $(dak admin config db-shell)
 fi
+
+########################################################################
+# Lockfiles used by different parts of our scripts
+
+# Various lockfiles used by multiple cron scripts
+# The main dinstall lock
+declare -r LOCK_DAILY="${lockdir}/daily.lock"
+# Lock unchecked queue processing
+declare -r LOCK_UNCHECKED="${lockdir}/unchecked.lock"
+# FIXME: The same, unify,
+declare -r LOCK_ACCEPTED="$lockdir/unchecked.lock"
+
+# This file is simply used to indicate to britney whether or not
+# the Packages file updates completed sucessfully.  It's not a lock
+# from our point of view
+declare -r LOCK_BRITNEY="$lockdir/britney.lock"
+
+# Lock buildd updates
+declare -r LOCK_BUILDD="$lockdir/buildd.lock"
+
+# Lock changelog updates
+declare -r LOCK_CHANGELOG="$lockdir/changelog.lock"
+
+# If this file exists we exit immediately after the currently running
+# function is done
+declare -r LOCK_STOP="${lockdir}/archive.stop"
