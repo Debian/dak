@@ -7,7 +7,11 @@ opunew                 oldstable-new              o-p-u-new                  fal
 backports_policy       none                       backports-policy           false   false
 cleanpolicy            none                       cleanpolicy                false   false
 fetchqueuedpackages    none                       fetchqueuedpackages        false   false
+LOCK                   BUILDD                     300                        false   false
 do_unchecked           none                       unchecked                  false   false
+UNLOCK                 BUILDD                     none                       false   false
 ddaccess               none                       none                       false   true
 scancontents           none                       contentsscan               false   false
 pg_timestamp           postunchecked              none                       false   false
+UNLOCK                 DAILY                      none                       false   false
+UNLOCK                 UNCHECKED                  none                       false   false
