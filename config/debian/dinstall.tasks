@@ -10,7 +10,7 @@ mailingliststxt        none                       none                       fal
 pseudopackages         none                       none                       false   true
 i18n1                  none                       i18n\ 1                    false   false
 dep11                  none                       dep11\ 1                   false   true
-LOCK                   ACCEPTED                   1200                       false   false
+LOCK                   UNCHECKED                  1200                       false   false
 punew                  stable-new                 p-u-new                    false   false
 opunew                 oldstable-new              o-p-u-new                  false   false
 backports_policy       none                       backports-policy           false   false
@@ -36,7 +36,7 @@ mkchecksums            none                       mkchecksums                tru
 dedup                  none                       dedup                      true    false
 signotherfiles         none                       signotherfiles             true    false
 mirror                 none                       mirror\ hardlinks          true    false
-UNLOCK                 ACCEPTED                   none                       false   false
+UNLOCK                 UNCHECKED                  none                       false   false
 UNLOCK                 DAILY                      none                       false   false
 NOSTAGE                remove_locks               none                       false   false
 STATE                  postlock                   none                       false   false
