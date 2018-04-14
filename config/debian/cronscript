@@ -85,6 +85,58 @@ EOF
         ;;
 esac
 
+function lock() {
+    local LOCK=${1:-}
+    local TIME=${2:-600}
+    local TYPE=${3:-exclusive}
+
+    if [[ -z ${LOCK} ]]; then
+        log_error "No lockfile name given"
+        exit 21
+    fi
+
+    # Prepend LOCK_ to lock name to get to variable name,
+    # kind of namespace
+    local lvar="LOCK_${LOCK}"
+
+    # Get filehandle
+    local randomstring
+    exec {randomstring}<>${!lvar}
+    # Store filehandle for later
+    LOCKFD[${LOCK}]=${randomstring}
+
+    # "Abusing" the err column, expecting the shared/exclusive value there.
+    # Any wrong value means exclusive.
+    case ${ERR} in
+        shared|exclusive)
+            flockparm="--${ERR}"
+            ;;
+        *)
+            flockparm="--exclusive"
+            ;;
+    esac
+
+    # Deal with time being special, usually it means false or true,
+    # but for locks we want a timeout. So if its set to one of the usuals,
+    # assume 300
+    if [[ ${TIME} == none ]]; then
+        TIME=300
+    fi
+    # Now try to get the lock
+    flock ${flockparm} --timeout ${TIME} LOCKFD[${LOCK}]
+}
+
+function unlock() {
+    local LOCK=${1:-}
+    if [[ -z ${LOCK} ]]; then
+        # Warn, but continue, unlock will happen at script end time
+        log "No lockfile name given"
+    fi
+
+    local randomstring=${LOCKFD[${LOCK}]}
+    exec {randomstring}>&-
+}
+
 (
     LOCKFREE=0
     flock --shared --nonblock 42 || LOCKFREE=1
@@ -204,40 +256,12 @@ esac
                 # For this we redefine what the columns mean.
                 # ARGS: Name of the lockfile
                 # TIME: How long to wait for getting the (exclusive) lock
-                # ERR: true == shared lock, false == exclusive lock
+                # ERR: shared == shared lock, may be hold more than once, exclusive == exclusive, only one.
 
-                # Prepend LOCK_ to lock name to get to variable name,
-                # kind of namespace
-                lvar="LOCK_${ARGS}"
-
-                # Get filehandle
-                exec {randomstring}<>${!lvar}
-                # Store filehandle for later
-                LOCKFD[${ARGS}]=${randomstring}
-
-                # "Abusing" the err column, expecting the shared/exclusive value there.
-                # Any wrong value means exclusive.
-                case ${ERR} in
-                    shared|exclusive)
-                        flockparm="--${ERR}"
-                        ;;
-                    *)
-                        flockparm="--exclusive"
-                        ;;
-                esac
-
-                # Deal with time being special, usually it means false or true,
-                # but for locks we want a timeout. So if its set to one of the usuals,
-                # assume 300
-                if [[ ${TIME} == true ]] || [[ ${TIME} == false ]]; then
-                    TIME=300
-                fi
-                # Now try to get the lock
-                flock ${flockparm} --timeout ${TIME} LOCKFD[${ARGS}]
+                lock ${ARGS} ${TIME} ${ERR}
                 ;;
             UNLOCK)
-                randomstring=${LOCKFD[${ARGS}]}
-                exec {randomstring}>&-
+                unlock ${ARGS}
                 ;;
             *)
                 GO=(
