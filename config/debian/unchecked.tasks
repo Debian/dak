@@ -1,17 +1,17 @@
-# FUNC                 ARGS                       TIME                       ERR     BG
-LOCK                   DAILY                      600                        true    false
-LOCK                   UNCHECKED                  600                        false   false
-pg_timestamp           preunchecked               none                       true    false
-punew                  stable-new                 p-u-new                    false   false
-opunew                 oldstable-new              o-p-u-new                  false   false
-backports_policy       none                       backports-policy           false   false
-cleanpolicy            none                       cleanpolicy                false   false
-fetchqueuedpackages    none                       fetchqueuedpackages        false   false
-LOCK                   BUILDD                     300                        false   false
-do_unchecked           none                       unchecked                  false   false
-UNLOCK                 BUILDD                     none                       false   false
-ddaccess               none                       none                       false   true
-scancontents           none                       contentsscan               false   false
-pg_timestamp           postunchecked              none                       false   false
-UNLOCK                 DAILY                      none                       false   false
-UNLOCK                 UNCHECKED                  none                       false   false
+# FUNC                 ARGS                       TIME                       ERR       BG
+LOCK                   DAILY                      600                        shared    false
+LOCK                   UNCHECKED                  600                        exclusive false
+pg_timestamp           preunchecked               none                       true      false
+punew                  stable-new                 p-u-new                    false     false
+opunew                 oldstable-new              o-p-u-new                  false     false
+backports_policy       none                       backports-policy           false     false
+cleanpolicy            none                       cleanpolicy                false     false
+fetchqueuedpackages    none                       fetchqueuedpackages        false     false
+LOCK                   BUILDD                     300                        exclusive false
+do_unchecked           none                       unchecked                  false     false
+UNLOCK                 BUILDD                     none                       false     false
+ddaccess               none                       none                       false     true
+scancontents           none                       contentsscan               false     false
+pg_timestamp           postunchecked              none                       false     false
+UNLOCK                 DAILY                      none                       false     false
+UNLOCK                 UNCHECKED                  none                       false     false

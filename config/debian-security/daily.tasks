@@ -1,9 +1,9 @@
-# FUNC                 ARGS                       TIME                       ERR     BG
+# FUNC                 ARGS                       TIME                       ERR        BG
 # Note: Not explicitly unlocked, want it until cronscript ends, after
 # all background functions finished
-LOCK                   UNCHECKED                  3600                       false   false
-fix_overrides          none                       none                       true    true
-fingerprints           some                       none                       false   true
-dakcleanup             unchecked\ disembargo      none                       true    false
-mklslar                none                       none                       true    true
-pg_timestamp           daily                      none                       true    false
+LOCK                   UNCHECKED                  3600                       exclusive  false
+fix_overrides          none                       none                       true       true
+fingerprints           some                       none                       false      true
+dakcleanup             unchecked\ disembargo      none                       true       false
+mklslar                none                       none                       true       true
+pg_timestamp           daily                      none                       true       false

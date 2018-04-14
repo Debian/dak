@@ -179,13 +179,14 @@ esac
             fi
         done
 
-        # ERR/BACKGROUND are boolean, check that they are.
+        # ERR/BACKGROUND are boolean for all but LOCK/UNLOCK, check that they are.
         for var in ERR BACKGROUND; do
             if [[ ${!var} != false ]] && [[ ${!var} != true ]]; then
-                error "Illegal value ${!var} for ${var} (should be true or false), line for function ${FUNC}"
+                if [[ ${FUNC} != LOCK ]] && [[ ${FUNC} != UNLOCK ]]; then
+                    error "Illegal value ${!var} for ${var} (should be true or false), line for function ${FUNC}"
+                fi
             fi
         done
-
         case ${FUNC} in
             STATE)
                 state ${ARGS}
@@ -214,11 +215,11 @@ esac
                 # Store filehandle for later
                 LOCKFD[${ARGS}]=${randomstring}
 
-                # Do we take a shared lock or not? Abusing the "may it error out or not", but
-                # logic is "could error -> shared, multiple can run", "cant error -> exclusive"
+                # "Abusing" the err column, expecting the shared/exclusive value there.
+                # Any wrong value means exclusive.
                 case ${ERR} in
-                    true)
-                        flockparm="--shared"
+                    shared|exclusive)
+                        flockparm="--${ERR}"
                         ;;
                     *)
                         flockparm="--exclusive"

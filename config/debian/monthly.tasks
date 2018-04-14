@@ -1,7 +1,7 @@
-# FUNC                 ARGS                       TIME                       ERR     BG
-rotatelog              none                       none                       false   true
-rotatequeued           none                       none                       false   true
-archivequeuedone       none                       none                       false   true
-LOCK                   UNCHECKED                  600                        false   false
-rotatereports          none                       none                       false   false
-UNLOCK                 UNCHECKED                  none                       false   false
+# FUNC                 ARGS                       TIME                       ERR       BG
+rotatelog              none                       none                       false     true
+rotatequeued           none                       none                       false     true
+archivequeuedone       none                       none                       false     true
+LOCK                   UNCHECKED                  600                        exclusive false
+rotatereports          none                       none                       false     false
+UNLOCK                 UNCHECKED                  none                       false     false
