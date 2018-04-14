@@ -121,7 +121,7 @@ function dep11() {
     local dep11dir="${scriptdir}/dep11"
     mkdir -p ${dep11dir}
     cd ${dep11dir}
-    rsync -rtq --safe-links --chmod=F644,D755 --delete --delete-after dep11-sync:/does/not/matter . || true
+    rsync -rtq --safe-links --chmod=F644,D755 --delete --delete-after dep11-sync:/does/not/matter .
 
     # Lets check!
     if ${scriptsdir}/dep11-basic-validate.py . ${dep11dir}/; then
