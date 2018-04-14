@@ -23,6 +23,9 @@ lintian:
     - source-contains-waf-binary
     - md5sum-mismatch
     - non-standard-toplevel-dir
+    - not-binnmuable-all-depends-any
+    - not-binnmuable-any-depends-all
+    - not-binnmuable-any-depends-any
     - license-problem-json-evil
     - gzip-file-is-not-multi-arch-same-safe
     - empty-binary-package
