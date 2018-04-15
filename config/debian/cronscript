@@ -85,6 +85,13 @@ EOF
         ;;
 esac
 
+function includetasks() {
+    local NAME=${1:?}
+
+    _preparetasks ${NAME}
+    _runtasks ${NAME}
+}
+
 function _preparetasks() {
     local NAME=${1:?}
 
@@ -127,6 +134,7 @@ function _runtasks() {
     #                   Note: Only really makes sense at beginning of a tasks file,
     #                   the stages directory gets cleared at successful exit anyways.
     #                   RMSTAGE simply ensures that ALL of the crons tasks ALWAYS run.
+    #         INCLUDE - Runs another task list after including corresponding functions
 
     # Note 2: If you want to hand an empty value to the stage function,
     #         use the word "none" in the list below.
@@ -173,6 +181,9 @@ function _runtasks() {
                 ;;
             UNLOCK)
                 unlock ${ARGS}
+                ;;
+            INCLUDE)
+                includetasks ${ARGS}
                 ;;
             *)
                 GO=(
