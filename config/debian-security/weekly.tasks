@@ -1,4 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR       BG
+LOCK                   DEPLOY                     600                        shared    false
 LOCK                   UNCHECKED                  1200                       exclusive false
 update_releases        none                       none                       true      false
 runcronscript          mirror                     none                       true      true

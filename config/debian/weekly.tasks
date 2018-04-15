@@ -1,4 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
+LOCK                   DEPLOY                     600                        shared  false
 purgeempty             none                       none                       false   true
 gitcleanup             none                       none                       false   true
 fixsymlinks            none                       none                       false   true

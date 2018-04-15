@@ -1,3 +1,4 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
+LOCK                   DEPLOY                     600                        shared  false
 importusers            none                       none                       false   false
 builddautosigning      security                   none                       false   false

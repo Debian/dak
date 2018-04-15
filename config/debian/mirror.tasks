@@ -1,3 +1,4 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
+LOCK                   DEPLOY                     600                        shared  false
 mirror                 none                       none                       true    false
 mirrorpush             none                       none                       true    false

@@ -68,3 +68,6 @@ declare -r LOCK_CHANGELOG="$lockdir/changelog.lock"
 # If this file exists we exit immediately after the currently running
 # function is done
 declare -r LOCK_STOP="${lockdir}/archive.stop"
+
+# Lock for deploying new code
+declare -r LOCK_DEPLOY="${lockdir}/deploy"

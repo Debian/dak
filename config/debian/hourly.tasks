@@ -1,4 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR       BG
+LOCK                   DEPLOY                     600                        shared    false
 importusers            none                       none                       false     false
 queuereport            none                       none                       false     true
 removalstxt            none                       none                       false     true

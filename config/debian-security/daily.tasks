@@ -1,4 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR        BG
+LOCK                   DEPLOY                     600                        shared     false
 # Note: Not explicitly unlocked, want it until cronscript ends, after
 # all background functions finished
 LOCK                   UNCHECKED                  3600                       exclusive  false

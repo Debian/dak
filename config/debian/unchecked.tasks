@@ -1,4 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR       BG
+LOCK                   DEPLOY                     600                        shared    false
 LOCK                   DAILY                      600                        shared    false
 LOCK                   UNCHECKED                  600                        exclusive false
 pg_timestamp           preunchecked               none                       true      false
