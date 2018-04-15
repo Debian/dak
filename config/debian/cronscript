@@ -149,7 +149,7 @@ function unlock() {
     fi
 
     # Where we store lockfile filehandles
-    declare -a LOCKFD
+    declare -A LOCKFD
 
     # common functions are "outsourced"
     . "${configdir}/common"
