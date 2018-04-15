@@ -1,4 +1,5 @@
-# FUNC                 ARGS                       TIME                       ERR     BG
-update_releases        none                       none                       true    false
-runcronscript          mirror                     none                       true    true
-linkmorgue             none                       none                       false   true
+# FUNC                 ARGS                       TIME                       ERR       BG
+LOCK                   UNCHECKED                  1200                       exclusive false
+update_releases        none                       none                       true      false
+runcronscript          mirror                     none                       true      true
+linkmorgue             none                       none                       false     true
