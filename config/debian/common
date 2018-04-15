@@ -380,14 +380,6 @@ function mklslar() {
     done
 }
 
-# Run another cronscript from within cronscript, sick bastard
-function runcronscript() {
-    local script=${1:-}
-    if [[ -n ${script} ]]; then
-        $configdir/cronscript ${script}
-    fi
-}
-
 function linkmorgue() {
     ${scriptsdir}/link_morgue.sh
 }
