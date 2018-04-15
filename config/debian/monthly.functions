@@ -25,7 +25,6 @@ function archivequeuedone() {
 }
 
 function rotatereports() {
-    TMPFILES="${TMPFILES} ${LOCK_UNCHECKED}"
     for dir in ${queuedir}/{.,p-u-new,o-p-u-new} /srv/backports-master.debian.org/queue/policy; do
         cd ${dir}
         mv REPORT REPORT.${OLDDATE}
