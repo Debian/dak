@@ -543,10 +543,6 @@ def main():
     if Options["No-Action"]:
         Options["Automatic"] = ""
 
-    # Check that we aren't going to clash with the daily cron job
-    if not Options["No-Action"] and os.path.exists("%s/daily.lock" % (cnf["Dir::Lock"])) and not Options["No-Lock"]:
-        utils.fubar("Archive maintenance in progress.  Try again later.")
-
     # Obtain lock if not in no-action mode and initialize the log
     if not Options["No-Action"]:
         lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'dinstall.lock'), os.O_RDWR | os.O_CREAT)
