@@ -16,13 +16,12 @@ reportdis=$queuedir/REPORT.disembargo
 timestamp=$(date "+%Y-%m-%d %H:%M")
 doanything=false
 dopolicy=false
-LOCKFILE="$lockdir/unchecked.lock"
 
 last_changed() {
     psql -qAtc "SELECT MAX(last_changed) FROM suite WHERE archive_id=(SELECT id FROM archive WHERE name='$1')"
 }
 
-exec {LOCKFD}<>${LOCKFILE}
+exec {LOCKFD}<>${LOCK_UNCHECKED}
 flock --exclusive --timeout 600 ${LOCKFD}
 
 old_last_changed=$(last_changed security)
