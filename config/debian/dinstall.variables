@@ -14,6 +14,7 @@ fi
 # How many logfiles to keep
 LOGROTATE=${LOGROTATE:-400}
 
+# Not really a lockfile, but convenient dir
 # Marker for dinstall start
 DINSTALLSTART="${lockdir}/dinstallstart"
 # Marker for dinstall end
@@ -21,20 +22,6 @@ DINSTALLEND="${lockdir}/dinstallend"
 
 # Timestamp for start
 DINSTALLBEGIN="$(date -u +"%a %b %d %T %Z %Y (%s)")"
-
-# Lock cron.unchecked from doing work
-LOCK_ACCEPTED="$lockdir/unchecked.lock"
-
-# This file is simply used to indicate to britney whether or not
-# the Packages file updates completed sucessfully.  It's not a lock
-# from our point of view
-LOCK_BRITNEY="$lockdir/britney.lock"
-
-# Lock buildd updates
-LOCK_BUILDD="$lockdir/buildd.lock"
-
-# Lock changelog updates
-LOCK_CHANGELOG="$lockdir/changelog.lock"
 
 # Statefile for the users
 DINSTALLSTATE="${webdir}/dinstall.status"

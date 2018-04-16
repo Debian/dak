@@ -16,21 +16,13 @@ reportdis=$queuedir/REPORT.disembargo
 timestamp=$(date "+%Y-%m-%d %H:%M")
 doanything=false
 dopolicy=false
-LOCKFILE="$lockdir/unchecked.lock"
 
 last_changed() {
     psql -qAtc "SELECT MAX(last_changed) FROM suite WHERE archive_id=(SELECT id FROM archive WHERE name='$1')"
 }
 
-cleanup() {
-    rm -f "$LOCKFILE"
-}
-
-if ! lockfile -r8 "$LOCKFILE"; then
-    echo "aborting cron.unchecked because $LOCKFILE has already been locked"
-    exit 0
-fi
-trap cleanup EXIT
+exec {LOCKFD}<>${LOCK_UNCHECKED}
+flock --exclusive --timeout 600 ${LOCKFD}
 
 old_last_changed=$(last_changed security)
 old_last_changed_build=$(last_changed build-queues)

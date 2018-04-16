@@ -1,51 +1,56 @@
-# FUNC                 ARGS                       TIME                       ERR     BG
-STATE                  startup                    none                       false   false
-NOSTAGE                startup                    none                       false   false
-savetimestamp          none                       none                       false   false
-qa1                    none                       init                       false   true
-pg_timestamp           predinstall                pg_dump1                   true    false
-bugdoctxt              none                       External\ Updates          false   true
-mailingliststxt        none                       none                       false   true
-pseudopackages         none                       none                       false   true
-i18n1                  none                       i18n\ 1                    false   false
-dep11                  none                       dep11\ 1                   false   true
-NOSTAGE                lockaccepted               none                       false   false
-punew                  stable-new                 p-u-new                    false   false
-opunew                 oldstable-new              o-p-u-new                  false   false
-backports_policy       none                       backports-policy           false   false
-cruft                  none                       cruft                      true    false
-STATE                  indices                    none                       false   false
-dominate               none                       dominate                   true    false
-autocruft              none                       autocruft                  true    false
-fingerprints           none                       import-keyring             false   true
-overrides              none                       overrides                  true    false
-mpfm                   none                       pkg-file-mapping           false   false
-STATE                  packages/contents          none                       true    false
-packages               none                       apt-ftparchive             true    false
-STATE                  dists/                     none                       false   false
-pdiff                  none                       pdiff                      true    false
-release                none                       release\ files             true    false
-dakcleanup             none                       cleanup                    true    false
-STATE                  scripts                    none                       false   false
-mkmaintainers          none                       mkmaintainers              true    false
-copyoverrides          none                       copyoverrides              true    false
-mklslar                none                       mklslar                    true    false
-mkfilesindices         none                       mkfilesindices             true    false
-mkchecksums            none                       mkchecksums                true    false
-dedup                  none                       dedup                      true    false
-signotherfiles         none                       signotherfiles             true    false
-mirror                 none                       mirror\ hardlinks          true    false
-NOSTAGE                remove_locks               none                       false   false
-STATE                  postlock                   none                       false   false
-ddaccess               none                       ddaccessible\ sync         false   true
-changelogs             none                       changelogs                 false   true
-pg_timestamp           postdinstall               pg_dump2                   true    false
-expire                 none                       expire_dumps               false   true
-transitionsclean       none                       transitionsclean           false   true
-dm                     none                       none                       false   true
-bts                    none                       none                       false   true
-mirrorpush             none                       mirrorpush                 false   true
-i18n2                  none                       i18n\ 2                    false   true
-stats                  none                       stats                      false   true
-testingsourcelist      none                       none                       false   true
-cleantransactions      none                       none                       false   false
+# FUNC                 ARGS                       TIME                       ERR       BG
+STATE                  startup                    none                       false     false
+LOCK                   DEPLOY                     600                        shared    false
+LOCK                   DAILY                      3600                       exclusive false
+NOSTAGE                startup                    none                       false     false
+savetimestamp          none                       none                       false     false
+qa1                    none                       init                       false     true
+pg_timestamp           predinstall                pg_dump1                   true      false
+bugdoctxt              none                       External\ Updates          false     true
+mailingliststxt        none                       none                       false     true
+pseudopackages         none                       none                       false     true
+i18n1                  none                       i18n\ 1                    false     false
+dep11                  none                       dep11\ 1                   false     true
+LOCK                   UNCHECKED                  1200                       exclusive false
+punew                  stable-new                 p-u-new                    false     false
+opunew                 oldstable-new              o-p-u-new                  false     false
+backports_policy       none                       backports-policy           false     false
+cruft                  none                       cruft                      true      false
+STATE                  indices                    none                       false     false
+dominate               none                       dominate                   true      false
+autocruft              none                       autocruft                  true      false
+fingerprints           none                       import-keyring             false     true
+overrides              none                       overrides                  true      false
+mpfm                   none                       pkg-file-mapping           false     false
+STATE                  packages/contents          none                       true      false
+packages               none                       apt-ftparchive             true      false
+STATE                  dists/                     none                       false     false
+pdiff                  none                       pdiff                      true      false
+release                none                       release\ files             true      false
+dakcleanup             none                       cleanup                    true      false
+STATE                  scripts                    none                       false     false
+mkmaintainers          none                       mkmaintainers              true      false
+copyoverrides          none                       copyoverrides              true      false
+mklslar                none                       mklslar                    true      false
+mkfilesindices         none                       mkfilesindices             true      false
+mkchecksums            none                       mkchecksums                true      false
+dedup                  none                       dedup                      true      false
+signotherfiles         none                       signotherfiles             true      false
+mirror                 none                       mirror\ hardlinks          true      false
+UNLOCK                 UNCHECKED                  none                       false     false
+UNLOCK                 DAILY                      none                       false     false
+NOSTAGE                remove_locks               none                       false     false
+STATE                  postlock                   none                       false     false
+ddaccess               none                       ddaccessible\ sync         false     true
+LOCK                   CHANGELOG                  300                        exclusive false
+changelogs             none                       changelogs                 false     true
+pg_timestamp           postdinstall               pg_dump2                   true      false
+expire                 none                       expire_dumps               false     true
+transitionsclean       none                       transitionsclean           false     true
+dm                     none                       none                       false     true
+bts                    none                       none                       false     true
+mirrorpush             none                       mirrorpush                 false     true
+i18n2                  none                       i18n\ 2                    false     true
+stats                  none                       stats                      false     true
+testingsourcelist      none                       none                       false     true
+cleantransactions      none                       none                       false     false

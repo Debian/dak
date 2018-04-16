@@ -1,4 +1,5 @@
 # FUNC                      ARGS                       TIME                       ERR     BG
+LOCK                        DEPLOY                     600                        shared  false
 wnppbugs                    none                       none                       false   false
 pushfilesdb                 none                       none                       false   false
 wbdump                      none                       none                       false   false

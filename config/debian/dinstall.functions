@@ -1,28 +1,5 @@
 # -*- mode:sh -*-
 
-# Remove changelog lock
-function remove_changelog_lock() {
-    rm -f $LOCK_CHANGELOG
-}
-
-# Remove all locks
-function remove_all_locks() {
-    rm -f $LOCK_DAILY $LOCK_ACCEPTED
-}
-
-# Get rid of all locks and unset the trap
-function remove_locks {
-    remove_all_locks
-    trap - EXIT TERM HUP INT QUIT
-    log_timestamp "locked part finished"
-}
-
-# Lock accepted
-function lockaccepted {
-    lockfile "$LOCK_ACCEPTED"
-    trap remove_all_locks EXIT TERM HUP INT QUIT
-}
-
 # If we error out this one is called, *FOLLOWED* by cleanup in common
 function onerror() {
     ERRDATE=$(date "+%Y.%m.%d-%H:%M:%S")
@@ -624,23 +601,19 @@ EOF
 
 # extract changelogs and stuff
 function changelogs() {
-    if lockfile -r3 ${LOCK_CHANGELOG}; then
-        trap remove_changelog_lock EXIT TERM HUP INT QUIT
-        log "Extracting changelogs"
-        dak make-changelog -e -a ftp-master
-        [[ -f ${exportdir}/changelogs/filelist.yaml ]] && xz -f ${exportdir}/changelogs/filelist.yaml
-        mkdir -p ${exportpublic}/changelogs
-        cd ${exportpublic}/changelogs
-        rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
-        sudo -H -u staticsync /usr/local/bin/static-update-component metadata.ftp-master.debian.org >/dev/null 2>&1 &
+    log "Extracting changelogs"
+    dak make-changelog -e -a ftp-master
+    [[ -f ${exportdir}/changelogs/filelist.yaml ]] && xz -f ${exportdir}/changelogs/filelist.yaml
+    mkdir -p ${exportpublic}/changelogs
+    cd ${exportpublic}/changelogs
+    rsync -aHW --delete --delete-after --ignore-errors ${exportdir}/changelogs/. .
+    sudo -H -u staticsync /usr/local/bin/static-update-component metadata.ftp-master.debian.org >/dev/null 2>&1 &
 
-        # dak make-changelog -e -a backports
-        # [[ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml  ]] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
-        # mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
-        # cd /srv/backports-master.debian.org/rsync/export/changelogs
-        # rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
-        remove_changelog_lock
-    fi
+    # dak make-changelog -e -a backports
+    # [[ -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml  ]] && xz -f /srv/backports-master.debian.org/export/changelogs/filelist.yaml
+    # mkdir -p /srv/backports-master.debian.org/rsync/export/changelogs
+    # cd /srv/backports-master.debian.org/rsync/export/changelogs
+    # rsync -aHW --delete --delete-after --ignore-errors /srv/backports-master.debian.org/export/changelogs/. .
 }
 
 # Generate a list of extra mirror files, sha256sum em and sign that
@@ -665,10 +638,7 @@ function signotherfiles() {
 function startup() {
     touch "${DINSTALLSTART}"
     log_timestamp "startup"
-    lockfile -l 3600 "${LOCK_DAILY}"
     trap onerror ERR
-    touch "${LOCK_BRITNEY}"
-    TMPFILES="${TMPFILES} ${LOCK_DAILY} ${LOCK_BRITNEY}"
 }
 
 function postcronscript() {
