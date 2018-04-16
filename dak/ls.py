@@ -91,10 +91,6 @@ def main ():
     if not packages:
         utils.fubar("need at least one package name as an argument.")
 
-    # If cron.daily is running; warn the user that our output might seem strange
-    if os.path.exists(os.path.join(cnf["Dir::Lock"], "daily.lock")):
-        utils.warn("Archive maintenance is in progress; database inconsistencies are possible.")
-
     # Handle buildd maintenance helper options
     if Options["GreaterOrEqual"] or Options["GreaterThan"]:
         if Options["GreaterOrEqual"] and Options["GreaterThan"]:
