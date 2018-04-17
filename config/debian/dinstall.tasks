@@ -39,7 +39,6 @@ signotherfiles         none                       signotherfiles             tru
 mirror                 none                       mirror\ hardlinks          true      false
 UNLOCK                 UNCHECKED                  none                       false     false
 UNLOCK                 DAILY                      none                       false     false
-NOSTAGE                remove_locks               none                       false     false
 STATE                  postlock                   none                       false     false
 ddaccess               none                       ddaccessible\ sync         false     true
 LOCK                   CHANGELOG                  300                        exclusive false
