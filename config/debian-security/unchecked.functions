@@ -1,0 +1,44 @@
+function sync_accepted() {
+    rsync --recursive --times --partial --remove-source-files \
+          ${queuedir}/accepted/ rsync-to-ssh.upload.debian.org:/does/not/matter
+}
+
+function update_kfreebsd() {
+    dak update-suite oldstable oldstable-kfreebsd
+}
+
+function trigger_wb_security() {
+    ${configdir}/cron.buildd
+}
+
+function clean_suites() {
+    # clean policy and build queues to remove files from rejected uploads
+    dak clean-suites -a new,policy,build-queues
+}
+
+function export_policy() {
+    local queue=$1
+    cd ${queuedir}/${queue}
+    rm -rf export.new
+    mkdir export.new
+    dak export -q ${queue} -d export.new --all
+    rsync -a --delete export.new/. export/.
+    rm -rf export.new
+}
+
+function process_policy_security() {
+    local queue=$1
+    local report=$queuedir/REPORT
+    local timestamp=$(date "+%Y-%m-%d %H:%M")
+    echo "$timestamp: processing ${queue}" >> ${report}
+    dak process-policy ${queue} | mail -a "X-Debian: DAK" -e -s "Automatically accepted from ${queue}" -a "From: Debian FTP Masters <ftpmaster@ftp-master.debian.org>" team@security.debian.org
+}
+
+function do_dinstall() {
+    new_last_changed=$(last_changed security)
+
+    if [[ ${LAST_CHANGED} != ${new_last_changed} ]]; then
+        # We had something approved from a policy queue, push out new archive
+        includetasks unchecked-dinstall
+    fi
+}

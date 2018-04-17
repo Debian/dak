@@ -1,0 +1,5 @@
+function last_changed() {
+    psql -qAtc "SELECT MAX(last_changed) FROM suite WHERE archive_id=(SELECT id FROM archive WHERE name='$1')"
+}
+
+declare -gr LAST_CHANGED=$(last_changed security)
