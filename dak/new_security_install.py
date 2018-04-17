@@ -32,6 +32,9 @@ import sys
 import time
 import apt_pkg
 import commands
+import errno
+from errno import EACCES, EAGAIN
+import fcntl
 
 from daklib import queue
 from daklib import daklog
@@ -87,25 +90,30 @@ def sudo(arg, fn, exit):
 def do_Approve(): sudo("A", _do_Approve, True)
 def _do_Approve():
     print "Locking unchecked"
-    lockfile='/srv/security-master.debian.org/lock/unchecked.lock'
-    spawn("lockfile -r42 {0}".format(lockfile))
+    lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'unchecked.lock'), os.O_RDWR | os.O_CREAT)
+    while True:
+        try:
+            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except IOError as e:
+            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
+                print "Another process keeping the unchecked lock, waiting."
+                time.sleep(10)
+            else:
+                raise
 
-    try:
-        # 1. Install accepted packages
-        print "Installing accepted packages into security archive"
-        for queue in ("embargoed",):
-            spawn("dak process-policy {0}".format(queue))
+    # 1. Install accepted packages
+    print "Installing accepted packages into security archive"
+    for queue in ("embargoed",):
+        spawn("dak process-policy {0}".format(queue))
 
-        # 3. Run all the steps that are needed to publish the changed archive
-        print "Doing loadsa stuff in the archive, will take time, please be patient"
-        os.environ['configdir'] = '/srv/security-master.debian.org/dak/config/debian-security'
-        spawn("/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked-dinstall")
+    # 3. Run all the steps that are needed to publish the changed archive
+    print "Doing loadsa stuff in the archive, will take time, please be patient"
+    os.environ['configdir'] = '/srv/security-master.debian.org/dak/config/debian-security'
+    spawn("/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked-dinstall")
 
-        print "Triggering metadata export for packages.d.o and other consumers"
-        spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
-    finally:
-        os.unlink(lockfile)
-        print "Lock released."
+    print "Triggering metadata export for packages.d.o and other consumers"
+    spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
 
 ########################################################################
 ########################################################################
