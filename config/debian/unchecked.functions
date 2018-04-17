@@ -1,9 +1,0 @@
-# -*- mode:sh -*-
-
-function fetchqueuedpackages() {
-    local host=$1
-    # Sync new uploaded packages from the central upload queue host.
-    log "Sync new uploads from upload queues"
-    cd ${unchecked}
-    rsync -rtq --safe-links --chmod=F640,D755 --remove-source-files $1:/does/not/matter . || true
-}
