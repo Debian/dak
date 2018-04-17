@@ -224,13 +224,13 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             if os.path.isdir(cnf["Dir::Lock"]):
-                lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'dinstall.lock'), os.O_RDWR | os.O_CREAT)
-                fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'daily.lock'), os.O_RDWR | os.O_CREAT)
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             else:
                 utils.warn("Lock directory doesn't exist yet - not locking")
         except IOError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
-                utils.fubar("Couldn't obtain lock; assuming another 'dak process-unchecked' is already running.")
+                utils.fubar("Couldn't obtain lock, looks like archive is doing something, try again later.")
 
         self.update_db()
 

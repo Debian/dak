@@ -545,9 +545,9 @@ def main():
 
     # Obtain lock if not in no-action mode and initialize the log
     if not Options["No-Action"]:
-        lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'dinstall.lock'), os.O_RDWR | os.O_CREAT)
+        lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'process-upload.lock'), os.O_RDWR | os.O_CREAT)
         try:
-            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except IOError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-upload' is already running.")

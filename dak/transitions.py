@@ -223,7 +223,7 @@ def lock_file(f):
     for retry in range(10):
         lock_fd = os.open(f, os.O_RDWR | os.O_CREAT)
         try:
-            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             return lock_fd
         except OSError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':

@@ -93,7 +93,7 @@ def _do_Approve():
     lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'unchecked.lock'), os.O_RDWR | os.O_CREAT)
     while True:
         try:
-            fcntl.lockf(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             break
         except IOError as e:
             if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
@@ -106,6 +106,9 @@ def _do_Approve():
     print "Installing accepted packages into security archive"
     for queue in ("embargoed",):
         spawn("dak process-policy {0}".format(queue))
+
+    # Unlock, the cronscript coming up locks itself where needed.
+    fcntl.flock(lock_fd, fcntl.LOCK_UN)
 
     # 3. Run all the steps that are needed to publish the changed archive
     print "Doing loadsa stuff in the archive, will take time, please be patient"
