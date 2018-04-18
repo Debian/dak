@@ -229,7 +229,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
             else:
                 utils.warn("Lock directory doesn't exist yet - not locking")
         except IOError as e:
-            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
+            if e.errno in (errno.EACCES, errno.EAGAIN):
                 utils.fubar("Couldn't obtain lock, looks like archive is doing something, try again later.")
 
         self.update_db()

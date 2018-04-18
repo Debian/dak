@@ -33,7 +33,6 @@ import time
 import apt_pkg
 import commands
 import errno
-from errno import EACCES, EAGAIN
 import fcntl
 
 from daklib import queue
@@ -96,7 +95,7 @@ def _do_Approve():
             fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             break
         except IOError as e:
-            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EAGAIN':
+            if e.errno in (errno.EACCESS, errno.EAGAIN):
                 print "Another process keeping the unchecked lock, waiting."
                 time.sleep(10)
             else:

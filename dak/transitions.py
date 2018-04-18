@@ -226,7 +226,7 @@ def lock_file(f):
             fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             return lock_fd
         except OSError as e:
-            if errno.errorcode[e.errno] == 'EACCES' or errno.errorcode[e.errno] == 'EEXIST':
+            if e.errno in (errno.EACCES, errno.EEXIST):
                 print "Unable to get lock for %s (try %d of 10)" % \
                         (file, retry+1)
                 time.sleep(60)

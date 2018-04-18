@@ -538,7 +538,7 @@ def get_readme_source (dsc_filename):
     try:
         shutil.rmtree(tempdir)
     except OSError as e:
-        if errno.errorcode[e.errno] != 'EACCES':
+        if e.errno != errno.EACCES:
             res += "%s: couldn't remove tmp dir %s for source tree." % (dsc_filename, tempdir)
 
     return res
@@ -666,7 +666,7 @@ def main ():
                     less_process.wait()
                     sys.stdout = stdout_fd
         except IOError as e:
-            if errno.errorcode[e.errno] == 'EPIPE':
+            if e.errno == errno.EPIPE:
                 utils.warn("[examine-package] Caught EPIPE; skipping.")
                 pass
             else:
