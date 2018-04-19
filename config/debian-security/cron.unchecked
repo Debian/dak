@@ -107,5 +107,4 @@ if [[ "${old_last_changed}" != "${new_last_changed}" ]]; then
     $configdir/cronscript unchecked-dinstall
 fi
 
-cleanup
 trap - EXIT
