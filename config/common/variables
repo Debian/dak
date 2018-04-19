@@ -33,10 +33,22 @@ declare -r done=$queuedir/done/ # from debian-security
 TMPDIR=${base}/tmp
 PATH=${masterdir}:${PATH}
 
-declare -r HOSTNAME=$(hostname -s)
-
 # By default, add no timestamps to stage logs
 TIMESTAMP=false
+
+declare -r HOSTNAME=$(hostname -s)
+
+# where do we want mails to go? For example log entries made with error()
+case ${HOSTNAME} in
+    fasolo|seger|coccia)
+        # Yay, ftpmaster
+        MAILTO=${MAILTO:-"ftpmaster@debian.org"}
+        ;;
+    *)
+        # Not our ftpmaster host
+        MAILTO=${MAILTO:-"root"}
+        ;;
+esac
 
 if [[ ${ARG:-none} != deploy ]]; then
     declare -r archs=$(dak admin a list | tr '\n' ' ')

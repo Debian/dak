@@ -2,15 +2,6 @@
 # usually we are not using debug logs. Set to 1 if you want them.
 DEBUG=0
 
-# where do we want mails to go? For example log entries made with error()
-if [[ ${HOSTNAME} != franck ]] && [[ ${HOSTNAME} != fasolo ]]; then
-    # Not our ftpmaster host
-    MAILTO=${MAILTO:-"root"}
-else
-    # Yay, ftpmaster
-    MAILTO=${MAILTO:-"ftpmaster@debian.org"}
-fi
-
 # How many logfiles to keep
 LOGROTATE=${LOGROTATE:-400}
 
