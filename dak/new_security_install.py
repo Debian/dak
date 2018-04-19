@@ -89,7 +89,7 @@ def sudo(arg, fn, exit):
 def do_Approve(): sudo("A", _do_Approve, True)
 def _do_Approve():
     print "Locking unchecked"
-    lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'unchecked.lock'), os.O_RDWR | os.O_CREAT)
+    lock_fd = os.open('/srv/security-master.debian.org/lock/unchecked.lock', os.O_RDWR | os.O_CREAT)
     while True:
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
