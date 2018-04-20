@@ -95,7 +95,7 @@ def _do_Approve():
             fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             break
         except IOError as e:
-            if e.errno in (errno.EACCESS, errno.EAGAIN):
+            if e.errno in (errno.EACCES, errno.EAGAIN):
                 print "Another process keeping the unchecked lock, waiting."
                 time.sleep(10)
             else:
