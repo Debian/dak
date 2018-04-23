@@ -89,27 +89,24 @@ def sudo(arg, fn, exit):
 def do_Approve(): sudo("A", _do_Approve, True)
 def _do_Approve():
     print "Locking unchecked"
-    lock_fd = os.open('/srv/security-master.debian.org/lock/unchecked.lock', os.O_RDWR | os.O_CREAT)
-    while True:
-        try:
-            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            break
-        except IOError as e:
-            if e.errno in (errno.EACCES, errno.EAGAIN):
-                print "Another process keeping the unchecked lock, waiting."
-                time.sleep(10)
-            else:
-                raise
+    with os.fdopen(os.open('/srv/security-master.debian.org/lock/unchecked.lock', os.O_CREAT | os.O_RDWR ), 'w') as lock_fd:
+        while True:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                break
+            except IOError as e:
+                if e.errno in (errno.EACCES, errno.EAGAIN):
+                    print "Another process keeping the unchecked lock, waiting."
+                    time.sleep(10)
+                else:
+                    raise
 
-    # 1. Install accepted packages
-    print "Installing accepted packages into security archive"
-    for queue in ("embargoed",):
-        spawn("dak process-policy {0}".format(queue))
+        # 1. Install accepted packages
+        print "Installing accepted packages into security archive"
+        for queue in ("embargoed",):
+            spawn("dak process-policy {0}".format(queue))
 
-    # Unlock, the cronscript coming up locks itself where needed.
-    fcntl.flock(lock_fd, fcntl.LOCK_UN)
-
-    # 3. Run all the steps that are needed to publish the changed archive
+    # 2. Run all the steps that are needed to publish the changed archive
     print "Doing loadsa stuff in the archive, will take time, please be patient"
     os.environ['configdir'] = '/srv/security-master.debian.org/dak/config/debian-security'
     spawn("/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked-dinstall")
