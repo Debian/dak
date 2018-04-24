@@ -642,6 +642,7 @@ function startup() {
 }
 
 function postcronscript() {
+    trap - ERR
     logstats ${LOGFILE}
     state "all done"
     touch "${DINSTALLEND}"
