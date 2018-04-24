@@ -123,7 +123,20 @@ function lock() {
         TIME=300
     fi
     # Now try to get the lock
-    flock ${flockparm} --timeout ${TIME} ${LOCKFD[${LOCK}]}
+    set +e
+    flock ${flockparm} --timeout ${TIME} --conflict-exit-code 3 ${LOCKFD[${LOCK}]}
+    ret=$?
+    set -e
+    case ${ret} in
+        0)
+            return
+            ;;
+        3)
+            log_error "Could not get lock ${lvar}, timeout"
+            ;;
+        *)
+            log_error "Could not get lock ${lvar}"
+    esac
 }
 
 function unlock() {
