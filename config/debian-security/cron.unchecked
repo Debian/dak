@@ -104,6 +104,7 @@ fi
 
 if [[ "${old_last_changed}" != "${new_last_changed}" ]]; then
     # We had something approved from a policy queue, push out new archive
+    exec {LOCKFD}>&-
     $configdir/cronscript unchecked-dinstall
 fi
 
