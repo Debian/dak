@@ -159,7 +159,7 @@ function do_unchecked () {
     report=${queuedir}/REPORT
     timestamp=$(date "+%Y-%m-%d %H:%M")
 
-    if [[ ! -z ${changes} ]]; then
+    if [[ -n ${changes} ]]; then
         log "Processing files ${changes}"
         {
             echo "${timestamp}: ${changes}"
