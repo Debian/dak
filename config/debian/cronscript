@@ -133,9 +133,11 @@ function lock() {
             ;;
         3)
             log_error "Could not get lock ${lvar}, timeout"
+            laststeps 2
             ;;
         *)
             log_error "Could not get lock ${lvar}"
+            laststeps 2
     esac
 }
 
@@ -150,6 +152,33 @@ function unlock() {
     exec {randomstring}>&-
 }
 
+function laststeps() {
+    local successval=${1:-0}
+
+    # Redirect output to another file, as we want to compress our logfile
+    # and ensure its no longer used
+    exec > "$logdir/after${PROGRAM}.log" 2>&1
+
+    # If there is a postcronscript function, we run it, if script was successful
+    postfunc=$(type -t postcronscript || echo "")
+    if [[ ${successval} -eq 0 ]] && [[ -n ${postfunc} ]] && [[ ${postfunc} = function ]]; then
+        postcronscript
+    fi
+
+    # Now, at the very (successful) end of this run, make sure we remove
+    # our stage files, so the next script run will do it all again.
+    if [[ ${successval} -eq 0 ]]; then
+        rm -f ${stagedir}/*
+    fi
+    bzip2 -9 ${LOGFILE}
+
+    # Logfile should be gone, remove the symlink
+    [[ -L ${logdir}/${PROGRAM} ]] && [[ ! -f ${logdir}/${PROGRAM} ]] && rm -f ${logdir}/${PROGRAM} || log "Logfile still exists or symlink gone already? Something fishy going on"
+
+    # FIXME: Mail the log when its non-empty
+    [[ -s "${logdir}/after${PROGRAM}.log" ]] || rm "${logdir}/after${PROGRAM}.log"
+}
+
 (
     LOCKFREE=0
     flock --shared --nonblock 42 || LOCKFREE=1
@@ -158,7 +187,7 @@ function unlock() {
     # can take an exclusive one in preparation for a reboot)
     if [[ ${LOCKFREE} -gt 0 ]]; then
         echo "Couldn't get (shared) reboot lock"
-        exit 1
+        laststeps 1
     fi
 
     # Where we store lockfile filehandles
@@ -297,26 +326,8 @@ function unlock() {
 
     # Common to all cron scripts
     log "Cron script successful, all done"
-    # Redirect output to another file, as we want to compress our logfile
-    # and ensure its no longer used
-    exec > "$logdir/after${PROGRAM}.log" 2>&1
 
-    # If there is a postcronscript function, we run it.
-    postfunc=$(type -t postcronscript || echo "")
-    if [[ -n ${postfunc} ]] && [[ ${postfunc} = function ]]; then
-        postcronscript
-    fi
-
-    # Now, at the very (successful) end of this run, make sure we remove
-    # our stage files, so the next script run will do it all again.
-    rm -f ${stagedir}/*
-    bzip2 -9 ${LOGFILE}
-
-    # Logfile should be gone, remove the symlink
-    [[ -L ${logdir}/${PROGRAM} ]] && [[ ! -f ${logdir}/${PROGRAM} ]] && rm -f ${logdir}/${PROGRAM} || log "Logfile still exists or symlink gone already? Something fishy going on"
-
-    # FIXME: Mail the log when its non-empty
-    [[ -s "${logdir}/after${PROGRAM}.log" ]] || rm "${logdir}/after${PROGRAM}.log"
+    laststeps 0
 
 # And end the reboot-locked part
 ) 42</var/run/reboot-lock
