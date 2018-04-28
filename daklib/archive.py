@@ -741,26 +741,34 @@ class ArchiveUpload(object):
         return sourcedir
 
     def _map_suite(self, suite_name):
+        suite_names = set((suite_name, ))
         for rule in Config().value_list("SuiteMappings"):
             fields = rule.split()
             rtype = fields[0]
             if rtype == "map" or rtype == "silent-map":
                 (src, dst) = fields[1:3]
-                if src == suite_name:
-                    suite_name = dst
+                if src in suite_names:
+                    suite_names.remove(src)
+                    suite_names.add(dst)
                     if rtype != "silent-map":
                         self.warnings.append('Mapping {0} to {1}.'.format(src, dst))
+            elif rtype == "copy" or rtype == "silent-copy":
+                (src, dst) = fields[1:3]
+                if src in suite_names:
+                    suite_names.add(dst)
+                    if rtype != "silent-copy":
+                        self.warnings.append('Copy {0} to {1}.'.format(src, dst))
             elif rtype == "ignore":
                 ignored = fields[1]
-                if suite_name == ignored:
+                if ignored in suite_names:
+                    suite_names.remove(ignored)
                     self.warnings.append('Ignoring target suite {0}.'.format(ignored))
-                    suite_name = None
             elif rtype == "reject":
                 rejected = fields[1]
-                if suite_name == rejected:
+                if rejected in suite_names:
                     raise checks.Reject('Uploads to {0} are not accepted.'.format(rejected))
             ## XXX: propup-version and map-unreleased not yet implemented
-        return suite_name
+        return suite_names
 
     def _mapped_suites(self):
         """Get target suites after mappings
@@ -770,11 +778,9 @@ class ArchiveUpload(object):
         """
         session = self.session
 
-        suite_names = []
+        suite_names = set()
         for dist in self.changes.distributions:
-            suite_name = self._map_suite(dist)
-            if suite_name is not None:
-                suite_names.append(suite_name)
+            suite_names.update(self._map_suite(dist))
 
         suites = session.query(Suite).filter(Suite.suite_name.in_(suite_names))
         return suites
@@ -944,6 +950,29 @@ class ArchiveUpload(object):
         if only_overrides:
             return None
         return get_mapped_component(binary.component, self.session)
+
+    def _source_component(self, suite, source, only_overrides=True):
+        """get component for a source
+
+        By default this will only look at overrides to get the right component;
+        if C{only_overrides} is C{False} this method will also look at the
+        Section field.
+
+        @type  suite: L{daklib.dbconn.Suite}
+
+        @type  binary: L{daklib.upload.Binary}
+
+        @type  only_overrides: bool
+        @param only_overrides: only use overrides to get the right component
+
+        @rtype: L{daklib.dbconn.Component} or C{None}
+        """
+        override = self._source_override(suite, source)
+        if override is not None:
+            return override.component
+        if only_overrides:
+            return None
+        return get_mapped_component(source.component, self.session)
 
     def check(self, force=False):
         """run checks against the upload
@@ -1304,7 +1333,7 @@ class ArchiveUpload(object):
 
             source_suites = self.session.query(Suite).filter(Suite.suite_id.in_(source_suite_ids)).subquery()
 
-            source_component_func = lambda source: self._source_override(overridesuite, source).component
+            source_component_func = lambda source: self._source_component(overridesuite, source, only_overrides=False)
             binary_component_func = lambda binary: self._binary_component(overridesuite, binary, only_overrides=False)
 
             (db_source, db_binaries) = self._install_to_suite(suite, redirected_suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
