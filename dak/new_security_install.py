@@ -175,7 +175,9 @@ def main():
         # strip epoch from version
         version=dbchange.version
         version=version[(version.find(':')+1):]
-        acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), dbchange.source, version)
+        # strip possible version from source (binNMUs)
+        source = dbchange.source.split(None, 1)[0]
+        acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), source, version)
         acceptfiles[acceptfilename]=1
 
     print "Would create %s now and then go on to accept this package, if you allow me to." % (acceptfiles.keys())
