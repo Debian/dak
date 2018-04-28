@@ -107,3 +107,5 @@ lintian:
     - license-problem-md5sum-non-distributable-file
     - license-problem-md5sum-non-free-file
     - latest-debian-changelog-entry-without-new-date
+    - debian-changelog-file-uses-obsolete-national-encoding
+    - debian-copyright-file-uses-obsolete-national-encoding
