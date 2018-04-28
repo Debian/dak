@@ -85,6 +85,123 @@ EOF
         ;;
 esac
 
+function includetasks() {
+    local NAME=${1:?}
+
+    _preparetasks ${NAME}
+    _runtasks ${NAME}
+}
+
+function _preparetasks() {
+    local NAME=${1:?}
+
+    # Each "cronscript" may have a variables and a functions file
+    # that we source
+    for what in variables functions; do
+        if [[ -f ${configdir}/${NAME}.${what} ]]; then
+            . ${configdir}/${NAME}.${what}
+        fi
+    done
+}
+
+function _runtasks() {
+    local NAME=${1:?}
+
+    # Which list of tasks should we run?
+    local TASKLIST="${configdir}/${NAME}.tasks"
+
+    # This loop simply wants to be fed by a list of values (see below)
+    # made out of 5 columns.
+    # The first four are the array values for the stage function, the
+    # fifth tells us if we should background the stage call.
+    #
+    #  - FUNC - the function name to call
+    #  - ARGS - Possible arguments to hand to the function. Can be the empty string
+    #  - TIME - The timestamp name. Can be the empty string
+    #  - ERR  - if this is the string false, then the call will be surrounded by
+    #           set +e ... set -e calls, so errors in the function do not exit
+    #           the script. Can be the empty string, meaning true.
+    #  - BG   - Background the function stage?
+    #
+    # ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
+    #
+    # NOTE 1: There are special values for the first column (FUNC).
+    #         STATE   - do not call stage function, call the state
+    #                   function to update the public statefile "where is dinstall"
+    #         NOSTAGE - do not call stage function, call the command directly.
+    #         RMSTAGE - clean out the stages directory, and as such
+    #                   the recording what already ran in an earlier cronscript.
+    #                   Note: Only really makes sense at beginning of a tasks file,
+    #                   the stages directory gets cleared at successful exit anyways.
+    #                   RMSTAGE simply ensures that ALL of the crons tasks ALWAYS run.
+    #         INCLUDE - Runs another task list after including corresponding functions
+
+    # Note 2: If you want to hand an empty value to the stage function,
+    #         use the word "none" in the list below.
+    while read FUNC ARGS TIME ERR BACKGROUND; do
+        debug "FUNC: $FUNC ARGS: $ARGS TIME: $TIME ERR: $ERR BG: $BACKGROUND"
+
+        # Empty values in the value list are the string "none" (or the
+        # while read loop won't work). Here we ensure that variables that
+        # can be empty, are empty if the string none is set for them.
+        for var in ARGS TIME; do
+            if [[ ${!var} == none ]]; then
+                typeset ${var}=''
+            fi
+        done
+
+        # ERR/BACKGROUND are boolean for all but LOCK/UNLOCK, check that they are.
+        for var in ERR BACKGROUND; do
+            if [[ ${!var} != false ]] && [[ ${!var} != true ]]; then
+                if [[ ${FUNC} != LOCK ]] && [[ ${FUNC} != UNLOCK ]]; then
+                    error "Illegal value ${!var} for ${var} (should be true or false), line for function ${FUNC}"
+                fi
+            fi
+        done
+        case ${FUNC} in
+            STATE)
+                state ${ARGS}
+                ;;
+            NOSTAGE)
+                ${ARGS}
+                ;;
+            RMSTAGE)
+                # Make sure we remove our stage files, so all the
+                # actions will be done again.
+                rm -f ${stagedir}/*
+                ;;
+            LOCK)
+                # We are asked to set a lock, so try to get it.
+                # For this we redefine what the columns mean.
+                # ARGS: Name of the lockfile
+                # TIME: How long to wait for getting the (exclusive) lock
+                # ERR: shared == shared lock, may be hold more than once, exclusive == exclusive, only one.
+
+                lock ${ARGS} ${TIME} ${ERR}
+                ;;
+            UNLOCK)
+                unlock ${ARGS}
+                ;;
+            INCLUDE)
+                includetasks ${ARGS}
+                ;;
+            *)
+                GO=(
+                    FUNC=${FUNC}
+                    TIME=${TIME}
+                    ARGS=${ARGS}
+                    ERR=${ERR}
+                )
+                if [[ ${BACKGROUND} == true ]]; then
+                    stage $GO &
+                else
+                    stage $GO
+                fi
+                ;;
+        esac
+    done < <(grep -v '^#' ${TASKLIST} )
+}
+
 function lock() {
     local LOCK=${1:-}
     local TIME=${2:-600}
@@ -199,19 +316,12 @@ function laststeps() {
     # Timestamp when we started
     NOW=$(date "+%Y.%m.%d-%H:%M:%S")
 
-    # Which list of tasks should we run?
-    declare -r TASKLIST="${configdir}/${PROGRAM}.tasks"
-
     # A logfile for every cron script
     LOGFILE="${logdir}/${PROGRAM}_${NOW}.log"
 
     # Each "cronscript" may have a variables and a functions file
     # that we source
-    for what in variables functions; do
-        if [[ -f ${configdir}/${PROGRAM}.${what} ]]; then
-            . ${configdir}/${PROGRAM}.${what}
-        fi
-    done
+    _preparetasks ${PROGRAM}
 
     # Get rid of tempfiles at the end
     trap cleanup EXIT TERM HUP INT QUIT
@@ -234,92 +344,8 @@ function laststeps() {
     # Ensure the dir exists
     mkdir -p ${stagedir}
 
-    # This loop simply wants to be fed by a list of values (see below)
-    # made out of 5 columns.
-    # The first four are the array values for the stage function, the
-    # fifth tells us if we should background the stage call.
-    #
-    #  - FUNC - the function name to call
-    #  - ARGS - Possible arguments to hand to the function. Can be the empty string
-    #  - TIME - The timestamp name. Can be the empty string
-    #  - ERR  - if this is the string false, then the call will be surrounded by
-    #           set +e ... set -e calls, so errors in the function do not exit
-    #           the script. Can be the empty string, meaning true.
-    #  - BG   - Background the function stage?
-    #
-    # ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
-    #
-    # NOTE 1: There are special values for the first column (FUNC).
-    #         STATE   - do not call stage function, call the state
-    #                   function to update the public statefile "where is dinstall"
-    #         NOSTAGE - do not call stage function, call the command directly.
-    #         RMSTAGE - clean out the stages directory, and as such
-    #                   the recording what already ran in an earlier cronscript.
-    #                   Note: Only really makes sense at beginning of a tasks file,
-    #                   the stages directory gets cleared at successful exit anyways.
-    #                   RMSTAGE simply ensures that ALL of the crons tasks ALWAYS run.
-
-    # Note 2: If you want to hand an empty value to the stage function,
-    #         use the word "none" in the list below.
-    while read FUNC ARGS TIME ERR BACKGROUND; do
-        debug "FUNC: $FUNC ARGS: $ARGS TIME: $TIME ERR: $ERR BG: $BACKGROUND"
-
-        # Empty values in the value list are the string "none" (or the
-        # while read loop won't work). Here we ensure that variables that
-        # can be empty, are empty if the string none is set for them.
-        for var in ARGS TIME; do
-            if [[ ${!var} == none ]]; then
-                typeset ${var}=''
-            fi
-        done
-
-        # ERR/BACKGROUND are boolean for all but LOCK/UNLOCK, check that they are.
-        for var in ERR BACKGROUND; do
-            if [[ ${!var} != false ]] && [[ ${!var} != true ]]; then
-                if [[ ${FUNC} != LOCK ]] && [[ ${FUNC} != UNLOCK ]]; then
-                    error "Illegal value ${!var} for ${var} (should be true or false), line for function ${FUNC}"
-                fi
-            fi
-        done
-        case ${FUNC} in
-            STATE)
-                state ${ARGS}
-                ;;
-            NOSTAGE)
-                ${ARGS}
-                ;;
-            RMSTAGE)
-                # Make sure we remove our stage files, so all the
-                # actions will be done again.
-                rm -f ${stagedir}/*
-                ;;
-            LOCK)
-                # We are asked to set a lock, so try to get it.
-                # For this we redefine what the columns mean.
-                # ARGS: Name of the lockfile
-                # TIME: How long to wait for getting the (exclusive) lock
-                # ERR: shared == shared lock, may be hold more than once, exclusive == exclusive, only one.
-
-                lock ${ARGS} ${TIME} ${ERR}
-                ;;
-            UNLOCK)
-                unlock ${ARGS}
-                ;;
-            *)
-                GO=(
-                    FUNC=${FUNC}
-                    TIME=${TIME}
-                    ARGS=${ARGS}
-                    ERR=${ERR}
-                )
-                if [[ ${BACKGROUND} == true ]]; then
-                    stage $GO &
-                else
-                    stage $GO
-                fi
-                ;;
-        esac
-    done < <(grep -v '^#' ${TASKLIST} )
+    # Run all tasks
+    _runtasks ${PROGRAM}
 
     # we need to wait for the background processes before the end of the cron script
     wait
