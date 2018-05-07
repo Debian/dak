@@ -520,6 +520,7 @@ def do_new(upload, upload_copy, handler, session):
         print
         print "   Target:     {0}".format(upload.target_suite.suite_name)
         print "   Changed-By: {0}".format(upload.changes.changedby)
+        print "   Date:       {0}".format(upload.changes.date)
         print
 
         #if len(byhand) == 0 and len(missing) == 0:
