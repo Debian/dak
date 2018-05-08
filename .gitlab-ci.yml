@@ -1,13 +1,20 @@
 ---
+.template: &template
+  except:
+    - deploy@ftp-team/dak
+
 test stretch:
+  <<: *template
   image: debian:stretch
   script: debian/run-ci
 
 test buster:
+  <<: *template
   image: debian:buster
   script: debian/run-ci
 
 flake8:
+  <<: *template
   image: debian:9
   script:
     - apt-get update
