@@ -6,3 +6,11 @@ test stretch:
 test buster:
   image: debian:buster
   script: debian/run-ci
+
+flake8:
+  image: debian:9
+  script:
+    - apt-get update
+    - apt-get install -y flake8
+    - flake8
+  allow_failure: true
