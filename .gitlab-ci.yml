@@ -1,0 +1,8 @@
+---
+test stretch:
+  image: debian:stretch
+  script: debian/run-ci
+
+test buster:
+  image: debian:buster
+  script: debian/run-ci
