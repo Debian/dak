@@ -34,88 +34,6 @@ from tabulate import tabulate
 Options = None
 Logger = None
 
-def fetch(reason, query, args, session):
-    idList = []
-    for row in session.execute(query, args).fetchall():
-        (id, package, version, suite_name, architecture) = row
-        if Options['No-Action']:
-            print "Delete %s %s from %s architecture %s (%s, %d)" % \
-                (package, version, suite_name, architecture, reason, id)
-        else:
-            Logger.log([reason, package, version, suite_name, \
-	        architecture, id])
-        idList.append(id)
-    return idList
-
-def obsoleteAnyByAllAssociations(suite, session):
-    query = """
-        SELECT obsolete.id, package, obsolete.version, suite_name, arch_string
-            FROM obsolete_any_by_all_associations AS obsolete
-            JOIN architecture ON obsolete.architecture = architecture.id
-            JOIN suite ON obsolete.suite = suite.id
-            WHERE suite = :suite
-    """
-    return fetch('newer_all', query, { 'suite': suite }, session)
-
-def obsoleteAnyAssociations(suite, session):
-    query = """
-        SELECT obsolete.id, package, obsolete.version, suite_name, arch_string
-            FROM obsolete_any_associations AS obsolete
-            JOIN architecture ON obsolete.architecture = architecture.id
-            JOIN suite ON obsolete.suite = suite.id
-            WHERE suite = :suite
-    """
-    return fetch('newer_any', query, { 'suite': suite }, session)
-
-def obsoleteSrcAssociations(suite, session):
-    query = """
-        SELECT obsolete.id, source, obsolete.version, suite_name,
-	    'source' AS arch_string
-            FROM obsolete_src_associations AS obsolete
-            JOIN suite ON obsolete.suite = suite.id
-            WHERE suite = :suite
-    """
-    return fetch('old_and_unreferenced', query, { 'suite': suite }, session)
-
-def obsoleteAllAssociations(suite, session):
-    query = """
-        SELECT obsolete.id, package, obsolete.version, suite_name,
-	    'all' AS arch_string
-            FROM obsolete_all_associations AS obsolete
-            JOIN suite ON obsolete.suite = suite.id
-            WHERE suite = :suite
-    """
-    return fetch('old_and_unreferenced', query, { 'suite': suite }, session)
-
-def deleteAssociations(table, idList, session):
-    global Options
-    query = """
-        DELETE
-            FROM %s
-            WHERE id IN :idList
-    """ % table
-    if not idList or Options['No-Action']:
-        return
-    params = {'idList': tuple(idList)}
-    session.execute(query, params)
-
-def doDaDoDa(suite, session, ids_bin, ids_src):
-    # keep this part disabled because it is too dangerous
-    #idList = obsoleteAnyByAllAssociations(suite, session)
-    #deleteAssociations('bin_associations', idList, session)
-
-    idList = obsoleteAnyAssociations(suite, session)
-    ids_bin.update(idList)
-    deleteAssociations('bin_associations', idList, session)
-
-    idList = obsoleteSrcAssociations(suite, session)
-    ids_src.update(idList)
-    deleteAssociations('src_associations', idList, session)
-
-    idList = obsoleteAllAssociations(suite, session)
-    ids_bin.update(idList)
-    deleteAssociations('bin_associations', idList, session)
-
 
 def retrieve_associations(suites, session):
     return session.execute(text('''
@@ -293,6 +211,34 @@ SELECT
 ))
 
 
+def delete_associations_table(table, ids, session):
+    result = session.execute(text('''
+        DELETE
+            FROM {}
+            WHERE id = ANY(:assoc_ids)
+    '''.format(table)).params(
+        assoc_ids = list(ids),
+    ))
+
+    assert result.rowcount == len(ids), 'Rows deleted are not equal to deletion requests'
+
+
+def delete_associations(assocs, session):
+    ids_bin = set()
+    ids_src = set()
+
+    for e in assocs:
+        Logger.log(['newer', e.package, e.version, e.suite, e.arch, e.assoc_id])
+
+        if e.arch == 'source':
+            ids_src.add(e.assoc_id)
+        else:
+            ids_bin.add(e.assoc_id)
+
+    delete_associations_table('bin_associations', ids_bin, session)
+    delete_associations_table('src_associations', ids_src, session)
+
+
 def usage():
     print """Usage: dak dominate [OPTIONS]
 Remove obsolete source and binary associations from suites.
@@ -340,43 +286,12 @@ def main():
     if Options['No-Action']:
         headers = ('source package', 'source version', 'package', 'version', 'arch', 'suite', 'id')
         print(tabulate(assocs, headers, tablefmt="orgtbl"))
-
-    else:
-        ids_bin = set()
-        ids_src = set()
-
-        for suite in suites:
-            doDaDoDa(suite.suite_id, session, ids_bin, ids_src)
-
-        # List differences in selection algorithm
-        assocs_diff = []
-        for assoc in assocs:
-            if assoc['arch'] == 'source':
-                try:
-                    ids_src.remove(assoc['assoc_id'])
-                except KeyError:
-                    assocs_diff.append(assoc)
-            if assoc['arch'] != 'source':
-                try:
-                    ids_bin.remove(assoc['assoc_id'])
-                except KeyError:
-                    assocs_diff.append(assoc)
-
-        if assocs_diff:
-            print('additional removals:')
-            headers = ('source package', 'source version', 'package', 'version', 'arch', 'suite', 'id')
-            print(tabulate(assocs_diff, headers, tablefmt="orgtbl"))
-
-        if ids_bin or ids_src:
-            print('missing removals:')
-            headers = ('arch', 'id')
-            a = [('source', i) for i in sorted(ids_src)] + [('!source', i) for i in sorted(ids_bin)]
-            print(tabulate(a, headers, tablefmt="orgtbl"))
-
-    if Options['No-Action']:
         session.rollback()
+
     else:
+        delete_associations(assocs, session)
         session.commit()
+
     if Logger:
         Logger.close()
 
