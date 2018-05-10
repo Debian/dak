@@ -157,7 +157,7 @@ class ArchiveTransaction(object):
         source_query = session.query(DBSource).filter_by(source=source_name, version=source_version)
         source = source_query.filter(DBSource.suites.contains(suite)).first()
         if source is None:
-            if source_suites != True:
+            if source_suites and source_suites != True:
                 source_query = source_query.join(DBSource.suites) \
                     .filter(Suite.suite_id == source_suites.c.id)
             source = source_query.first()
