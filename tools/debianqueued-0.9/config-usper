@@ -43,7 +43,8 @@ $statusfile = "$incoming/status";
 $statusdelay = 30;
 
 # names of the keyring files
-@keyrings = ( "/srv/keyring.debian.org/keyrings/debian-keyring.gpg",
+@keyrings = ( "/srv/ftp-master.debian.org/dak/config/debian-common/keyrings/automatic-source-uploads.kbx",
+              "/srv/keyring.debian.org/keyrings/debian-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/debian-maintainers.gpg",
               "/srv/keyring.debian.org/keyrings/debian-nonupload.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-all-keyring.gpg",
