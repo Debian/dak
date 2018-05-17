@@ -20,39 +20,24 @@ if [[ ! -v DAK_INTEGRATION_TEST || ! -v DAK_ROOT ]]; then
   exit 1
 fi
 
-dak-setup() {
+test-setup() {
+
   local setupdir="${DAK_ROOT}/setup"
 
   export DAKBASE=$(mktemp -d)
   export DAKHOST=dak-master
 
-  (cd ${setupdir}; ./init_db)
-  if [[ ${PGUSER:-} != dak ]]; then
-    psql -c "GRANT dak TO \"${PGUSER}\""
-  fi
-  psql -f ${setupdir}/current_schema.sql -d projectb >/dev/null
-  unset PGDATABASE
-  (cd ${setupdir}; ./init_core)
-
-  mkdir ${DAKBASE}/etc ${DAKBASE}/bin ${DAKBASE}/keyrings ${DAKBASE}/tmp
-  ln -s ${DAK_ROOT}/templates ${DAKBASE}/
-
-  export DAK_CONFIG="${DAKBASE}/etc/dak.conf"
-  (cd ${setupdir}; ./init_minimal_conf) > ${DAK_CONFIG}
-  echo 'DB::Role "dak";' >> ${DAK_CONFIG}
+  ${setupdir}/dak-setup.sh
 
   export PATH="${DAKBASE}/bin:${PATH}"
-  ln -s ${DAK_ROOT}/dak/dak.py ${DAKBASE}/bin/dak
-
-  dak update-db --yes
-  dak init-dirs
+  export DAK_CONFIG="${DAKBASE}/etc/dak.conf"
 }
 
-dak-cleanup() {
+test-cleanup() {
   if [[ -v DAKBASE ]]; then
     rm -rf -- "${DAKBASE}"
   fi
 }
 
-trap dak-cleanup EXIT
-dak-setup
+trap test-cleanup EXIT
+test-setup
