@@ -2,14 +2,14 @@ Initialising a dak database schema
 ==================================
 
 The following packages are needed for the database:
- * postgresql-9.4 postgresql-client-9.4 postgresql-9.4-debversion
+ * postgresql-9.6 postgresql-client-9.6 postgresql-9.6-debversion
 and the following packages for dak itself:
  * python-psycopg2 python-sqlalchemy python-apt gnupg dpkg-dev lintian
    binutils-multiarch python-yaml less python-ldap python-pyrss2gen python-rrdtool
    symlinks python-debian python-debianbts
 
 (the schema assumes at least postgresql 9.1; ftpmaster in Debian currently uses
-the postgresql 9.4 version from Debian 8)
+the postgresql 9.6 version from Debian 9)
 
 The following roles are assumed to exist:
  * dak: database superuser: needs to be an actual user
@@ -23,47 +23,26 @@ Set up the dak user:
 # sudo addgroup ftpmaster
 # sudo adduser dak --disabled-login --ingroup ftpmaster --shell /bin/bash
 
-Create postgres roles and database:
-# sudo -u postgres ./init_db
-
 Set up the dak directory:
 # sudo mkdir /etc/dak
 # sudo mkdir /srv/dak
 # sudo chown dak:ftpmaster /srv/dak
 # sudo chmod 2775 /srv/dak
 
-Create a symlink to /srv/dak/dak.conf in /etc/dak
+Create a symlink to /srv/dak/etc/dak.conf in /etc/dak
 (we'll create the config file in a bit)
-# sudo ln -s /srv/dak/dak.conf /etc/dak/dak.conf
+# sudo ln -s /srv/dak/etc/dak.conf /etc/dak/dak.conf
 
-Become the dak user:
-# sudo -u dak -s -H
+This script does the rest of the work.  It uses the generic variables set in
+init_vars, which can be customized if needed.
+# setup/dak-setup.sh
 
-Import the schema.  We redirect STDOUT to /dev/null as otherwise it's
-impossible to see if something fails.
-# psql -1 -f current_schema.sql -d projectb >/dev/null
+The above script symlinks the dak.py script to /srv/dak/bin/dak, you should also
+update your PATH variable to be able to execute dak:
+# export PATH="/srv/dak/bin:${PATH}"
 
-Set up some core data in projectb to get started (read the init_vars file if
-you wish to customise various aspects):
-# ./init_core
-
-Create a minimal dak.conf
-# ./init_minimal_conf > /srv/dak/dak.conf
-
-Set up a symlink somewhere
-# mkdir ~dak/bin
-# ln -s /path/to/dak.py ~dak/bin/dak
-
-At this point, you should be able to test that the database schema is
-up-to-date
-# dak update-db
-
-Run dak init-dirs to set up the initial /srv/dak tree
-# dak init-dirs
-
-Copy the email templates into the /srv/dak tree.
-WARNING: Please check these templates over and customise as necessary
-# cp templates/* /srv/dak/templates/
+WARNING: Please check the templates in /srv/dak/templates over and customise
+as necessary
 
 Set up a private signing key: don't set a passphrase as dak will not
 pass one through to gpg.  Guard this key carefully!
