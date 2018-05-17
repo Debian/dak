@@ -52,7 +52,7 @@ maintainer_id_cache={}
 def get_or_set_maintainer_id (maintainer):
     global maintainer_id_cache
 
-    if maintainer_id_cache.has_key(maintainer):
+    if maintainer in maintainer_id_cache:
         return maintainer_id_cache[maintainer]
 
     if isinstance(maintainer, basestring):

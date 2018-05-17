@@ -124,7 +124,7 @@ def add_rss_item(status, msg, direction):
         pubdate = msg['Date']
     elif direction == "out":
         feed = status.feed_out
-        if msg.has_key('Leave-Reason'):
+        if 'Leave-Reason' in msg:
             title = "%s %s left NEW (%s)" % (msg['Source'], msg['Version'],
                                              msg['Leave-Reason'][0])
         else:
@@ -143,7 +143,7 @@ def add_rss_item(status, msg, direction):
             (msg['Source'], msg['Version'])
     guid = msg['Checksums-Sha256'][0]['sha256']
 
-    if msg.has_key('Processed-By'):
+    if 'Processed-By' in msg:
         author = msg['Processed-By']
     else:
         changedby = parseaddr(msg['Changed-By'])
@@ -169,16 +169,16 @@ def update_feeds(curqueue, status, settings):
     reason_log = os.path.join(settings.logdir, time.strftime("%Y-%m"))
 
     for (name, parsed) in curqueue.items():
-        if not status.queue.has_key(name):
+        if name not in status.queue:
             # new package
             add_rss_item(status, parsed, "in")
 
     for (name, parsed) in status.queue.items():
-        if not curqueue.has_key(name):
+        if name not in curqueue:
             # removed package, try to find out why
             if leave_reason is None:
                 leave_reason = parse_leave_reason(reason_log)
-            if leave_reason and leave_reason.has_key(name):
+            if leave_reason and name in leave_reason:
                 parsed['Leave-Reason'] = leave_reason[name][0]
                 parsed['Processed-By'] = leave_reason[name][1] + "@debian.org"
             add_rss_item(status, parsed, "out")

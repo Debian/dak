@@ -178,7 +178,7 @@ def get_upload_data(changesfn):
     uploader = re.sub(r'^\s*(\S.*)\s+<.*>',r'\1',uploader)
     with utils.open_file(changesfn) as f:
         fingerprint = SignedFile(f.read(), keyrings=get_active_keyring_paths(), require_signature=False).fingerprint
-    if Cnf.has_key("Show-Deferred::LinkPath"):
+    if "Show-Deferred::LinkPath" in Cnf:
         isnew = 0
         suites = get_suites_source_in(achanges['source'])
         if 'unstable' not in suites and 'experimental' not in suites:
@@ -215,7 +215,7 @@ def list_uploads(filelist, rrd_dir):
         print '<h1>Currently no deferred uploads to Debian</h1>'
     print footer()
     # machine readable summary
-    if Cnf.has_key("Show-Deferred::LinkPath"):
+    if "Show-Deferred::LinkPath" in Cnf:
         fn = os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp')
         f = open(fn,"w")
         try:
@@ -262,12 +262,14 @@ def init():
                  ('r',"rrd","Show-Deferred::Options::Rrd", "HasArg")]
     args = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
     for i in ["help"]:
-        if not Cnf.has_key("Show-Deferred::Options::%s" % (i)):
-            Cnf["Show-Deferred::Options::%s" % (i)] = ""
-    for i,j in [("DeferredQueue","--deferred-queue")]:
-        if not Cnf.has_key("Show-Deferred::%s" % (i)):
-            print >> sys.stderr, """Show-Deferred::%s is mandatory.
-  set via config file or command-line option %s"""%(i,j)
+        key = "Show-Deferred::Options::%s" % i
+        if key not in Cnf:
+            Cnf[key] = ""
+    for i, j in [("DeferredQueue", "--deferred-queue")]:
+        key = "Show-Deferred::%s" % i
+        if key not in Cnf:
+            print >>sys.stderr, """%s is mandatory.
+  set via config file or command-line option %s""" % (key, j)
 
     Options = Cnf.subtree("Show-Deferred::Options")
     if Options["help"]:
@@ -283,9 +285,9 @@ def main():
     if len(args)!=0:
         usage(1)
 
-    if Cnf.has_key("Show-Deferred::Options::Rrd"):
+    if "Show-Deferred::Options::Rrd" in Cnf:
         rrd_dir = Cnf["Show-Deferred::Options::Rrd"]
-    elif Cnf.has_key("Dir::Rrd"):
+    elif "Dir::Rrd" in Cnf:
         rrd_dir = Cnf["Dir::Rrd"]
     else:
         rrd_dir = None
@@ -297,7 +299,7 @@ def main():
     list_uploads(filelist, rrd_dir)
 
     available_changes = set(map(os.path.basename,filelist))
-    if Cnf.has_key("Show-Deferred::LinkPath"):
+    if "Show-Deferred::LinkPath" in Cnf:
         # remove dead links
         for r,d,f in os.walk(Cnf["Show-Deferred::LinkPath"]):
             for af in f:

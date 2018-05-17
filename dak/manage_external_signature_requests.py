@@ -55,8 +55,9 @@ def main ():
     cnf = Config()
 
     for i in ["Help"]:
-        if not cnf.has_key("Manage-External-Signature-Requests::Options::{}".format(i)):
-            cnf["Manage-External-Signature-Requests::Options::{}".format(i)] = ""
+        key = "Manage-External-Signature-Requests::Options::{}".format(i)
+        if key not in cnf:
+            cnf[key] = ""
 
     Arguments = [('h',"help","Manage-External-Signature-Requests::Options::Help")]
 

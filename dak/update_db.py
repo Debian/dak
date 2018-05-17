@@ -126,13 +126,13 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             # Build a connect string
-            if cnf.has_key("DB::Service"):
+            if "DB::Service" in cnf:
                 connect_str = "service=%s" % cnf["DB::Service"]
             else:
                 connect_str = "dbname=%s"% (cnf["DB::Name"])
-                if cnf.has_key("DB::Host") and cnf["DB::Host"] != '':
+                if "DB::Host" in cnf and cnf["DB::Host"] != '':
                     connect_str += " host=%s" % (cnf["DB::Host"])
-                if cnf.has_key("DB::Port") and cnf["DB::Port"] != '-1':
+                if "DB::Port" in cnf and cnf["DB::Port"] != '-1':
                     connect_str += " port=%d" % (int(cnf["DB::Port"]))
 
             self.db = psycopg2.connect(connect_str)
@@ -210,8 +210,9 @@ Updates dak's database schema to the lastest version. You should disable crontab
         arguments = [('h', "help", "Update-DB::Options::Help"),
                      ("y", "yes", "Update-DB::Options::Yes")]
         for i in [ "help" ]:
-            if not cnf.has_key("Update-DB::Options::%s" % (i)):
-                cnf["Update-DB::Options::%s" % (i)] = ""
+            key = "Update-DB::Options::%s" % i
+            if key not in cnf:
+                cnf[key] = ""
 
         arguments = apt_pkg.parse_commandline(cnf.Cnf, arguments, sys.argv)
 

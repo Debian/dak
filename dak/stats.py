@@ -109,7 +109,7 @@ def daily_install_stats():
         if action != "installing changes" and action != "installed":
             continue
         date = split[0][:8]
-        if not stats.has_key(date):
+        if date not in stats:
             stats[date] = {}
             stats[date]["packages"] = 0
             stats[date]["size"] = 0.0
@@ -203,7 +203,7 @@ def number_of_packages():
         arch_id = arch_ids[arch]
         output = output + arch.center(longest_arch)+" |"
         for suite_id in suite_id_list:
-            if suite_arches[suite_id].has_key(arch):
+            if arch in suite_arches[suite_id]:
                 count = "%d" % d[suite_id][arch_id]
             else:
                 count = "-"
@@ -390,8 +390,9 @@ def main ():
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Stats::Options::Help")]
     for i in [ "help" ]:
-        if not Cnf.has_key("Stats::Options::%s" % (i)):
-            Cnf["Stats::Options::%s" % (i)] = ""
+        key = "Stats::Options::%s" % i
+        if key not in Cnf:
+            Cnf[key] = ""
 
     args = apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 

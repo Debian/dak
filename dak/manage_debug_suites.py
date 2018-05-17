@@ -92,8 +92,9 @@ def main ():
     cnf = Config()
 
     for i in ["Help", "No-Action", "All"]:
-        if not cnf.has_key("Manage-Debug-Suites::Options::%s" % (i)):
-            cnf["Manage-Debug-Suites::Options::%s" % (i)] = ""
+        key = "Manage-Debug-Suites::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     Arguments = [('h',"help","Manage-Debug-Suites::Options::Help"),
                  ('n',"no-action","Manage-Debug-Suites::Options::No-Action"),

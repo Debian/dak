@@ -71,8 +71,9 @@ def main():
                  ('s',"source","Make-Maintainers::Options::Source"),
                  ('p',"print","Make-Maintainers::Options::Print")]
     for i in ["Help", "Source", "Print" ]:
-        if not cnf.has_key("Make-Maintainers::Options::%s" % (i)):
-            cnf["Make-Maintainers::Options::%s" % (i)] = ""
+        key = "Make-Maintainers::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     extra_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Make-Maintainers::Options")

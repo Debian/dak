@@ -173,7 +173,7 @@ def flush_orphans ():
         for i in (files.keys(), dsc_files.keys(), [changes_filename]):
             keys.extend(i)
         for key in keys:
-            if all_files.has_key(key):
+            if key in all_files:
                 if Options["Verbose"]:
                     print "Skipping, has parents, '%s'." % (key)
                 del all_files[key]
@@ -195,9 +195,10 @@ def main ():
     cnf = Config()
 
     for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
-        if not cnf.has_key("Clean-Queues::Options::%s" % (i)):
-            cnf["Clean-Queues::Options::%s" % (i)] = ""
-    if not cnf.has_key("Clean-Queues::Options::Days"):
+        key = "Clean-Queues::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
+    if "Clean-Queues::Options::Days" not in cnf:
         cnf["Clean-Queues::Options::Days"] = "14"
 
     Arguments = [('h',"help","Clean-Queues::Options::Help"),

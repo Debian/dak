@@ -102,8 +102,9 @@ def main ():
     cnf = Config()
     Arguments = [('h',"help","Make-Overrides::Options::Help")]
     for i in [ "help" ]:
-        if not cnf.has_key("Make-Overrides::Options::%s" % (i)):
-            cnf["Make-Overrides::Options::%s" % (i)] = ""
+        key = "Make-Overrides::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
     apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Make-Overrides::Options")
     if Options["Help"]:

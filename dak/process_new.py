@@ -699,7 +699,7 @@ def do_pkg(upload, session):
     group = cnf.get('Dinstall::UnprivGroup') or None
 
     #bcc = "X-DAK: dak process-new"
-    #if cnf.has_key("Dinstall::Bcc"):
+    #if "Dinstall::Bcc" in cnf:
     #    u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
     #else:
     #    u.Subst["__BCC__"] = bcc
@@ -806,8 +806,9 @@ def main():
     changes_files = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
 
     for i in ["automatic", "no-binaries", "comments", "help", "manual-reject", "no-action", "version", "trainee"]:
-        if not cnf.has_key("Process-New::Options::%s" % (i)):
-            cnf["Process-New::Options::%s" % (i)] = ""
+        key = "Process-New::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     queue_name = cnf.get('Process-New::Options::Queue', 'new')
     new_queue = session.query(PolicyQueue).filter_by(queue_name=queue_name).one()

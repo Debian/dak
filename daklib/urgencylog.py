@@ -48,7 +48,7 @@ class UrgencyLog(object):
             self.timestamp = time.strftime("%Y%m%d%H%M%S")
 
             cnf = Config()
-            if cnf.has_key("Dir::UrgencyLog"):
+            if "Dir::UrgencyLog" in cnf:
                 # Create the log directory if it doesn't exist
                 self.log_dir = cnf["Dir::UrgencyLog"]
 

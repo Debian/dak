@@ -2142,7 +2142,7 @@ class DBConn(object):
 
         if not getattr(self, 'initialised', False):
             self.initialised = True
-            self.debug = kwargs.has_key('debug')
+            self.debug = 'debug' in kwargs
             self.__createconn()
 
     def __setuptables(self):
@@ -2495,24 +2495,24 @@ class DBConn(object):
     def __createconn(self):
         from config import Config
         cnf = Config()
-        if cnf.has_key("DB::Service"):
+        if "DB::Service" in cnf:
             connstr = "postgresql://service=%s" % cnf["DB::Service"]
-        elif cnf.has_key("DB::Host"):
+        elif "DB::Host" in cnf:
             # TCP/IP
             connstr = "postgresql://%s" % cnf["DB::Host"]
-            if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
+            if "DB::Port" in cnf and cnf["DB::Port"] != "-1":
                 connstr += ":%s" % cnf["DB::Port"]
             connstr += "/%s" % cnf["DB::Name"]
         else:
             # Unix Socket
             connstr = "postgresql:///%s" % cnf["DB::Name"]
-            if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
+            if "DB::Port" in cnf and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 
         engine_args = { 'echo': self.debug }
-        if cnf.has_key('DB::PoolSize'):
+        if 'DB::PoolSize' in cnf:
             engine_args['pool_size'] = int(cnf['DB::PoolSize'])
-        if cnf.has_key('DB::MaxOverflow'):
+        if 'DB::MaxOverflow' in cnf:
             engine_args['max_overflow'] = int(cnf['DB::MaxOverflow'])
         if cnf.get('DB::Unicode') == 'false':
             engine_args['use_native_unicode'] = False

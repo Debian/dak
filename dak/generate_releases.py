@@ -452,8 +452,9 @@ def main ():
     cnf = Config()
 
     for i in ["Help", "Suite", "Force", "Quiet"]:
-        if not cnf.has_key("Generate-Releases::Options::%s" % (i)):
-            cnf["Generate-Releases::Options::%s" % (i)] = ""
+        key = "Generate-Releases::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     Arguments = [('h',"help","Generate-Releases::Options::Help"),
                  ('a','archive','Generate-Releases::Options::Archive','HasArg'),

@@ -80,8 +80,9 @@ def main ():
     for i in [ "architecture", "binarytype", "component", "format",
                "greaterorequal", "greaterthan", "regex", "suite",
                "source-and-binary", "help" ]:
-        if not cnf.has_key("Ls::Options::%s" % (i)):
-            cnf["Ls::Options::%s" % (i)] = ""
+        key = "Ls::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     packages = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Ls::Options")

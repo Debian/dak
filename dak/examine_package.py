@@ -426,7 +426,7 @@ def output_deb_info(suite, filename, packagename, session = None):
     if control == '':
         return formatted_text("no control info")
     to_print = ""
-    if not package_relations.has_key(packagename):
+    if packagename not in package_relations:
         package_relations[packagename] = {}
     for key in control_keys :
         if key == 'Pre-Depends':
@@ -507,7 +507,7 @@ def get_copyright (deb_filename):
     copyrightmd5 = md5.md5(cright).hexdigest()
 
     res = ""
-    if printed.copyrights.has_key(copyrightmd5) and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, os.path.basename(deb_filename)):
+    if copyrightmd5 in printed.copyrights and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, os.path.basename(deb_filename)):
         res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
                                (printed.copyrights[copyrightmd5]))
     else:
@@ -623,8 +623,9 @@ def main ():
                  ('H',"html-output","Examine-Package::Options::Html-Output"),
                 ]
     for i in [ "Help", "Html-Output", "partial-html" ]:
-        if not Cnf.has_key("Examine-Package::Options::%s" % (i)):
-            Cnf["Examine-Package::Options::%s" % (i)] = ""
+        key = "Examine-Package::Options::%s" % i
+        if key not in Cnf:
+            Cnf[key] = ""
 
     args = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
     Options = Cnf.subtree("Examine-Package::Options")

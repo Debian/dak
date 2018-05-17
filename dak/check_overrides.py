@@ -148,10 +148,10 @@ SELECT s.source FROM source s
     if otype == "dsc":
         for i in q.fetchall():
             package = i[0]
-            if src_packages.has_key(package):
+            if package in src_packages:
                 src_packages[package] = 1
             else:
-                if blacklist.has_key(package):
+                if package in blacklist:
                     utils.warn("%s in incoming, not touching" % package)
                     continue
                 Logger.log(["removing unused override", osuite, component,
@@ -170,7 +170,7 @@ SELECT s.source FROM source s
                             {'suite_id': osuite_id, 'component_id': component_id})
         for i in q.fetchall():
             package = i[0]
-            if not src_packages.has_key(package) or src_packages[package]:
+            if package not in src_packages or src_packages[package]:
                 continue
             src_packages[package] = 1
 
@@ -202,7 +202,7 @@ SELECT s.source FROM source s
                                  'component_id': component_id, 'type_id': type_id})
             for i in q.fetchall():
                 package = i[0]
-                if not src_packages.has_key(package) or src_packages[package]:
+                if package not in src_packages or src_packages[package]:
                     if i[4] and (i[1] != i[4] or i[2] != i[5] or i[3] != i[6]):
                         Logger.log(["syncing override", osuite, component,
                             otype, package, "source", sections[i[5]], i[6], "source", sections[i[2]], i[3]])
@@ -240,10 +240,10 @@ SELECT s.source FROM source s
     else: # binary override
         for i in q.fetchall():
             package = i[0]
-            if packages.has_key(package):
+            if package in packages:
                 packages[package] = 1
             else:
-                if blacklist.has_key(package):
+                if package in blacklist:
                     utils.warn("%s in incoming, not touching" % package)
                     continue
                 Logger.log(["removing unused override", osuite, component,
@@ -274,7 +274,7 @@ SELECT s.source FROM source s
                                   'component_id': component_id, 'type_id': type_id})
             for i in q.fetchall():
                 package = i[0]
-                if not packages.has_key(package) or packages[package]:
+                if package not in packages or packages[package]:
                     if i[4] and (i[1] != i[4] or i[2] != i[5] or i[3] != i[6]):
                         Logger.log(["syncing override", osuite, component,
                             otype, package, priorities[i[4]], sections[i[5]],
@@ -324,8 +324,9 @@ def main ():
     Arguments = [('h',"help","Check-Overrides::Options::Help"),
                  ('n',"no-action", "Check-Overrides::Options::No-Action")]
     for i in [ "help", "no-action" ]:
-        if not cnf.has_key("Check-Overrides::Options::%s" % (i)):
-            cnf["Check-Overrides::Options::%s" % (i)] = ""
+        key = "Check-Overrides::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
     apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Check-Overrides::Options")
 

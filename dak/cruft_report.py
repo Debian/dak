@@ -68,7 +68,7 @@ Check for obsolete or duplicated packages.
 
 def add_nbs(nbs_d, source, version, package, suite_id, session):
     # Ensure the package is still in the suite (someone may have already removed it)
-    if no_longer_in_suite.has_key(package):
+    if package in no_longer_in_suite:
         return
     else:
         q = session.execute("""SELECT b.id FROM binaries b, bin_associations ba
@@ -105,7 +105,7 @@ def do_anais(architecture, binaries_list, source, session):
         for i in ql:
             arch = i[0]
             version = i[1]
-            if architectures.has_key(arch):
+            if arch in architectures:
                 versions.append(version)
         versions.sort(apt_pkg.version_compare)
         if versions:
@@ -117,7 +117,7 @@ def do_anais(architecture, binaries_list, source, session):
         for i in ql:
             arch = i[0]
             version = i[1]
-            if not architectures.has_key(arch):
+            if arch not in architectures:
                 versions_d.setdefault(version, [])
                 versions_d[version].append(arch)
 
@@ -508,15 +508,16 @@ def main ():
                  ('s',"suite","Cruft-Report::Options::Suite","HasArg"),
                  ('w',"wanna-build-dump","Cruft-Report::Options::Wanna-Build-Dump","HasArg")]
     for i in [ "help", "Rdep-Check" ]:
-        if not cnf.has_key("Cruft-Report::Options::%s" % (i)):
-            cnf["Cruft-Report::Options::%s" % (i)] = ""
+        key = "Cruft-Report::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     cnf["Cruft-Report::Options::Suite"] = cnf.get("Dinstall::DefaultSuite", "unstable")
 
-    if not cnf.has_key("Cruft-Report::Options::Mode"):
+    if "Cruft-Report::Options::Mode" not in cnf:
         cnf["Cruft-Report::Options::Mode"] = "daily"
 
-    if not cnf.has_key("Cruft-Report::Options::Wanna-Build-Dump"):
+    if "Cruft-Report::Options::Wanna-Build-Dump" not in cnf:
         cnf["Cruft-Report::Options::Wanna-Build-Dump"] = "/srv/ftp-master.debian.org/scripts/nfu"
 
     apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
@@ -591,7 +592,7 @@ def main ():
                 if "bnb" in checks:
                     # Check for binaries not built on any architecture.
                     for binary in binaries_list:
-                        if not bins_in_suite.has_key(binary):
+                        if binary not in bins_in_suite:
                             bin_not_built.setdefault(source, {})
                             bin_not_built[source][binary] = ""
 
@@ -632,7 +633,7 @@ def main ():
                     version = Packages.section.find('Version')
                     if source == "":
                         source = package
-                    if bin2source.has_key(package) and \
+                    if package in bin2source and \
                            apt_pkg.version_compare(version, bin2source[package]["version"]) > 0:
                         bin2source[package]["version"] = version
                         bin2source[package]["source"] = source
@@ -644,7 +645,7 @@ def main ():
                         m = re_extract_src_version.match(source)
                         source = m.group(1)
                         version = m.group(2)
-                    if not bin_pkgs.has_key(package):
+                    if package not in bin_pkgs:
                         nbs.setdefault(source,{})
                         nbs[source].setdefault(package, {})
                         nbs[source][package][version] = ""

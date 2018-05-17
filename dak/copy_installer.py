@@ -43,8 +43,9 @@ def main():
             ('n', "no-action",   "Copy-Installer::Options::No-Action"),
             ]
     for option in [ "help", "source", "destination", "no-action" ]:
-        if not cnf.has_key("Copy-Installer::Options::%s" % (option)):
-            cnf["Copy-Installer::Options::%s" % (option)] = ""
+        key = "Copy-Installer::Options::%s" % option
+        if key not in cnf:
+            cnf[key] = ""
     extra_arguments = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Copy-Installer::Options")
 

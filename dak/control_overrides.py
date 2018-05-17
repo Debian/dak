@@ -161,27 +161,27 @@ def process_file(file, suite, component, otype, mode, action, session):
                 c_error += 1
                 continue
 
-        if not section_cache.has_key(section):
+        if section not in section_cache:
             utils.warn("'%s' is not a valid section. ['%s' in suite %s, component %s]." % (section, package, suite, component))
             c_error += 1
             continue
 
         section_id = section_cache[section]
 
-        if not priority_cache.has_key(priority):
+        if priority not in priority_cache:
             utils.warn("'%s' is not a valid priority. ['%s' in suite %s, component %s]." % (priority, package, suite, component))
             c_error += 1
             continue
 
         priority_id = priority_cache[priority]
 
-        if new.has_key(package):
+        if package in new:
             utils.warn("Can't insert duplicate entry for '%s'; ignoring all but the first. [suite %s, component %s]" % (package, suite, component))
             c_error += 1
             continue
         new[package] = ""
 
-        if original.has_key(package):
+        if package in original:
             (old_priority_id, old_section_id, old_maintainer_override, old_priority, old_section) = original[package]
             if mode == "add" or old_priority_id == priority_id and \
                old_section_id == section_id and \
@@ -236,7 +236,7 @@ def process_file(file, suite, component, otype, mode, action, session):
     if mode == "set":
         # Delete any packages which were removed
         for package in original.keys():
-            if not new.has_key(package):
+            if package not in new:
                 if action:
                     session.execute("""DELETE FROM override
                                        WHERE suite = :suiteid AND component = :componentid
@@ -311,13 +311,14 @@ def main ():
 
     # Default arguments
     for i in [ "add", "help", "list", "quiet", "set", "change", "no-action" ]:
-        if not cnf.has_key("Control-Overrides::Options::%s" % (i)):
-            cnf["Control-Overrides::Options::%s" % (i)] = ""
-    if not cnf.has_key("Control-Overrides::Options::Component"):
+        key = "Control-Overrides::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
+    if "Control-Overrides::Options::Component" not in cnf:
         cnf["Control-Overrides::Options::Component"] = "main"
-    if not cnf.has_key("Control-Overrides::Options::Suite"):
+    if "Control-Overrides::Options::Suite" not in cnf:
         cnf["Control-Overrides::Options::Suite"] = "unstable"
-    if not cnf.has_key("Control-Overrides::Options::Type"):
+    if "Control-Overrides::Options::Type" not in cnf:
         cnf["Control-Overrides::Options::Type"] = "deb"
 
     file_list = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)

@@ -89,9 +89,10 @@ def main():
                 ]
 
     for i in [ "help", "report-changes", "generate-users",
-	    "import-ldap-users", "list-uids", "no-action" ]:
-        if not cnf.has_key("Import-Keyring::Options::%s" % (i)):
-            cnf["Import-Keyring::Options::%s" % (i)] = ""
+            "import-ldap-users", "list-uids", "no-action" ]:
+        key = "Import-Keyring::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     keyring_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 

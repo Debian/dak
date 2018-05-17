@@ -128,8 +128,9 @@ def main ():
     cnf = Config()
 
     for i in ["Help", "No-Action", "All"]:
-        if not cnf.has_key("Manage-Build-Queues::Options::%s" % (i)):
-            cnf["Manage-Build-Queues::Options::%s" % (i)] = ""
+        key = "Manage-Build-Queues::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     Arguments = [('h',"help","Manage-Build-Queues::Options::Help"),
                  ('n',"no-action","Manage-Build-Queues::Options::No-Action"),

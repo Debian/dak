@@ -159,7 +159,7 @@ def main():
 
     for arg in arguments:
         opt = "BtsCategorize::Options::%s" % arg[1]
-        if not Cnf.has_key(opt):
+        if opt not in Cnf:
             Cnf[opt] = ""
 
     packages = apt_pkg.parse_commandline(Cnf, arguments, sys.argv)
