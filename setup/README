@@ -26,11 +26,9 @@ Set up the dak user:
 Set up the dak directory:
 # sudo mkdir /etc/dak
 # sudo mkdir /srv/dak
-# sudo chown dak:ftpmaster /srv/dak
-# sudo chmod 2775 /srv/dak
 
 Create a symlink to /srv/dak/etc/dak.conf in /etc/dak
-(we'll create the config file in a bit)
+(The actual file will be created by the setup script)
 # sudo ln -s /srv/dak/etc/dak.conf /etc/dak/dak.conf
 
 This script does the rest of the work.  It uses the generic variables set in

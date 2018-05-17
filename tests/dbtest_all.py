@@ -4,6 +4,7 @@
 import os
 import unittest
 
+
 def suite():
     suite = unittest.TestSuite()
     for _, _, files in os.walk('.'):
@@ -11,6 +12,7 @@ def suite():
             tests = unittest.defaultTestLoader.loadTestsFromName(name[:-3])
             suite.addTests(tests)
     return suite
+
 
 def is_test(filename):
     return filename.startswith('dbtest_') and filename.endswith('.py')

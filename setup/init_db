@@ -3,14 +3,16 @@
 set -e
 set -u
 
-psql <<EOT
+. ./init_vars
+
+psql -d postgres <<EOT
   CREATE USER dak CREATEROLE;
   CREATE ROLE ftpmaster WITH ROLE dak;
   CREATE ROLE ftpteam WITH ROLE ftpmaster;
   CREATE ROLE ftptrainee WITH ROLE ftpmaster, ftpteam;
 
-  CREATE DATABASE projectb WITH OWNER dak TEMPLATE template0 ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C';
-  \c projectb
+  CREATE DATABASE ${PGDATABASE} WITH OWNER dak TEMPLATE template0 ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C';
+  \c ${PGDATABASE}
   CREATE EXTENSION IF NOT EXISTS plpgsql;
   CREATE EXTENSION IF NOT EXISTS debversion;
 EOT

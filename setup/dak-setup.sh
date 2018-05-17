@@ -26,9 +26,9 @@ dak-setup() {
   # This script can be used both for the integration tests and for actual
   # creation of a system dak. This is governed by the DAK_INTEGRATION_TEST var.
   if [[ ! -v DAK_INTEGRATION_TEST ]]; then
-    PG_CMD="sudo -u postgres"
-    SYS_CMD="sudo"
-    USER_CMD="sudo -u dak -s -H"
+    PG_CMD="sudo -E -u postgres"
+    SYS_CMD="sudo -E"
+    USER_CMD="sudo -E -u dak -s -H"
   else
     PG_CMD=""
     SYS_CMD=""
@@ -38,6 +38,15 @@ dak-setup() {
   # Get default values from init_vars.
   # This sets the DAKBASE variable in case it didn't have a value.
   . ${setupdir}/init_vars
+
+  # Ensure that DAKBASE exists
+  $SYS_CMD mkdir -p ${DAKBASE}
+
+  # Ensure the right permissions when not running tests
+  if [[ ! -v DAK_INTEGRATION_TEST ]]; then
+    $SYS_CMD chown dak:ftpmaster ${DAKBASE}
+    $SYS_CMD chmod 2775 ${DAKBASE}
+  fi
 
   # When setting up the system DB, this needs to be run as postgres
   (cd ${setupdir}; $PG_CMD ./init_db)
@@ -56,10 +65,9 @@ dak-setup() {
 
   # Import the schema.  We redirect STDOUT to /dev/null as otherwise it's
   # impossible to see if something fails.
-  $USER_CMD psql -f ${setupdir}/current_schema.sql -d projectb >/dev/null
-  unset PGDATABASE
+  $USER_CMD psql -f ${setupdir}/current_schema.sql -d ${PGDATABASE} >/dev/null
 
-  # Set up some core data in projectb to get started
+  # Set up some core data in PGDATABASE to get started
   (cd ${setupdir}; $USER_CMD ./init_core)
 
   # Create a minimal dak.conf

@@ -7,7 +7,9 @@ from daklib.dbconn import Uid
 import time
 import unittest
 
+
 class TimestampTestCase(DBDakTestCase):
+
     """
     TimestampTestCase checks that the timestamps created and modified are
     working correctly.

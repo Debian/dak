@@ -26,6 +26,7 @@ test-setup() {
 
   export DAKBASE=$(mktemp -d)
   export DAKHOST=dak-master
+  export PGDATABASE=projectb
 
   ${setupdir}/dak-setup.sh
 

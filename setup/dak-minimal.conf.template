@@ -5,7 +5,7 @@ Common
 
 DB
 {
-  Name "projectb";
+  Name "__PGDATABASE__";
   // PoolSize should be at least ThreadCount + 1
   PoolSize 5;
   // MaxOverflow shouldn't exceed postgresql.conf's max_connections - PoolSize

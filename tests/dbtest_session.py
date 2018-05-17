@@ -9,7 +9,9 @@ from sqlalchemy.exc import InvalidRequestError
 import time
 import unittest
 
+
 class SessionTestCase(DBDakTestCase):
+
     """
     This TestCase checks the behaviour of SQLAlchemy's session object. It should
     make sure the SQLAlchemy always works as we expect it. And it might help

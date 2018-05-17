@@ -2,4 +2,7 @@
 
 . ./init_vars
 
-sed -e "s@__DAKBASE__@${DAKBASE}@" -e "s@__DAKFQDN__@${DAKFQDN}@" dak-minimal.conf.template
+sed -e "s@__DAKBASE__@${DAKBASE}@" \
+    -e "s@__DAKFQDN__@${DAKFQDN}@" \
+    -e "s@__PGDATABASE__@${PGDATABASE}@" \
+    dak-minimal.conf.template
