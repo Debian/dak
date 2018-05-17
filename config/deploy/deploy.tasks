@@ -1,4 +1,5 @@
 # FUNC                 ARGS                       TIME           ERR       BG
+LOCK                   /run/reboot-lock           0              shared    false
 LOCK                   DEPLOY                     120            exclusive false
 RMSTAGE                none                       none           true      false
 fetch_updates          none                       none           true      false

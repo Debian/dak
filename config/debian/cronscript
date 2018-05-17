@@ -304,16 +304,6 @@ function laststeps() {
 }
 
 (
-    LOCKFREE=0
-    flock --shared --nonblock 42 || LOCKFREE=1
-
-    # Did we get the lock? (It's shared, so usually we will. But DSA
-    # can take an exclusive one in preparation for a reboot)
-    if [[ ${LOCKFREE} -gt 0 ]]; then
-        echo "Couldn't get (shared) reboot lock"
-        laststeps 1
-    fi
-
     # Where we store lockfile filehandles
     declare -A LOCKFD
 
@@ -361,6 +351,4 @@ function laststeps() {
     log "Cron script successful, all done"
 
     laststeps 0
-
-# And end the reboot-locked part
-) 42</var/run/reboot-lock
+)
