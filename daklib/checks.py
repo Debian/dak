@@ -833,6 +833,22 @@ class NoSourceOnlyCheck(Check):
         return True
 
 
+class NewOverrideCheck(Check):
+    """Override NEW requirement
+    """
+    def check(self, upload):
+        if not upload.new:
+            return True
+
+        new_override_keys = Config().value_list('Dinstall::NewOverrideKeys')
+        changes = upload.changes
+
+        if changes.primary_fingerprint in new_override_keys:
+            upload.new = False
+
+        return True
+
+
 class ArchAllBinNMUCheck(Check):
     """Check for arch:all binNMUs"""
 

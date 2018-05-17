@@ -1022,6 +1022,7 @@ class ArchiveUpload(object):
             for chk in (
                     checks.TransitionCheck,
                     checks.ACLCheck,
+                    checks.NewOverrideCheck,
                     checks.NoSourceOnlyCheck,
                     checks.LintianCheck,
                     ):
