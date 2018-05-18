@@ -21,7 +21,6 @@
 
 import apt_pkg
 import os
-import re
 import tempfile
 
 from daklib.config import Config

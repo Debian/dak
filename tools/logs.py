@@ -4,7 +4,7 @@
 
 
 import os,re,datetime, sys
-import tempfile, time
+import tempfile
 
 ITEMS_TO_KEEP = 20
 CACHE_FILE = '/srv/ftp-master.debian.org/misc/dinstall_time_cache'

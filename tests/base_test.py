@@ -1,7 +1,6 @@
 import os
 import sys
 import unittest
-import warnings
 
 from os.path import abspath, dirname, join
 

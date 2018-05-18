@@ -6,7 +6,7 @@ import unittest
 
 from daklib.gpg import GpgException
 from daklib.utils import parse_changes, check_dsc_files, build_file_list
-from daklib.dak_exceptions import InvalidDscError, ParseChangesError
+from daklib.dak_exceptions import ParseChangesError
 
 class ParseChangesTestCase(DakTestCase):
     def assertParse(self, filename, *args):

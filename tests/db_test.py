@@ -4,11 +4,9 @@ from daklib.config import Config
 from daklib.dbconn import *
 
 from sqlalchemy import create_engine, func, __version__
-from sqlalchemy.exc import SADeprecationWarning
 from sqlalchemy.schema import DDL
 
 import pickle
-import warnings
 
 all_tables = ['architecture', 'archive', 'bin_associations', 'bin_contents',
     'binaries', 'binary_acl', 'binary_acl_map', 'build_queue', 'build_queue_files',

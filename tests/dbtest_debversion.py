@@ -2,7 +2,7 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import DBConn, DebVersion
+from daklib.dbconn import DebVersion
 
 from sqlalchemy import Table, Column, Integer, func
 from sqlalchemy.orm import mapper

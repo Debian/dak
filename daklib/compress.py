@@ -18,12 +18,9 @@
 Helper methods to deal with (de)compressing files
 """
 
-import daklib.config
-
 import os
 import shutil
 import subprocess
-import tempfile
 
 def decompress_xz(input, output):
     subprocess.check_call(["xz", "--decompress"], stdin=input, stdout=output)

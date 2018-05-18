@@ -17,7 +17,6 @@
 """Transactions for filesystem actions
 """
 
-import errno
 import os
 import shutil
 

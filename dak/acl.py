@@ -18,12 +18,9 @@
 
 from __future__ import print_function
 
-import apt_pkg
 import os
-import sqlalchemy as sql
 import sys
 
-from daklib.config import Config
 from daklib.dbconn import DBConn, Fingerprint, Keyring, Uid, ACL
 
 def usage():

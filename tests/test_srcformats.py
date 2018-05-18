@@ -4,7 +4,6 @@ from base_test import DakTestCase
 
 from daklib import srcformats
 from collections import defaultdict
-from daklib.formats import parse_format
 from daklib.dak_exceptions import UnknownFormatError
 
 class SourceFormatTestCase(DakTestCase):
