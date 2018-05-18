@@ -6,7 +6,6 @@ from daklib.dbconn import *
 from daklib.contents import BinaryContentsWriter, BinaryContentsScanner, \
     UnpackedSource, SourceContentsScanner, SourceContentsWriter
 
-from os.path import normpath
 from sqlalchemy.exc import FlushError, IntegrityError
 from subprocess import CalledProcessError
 import unittest

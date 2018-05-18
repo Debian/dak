@@ -2,7 +2,7 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import DBConn, Uid
+from daklib.dbconn import Uid
 
 import time
 import unittest

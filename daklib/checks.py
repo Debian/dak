@@ -37,7 +37,6 @@ import apt_inst
 import apt_pkg
 from apt_pkg import version_compare
 import datetime
-import errno
 import os
 import subprocess
 import textwrap

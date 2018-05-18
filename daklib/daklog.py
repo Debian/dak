@@ -26,7 +26,6 @@ Logging functions
 
 import fcntl
 import os
-import pwd
 import time
 import sys
 import utils

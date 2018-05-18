@@ -2,7 +2,7 @@
 
 from db_test import DBDakTestCase
 
-from daklib.dbconn import DBConn, MetadataKey, BinaryMetadata, SourceMetadata
+from daklib.dbconn import MetadataKey, BinaryMetadata, SourceMetadata
 
 import unittest
 

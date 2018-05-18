@@ -17,7 +17,7 @@
 """module to process policy queue uploads"""
 
 from .config import Config
-from .dbconn import BinaryMetadata, Component, MetadataKey, Override, OverrideType, Suite, get_mapped_component, get_mapped_component_name
+from .dbconn import Component, Override, OverrideType, Suite, get_mapped_component, get_mapped_component_name
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
 from .packagelist import PackageList
@@ -26,7 +26,6 @@ import daklib.utils as utils
 import errno
 import os
 import shutil
-import tempfile
 
 class UploadCopy(object):
     """export a policy queue upload

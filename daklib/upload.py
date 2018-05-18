@@ -25,7 +25,6 @@ import apt_inst
 import apt_pkg
 import errno
 import os
-import re
 
 from daklib.gpg import SignedFile
 from daklib.regexes import *

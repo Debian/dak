@@ -18,7 +18,7 @@
 
 from base_test import DakTestCase
 import unittest
-from daklib.packagelist import PackageList, InvalidSource
+from daklib.packagelist import PackageList
 
 class FakeArchitecture(object):
     def __init__(self, name):

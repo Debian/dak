@@ -21,7 +21,6 @@
 
 import apt_pkg
 import datetime
-import errno
 import fcntl
 import os
 import select

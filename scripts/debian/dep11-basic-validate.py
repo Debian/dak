@@ -20,7 +20,7 @@ import sys
 import yaml
 import gzip
 import lzma
-from voluptuous import Schema, Required, All, Any, Length, Range, Match, Url
+from voluptuous import Schema, Required, All, Length,  Match, Url
 from optparse import OptionParser
 import multiprocessing as mp
 

@@ -28,15 +28,11 @@ Changes class for dak
 ###############################################################################
 
 import os
-import stat
-
 import datetime
-from cPickle import Unpickler, Pickler
-from errno import EPERM
 
 from apt_pkg import TagSection
 
-from utils import open_file, fubar, poolify, deb_extract_control
+from utils import open_file,  poolify, deb_extract_control
 from config import *
 from dbconn import *
 
