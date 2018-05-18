@@ -12,5 +12,8 @@ base=/srv/${functionname}
 masterdir=${base}/dak/
 export configdir=${configdir:-${masterdir}/config/${confpart}/}
 
+# Lock for deploying new code - does not use the pre-defined lockdir!
+LOCK_DEPLOY="${base}/lock/deploy"
+
 # And get all the tons of other variables
 source ${configdir}/../${confpart}/vars

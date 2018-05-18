@@ -82,4 +82,4 @@ declare -r LOCK_CHANGELOG="$lockdir/changelog.lock"
 declare -r LOCK_STOP="${lockdir}/archive.stop"
 
 # Lock for deploying new code
-declare -r LOCK_DEPLOY="${lockdir}/deploy"
+declare -r LOCK_DEPLOY=${LOCK_DEPLOY:-"${lockdir}/deploy"}
