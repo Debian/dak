@@ -1,6 +1,6 @@
 # FUNC                 ARGS                       TIME                       ERR       BG
+INCLUDE                lock                       none                       true      false
 STATE                  startup                    none                       false     false
-LOCK                   DEPLOY                     600                        shared    false
 LOCK                   DAILY                      3600                       exclusive false
 RMSTAGE                none                       none                       false     false
 NOSTAGE                startup                    none                       false     false

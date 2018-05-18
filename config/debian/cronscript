@@ -212,13 +212,20 @@ function lock() {
         exit 21
     fi
 
-    # Prepend LOCK_ to lock name to get to variable name,
-    # kind of namespace
-    local lvar="LOCK_${LOCK}"
+    local LOCKFILE=
+
+    if [[ $LOCK == /* ]]; then
+        LOCKFILE=${LOCK}
+    else
+        # Prepend LOCK_ to lock name to get to variable name,
+        # kind of namespace
+        local lvar="LOCK_${LOCK}"
+        LOCKFILE=${!lvar}
+    fi
 
     # Get filehandle
     local randomstring
-    exec {randomstring}<>${!lvar}
+    exec {randomstring}<>${LOCKFILE}
     # Store filehandle for later
     LOCKFD[${LOCK}]=${randomstring}
 
@@ -249,11 +256,11 @@ function lock() {
             return
             ;;
         3)
-            log_error "Could not get lock ${lvar}, timeout"
+            log_error "Could not get lock ${LOCKFILE}, timeout"
             laststeps 2
             ;;
         *)
-            log_error "Could not get lock ${lvar}"
+            log_error "Could not get lock ${LOCKFILE}"
             laststeps 2
     esac
 }
@@ -297,16 +304,6 @@ function laststeps() {
 }
 
 (
-    LOCKFREE=0
-    flock --shared --nonblock 42 || LOCKFREE=1
-
-    # Did we get the lock? (It's shared, so usually we will. But DSA
-    # can take an exclusive one in preparation for a reboot)
-    if [[ ${LOCKFREE} -gt 0 ]]; then
-        echo "Couldn't get (shared) reboot lock"
-        laststeps 1
-    fi
-
     # Where we store lockfile filehandles
     declare -A LOCKFD
 
@@ -354,6 +351,4 @@ function laststeps() {
     log "Cron script successful, all done"
 
     laststeps 0
-
-# And end the reboot-locked part
-) 42</var/run/reboot-lock
+)

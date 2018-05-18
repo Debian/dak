@@ -1,5 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR       BG
-LOCK                   DEPLOY                     600                        shared    false
+INCLUDE                lock                       none                       true      false
 LOCK                   UNCHECKED                  1200                       exclusive false
 update_releases        none                       none                       true      false
 INCLUDE                mirror                     none                       true      true

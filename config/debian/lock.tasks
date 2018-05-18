@@ -1,0 +1,3 @@
+# FUNC                 ARGS                       TIME                       ERR       BG
+LOCK                   /run/reboot-lock           0                          shared    false
+LOCK                   DEPLOY                     600                        shared    false
