@@ -836,13 +836,13 @@ def show_config(command):
 
     if mode == 'db':
         connstr = ""
-        if cnf.has_key("DB::Service"):
+        if "DB::Service" in cnf:
             # Service mode
             connstr = "postgresql://service=%s" % cnf["DB::Service"]
-        elif cnf.has_key("DB::Host"):
+        elif "DB::Host" in cnf:
             # TCP/IP
             connstr = "postgres://%s" % cnf["DB::Host"]
-            if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
+            if "DB::Port" in cnf and cnf["DB::Port"] != "-1":
                 connstr += ":%s" % cnf["DB::Port"]
             connstr += "/%s" % cnf["DB::Name"]
         else:
@@ -853,16 +853,16 @@ def show_config(command):
         print connstr
     elif mode == 'db-shell':
         e = []
-        if cnf.has_key("DB::Service"):
+        if "DB::Service" in cnf:
             e.append('PGSERVICE')
             print "PGSERVICE=%s" % cnf["DB::Service"]
-        if cnf.has_key("DB::Name"):
+        if "DB::Name" in cnf:
             e.append('PGDATABASE')
             print "PGDATABASE=%s" % cnf["DB::Name"]
-        if cnf.has_key("DB::Host"):
+        if "DB::Host" in cnf:
             print "PGHOST=%s" % cnf["DB::Host"]
             e.append('PGHOST')
-        if cnf.has_key("DB::Port") and cnf["DB::Port"] != "-1":
+        if "DB::Port" in cnf and cnf["DB::Port"] != "-1":
             print "PGPORT=%s" % cnf["DB::Port"]
             e.append('PGPORT')
         print "export " + " ".join(e)
@@ -1018,8 +1018,9 @@ def main():
     arguments = [('h', "help", "Admin::Options::Help"),
                  ('n', "dry-run", "Admin::Options::Dry-Run")]
     for i in [ "help", "dry-run" ]:
-        if not Cnf.has_key("Admin::Options::%s" % (i)):
-            Cnf["Admin::Options::%s" % (i)] = ""
+        key = "Admin::Options::%s" % i
+        if key not in Cnf:
+            Cnf[key] = ""
 
     arguments = apt_pkg.parse_commandline(Cnf, arguments, sys.argv)
 

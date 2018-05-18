@@ -55,8 +55,9 @@ def main():
                  ]
 
     for i in [ "help" ]:
-        if not Cnf.has_key("Add-User::Options::%s" % (i)):
-            Cnf["Add-User::Options::%s" % (i)] = ""
+        key = "Add-User::Options::%s" % i
+        if key not in Cnf:
+            Cnf[key] = ""
 
     apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
@@ -83,7 +84,7 @@ def main():
     primary_key = primary_key.replace(" ","")
 
     uid = ""
-    if Cnf.has_key("Add-User::Options::User") and Cnf["Add-User::Options::User"]:
+    if "Add-User::Options::User" in Cnf and Cnf["Add-User::Options::User"]:
         uid = Cnf["Add-User::Options::User"]
         name = Cnf["Add-User::Options::User"]
     else:
@@ -120,7 +121,7 @@ def main():
         session.commit()
 
         # Lets add user to the email-whitelist file if its configured.
-        if Cnf.has_key("Dinstall::MailWhiteList") and Cnf["Dinstall::MailWhiteList"] != "":
+        if "Dinstall::MailWhiteList" in Cnf and Cnf["Dinstall::MailWhiteList"] != "":
             f = utils.open_file(Cnf["Dinstall::MailWhiteList"], "a")
             for mail in emails:
                 f.write(mail+'\n')

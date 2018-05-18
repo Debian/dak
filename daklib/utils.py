@@ -216,7 +216,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
 
     changes["filecontents"] = armored_contents
 
-    if changes.has_key("source"):
+    if "source" in changes:
         # Strip the source version in brackets from the source field,
         # put it in the "source-version" field instead.
         srcver = re_srchasver.search(changes["source"])
@@ -269,7 +269,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
 
         missingfields=[]
         for keyword in must_keywords:
-            if not changes.has_key(keyword.lower()):
+            if keyword.lower() not in changes:
                 missingfields.append(keyword)
 
                 if len(missingfields):
@@ -366,7 +366,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     files = {}
 
     # Make sure we have a Files: field to parse...
-    if not changes.has_key(field):
+    if field not in changes:
         raise NoFilesFieldError
 
     # Validate .changes Format: field
@@ -423,7 +423,7 @@ def send_mail (message, filename="", whitelists=None):
             print >>fh, message,
 
     # Check whether we're supposed to be sending mail
-    if Cnf.has_key("Dinstall::Options::No-Mail") and Cnf["Dinstall::Options::No-Mail"]:
+    if "Dinstall::Options::No-Mail" in Cnf and Cnf["Dinstall::Options::No-Mail"]:
         return
 
     # If we've been passed a string dump it into a temporary file
@@ -476,10 +476,10 @@ def send_mail (message, filename="", whitelists=None):
                     message_raw.replace_header(field, ', '.join(match))
 
         # Change message fields in order if we don't have a To header
-        if not message_raw.has_key("To"):
+        if "To" not in message_raw:
             fields.reverse()
             for field in fields:
-                if message_raw.has_key(field):
+                if field in message_raw:
                     message_raw[fields[-1]] = message_raw[field]
                     del message_raw[field]
                     break
@@ -1183,7 +1183,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 for virtual_pkg in provides.split(","):
                     virtual_pkg = virtual_pkg.strip()
                     if virtual_pkg == package: continue
-                    if not virtual_packages.has_key(virtual_pkg):
+                    if virtual_pkg not in virtual_packages:
                         virtual_packages[virtual_pkg] = 0
                     if package not in removals:
                         virtual_packages[virtual_pkg] += 1

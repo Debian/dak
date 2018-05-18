@@ -214,12 +214,12 @@ class Upload(object):
         cnf = Config()
 
         # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
-        if not self.pkg.changes.has_key("architecture") or not \
+        if "architecture" not in self.pkg.changes or not \
            isinstance(self.pkg.changes["architecture"], dict):
             self.pkg.changes["architecture"] = { "Unknown" : "" }
 
         # and maintainer2047 may not exist.
-        if not self.pkg.changes.has_key("maintainer2047"):
+        if "maintainer2047" not in self.pkg.changes:
             self.pkg.changes["maintainer2047"] = cnf["Dinstall::MyEmailAddress"]
 
         self.Subst["__ARCHITECTURE__"] = " ".join(self.pkg.changes["architecture"].keys())
@@ -227,7 +227,7 @@ class Upload(object):
         self.Subst["__FILE_CONTENTS__"] = self.pkg.changes.get("filecontents", "")
 
         # For source uploads the Changed-By field wins; otherwise Maintainer wins.
-        if self.pkg.changes["architecture"].has_key("source") and \
+        if "source" in self.pkg.changes["architecture"] and \
            self.pkg.changes["changedby822"] != "" and \
            (self.pkg.changes["changedby822"] != self.pkg.changes["maintainer822"]):
 
@@ -244,15 +244,15 @@ class Upload(object):
         # the package into PU-NEW, but the fingerprint has gone away from the keyring in
         # the meantime so the package will be remarked as rejectable.  Urgh.
         # TODO: Fix this properly
-        if self.pkg.changes.has_key('fingerprint'):
+        if 'fingerprint' in self.pkg.changes:
             session = DBConn().session()
             fpr = get_fingerprint(self.pkg.changes['fingerprint'], session)
             if fpr and self.check_if_upload_is_sponsored("%s@debian.org" % fpr.uid.uid, fpr.uid.name):
-                if self.pkg.changes.has_key("sponsoremail"):
+                if "sponsoremail" in self.pkg.changes:
                     self.Subst["__MAINTAINER_TO__"] += ", %s" % self.pkg.changes["sponsoremail"]
             session.close()
 
-        if cnf.has_key("Dinstall::PackagesServer") and self.pkg.changes.has_key("source"):
+        if "Dinstall::PackagesServer" in cnf and "source" in self.pkg.changes:
             self.Subst["__MAINTAINER_TO__"] += "\nBcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::PackagesServer"])
 
         # Apply any global override of the Maintainer field
@@ -269,7 +269,7 @@ class Upload(object):
 
     def check_if_upload_is_sponsored(self, uid_email, uid_name):
         for key in "maintaineremail", "changedbyemail", "maintainername", "changedbyname":
-            if not self.pkg.changes.has_key(key):
+            if key not in self.pkg.changes:
                 return False
         uid_email = '@'.join(uid_email.split('@')[:2])
         if uid_email in [self.pkg.changes["maintaineremail"], self.pkg.changes["changedbyemail"]]:
@@ -314,12 +314,12 @@ class Upload(object):
         cnf = Config()
 
         # Skip all of this if not sending mail to avoid confusing people
-        if cnf.has_key("Dinstall::Options::No-Mail") and cnf["Dinstall::Options::No-Mail"]:
+        if "Dinstall::Options::No-Mail" in cnf and cnf["Dinstall::Options::No-Mail"]:
             return ""
 
         # Only do announcements for source uploads with a recent dpkg-dev installed
-        if float(self.pkg.changes.get("format", 0)) < 1.6 or not \
-           self.pkg.changes["architecture"].has_key("source"):
+        if float(self.pkg.changes.get("format", 0)) < 1.6 or \
+           "source" not in self.pkg.changes["architecture"]:
             return ""
 
         announcetemplate = os.path.join(cnf["Dir::Templates"], 'process-unchecked.announce')
@@ -343,7 +343,7 @@ class Upload(object):
                 self.update_subst()
                 self.Subst["__ANNOUNCE_LIST_ADDRESS__"] = announce_list
                 if cnf.get("Dinstall::PackagesServer") and \
-                   self.pkg.changes["architecture"].has_key("source"):
+                   "source" in self.pkg.changes["architecture"]:
                     trackingsendto = "Bcc: %s@%s" % (self.pkg.changes["source"], cnf["Dinstall::PackagesServer"])
                     self.Subst["__ANNOUNCE_LIST_ADDRESS__"] += "\n" + trackingsendto
 
@@ -352,7 +352,7 @@ class Upload(object):
 
                 del self.Subst["__ANNOUNCE_LIST_ADDRESS__"]
 
-        if cnf.find_b("Dinstall::CloseBugs") and cnf.has_key("Dinstall::BugServer"):
+        if cnf.find_b("Dinstall::CloseBugs") and "Dinstall::BugServer" in cnf:
             summary = self.close_bugs(summary, action)
 
         del self.Subst["__SHORT_SUMMARY__"]

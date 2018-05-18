@@ -481,8 +481,9 @@ def main():
                  ('n',"no-action","Process-Policy::Options::No-Action")]
 
     for i in ["help", "no-action"]:
-        if not cnf.has_key("Process-Policy::Options::%s" % (i)):
-            cnf["Process-Policy::Options::%s" % (i)] = ""
+        key = "Process-Policy::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     queue_name = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
 

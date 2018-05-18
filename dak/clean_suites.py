@@ -471,8 +471,9 @@ def main():
     cnf = Config()
 
     for i in ["Help", "No-Action", "Maximum" ]:
-        if not cnf.has_key("Clean-Suites::Options::%s" % (i)):
-            cnf["Clean-Suites::Options::%s" % (i)] = ""
+        key = "Clean-Suites::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     Arguments = [('h',"help","Clean-Suites::Options::Help"),
                  ('a','archive','Clean-Suites::Options::Archive','HasArg'),

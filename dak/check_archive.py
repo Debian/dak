@@ -98,7 +98,7 @@ def process_dir (unused, dirname, filenames):
         return
     for name in filenames:
         filename = os.path.abspath(os.path.join(dirname,name))
-        if os.path.isfile(filename) and not os.path.islink(filename) and not db_files.has_key(filename) and not excluded.has_key(filename):
+        if os.path.isfile(filename) and not os.path.islink(filename) and filename not in db_files and filename not in excluded:
             waste += os.stat(filename)[stat.ST_SIZE]
             print "%s" % (filename)
 
@@ -532,8 +532,9 @@ def main ():
 
     Arguments = [('h',"help","Check-Archive::Options::Help")]
     for i in [ "help" ]:
-        if not cnf.has_key("Check-Archive::Options::%s" % (i)):
-            cnf["Check-Archive::Options::%s" % (i)] = ""
+        key = "Check-Archive::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     args = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 

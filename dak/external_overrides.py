@@ -159,11 +159,11 @@ def main():
     except KeyError:
         Options = {}
 
-    if Options.has_key("Help"):
+    if "Help" in Options:
         usage()
 
     force = False
-    if Options.has_key("Force") and Options["Force"]:
+    if "Force" in Options and Options["Force"]:
         force = True
 
     logger = daklog.Logger('external-overrides')

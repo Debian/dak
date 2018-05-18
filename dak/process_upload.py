@@ -497,7 +497,7 @@ def process_changes(changes_filenames):
 def process_buildinfos(upload):
     cnf = Config()
 
-    if not cnf.has_key('Dir::BuildinfoArchive'):
+    if 'Dir::BuildinfoArchive' not in cnf:
         return
 
     target_dir = os.path.join(
@@ -529,8 +529,9 @@ def main():
 
     for i in ["automatic", "help", "no-action", "no-lock", "no-mail",
               "version", "directory"]:
-        if not cnf.has_key("Dinstall::Options::%s" % (i)):
-            cnf["Dinstall::Options::%s" % (i)] = ""
+        key = "Dinstall::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     changes_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Dinstall::Options")

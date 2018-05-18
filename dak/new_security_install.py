@@ -129,8 +129,9 @@ def main():
                  ]
 
     for i in ["Help", "No-Action", "Changesfile", "Sudo", "Approve"]:
-        if not cnf.has_key("Security::Options::%s" % (i)):
-            cnf["Security::Options::%s" % (i)] = ""
+        key = "Security::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     changes_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 

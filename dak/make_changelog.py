@@ -186,7 +186,7 @@ def export_files(session, archive, clpool, progress=False):
                ORDER BY s.source, suite"""
 
     for p in session.execute(query, {'archive_id': archive.archive_id}):
-        if not sources.has_key(p[0]):
+        if p[0] not in sources:
             sources[p[0]] = {}
         sources[p[0]][p[1]] = (re_no_epoch.sub('', p[2]), p[3])
 
@@ -197,7 +197,7 @@ def export_files(session, archive, clpool, progress=False):
                 os.makedirs(path)
             if not os.path.exists(os.path.join(path, \
                    '%s_%s_changelog' % (p, sources[p][s][0]))):
-                if not unpack.has_key(os.path.join(pool, sources[p][s][1])):
+                if os.path.join(pool, sources[p][s][1]) not in unpack:
                     unpack[os.path.join(pool, sources[p][s][1])] = (path, set())
                 unpack[os.path.join(pool, sources[p][s][1])][1].add(s)
             else:
@@ -301,8 +301,9 @@ def main():
                  ('p','progress','Make-Changelog::Options::progress')]
 
     for i in ['help', 'suite', 'base-suite', 'binnmu', 'export', 'progress']:
-        if not Cnf.has_key('Make-Changelog::Options::%s' % (i)):
-            Cnf['Make-Changelog::Options::%s' % (i)] = ''
+        key = 'Make-Changelog::Options::%s' % i
+        if key not in Cnf:
+            Cnf[key] = ''
 
     apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
     Options = Cnf.subtree('Make-Changelog::Options')

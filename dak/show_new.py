@@ -217,8 +217,9 @@ def init(session):
                  ('q','queue','Show-New::Options::Queue','HasArg')]
 
     for i in ["help"]:
-        if not cnf.has_key("Show-New::Options::%s" % (i)):
-            cnf["Show-New::Options::%s" % (i)] = ""
+        key = "Show-New::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     changesnames = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
     Options = cnf.subtree("Show-New::Options")

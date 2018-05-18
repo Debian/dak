@@ -398,8 +398,9 @@ def main ():
                  ('s',"set", "Control-Suite::Options::Set", "HasArg")]
 
     for i in ["add", "britney", "help", "list", "remove", "set", "version" ]:
-        if not cnf.has_key("Control-Suite::Options::%s" % (i)):
-            cnf["Control-Suite::Options::%s" % (i)] = ""
+        key = "Control-Suite::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     try:
         file_list = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv);
@@ -411,7 +412,7 @@ def main ():
     if Options["Help"]:
         usage()
 
-    force = Options.has_key("Force") and Options["Force"]
+    force = "Force" in Options and Options["Force"]
 
     action = None
 

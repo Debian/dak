@@ -73,8 +73,9 @@ def init():
                  ('n',"no-action","Edit-Transitions::Options::No-Action")]
 
     for i in ["automatic", "help", "no-action", "edit", "import", "check", "sudo"]:
-        if not Cnf.has_key("Edit-Transitions::Options::%s" % (i)):
-            Cnf["Edit-Transitions::Options::%s" % (i)] = ""
+        key = "Edit-Transitions::Options::%s" % i
+        if key not in Cnf:
+            Cnf[key] = ""
 
     apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
 
@@ -465,7 +466,7 @@ def check_transitions(transitions):
                 print "Sending notification to %s" % subst['__TRANSITION_EMAIL__']
                 subst['__DAK_ADDRESS__'] = Cnf["Dinstall::MyEmailAddress"]
                 subst['__BCC__'] = 'X-DAK: dak transitions'
-                if Cnf.has_key("Dinstall::Bcc"):
+                if "Dinstall::Bcc" in Cnf:
                     subst["__BCC__"] += '\nBcc: %s' % Cnf["Dinstall::Bcc"]
                 message = utils.TemplateSubst(subst,
                                               os.path.join(Cnf["Dir::Templates"], 'transition.removed'))

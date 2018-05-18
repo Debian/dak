@@ -124,8 +124,9 @@ def main():
     apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
 
     for i in ["help"]:
-        if not cnf.has_key("Archive-Dedup-Pool::Options::%s" % (i)):
-            cnf["Archive-Dedup-Pool::Options::%s" % (i)] = ""
+        key = "Archive-Dedup-Pool::Options::%s" % i
+        if key not in cnf:
+            cnf[key] = ""
 
     Options = cnf.subtree("Archive-Dedup-Pool::Options")
 

@@ -103,7 +103,7 @@ class Changes(object):
     def file_summary(self):
         # changes["distribution"] may not exist in corner cases
         # (e.g. unreadable changes files)
-        if not self.changes.has_key("distribution") or not \
+        if "distribution" not in self.changes or not \
                isinstance(self.changes["distribution"], dict):
             self.changes["distribution"] = {}
 
@@ -113,15 +113,15 @@ class Changes(object):
         override_summary = ""
 
         for name, entry in sorted(self.files.items()):
-            if entry.has_key("byhand"):
+            if "byhand" in entry:
                 byhand = True
                 summary += name + " byhand\n"
 
-            elif entry.has_key("new"):
+            elif "new" in entry:
                 new = True
                 summary += "(new) %s %s %s\n" % (name, entry["priority"], entry["section"])
 
-                if entry.has_key("othercomponents"):
+                if "othercomponents" in entry:
                     summary += "WARNING: Already present in %s distribution.\n" % (entry["othercomponents"])
 
                 if entry["type"] == "deb":
@@ -134,7 +134,7 @@ class Changes(object):
                 destination = entry["pool name"] + name
                 summary += name + "\n  to " + destination + "\n"
 
-                if not entry.has_key("type"):
+                if "type" not in entry:
                     entry["type"] = "unknown"
 
                 if entry["type"] in ["deb", "udeb", "dsc"]:
@@ -157,11 +157,11 @@ class Changes(object):
         summary = ""
 
         # Abandon the check if it's a non-sourceful upload
-        if not self.changes["architecture"].has_key("source"):
+        if "source" not in self.changes["architecture"]:
             return summary
 
         for name, entry in sorted(self.files.items()):
-            if not entry.has_key("new") and entry["type"] == "deb":
+            if "new" not in entry and entry["type"] == "deb":
                 if entry["section"] != "-":
                     if entry["section"].lower() != entry["override section"].lower():
                         summary += "%s: package says section is %s, override says %s.\n" % (name,
@@ -183,13 +183,13 @@ class Changes(object):
     def mark_missing_fields(self):
         """add "missing" in fields which we will require for the known_changes table"""
         for key in ['urgency', 'maintainer', 'fingerprint', 'changed-by' ]:
-            if (not self.changes.has_key(key)) or (not self.changes[key]):
+            if (key not in self.changes) or (not self.changes[key]):
                 self.changes[key]='missing'
 
     def __get_file_from_pool(self, filename, entry, session, logger):
         cnf = Config()
 
-        if cnf.has_key("Dinstall::SuiteSuffix"):
+        if "Dinstall::SuiteSuffix" in cnf:
             component = cnf["Dinstall::SuiteSuffix"] + entry["component"]
         else:
             component = entry["component"]
@@ -262,13 +262,13 @@ class Changes(object):
                 cpf.size = entry['size']
                 cpf.md5sum = entry['md5sum']
 
-                if entry.has_key('sha1sum'):
+                if 'sha1sum' in entry:
                     cpf.sha1sum = entry['sha1sum']
                 else:
                     f.seek(0)
                     cpf.sha1sum = apt_pkg.sha1sum(f)
 
-                if entry.has_key('sha256sum'):
+                if 'sha256sum' in entry:
                     cpf.sha256sum = entry['sha256sum']
                 else:
                     f.seek(0)
@@ -288,7 +288,7 @@ class Changes(object):
 
         # Add files referenced in .dsc, but not included in .changes
         for name, entry in self.dsc_files.items():
-            if self.files.has_key(name):
+            if name in self.files:
                 continue
 
             entry['source'] = self.changes['source']
@@ -322,7 +322,7 @@ class Changes(object):
         for name, entry in self.files.items():
             r.append("  %s:" % (name))
             for i in CHANGESFIELDS_FILES:
-                if entry.has_key(i):
+                if i in entry:
                     r.append("   %s: %s" % (i.capitalize(), entry[i]))
             xfields = self.unknown_files_fields(name)
             if len(xfields) > 0:
@@ -341,7 +341,7 @@ class Changes(object):
             r.append('  %s: %s' % (i.capitalize(), val))
 
         for i in CHANGESFIELDS_OPTIONAL:
-            if self.changes.has_key(i):
+            if i in self.changes:
                 r.append('  %s: %s' % (i.capitalize(), self.changes[i]))
 
         xfields = self.unknown_changes_fields()
@@ -353,7 +353,7 @@ class Changes(object):
     def str_dsc(self):
         r = []
         for i in CHANGESFIELDS_DSC:
-            if self.dsc.has_key(i):
+            if i in self.dsc:
                 r.append('  %s: %s' % (i.capitalize(), self.dsc[i]))
 
         xfields = self.unknown_dsc_fields()
@@ -369,7 +369,7 @@ class Changes(object):
             for i in CHANGESFIELDS_DSCFILES_MANDATORY:
                 r.append("   %s: %s" % (i.capitalize(), entry[i]))
             for i in CHANGESFIELDS_DSCFILES_OPTIONAL:
-                if entry.has_key(i):
+                if i in entry:
                     r.append("   %s: %s" % (i.capitalize(), entry[i]))
             xfields = self.unknown_dsc_files_fields(name)
             if len(xfields) > 0:
