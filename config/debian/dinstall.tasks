@@ -53,3 +53,5 @@ i18n2                  none                       i18n\ 2                    fal
 stats                  none                       stats                      false     true
 testingsourcelist      none                       none                       false     true
 cleantransactions      none                       none                       false     false
+postcronscript         none                       none                       false     false
+STATE                  all\ done                  none                       false     false

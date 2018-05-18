@@ -283,12 +283,6 @@ function laststeps() {
     # and ensure its no longer used
     exec > "$logdir/after${PROGRAM}.log" 2>&1
 
-    # If there is a postcronscript function, we run it, if script was successful
-    postfunc=$(type -t postcronscript || echo "")
-    if [[ ${successval} -eq 0 ]] && [[ -n ${postfunc} ]] && [[ ${postfunc} = function ]]; then
-        postcronscript
-    fi
-
     # Now, at the very (successful) end of this run, make sure we remove
     # our stage files, so the next script run will do it all again.
     if [[ ${successval} -eq 0 ]]; then
@@ -322,12 +316,6 @@ function laststeps() {
 
     # Get rid of tempfiles at the end
     trap cleanup EXIT TERM HUP INT QUIT
-
-    # If there is a precronscript function, we run it.
-    prefunc=$(type -t precronscript || echo "")
-    if [[ -n ${prefunc} ]] && [[ ${prefunc} = function ]]; then
-        precronscript
-    fi
 
     # An easy access by name for the current log
     ln -sf ${LOGFILE} ${logdir}/${PROGRAM}
