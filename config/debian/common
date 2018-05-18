@@ -175,15 +175,15 @@ function do_unchecked () {
             dak process-commands -d "$unchecked"
         } >> ${report}
         dak manage-external-signature-requests
-
-        sync_debbugs
-        make_buildd_dir
-        SSHOPT="-n -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
-        ssh -q -q ${SSHOPT} wbadm@buildd /srv/wanna-build/trigger.often
     else
         log "Nothing to do"
         echo "Nothing to do" >> ${report}
     fi
+}
+
+function trigger_wb() {
+    SSHOPT="-n -o BatchMode=yes -o ConnectTimeout=30 -o SetupTimeout=240"
+    ssh -q -q ${SSHOPT} wbadm@buildd /srv/wanna-build/trigger.often
 }
 
 # process NEW policy queue
