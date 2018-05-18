@@ -271,19 +271,19 @@ def reportNBS(suite_name, suite_id, rdeps=False):
     nbsRows = queryNBS(suite_id, session)
     title = 'NBS packages in suite %s' % suite_name
     if nbsRows.rowcount > 0:
-	print '%s\n%s\n' % (title, '-' * len(title))
+        print '%s\n%s\n' % (title, '-' * len(title))
     for row in nbsRows:
-	(pkg_list, arch_list, source, version) = row
-	pkg_string = ' '.join(pkg_list)
-	arch_string = ','.join(arch_list)
-	print "* source package %s version %s no longer builds" % \
-	    (source, version)
-	print "  binary package(s): %s" % pkg_string
-	print "  on %s" % arch_string
-	print "  - suggested command:"
-	message = '"[auto-cruft] NBS (no longer built by %s)"' % source
-	print "    dak rm -m %s -s %s -a %s -p -R -b %s" % \
-	    (message, suite_name, arch_string, pkg_string)
+        (pkg_list, arch_list, source, version) = row
+        pkg_string = ' '.join(pkg_list)
+        arch_string = ','.join(arch_list)
+        print "* source package %s version %s no longer builds" % \
+            (source, version)
+        print "  binary package(s): %s" % pkg_string
+        print "  on %s" % arch_string
+        print "  - suggested command:"
+        message = '"[auto-cruft] NBS (no longer built by %s)"' % source
+        print "    dak rm -m %s -s %s -a %s -p -R -b %s" % \
+            (message, suite_name, arch_string, pkg_string)
         if rdeps:
             if utils.check_reverse_depends(pkg_list, suite_name, arch_list, session, True):
                 print
@@ -341,10 +341,10 @@ SELECT ss.src, ss.source, ss.version,
     to_char(ss.install_date, 'YYYY-MM-DD') AS install_date
     FROM source_suite ss
     JOIN source_suite_unique ssu
-	ON ss.source = ssu.source AND ss.suite = ssu.suite
+        ON ss.source = ssu.source AND ss.suite = ssu.suite
     JOIN suite s ON s.id = ss.suite
     LEFT JOIN bin_associations_binaries bab
-	ON ss.src = bab.source AND ss.suite = bab.suite
+        ON ss.src = bab.source AND ss.suite = bab.suite
     WHERE s.suite_name = :suite_name AND bab.id IS NULL
       AND now() - ss.install_date > '1 day'::interval
     ORDER BY install_date"""
@@ -375,7 +375,7 @@ SELECT sas.source, MAX(sas.version) AS srcver
     JOIN bin_associations_binaries bab ON sas.src = bab.source
     JOIN suite s on s.id = bab.suite
     WHERE s.suite_name = :suite_name AND bab.package = :package
-	GROUP BY sas.source, bab.package
+        GROUP BY sas.source, bab.package
         ORDER BY sas.source, bab.package"""
     args = { 'suite_name': suite_name, 'package': package }
     return session.execute(query, args)

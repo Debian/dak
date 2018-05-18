@@ -37,8 +37,8 @@ def do_update(self):
 
         c = self.db.cursor()
 
-	stayofexecution = cnf.get('Clean-Suites::StayOfExecution', '129600')
-	c.execute("ALTER TABLE archive ADD COLUMN stayofexecution INTERVAL NOT NULL DEFAULT %s", (stayofexecution,))
+        stayofexecution = cnf.get('Clean-Suites::StayOfExecution', '129600')
+        c.execute("ALTER TABLE archive ADD COLUMN stayofexecution INTERVAL NOT NULL DEFAULT %s", (stayofexecution,))
         c.execute("UPDATE archive SET stayofexecution='0' WHERE name IN ('new', 'policy', 'build-queues')")
 
         c.execute("UPDATE config SET value = '77' WHERE name = 'db_revision'")
