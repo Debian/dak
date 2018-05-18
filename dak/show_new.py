@@ -172,8 +172,8 @@ def do_pkg(upload_id):
 
     group = cnf.get('Dinstall::UnprivGroup') or None
 
-    with open(htmlfile, 'w') as outfile:
-      with policy.UploadCopy(upload, group=group) as upload_copy:
+    with open(htmlfile, 'w') as outfile, \
+            policy.UploadCopy(upload, group=group) as upload_copy:
         handler = policy.PolicyQueueUploadHandler(upload, session)
         missing = [ (o['type'], o['package']) for o in handler.missing_overrides() ]
         distribution = changes.distribution

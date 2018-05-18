@@ -105,10 +105,10 @@ class SignedFile(object):
         return self.signature_ids[0]
 
     def _verify(self, data, require_signature):
-        with _Pipe() as stdin:
-         with _Pipe() as contents:
-          with _Pipe() as status:
-           with _Pipe() as stderr:
+        with _Pipe() as stdin, \
+                _Pipe() as contents, \
+                _Pipe() as status, \
+                _Pipe() as stderr:
             pid = os.fork()
             if pid == 0:
                 self._exec_gpg(stdin.r, contents.w, stderr.w, status.w)

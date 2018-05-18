@@ -46,24 +46,24 @@ if m:
     raise Exception("I don't like command line arguments including char '%s'"%m.group(0))
 
 if args:
-  for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "'+'" "'.join(args)+'"'):
-    m = LINE.match(l)
-    if not m:
-        raise Exception("woops '%s'"%l)
-    g = map(lambda x: (not x.isdigit() and x) or int(x), m.groups())
-    dt = datetime.datetime(*g[:6])
-    if olddt != dt:
-        oldsecs = 0
-        olddt = dt
-    dt2 = datetime.datetime(*(g[:3]+g[-3:]))
-    secs = (dt2-dt).seconds
-    assert secs >= 0 # should add 24*60*60
-    k = g[6]
-    d.setdefault(str(dt),{})[k] = (secs-oldsecs)/60.0
-    oldsecs = secs
-    if k not in ks:
-        ks.add(k)
-        kl.append(k)
+    for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "'+'" "'.join(args)+'"'):
+        m = LINE.match(l)
+        if not m:
+            raise Exception("woops '%s'"%l)
+        g = map(lambda x: (not x.isdigit() and x) or int(x), m.groups())
+        dt = datetime.datetime(*g[:6])
+        if olddt != dt:
+            oldsecs = 0
+            olddt = dt
+        dt2 = datetime.datetime(*(g[:3]+g[-3:]))
+        secs = (dt2-dt).seconds
+        assert secs >= 0 # should add 24*60*60
+        k = g[6]
+        d.setdefault(str(dt),{})[k] = (secs-oldsecs)/60.0
+        oldsecs = secs
+        if k not in ks:
+            ks.add(k)
+            kl.append(k)
 
 if (wantkeys-ks):
     print >> sys.stderr, "warning, requested keys not found in any log: "+' '.join(wantkeys-ks)

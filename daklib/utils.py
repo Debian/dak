@@ -442,13 +442,13 @@ def send_mail (message, filename="", whitelists=None):
 
         whitelist = [];
         for path in whitelists:
-          with open_file(path, 'r') as whitelist_in:
-            for line in whitelist_in:
-                if not re_whitespace_comment.match(line):
-                    if re_re_mark.match(line):
-                        whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
-                    else:
-                        whitelist.append(re.compile(re.escape(line.strip())))
+            with open_file(path, 'r') as whitelist_in:
+                for line in whitelist_in:
+                    if not re_whitespace_comment.match(line):
+                        if re_re_mark.match(line):
+                            whitelist.append(re.compile(re_re_mark.sub("", line.strip(), 1)))
+                        else:
+                            whitelist.append(re.compile(re.escape(line.strip())))
 
         # Fields to check.
         fields = ["To", "Bcc", "Cc"]
