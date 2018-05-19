@@ -49,7 +49,7 @@ from daklib.cruft import *
 
 ################################################################################
 
-no_longer_in_suite = {}; # Really should be static to add_nbs, but I'm lazy
+no_longer_in_suite = {} # Really should be static to add_nbs, but I'm lazy
 
 source_binaries = {}
 source_versions = {}
@@ -628,7 +628,7 @@ def main():
     # Checks based on the Packages files
     check_components = components[:]
     if suite_name != "experimental":
-        check_components.append('main/debian-installer');
+        check_components.append('main/debian-installer')
 
     for component in check_components:
         architectures = [ a.arch_string for a in get_suite_architectures(suite_name,
