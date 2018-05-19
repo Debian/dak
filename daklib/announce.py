@@ -132,7 +132,7 @@ def announce_accept(upload):
     send_mail(message, whitelists=whitelists)
 
     if accepted_to_real_suite and upload.sourceful:
-        # senf mail to announce lists and packages server
+        # send mail to announce lists and tracking server
         announce = set()
         for suite in upload.suites:
             if suite.policy_queue is None or suite in upload.from_policy_suites:
