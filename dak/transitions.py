@@ -343,7 +343,7 @@ def edit_transitions():
         # Now try to load the new file
         test = load_transitions(edit_file)
 
-        if test == None:
+        if test is None:
             # Edit is broken
             print "Edit was unparsable."
             prompt = "[E]dit again, Drop changes?"
@@ -600,7 +600,7 @@ def main():
 
     # Parse the yaml file
     transitions = load_transitions(transpath)
-    if transitions == None:
+    if transitions is None:
         # Something very broken with the transitions, exit
         utils.warn("Could not parse existing transitions file. Aborting.")
         sys.exit(2)

@@ -160,7 +160,7 @@ def main():
     fpr = {}
     for z in keyring.keys.keys():
         keyid = db_uid_byname.get(keyring.keys[z].get("uid", None), [None])[0]
-        if keyid == None:
+        if keyid is None:
             keyid = db_fin_info.get(keyring.keys[z]["fingerprints"][0], [None])[0]
         for y in keyring.keys[z]["fingerprints"]:
             fpr[y] = (keyid, keyring.keyring_id)
@@ -190,10 +190,10 @@ def main():
 
         (olduid, oldfid, oldkid) = db_fin_info.get(f, [-1,-1,-1])
 
-        if olduid == None:
+        if olduid is None:
             olduid = -1
 
-        if oldkid == None:
+        if oldkid is None:
             oldkid = -1
 
         if oldfid == -1:

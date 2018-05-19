@@ -968,7 +968,7 @@ class Keyring(object):
                     continue
                 self.keys[key]["uid"] = uid
 
-                if keyid != None:
+                if keyid is not None:
                     continue
                 keyid = get_or_set_uid(uid, session).uid_id
                 byuid[keyid] = (uid, name)
