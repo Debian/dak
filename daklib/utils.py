@@ -25,7 +25,6 @@
 import commands
 import codecs
 import datetime
-import email.Header
 import os
 import pwd
 import grp
