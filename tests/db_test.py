@@ -140,7 +140,7 @@ class DBDakTestCase(DakTestCase):
         for f in self.file.values():
             f.sha1sum = 'sha1sum'
             f.sha256sum = 'sha256sum'
-            if not 'gnome-hello_3.0-1' in f.filename:
+            if 'gnome-hello_3.0-1' not in f.filename:
                 archive_files.append(ArchiveFile(
                     archive=self.archive, component=self.comp['main'], file=f))
             else:

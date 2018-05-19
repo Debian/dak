@@ -762,7 +762,7 @@ def sort_uploads(new_queue, uploads, session, nobinaries=False):
       filter_by(trainee=False, policy_queue=new_queue).distinct()]
     for upload in uploads:
         source = upload.changes.source
-        if not source in sources:
+        if source not in sources:
             sources[source] = []
         sources[source].append({'upload': upload,
                                 'date': upload.changes.created,

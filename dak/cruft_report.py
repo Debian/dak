@@ -485,9 +485,9 @@ def report_outdated_nonfree(suite, session, rdeps=False):
         arch = package[2]
         if arch == 'all':
             continue
-        if not source in packages:
+        if source not in packages:
             packages[source] = {}
-        if not binary in packages[source]:
+        if binary not in packages[source]:
             packages[source][binary] = set()
         packages[source][binary].add(arch)
     if packages:
