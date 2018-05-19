@@ -590,7 +590,7 @@ def main():
                 source_version = Sources.section.find('Version')
                 architecture = Sources.section.find('Architecture')
                 binaries = Sources.section.find('Binary')
-                binaries_list = [ i.strip() for i in  binaries.split(',') ]
+                binaries_list = [ i.strip() for i in binaries.split(',') ]
 
                 if "bnb" in checks:
                     # Check for binaries not built on any architecture.
