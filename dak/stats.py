@@ -408,8 +408,8 @@ def main():
             utils.warn("dak stats accepts only one MODE argument")
             usage(1)
     elif args[0].lower() == "new":
-            utils.warn("new MODE requires an output file")
-            usage(1)
+        utils.warn("new MODE requires an output file")
+        usage(1)
     mode = args[0].lower()
 
     if mode == "arch-space":
