@@ -65,7 +65,8 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
     actions = []
     for comm in [ x for x in os.listdir(dir) if x.startswith(opref) ]:
         lines = open(os.path.join(dir, comm)).readlines()
-        if len(lines) == 0 or lines[0] != line + "\n": continue
+        if len(lines) == 0 or lines[0] != line + "\n":
+            continue
 
         # If the ACCEPT includes a _<arch> we only accept that .changes.
         # Otherwise we accept all .changes that start with the given prefix

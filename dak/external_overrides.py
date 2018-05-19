@@ -76,7 +76,8 @@ class ExternalOverrideReader(object):
         override file
         """
         for line in self.fh:
-            if not line: continue
+            if not line:
+                continue
             if line[0] in (" ", "\t"):
                 # Continuation line
                 self.value.append(line.rstrip())

@@ -109,7 +109,8 @@ def pipe_file(f, t):
     f.seek(0)
     while 1:
         l = f.read(65536)
-        if not l: break
+        if not l:
+            break
         t.write(l)
     t.close()
 
@@ -130,7 +131,8 @@ class Updates:
                 def read_hashs(ind, hashind, f, self, x=x):
                     while 1:
                         x = f.readline()
-                        if not x or x[0] != " ": break
+                        if not x or x[0] != " ":
+                            break
                         l = x.split()
                         fname = l[2]
                         if fname.endswith('.gz'):
@@ -245,7 +247,8 @@ def create_temp_file(r):
     f = tempfile.TemporaryFile()
     while 1:
         x = r.read(65536)
-        if not x: break
+        if not x:
+            break
         f.write(x)
     r.close()
     del x,r
@@ -304,9 +307,11 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
     #    if upd.filesizesha1 != oldsizesha1:
     #        print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
-    if "CanonicalPath" in Options: upd.can_path=Options["CanonicalPath"]
+    if "CanonicalPath" in Options:
+        upd.can_path=Options["CanonicalPath"]
 
-    if os.path.exists(newfile): os.unlink(newfile)
+    if os.path.exists(newfile):
+        os.unlink(newfile)
     smartlink(origfile, newfile)
     newf = open(newfile, "r")
     newsizehashes = sizehashes(newf)
@@ -364,7 +369,8 @@ def main():
                 ]
     suites = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
     Options = Cnf.subtree("Generate-Index-Diffs::Options")
-    if "Help" in Options: usage()
+    if "Help" in Options:
+        usage()
 
     maxdiffs = Options.get("MaxDiffs::Default", "56")
     maxpackages = Options.get("MaxDiffs::Packages", maxdiffs)
@@ -442,12 +448,14 @@ def main():
 
                 # Process Contents
                 file = "%s/%s/Contents-%s" % (tree, component, architecture)
-                if "Verbose" in Options: print(file)
+                if "Verbose" in Options:
+                    print(file)
                 storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
                 genchanges(Options, file + ".diff", storename, file, maxcontents)
 
                 file = "%s/%s/%s/%s" % (tree, component, longarch, packages)
-                if "Verbose" in Options: print(file)
+                if "Verbose" in Options:
+                    print(file)
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
                 genchanges(Options, file + ".diff", storename, file, maxsuite)
 

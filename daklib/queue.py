@@ -330,7 +330,8 @@ class Upload(object):
         # Get a unique list of target lists
         for dist in self.pkg.changes["distribution"].keys():
             suite = get_suite(dist)
-            if suite is None: continue
+            if suite is None:
+                continue
             for tgt in suite.announce:
                 lists_todo[tgt] = 1
 
