@@ -146,7 +146,7 @@ def main(argv=None):
         ('n', 'max-packages', 'Import-Repository::MaxPackages', 'HasArg'),
         ]
 
-    cnf = daklib.config.Config();
+    cnf = daklib.config.Config()
     argv = apt_pkg.parse_commandline(cnf.Cnf, arguments, argv)
     options = cnf.subtree('Import-Repository')
 

@@ -39,10 +39,10 @@ def do_update(self):
 
         c = self.db.cursor()
 
-        c.execute("UPDATE policy_queue set queue_name='stable-new' where queue_name='proposedupdates'");
-        c.execute("UPDATE policy_queue set queue_name='oldstable-new' where queue_name='oldproposedupdates'");
-        c.execute("UPDATE suite set suite_name='stable-new' where    suite_name='proposedupdates'");
-        c.execute("UPDATE suite set suite_name='oldstable-new' where suite_name='oldproposedupdates'");
+        c.execute("UPDATE policy_queue set queue_name='stable-new' where queue_name='proposedupdates'")
+        c.execute("UPDATE policy_queue set queue_name='oldstable-new' where queue_name='oldproposedupdates'")
+        c.execute("UPDATE suite set suite_name='stable-new' where    suite_name='proposedupdates'")
+        c.execute("UPDATE suite set suite_name='oldstable-new' where suite_name='oldproposedupdates'")
 
         c.execute("UPDATE config SET value = '79' WHERE name = 'db_revision'")
         self.db.commit()

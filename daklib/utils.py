@@ -450,7 +450,7 @@ def send_mail(message, filename="", whitelists=None):
         with open_file(filename) as message_in:
             message_raw = modemail.message_from_file(message_in)
 
-        whitelist = [];
+        whitelist = []
         for path in whitelists:
             with open_file(path, 'r') as whitelist_in:
                 for line in whitelist_in:
@@ -466,7 +466,7 @@ def send_mail(message, filename="", whitelists=None):
             # Check each field
             value = message_raw.get(field, None)
             if value is not None:
-                match = [];
+                match = []
                 for item in value.split(","):
                     (rfc822_maint, rfc2047_maint, name, email) = fix_maintainer(item.strip())
                     mail_whitelisted = 0
@@ -497,12 +497,12 @@ def send_mail(message, filename="", whitelists=None):
                 # Clean up any temporary files
                 # and return, as we removed all recipients.
                 if message:
-                    os.unlink(filename);
-                return;
+                    os.unlink(filename)
+                return
 
-        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0o700);
-        os.write(fd, message_raw.as_string(True));
-        os.close(fd);
+        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0o700)
+        os.write(fd, message_raw.as_string(True))
+        os.close(fd)
 
     # Invoke sendmail
     (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))

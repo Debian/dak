@@ -39,7 +39,7 @@ def do_update(self):
 
         c = self.db.cursor()
 
-        c.execute("CREATE SCHEMA world");
+        c.execute("CREATE SCHEMA world")
         c.execute("GRANT USAGE ON SCHEMA world TO PUBLIC")
         c.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA world GRANT SELECT ON TABLES TO PUBLIC")
         c.execute("ALTER DEFAULT PRIVILEGES IN SCHEMA world GRANT ALL ON TABLES TO ftpmaster")

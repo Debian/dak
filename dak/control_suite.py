@@ -413,7 +413,7 @@ def main():
             cnf[key] = ""
 
     try:
-        file_list = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv);
+        file_list = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     except SystemError as e:
         print "%s\n" % e
         usage(1)
