@@ -288,7 +288,7 @@ class Upload(object):
             if ("source" in self.pkg.changes["architecture"] and uid_email and utils.is_email_alias(uid_email)):
                 if (self.pkg.changes["maintaineremail"] not in sponsor_addresses and
                     self.pkg.changes["changedbyemail"] not in sponsor_addresses):
-                        self.pkg.changes["sponsoremail"] = uid_email
+                    self.pkg.changes["sponsoremail"] = uid_email
 
         return sponsored
 

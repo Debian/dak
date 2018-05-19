@@ -141,7 +141,7 @@ def do_anais(architecture, binaries_list, source, session):
 # package any more, and have them listed as Not-For-Us
 def do_nfu(nfu_packages):
     output = ""
-    
+
     a2p = {}
 
     for architecture in nfu_packages:
@@ -170,7 +170,7 @@ def parse_nfu(architecture):
     r = re.compile("^\w+/([^_]+)_.*: Not-For-Us")
 
     ret = set()
-    
+
     filename = "%s/%s-all.txt" % (cnf["Cruft-Report::Options::Wanna-Build-Dump"], architecture)
 
     # Not all architectures may have a wanna-build dump, so we want to ignore missin

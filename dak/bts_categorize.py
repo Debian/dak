@@ -95,7 +95,7 @@ class BugClassifier(object):
         tagged_bugs = bts.get_usertag('ftp.debian.org@packages.debian.org')
         tagged_bugs_ftp = []
         for tags in tagged_bugs.keys():
-                tagged_bugs_ftp += tagged_bugs[tags]
+            tagged_bugs_ftp += tagged_bugs[tags]
 
         return [ bug for bug in bts.get_status( bts.get_bugs("package", "ftp.debian.org" ) ) \
                      if bug.pending=='pending' and not bug.bug_num in tagged_bugs_ftp ]

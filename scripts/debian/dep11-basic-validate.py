@@ -79,77 +79,77 @@ def test_localized(doc, key):
     return test_localized_dict(doc, ldict, key)
 
 def validate_data(data):
-        ret = True
-        lines = data.split("\n")
+    ret = True
+    lines = data.split("\n")
 
-        # see if there are any Python-specific objects encoded
-        ret = test_custom_objects(lines)
+    # see if there are any Python-specific objects encoded
+    ret = test_custom_objects(lines)
+
+    try:
+        docs = yaml.safe_load_all(data)
+        header = next(docs)
+    except Exception as e:
+        add_issue("Could not parse file: %s" % (str(e)))
+        return False
+
+    try:
+        schema_header(header)
+    except Exception as e:
+        add_issue("Invalid DEP-11 header: %s" % (str(e)))
+        ret = False
+
+    for doc in docs:
+        cptid = doc.get('ID')
+        pkgname = doc.get('Package')
+        cpttype = doc.get('Type')
+        if not doc:
+            add_issue("FATAL: Empty document found.")
+            ret = False
+            continue
+        if not cptid:
+            add_issue("FATAL: Component without ID found.")
+            ret = False
+            continue
+        if not pkgname:
+            if cpttype != "web-application":
+                add_issue("[%s]: %s" % (cptid, "Component is missing a 'Package' key."))
+                ret = False
+                continue
 
         try:
-            docs = yaml.safe_load_all(data)
-            header = next(docs)
+            schema_component(doc)
         except Exception as e:
-            add_issue("Could not parse file: %s" % (str(e)))
-            return False
+            add_issue("[%s]: %s" % (cptid, str(e)))
+            ret = False
+            continue
 
-        try:
-            schema_header(header)
-        except Exception as e:
-            add_issue("Invalid DEP-11 header: %s" % (str(e)))
+        # more tests for the icon key
+        icon = doc.get('Icon')
+        if (cpttype == "desktop-application") or (cpttype == "web-application"):
+            if not doc.get('Icon'):
+                add_issue("[%s]: %s" % (cptid, "Components containing an application must have an 'Icon' key."))
+                ret = False
+        if icon:
+            if (not icon.get('stock')) and (not icon.get('cached')) and (not icon.get('local')):
+                add_issue("[%s]: %s" % (cptid, "A 'stock', 'cached' or 'local' icon must at least be provided. @ data['Icon']"))
+                ret = False
+
+        if not test_localized(doc, 'Name'):
+            ret = False
+        if not test_localized(doc, 'Summary'):
+            ret = False
+        if not test_localized(doc, 'Description'):
+            ret = False
+        if not test_localized(doc, 'DeveloperName'):
             ret = False
 
-        for doc in docs:
-            cptid = doc.get('ID')
-            pkgname = doc.get('Package')
-            cpttype = doc.get('Type')
-            if not doc:
-                add_issue("FATAL: Empty document found.")
-                ret = False
-                continue
-            if not cptid:
-                add_issue("FATAL: Component without ID found.")
-                ret = False
-                continue
-            if not pkgname:
-                if cpttype != "web-application":
-                    add_issue("[%s]: %s" % (cptid, "Component is missing a 'Package' key."))
-                    ret = False
-                    continue
-
-            try:
-                schema_component(doc)
-            except Exception as e:
-                add_issue("[%s]: %s" % (cptid, str(e)))
-                ret = False
-                continue
-
-            # more tests for the icon key
-            icon = doc.get('Icon')
-            if (cpttype == "desktop-application") or (cpttype == "web-application"):
-                if not doc.get('Icon'):
-                    add_issue("[%s]: %s" % (cptid, "Components containing an application must have an 'Icon' key."))
-                    ret = False
-            if icon:
-                if (not icon.get('stock')) and (not icon.get('cached')) and (not icon.get('local')):
-                    add_issue("[%s]: %s" % (cptid, "A 'stock', 'cached' or 'local' icon must at least be provided. @ data['Icon']"))
+        for shot in doc.get('Screenshots', list()):
+            caption = shot.get('caption')
+            if caption:
+                if not test_localized_dict(doc, caption, "Screenshots.x.caption"):
                     ret = False
 
-            if not test_localized(doc, 'Name'):
-                ret = False
-            if not test_localized(doc, 'Summary'):
-                ret = False
-            if not test_localized(doc, 'Description'):
-                ret = False
-            if not test_localized(doc, 'DeveloperName'):
-                ret = False
-
-            for shot in doc.get('Screenshots', list()):
-                caption = shot.get('caption')
-                if caption:
-                    if not test_localized_dict(doc, caption, "Screenshots.x.caption"):
-                        ret = False
-
-        return ret
+    return ret
 
 def validate_file(fname):
     f = None

@@ -162,11 +162,11 @@ def do_pkg(upload_id):
     # Have we already processed this?
     if os.path.exists(htmlfile) and \
         os.stat(htmlfile).st_mtime > time.mktime(changes.created.timetuple()):
-            with open(htmlfile, "r") as fd:
-                if fd.read() != timeout_str:
-                    sources.append(htmlname)
-                    return (PROC_STATUS_SUCCESS,
-                            '%s already up-to-date' % htmlfile)
+        with open(htmlfile, "r") as fd:
+            if fd.read() != timeout_str:
+                sources.append(htmlname)
+                return (PROC_STATUS_SUCCESS,
+                        '%s already up-to-date' % htmlfile)
 
     # Go, process it... Now!
     htmlfiles_to_process.append(htmlfile)
