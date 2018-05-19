@@ -97,9 +97,7 @@ def list_packages(packages, suites=None, components=None, architectures=None, bi
             val = lambda: defaultdict(val)
             ret = val()
             for row in result:
-                ret[row[t.c.package]] \
-                   [row[t.c.display_suite]] \
-                   [row[t.c.version]]={'component':      row[t.c.component],
+                ret[row[t.c.package]][row[t.c.display_suite]][row[t.c.version]]={'component':      row[t.c.component],
                                        'architectures':  row[c_architectures].split(','),
                                        'source':         row[t.c.source],
                                        'source_version': row[t.c.source_version]

@@ -52,7 +52,7 @@ Options = None
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak generate-index-diffs [OPTIONS] [suites]
 Write out ed-style diffs to Packages/Source lists
 

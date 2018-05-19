@@ -57,7 +57,7 @@ Logger = None                  #: Our logging object
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     """ Usage information"""
 
     print """Usage: dak generate-releases [OPTIONS]
@@ -446,7 +446,7 @@ class ReleaseWriter(object):
         return
 
 
-def main ():
+def main():
     global Logger
 
     cnf = Config()

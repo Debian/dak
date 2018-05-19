@@ -200,7 +200,7 @@ def do_pkg(upload_id):
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak show-new [OPTION]... [CHANGES]...
   -h, --help                show this help and exit.
   -p, --html-path [path]    override output directory.

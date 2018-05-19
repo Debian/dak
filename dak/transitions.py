@@ -94,7 +94,7 @@ def init():
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: transitions [OPTION]...
 Update and check the release managers transition file.
 

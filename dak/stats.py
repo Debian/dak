@@ -383,7 +383,7 @@ def new_stats(logdir, yaml):
 
 ################################################################################
 
-def main ():
+def main():
     global Cnf
     global users
 

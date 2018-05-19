@@ -500,7 +500,7 @@ def report_outdated_nonfree(suite, session, rdeps=False):
 
 ################################################################################
 
-def main ():
+def main():
     global suite, suite_id, source_binaries, source_versions
 
     cnf = Config()

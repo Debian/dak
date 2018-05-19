@@ -80,7 +80,7 @@ Sections = None
 ################################################################################
 
 class Section_Completer:
-    def __init__ (self, session):
+    def __init__(self, session):
         self.sections = []
         self.matches = []
         for s, in session.query(Section.section):
@@ -101,7 +101,7 @@ class Section_Completer:
 ############################################################
 
 class Priority_Completer:
-    def __init__ (self, session):
+    def __init__(self, session):
         self.priorities = []
         self.matches = []
         for p, in session.query(Priority.priority):
@@ -131,8 +131,7 @@ def takenover_binaries(upload, missing, session):
         source = upload.binaries[0].source.source
         suite = upload.target_suite.overridesuite or \
                     upload.target_suite.suite_name
-        suites = [s[0] for s in session.query(Suite.suite_name).filter \
-                                    (or_(Suite.suite_name == suite,
+        suites = [s[0] for s in session.query(Suite.suite_name).filter(or_(Suite.suite_name == suite,
                                      Suite.overridesuite == suite)).all()]
         rows = session.query(DBSource.source, DBBinary.package).distinct(). \
                              filter(DBBinary.package.in_(binaries)). \
@@ -145,7 +144,7 @@ def takenover_binaries(upload, missing, session):
 
 ################################################################################
 
-def print_new (upload, missing, indexed, session, file=sys.stdout):
+def print_new(upload, missing, indexed, session, file=sys.stdout):
     check_valid(missing, session)
     index = 0
     for m in missing:
@@ -181,7 +180,7 @@ def print_new (upload, missing, indexed, session, file=sys.stdout):
 
 ################################################################################
 
-def index_range (index):
+def index_range(index):
     if index == 1:
         return "1"
     else:
@@ -190,17 +189,17 @@ def index_range (index):
 ################################################################################
 ################################################################################
 
-def edit_new (overrides, upload, session):
+def edit_new(overrides, upload, session):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
     temp_file = os.fdopen(fd, 'w')
-    print_new (upload, overrides, indexed=0, session=session, file=temp_file)
+    print_new(upload, overrides, indexed=0, session=session, file=temp_file)
     temp_file.close()
     # Spawn an editor on that file
     editor = os.environ.get("EDITOR","vi")
     result = os.system("%s %s" % (editor, temp_filename))
     if result != 0:
-        utils.fubar ("%s invocation failed for %s." % (editor, temp_filename), result)
+        utils.fubar("%s invocation failed for %s." % (editor, temp_filename), result)
     # Read the edited data back in
     temp_file = utils.open_file(temp_filename)
     lines = temp_file.readlines()
@@ -242,7 +241,7 @@ def edit_new (overrides, upload, session):
 
 ################################################################################
 
-def edit_index (new, upload, index):
+def edit_index(new, upload, index):
     package = new[index]['package']
     priority = new[index]["priority"]
     section = new[index]["section"]
@@ -313,11 +312,11 @@ def edit_index (new, upload, index):
 
 ################################################################################
 
-def edit_overrides (new, upload, session):
+def edit_overrides(new, upload, session):
     print
     done = 0
     while not done:
-        print_new (upload, new, indexed=1, session=session)
+        print_new(upload, new, indexed=1, session=session)
         prompt = "edit override <n>, Editor, Done ? "
 
         got_answer = 0
@@ -327,7 +326,7 @@ def edit_overrides (new, upload, session):
                 answer = answer[:1].upper()
             if answer == "E" or answer == "D":
                 got_answer = 1
-            elif re_isanum.match (answer):
+            elif re_isanum.match(answer):
                 answer = int(answer)
                 if answer < 1 or answer > len(new):
                     print "{0} is not a valid index.  Please retry.".format(answer)
@@ -339,14 +338,14 @@ def edit_overrides (new, upload, session):
         elif answer == 'D':
             done = 1
         else:
-            edit_index (new, upload, answer - 1)
+            edit_index(new, upload, answer - 1)
 
     return new
 
 
 ################################################################################
 
-def check_pkg (upload, upload_copy, session):
+def check_pkg(upload, upload_copy, session):
     missing = []
     save_stdout = sys.stdout
     changes = os.path.join(upload_copy.directory, upload.changes.changesname)
@@ -418,7 +417,7 @@ def do_bxa_notification(new, upload, session):
 
 ################################################################################
 
-def add_overrides (new_overrides, suite, session):
+def add_overrides(new_overrides, suite, session):
     if suite.overridesuite is not None:
         suite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
@@ -583,7 +582,7 @@ def do_new(upload, upload_copy, handler, session):
         elif answer == 'C':
             check_pkg(upload, upload_copy, session)
         elif answer == 'E' and not Options["Trainee"]:
-            missing = edit_overrides (missing, upload, session)
+            missing = edit_overrides(missing, upload, session)
         elif answer == 'M' and not Options["Trainee"]:
             reason = Options.get('Manual-Reject', '') + "\n"
             reason = reason + "\n\n=====\n\n".join([n.comment for n in get_new_comments(upload.policy_queue, upload.changes.source, session=session)])
@@ -629,7 +628,7 @@ def do_new(upload, upload_copy, handler, session):
 ################################################################################
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -b, --no-binaries         do not sort binary-NEW packages first
@@ -757,7 +756,7 @@ def sort_uploads(new_queue, uploads, session, nobinaries=False):
             changes = sources[src]
             firstseen = sorted(changes, key=lambda k: (k['date']))[0]['date']
             changes.sort(key=lambda item:item['date'])
-            for i in range (0, len(changes)):
+            for i in range(0, len(changes)):
                 changes[i]['date'] = firstseen
                 changes[i]['stack'] = i + 1
         sorteduploads += sources[src]
@@ -842,7 +841,7 @@ def main():
         show_new_comments(uploads, session)
     else:
         for upload in uploads:
-            do_pkg (upload, session)
+            do_pkg(upload, session)
 
     end()
 

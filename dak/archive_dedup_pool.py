@@ -40,7 +40,7 @@ Logger = None
 ################################################################################
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak archive-dedup-pool [OPTION]...
   -h, --help                show this help and exit.
   -V, --version             display the version number and exit

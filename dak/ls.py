@@ -42,7 +42,7 @@ from daklib import utils
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print("""Usage: dak ls [OPTION] PACKAGE[...]
 Display information about PACKAGE(s).
 
@@ -63,7 +63,7 @@ ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 
 ################################################################################
 
-def main ():
+def main():
     cnf = Config()
 
     Arguments = [('a', "architecture", "Ls::Options::Architecture", "HasArg"),

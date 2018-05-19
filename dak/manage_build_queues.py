@@ -42,7 +42,7 @@ Logger = None
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak manage-build-queues [OPTIONS] buildqueue1 buildqueue2
 Manage the contents of one or more build queues
 
@@ -122,7 +122,7 @@ def clean(build_queue, transaction, now=None):
         Logger.log(["removed source from build queue", build_queue.queue_name, source.source, source.version])
         transaction.remove_source(source, suite)
 
-def main ():
+def main():
     global Options, Logger
 
     cnf = Config()
