@@ -705,12 +705,12 @@ def do_pkg(upload, session):
     #    u.Subst["__BCC__"] = bcc
 
     try:
-      with lock_package(upload.changes.source):
-       with UploadCopy(upload, group=group) as upload_copy:
-        handler = PolicyQueueUploadHandler(upload, session)
-        if handler.get_action() is not None:
-            print "PENDING %s\n" % handler.get_action()
-            return
+        with lock_package(upload.changes.source), \
+                UploadCopy(upload, group=group) as upload_copy:
+            handler = PolicyQueueUploadHandler(upload, session)
+            if handler.get_action() is not None:
+                print "PENDING %s\n" % handler.get_action()
+                return
 
         do_new(upload, upload_copy, handler, session)
     except AlreadyLockedError as e:

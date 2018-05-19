@@ -587,73 +587,73 @@ def __suite_component_list(d, args):
 
 
 def __suite_component_listcomponent(d, args):
-     die_arglen(args, 3, "E: suite-component list-component requires a suite")
-     suite = get_suite(args[2].lower(), d.session())
-     if suite is None:
-         die('E: suite %s is invalid' % args[2].lower())
-     for c in suite.components:
-         print c.component_name
+    die_arglen(args, 3, "E: suite-component list-component requires a suite")
+    suite = get_suite(args[2].lower(), d.session())
+    if suite is None:
+        die('E: suite %s is invalid' % args[2].lower())
+    for c in suite.components:
+        print c.component_name
 
 
 def __suite_component_listsuite(d, args):
-     die_arglen(args, 3, "E: suite-component list-suite requires an component")
-     component = get_component(args[2].lower(), d.session())
-     if component is None:
-         die("E: component %s is invalid" % args[2].lower())
-     for s in component.suites:
-         print s.suite_name
+    die_arglen(args, 3, "E: suite-component list-suite requires an component")
+    component = get_component(args[2].lower(), d.session())
+    if component is None:
+        die("E: component %s is invalid" % args[2].lower())
+    for s in component.suites:
+        print s.suite_name
 
 
 def __suite_component_add(d, args):
-     if len(args) < 3:
-         die("E: adding a suite-component entry requires a suite and component")
+    if len(args) < 3:
+        die("E: adding a suite-component entry requires a suite and component")
 
-     s = d.session()
+    s = d.session()
 
-     suite = get_suite(args[2].lower(), s)
-     if suite is None: die("E: Can't find suite %s" % args[2].lower())
+    suite = get_suite(args[2].lower(), s)
+    if suite is None: die("E: Can't find suite %s" % args[2].lower())
 
-     for component_name in args[3:]:
-         component = get_component(component_name.lower(), s)
-         if component is None: die("E: Can't find component %s" % args[3].lower())
+    for component_name in args[3:]:
+        component = get_component(component_name.lower(), s)
+        if component is None: die("E: Can't find component %s" % args[3].lower())
 
-         try:
-             suite.components.append(component)
-             s.flush()
-         except IntegrityError as e:
-             die("E: Can't add suite-component entry (%s, %s) - probably already exists" % (args[2].lower(), component_name))
-         except SQLAlchemyError as e:
-             die("E: Can't add suite-component entry (%s, %s) - %s" % (args[2].lower(), component_name, e))
+        try:
+            suite.components.append(component)
+            s.flush()
+        except IntegrityError as e:
+            die("E: Can't add suite-component entry (%s, %s) - probably already exists" % (args[2].lower(), component_name))
+        except SQLAlchemyError as e:
+            die("E: Can't add suite-component entry (%s, %s) - %s" % (args[2].lower(), component_name, e))
 
-         print "Added suite-component entry for %s, %s" % (args[2].lower(), component_name)
+        print "Added suite-component entry for %s, %s" % (args[2].lower(), component_name)
 
-     if not dryrun:
-         s.commit()
-     s.close()
+    if not dryrun:
+        s.commit()
+    s.close()
 
 def __suite_component_rm(d, args):
-     if len(args) < 3:
-         die("E: removing an suite-component entry requires a suite and component")
+    if len(args) < 3:
+        die("E: removing an suite-component entry requires a suite and component")
 
-     s = d.session()
-     if not dryrun:
-         try:
-             suite_name = args[2].lower()
-             suite = get_suite(suite_name, s)
-             if suite is None:
-                 die('E: no such suite %s' % suite_name)
-             component_string = args[3].lower()
-             component = get_component(arch_string, s)
-             if component not in suite.components:
-                 die("E: component %s not found in suite %s" % (component_string, suite_name))
-             suite.components.remove(component)
-             s.commit()
-         except IntegrityError as e:
-             die("E: Can't remove suite-component entry (%s, %s) - it's probably referenced" % (args[2].lower(), args[3].lower()))
-         except SQLAlchemyError as e:
-             die("E: Can't remove suite-component entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
+    s = d.session()
+    if not dryrun:
+        try:
+            suite_name = args[2].lower()
+            suite = get_suite(suite_name, s)
+            if suite is None:
+                die('E: no such suite %s' % suite_name)
+            component_string = args[3].lower()
+            component = get_component(arch_string, s)
+            if component not in suite.components:
+                die("E: component %s not found in suite %s" % (component_string, suite_name))
+            suite.components.remove(component)
+            s.commit()
+        except IntegrityError as e:
+            die("E: Can't remove suite-component entry (%s, %s) - it's probably referenced" % (args[2].lower(), args[3].lower()))
+        except SQLAlchemyError as e:
+            die("E: Can't remove suite-component entry (%s, %s) - %s" % (args[2].lower(), args[3].lower(), e))
 
-     print "Removed suite-component entry for %s, %s" % (args[2].lower(), args[3].lower())
+    print "Removed suite-component entry for %s, %s" % (args[2].lower(), args[3].lower())
 
 
 def suite_component(command):
@@ -790,11 +790,11 @@ def __version_check_rm(d, suite_name, check, reference_name):
 
     session = d.session()
     try:
-      vc = session.query(VersionCheck).filter_by(suite=suite, check=check, reference=reference).one()
-      session.delete(vc)
-      session.commit()
+        vc = session.query(VersionCheck).filter_by(suite=suite, check=check, reference=reference).one()
+        session.delete(vc)
+        session.commit()
     except NoResultFound:
-      print "W: version-check not found."
+        print "W: version-check not found."
 
 def version_check(command):
     args = [str(x) for x in command]

@@ -268,7 +268,7 @@ def main():
         usage()
 
     if not Options['No-Action']:
-       Logger = daklog.Logger("dominate")
+        Logger = daklog.Logger("dominate")
     session = DBConn().session()
 
     suites_query = (session
