@@ -407,7 +407,6 @@ def main():
 
     force = "Force" in Options and Options["Force"]
 
-
     def parse_results(message):
         # Split out into (code, msg)
         code, msg = message

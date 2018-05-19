@@ -1387,7 +1387,6 @@ class ArchiveUpload(object):
             new_queue = self.transaction.session.query(PolicyQueue).filter_by(queue_name='byhand').one()
         new_suite = new_queue.suite
 
-
         def binary_component_func(binary):
             return self._binary_component(suite, binary, only_overrides=False)
 

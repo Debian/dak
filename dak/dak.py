@@ -181,7 +181,6 @@ Available commands:"""
 def main():
     """Launch dak functionality."""
 
-
     try:
         logger = Logger('dak top-level', print_starting=False)
     except CantOpenError:

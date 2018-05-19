@@ -268,7 +268,6 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
         raise ChangesUnicodeError("Changes file not proper utf-8")
     changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
-
     if not dsc_file:
         # Finally ensure that everything needed for .changes is there
         must_keywords = ('Format', 'Date', 'Source', 'Binary', 'Architecture', 'Version',

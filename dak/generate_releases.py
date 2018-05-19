@@ -430,7 +430,6 @@ class ReleaseWriter(object):
             for hf in hashes:
                 fileinfo[filename][hf.release_field] = hf.func(contents)
 
-
         for field in sorted(h.release_field for h in hashes):
             out.write('%s:\n' % field)
             for filename in sorted(fileinfo.keys()):

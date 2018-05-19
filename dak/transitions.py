@@ -208,7 +208,6 @@ def load_transitions(trans_file):
         print "ERROR: Unable to parse the file"
         failure = True
 
-
     if failure:
         return None
 

@@ -64,7 +64,6 @@ def do_update(self):
               WHERE fam.archive_id = (SELECT id FROM archive WHERE name IN ('backports', 'ftp-master', 'security'))
             """)
 
-
         c.execute("UPDATE config SET value = '79' WHERE name = 'db_revision'")
         self.db.commit()
 
