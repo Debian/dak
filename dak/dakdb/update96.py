@@ -50,6 +50,8 @@ CREATE OR REPLACE VIEW world.suite_summary AS
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

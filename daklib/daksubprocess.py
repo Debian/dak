@@ -22,6 +22,8 @@ import signal
 import subprocess
 
 #
+
+
 def fix_signal_handlers():
     """reset signal handlers to default action.
 
@@ -38,6 +40,7 @@ def fix_signal_handlers():
         except AttributeError:
             pass
 
+
 def _generate_preexec_fn(other_preexec_fn=None):
     def preexec_fn():
         fix_signal_handlers()
@@ -45,11 +48,13 @@ def _generate_preexec_fn(other_preexec_fn=None):
             other_preexec_fn()
     return preexec_fn
 
+
 def call(*args, **kwargs):
     """wrapper around subprocess.call that fixes signal handling"""
     preexec_fn = _generate_preexec_fn(kwargs.get('preexec_fn'))
     kwargs['preexec_fn'] = preexec_fn
     return subprocess.call(*args, **kwargs)
+
 
 def check_call(*args, **kwargs):
     """wrapper around subprocess.check_call that fixes signal handling"""
@@ -57,11 +62,13 @@ def check_call(*args, **kwargs):
     kwargs['preexec_fn'] = preexec_fn
     return subprocess.check_call(*args, **kwargs)
 
+
 def check_output(*args, **kwargs):
     """wrapper around subprocess.check_output that fixes signal handling"""
     preexec_fn = _generate_preexec_fn(kwargs.get('preexec_fn'))
     kwargs['preexec_fn'] = preexec_fn
     return subprocess.check_output(*args, **kwargs)
+
 
 def Popen(*args, **kwargs):
     """wrapper around subprocess.Popen that fixes signal handling"""

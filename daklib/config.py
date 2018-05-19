@@ -44,8 +44,10 @@ warnings.filterwarnings('ignore', ".*apt_pkg.* is deprecated.*", DeprecationWarn
 
 ################################################################################
 
+
 def which_conf_file():
     return os.getenv("DAK_CONFIG", default_config)
+
 
 class Config(object):
     """

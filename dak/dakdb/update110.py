@@ -39,6 +39,8 @@ COMMENT ON COLUMN suite.debugsuite_id IS 'Suite to redirect debug packages (Sect
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

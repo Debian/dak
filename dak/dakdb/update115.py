@@ -41,6 +41,8 @@ COMMENT ON COLUMN suite.last_changed
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

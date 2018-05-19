@@ -36,6 +36,7 @@ import apt_pkg
 from daklib import utils
 import debianbts as bts
 
+
 def usage():
     print """
 SYNOPSIS
@@ -64,6 +65,7 @@ arguments = [('s','simulate','BtsCategorize::Options::Simulate'),
              ('v', 'verbose', 'BtsCategorize::Options::Verbose'),
              ('q', 'quiet', 'BtsCategorize::Options::Quiet'),
              ('h', 'help', 'BtsCategorize::Options::Help')]
+
 
 class BugClassifier(object):
     """
@@ -135,6 +137,7 @@ class BugClassifier(object):
             log.error("couldn't retrieve bugs from soap interface: %s" % sys.exc_info()[0])
             return None
 
+
 def send_email(commands, simulate=False):
     global Cnf
 
@@ -148,6 +151,7 @@ def send_email(commands, simulate=False):
         print bts_mail_message
     else:
         utils.send_mail( bts_mail_message )
+
 
 def main():
     """

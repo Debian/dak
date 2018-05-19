@@ -109,6 +109,7 @@ __all__ = ['IntegrityError', 'SQLAlchemyError', 'DebVersion']
 
 ################################################################################
 
+
 def session_wrapper(fn):
     """
     Wrapper around common ".., session=None):" handling. If the wrapped
@@ -159,6 +160,7 @@ def session_wrapper(fn):
 __all__.append('session_wrapper')
 
 ################################################################################
+
 
 class ORMObject(object):
     """
@@ -302,11 +304,13 @@ __all__.append('ORMObject')
 
 ################################################################################
 
+
 class ACL(ORMObject):
     def __repr__(self):
         return "<ACL {0}>".format(self.name)
 
 __all__.append('ACL')
+
 
 class ACLPerSource(ORMObject):
     def __repr__(self):
@@ -315,6 +319,7 @@ class ACLPerSource(ORMObject):
 __all__.append('ACLPerSource')
 
 ################################################################################
+
 
 class Architecture(ORMObject):
     def __init__(self, arch_string=None, description=None):
@@ -337,6 +342,7 @@ class Architecture(ORMObject):
         return ['arch_string', 'arch_id', 'suites_count']
 
 __all__.append('Architecture')
+
 
 @session_wrapper
 def get_architecture(architecture, session=None):
@@ -365,6 +371,7 @@ __all__.append('get_architecture')
 
 ################################################################################
 
+
 class Archive(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -373,6 +380,7 @@ class Archive(object):
         return '<Archive %s>' % self.archive_name
 
 __all__.append('Archive')
+
 
 @session_wrapper
 def get_archive(archive, session=None):
@@ -403,6 +411,7 @@ __all__.append('get_archive')
 
 ################################################################################
 
+
 class ArchiveFile(object):
     def __init__(self, archive=None, component=None, file=None):
         self.archive = archive
@@ -417,6 +426,7 @@ __all__.append('ArchiveFile')
 
 ################################################################################
 
+
 class BinContents(ORMObject):
     def __init__(self, file=None, binary=None):
         self.file = file
@@ -428,6 +438,7 @@ class BinContents(ORMObject):
 __all__.append('BinContents')
 
 ################################################################################
+
 
 class DBBinary(ORMObject):
     def __init__(self, package=None, source=None, version=None, \
@@ -508,6 +519,7 @@ class DBBinary(ORMObject):
 
 __all__.append('DBBinary')
 
+
 @session_wrapper
 def get_suites_binary_in(package, session=None):
     """
@@ -523,6 +535,7 @@ def get_suites_binary_in(package, session=None):
     return session.query(Suite).filter(Suite.binaries.any(DBBinary.package == package)).all()
 
 __all__.append('get_suites_binary_in')
+
 
 @session_wrapper
 def get_component_by_package_suite(package, suite_list, arch_list=[], session=None):
@@ -559,6 +572,7 @@ __all__.append('get_component_by_package_suite')
 
 ################################################################################
 
+
 class BuildQueue(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -569,6 +583,7 @@ class BuildQueue(object):
 __all__.append('BuildQueue')
 
 ################################################################################
+
 
 class Component(ORMObject):
     def __init__(self, component_name=None):
@@ -591,6 +606,7 @@ class Component(ORMObject):
             'meets_dfsg', 'overrides_count']
 
 __all__.append('Component')
+
 
 @session_wrapper
 def get_component(component, session=None):
@@ -615,6 +631,7 @@ def get_component(component, session=None):
 
 __all__.append('get_component')
 
+
 def get_mapped_component_name(component_name):
     cnf = Config()
     for m in cnf.value_list("ComponentMappings"):
@@ -624,6 +641,7 @@ def get_mapped_component_name(component_name):
     return component_name
 
 __all__.append('get_mapped_component_name')
+
 
 @session_wrapper
 def get_mapped_component(component_name, session=None):
@@ -649,6 +667,7 @@ def get_mapped_component(component_name, session=None):
 
 __all__.append('get_mapped_component')
 
+
 @session_wrapper
 def get_component_names(session=None):
     """
@@ -664,6 +683,7 @@ __all__.append('get_component_names')
 
 ################################################################################
 
+
 class DBConfig(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -675,6 +695,7 @@ __all__.append('DBConfig')
 
 ################################################################################
 
+
 class DSCFile(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -683,6 +704,7 @@ class DSCFile(object):
         return '<DSCFile %s>' % self.dscfile_id
 
 __all__.append('DSCFile')
+
 
 @session_wrapper
 def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None):
@@ -719,6 +741,7 @@ __all__.append('get_dscfiles')
 
 ################################################################################
 
+
 class ExternalOverride(ORMObject):
     def __init__(self, *args, **kwargs):
         pass
@@ -729,6 +752,7 @@ class ExternalOverride(ORMObject):
 __all__.append('ExternalOverride')
 
 ################################################################################
+
 
 class PoolFile(ORMObject):
     def __init__(self, filename=None, filesize=-1, \
@@ -785,6 +809,7 @@ __all__.append('PoolFile')
 
 ################################################################################
 
+
 class Fingerprint(ORMObject):
     def __init__(self, fingerprint=None):
         self.fingerprint = fingerprint
@@ -794,6 +819,7 @@ class Fingerprint(ORMObject):
             'binary_reject']
 
 __all__.append('Fingerprint')
+
 
 @session_wrapper
 def get_fingerprint(fpr, session=None):
@@ -821,6 +847,7 @@ def get_fingerprint(fpr, session=None):
     return ret
 
 __all__.append('get_fingerprint')
+
 
 @session_wrapper
 def get_or_set_fingerprint(fpr, session=None):
@@ -860,6 +887,8 @@ __all__.append('get_or_set_fingerprint')
 ################################################################################
 
 # Helper routine for Keyring class
+
+
 def get_ldap_name(entry):
     name = []
     for k in ["cn", "mn", "sn"]:
@@ -869,6 +898,7 @@ def get_ldap_name(entry):
     return " ".join(name)
 
 ################################################################################
+
 
 class Keyring(object):
     keys = {}
@@ -1002,6 +1032,7 @@ class Keyring(object):
 
 __all__.append('Keyring')
 
+
 @session_wrapper
 def get_keyring(keyring, session=None):
     """
@@ -1024,6 +1055,7 @@ def get_keyring(keyring, session=None):
 
 __all__.append('get_keyring')
 
+
 @session_wrapper
 def get_active_keyring_paths(session=None):
     """
@@ -1036,6 +1068,7 @@ __all__.append('get_active_keyring_paths')
 
 ################################################################################
 
+
 class DBChange(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1044,6 +1077,7 @@ class DBChange(object):
         return '<DBChange %s>' % self.changesname
 
 __all__.append('DBChange')
+
 
 @session_wrapper
 def get_dbchange(filename, session=None):
@@ -1072,6 +1106,7 @@ __all__.append('get_dbchange')
 
 ################################################################################
 
+
 class Maintainer(ORMObject):
     def __init__(self, name=None):
         self.name = name
@@ -1086,6 +1121,7 @@ class Maintainer(ORMObject):
         return fix_maintainer(self.name.strip())
 
 __all__.append('Maintainer')
+
 
 @session_wrapper
 def get_or_set_maintainer(name, session=None):
@@ -1121,6 +1157,7 @@ def get_or_set_maintainer(name, session=None):
 
 __all__.append('get_or_set_maintainer')
 
+
 @session_wrapper
 def get_maintainer(maintainer_id, session=None):
     """
@@ -1140,6 +1177,7 @@ __all__.append('get_maintainer')
 
 ################################################################################
 
+
 class NewComment(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1148,6 +1186,7 @@ class NewComment(object):
         return '''<NewComment for '%s %s' (%s)>''' % (self.package, self.version, self.comment_id)
 
 __all__.append('NewComment')
+
 
 @session_wrapper
 def has_new_comment(policy_queue, package, version, session=None):
@@ -1175,6 +1214,7 @@ def has_new_comment(policy_queue, package, version, session=None):
     return bool(q.count() > 0)
 
 __all__.append('has_new_comment')
+
 
 @session_wrapper
 def get_new_comments(policy_queue, package=None, version=None, comment_id=None, session=None):
@@ -1213,6 +1253,7 @@ __all__.append('get_new_comments')
 
 ################################################################################
 
+
 class Override(ORMObject):
     def __init__(self, package=None, suite=None, component=None, overridetype=None, \
         section=None, priority=None):
@@ -1228,6 +1269,7 @@ class Override(ORMObject):
             'priority']
 
 __all__.append('Override')
+
 
 @session_wrapper
 def get_override(package, suite=None, component=None, overridetype=None, session=None):
@@ -1291,6 +1333,7 @@ class OverrideType(ORMObject):
 
 __all__.append('OverrideType')
 
+
 @session_wrapper
 def get_override_type(override_type, session=None):
     """
@@ -1318,6 +1361,7 @@ __all__.append('get_override_type')
 
 ################################################################################
 
+
 class PolicyQueue(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1326,6 +1370,7 @@ class PolicyQueue(object):
         return '<PolicyQueue %s>' % self.queue_name
 
 __all__.append('PolicyQueue')
+
 
 @session_wrapper
 def get_policy_queue(queuename, session=None):
@@ -1354,6 +1399,7 @@ __all__.append('get_policy_queue')
 
 ################################################################################
 
+
 class PolicyQueueUpload(object):
     def __cmp__(self, other):
         ret = cmp(self.changes.source, other.changes.source)
@@ -1372,12 +1418,14 @@ __all__.append('PolicyQueueUpload')
 
 ################################################################################
 
+
 class PolicyQueueByhandFile(object):
     pass
 
 __all__.append('PolicyQueueByhandFile')
 
 ################################################################################
+
 
 class Priority(ORMObject):
     def __init__(self, priority=None, level=None):
@@ -1400,6 +1448,7 @@ class Priority(ORMObject):
         return NotImplemented
 
 __all__.append('Priority')
+
 
 @session_wrapper
 def get_priority(priority, session=None):
@@ -1426,6 +1475,7 @@ def get_priority(priority, session=None):
 
 __all__.append('get_priority')
 
+
 @session_wrapper
 def get_priorities(session=None):
     """
@@ -1450,6 +1500,7 @@ __all__.append('get_priorities')
 
 ################################################################################
 
+
 class Section(ORMObject):
     def __init__(self, section=None):
         self.section = section
@@ -1470,6 +1521,7 @@ class Section(ORMObject):
         return NotImplemented
 
 __all__.append('Section')
+
 
 @session_wrapper
 def get_section(section, session=None):
@@ -1496,6 +1548,7 @@ def get_section(section, session=None):
 
 __all__.append('get_section')
 
+
 @session_wrapper
 def get_sections(session=None):
     """
@@ -1520,6 +1573,7 @@ __all__.append('get_sections')
 
 ################################################################################
 
+
 class SignatureHistory(ORMObject):
     @classmethod
     def from_signed_file(cls, signed_file):
@@ -1543,6 +1597,7 @@ __all__.append('SignatureHistory')
 
 ################################################################################
 
+
 class SrcContents(ORMObject):
     def __init__(self, file=None, source=None):
         self.file = file
@@ -1558,6 +1613,8 @@ __all__.append('SrcContents')
 from debian.debfile import Deb822
 
 # Temporary Deb822 subclass to fix bugs with : handling; see #597249
+
+
 class Dak822(Deb822):
     def _internal_parser(self, sequence, fields=None):
         # The key is non-whitespace, non-colon characters before any colon.
@@ -1669,6 +1726,7 @@ class DBSource(ORMObject):
 
 __all__.append('DBSource')
 
+
 @session_wrapper
 def get_suites_source_in(source, session=None):
     """
@@ -1687,6 +1745,8 @@ __all__.append('get_suites_source_in')
 
 # FIXME: This function fails badly if it finds more than 1 source package and
 # its implementation is trivial enough to be inlined.
+
+
 @session_wrapper
 def get_source_in_suite(source, suite_name, session=None):
     """
@@ -1714,6 +1774,7 @@ def get_source_in_suite(source, suite_name, session=None):
         return None
 
 __all__.append('get_source_in_suite')
+
 
 @session_wrapper
 def import_metadata_into_db(obj, session=None):
@@ -1744,6 +1805,7 @@ __all__.append('import_metadata_into_db')
 
 ################################################################################
 
+
 class SrcFormat(object):
     def __init__(self, *args, **kwargs):
         pass
@@ -1773,6 +1835,8 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
 
 # Why the heck don't we have any UNIQUE constraints in table suite?
 # TODO: Add UNIQUE constraints for appropriate columns.
+
+
 class Suite(ORMObject):
     def __init__(self, suite_name=None, version=None):
         self.suite_name = suite_name
@@ -1865,6 +1929,7 @@ class Suite(ORMObject):
 
 __all__.append('Suite')
 
+
 @session_wrapper
 def get_suite(suite, session=None):
     """
@@ -1906,6 +1971,7 @@ __all__.append('get_suite')
 
 ################################################################################
 
+
 @session_wrapper
 def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     """
@@ -1940,6 +2006,7 @@ __all__.append('get_suite_architectures')
 
 ################################################################################
 
+
 class Uid(ORMObject):
     def __init__(self, uid=None, name=None):
         self.uid = uid
@@ -1961,6 +2028,7 @@ class Uid(ORMObject):
         return ['uid', 'name', 'fingerprint']
 
 __all__.append('Uid')
+
 
 @session_wrapper
 def get_or_set_uid(uidname, session=None):
@@ -1996,6 +2064,7 @@ def get_or_set_uid(uidname, session=None):
 
 __all__.append('get_or_set_uid')
 
+
 @session_wrapper
 def get_uid_from_fingerprint(fpr, session=None):
     q = session.query(Uid)
@@ -2010,6 +2079,7 @@ __all__.append('get_uid_from_fingerprint')
 
 ################################################################################
 
+
 class MetadataKey(ORMObject):
     def __init__(self, key=None):
         self.key = key
@@ -2018,6 +2088,7 @@ class MetadataKey(ORMObject):
         return ['key']
 
 __all__.append('MetadataKey')
+
 
 @session_wrapper
 def get_or_set_metadatakey(keyname, session=None):
@@ -2053,6 +2124,7 @@ __all__.append('get_or_set_metadatakey')
 
 ################################################################################
 
+
 class BinaryMetadata(ORMObject):
     def __init__(self, key=None, value=None, binary=None):
         self.key = key
@@ -2067,6 +2139,7 @@ __all__.append('BinaryMetadata')
 
 ################################################################################
 
+
 class SourceMetadata(ORMObject):
     def __init__(self, key=None, value=None, source=None):
         self.key = key
@@ -2080,6 +2153,7 @@ class SourceMetadata(ORMObject):
 __all__.append('SourceMetadata')
 
 ################################################################################
+
 
 class MetadataProxy(object):
     def __init__(self, session, query):
@@ -2112,6 +2186,7 @@ class MetadataProxy(object):
 
 ################################################################################
 
+
 class VersionCheck(ORMObject):
     def __init__(self, *args, **kwargs):
         pass
@@ -2121,6 +2196,7 @@ class VersionCheck(ORMObject):
         return ['check']
 
 __all__.append('VersionCheck')
+
 
 @session_wrapper
 def get_version_checks(suite_name, check=None, session=None):
@@ -2137,6 +2213,7 @@ def get_version_checks(suite_name, check=None, session=None):
 __all__.append('get_version_checks')
 
 ################################################################################
+
 
 class DBConn(object):
     """

@@ -22,11 +22,14 @@ import os
 import shutil
 import subprocess
 
+
 def decompress_xz(input, output):
     subprocess.check_call(["xz", "--decompress"], stdin=input, stdout=output)
 
+
 def decompress_bz2(input, output):
     subprocess.check_call(["bzip2", "--decompress"], stdin=input, stdout=output)
+
 
 def decompress_gz(input, output):
     subprocess.check_call(["gzip", "--decompress"], stdin=input, stdout=output)
@@ -36,6 +39,7 @@ decompressors = {
     '.bz2': decompress_bz2,
     '.gz': decompress_gz,
 }
+
 
 def decompress(input, output, filename=None):
     if filename is None:

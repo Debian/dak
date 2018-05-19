@@ -61,6 +61,7 @@ Options = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak rm [OPTIONS] PACKAGE[...]
 Remove PACKAGE(s) from suite(s).
@@ -94,6 +95,7 @@ ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 #  man...That's it man, game over man, game over, man! Game over! What
 #  the fuck are we gonna do now? What are we gonna do?"
 
+
 def game_over():
     answer = utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
@@ -101,6 +103,7 @@ def game_over():
         sys.exit(1)
 
 ################################################################################
+
 
 def reverse_depends_check(removals, suite, arches=None, session=None, include_arch_all=True):
     print "Checking reverse dependencies..."
@@ -113,6 +116,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None, include_ar
     print
 
 ################################################################################
+
 
 def main():
     global Options

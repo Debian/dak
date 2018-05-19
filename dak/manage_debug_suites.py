@@ -38,6 +38,7 @@ Logger = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak manage-debug-suites [-a|--all|<suite>...]
 Manage the contents of one or more debug suites
@@ -49,6 +50,7 @@ Manage the contents of one or more debug suites
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def clean(debug_suite, transaction):
     session = transaction.session
@@ -85,6 +87,7 @@ def clean(debug_suite, transaction):
     result = session.execute(query, {"debugsuite_id": debug_suite.suite_id})
     for row in result:
         Logger.log(["remove", debug_suite.suite_name, row[0], row[1], row[2]])
+
 
 def main():
     global Options, Logger

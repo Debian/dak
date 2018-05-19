@@ -23,6 +23,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib.policy import UploadCopy
 
+
 def usage():
     print """Usage: dak export -q <queue> [options] -a|--all|<source...>
 
@@ -36,6 +37,7 @@ source package and all other files associated with that.
  -q <queue>        queue to grab uploads from
  <source>          source package name to export
 """
+
 
 def main(argv=None):
     if argv is None:

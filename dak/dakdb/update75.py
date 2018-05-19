@@ -33,6 +33,7 @@ import os
 
 ################################################################################
 
+
 def _track_files_per_archive(cnf, c):
     c.execute("SELECT id FROM archive")
     (archive_id,) = c.fetchone()
@@ -69,6 +70,7 @@ def _track_files_per_archive(cnf, c):
     c.execute("DROP VIEW IF EXISTS binfiles_suite_component_arch")
     c.execute("ALTER TABLE files DROP COLUMN location")
     c.execute("DROP TABLE location")
+
 
 def _convert_policy_queues(cnf, c):
     base = cnf['Dir::Base']
@@ -171,6 +173,7 @@ def _convert_policy_queues(cnf, c):
       DROP COLUMN approved_for
     """)
 
+
 def _convert_build_queues(cnf, c):
     base = cnf['Dir::Base']
     build_queue_path = os.path.join(base, 'build-queues')
@@ -206,6 +209,7 @@ def _convert_build_queues(cnf, c):
                    DROP COLUMN releasedescription,
                    DROP COLUMN signingkey,
                    DROP COLUMN notautomatic""")
+
 
 def do_update(self):
     print __doc__

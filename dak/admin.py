@@ -36,16 +36,21 @@ dispatch = {}
 dryrun = False
 
 ################################################################################
+
+
 def warn(msg):
     print >> sys.stderr, msg
+
 
 def die(msg, exit_code=1):
     print >> sys.stderr, msg
     sys.exit(exit_code)
 
+
 def die_arglen(args, args_needed, msg):
     if len(args) < args_needed:
         die(msg)
+
 
 def usage(exit_code=0):
     """Perform administrative work on the dak database."""
@@ -153,6 +158,7 @@ Perform administrative work on the dak database.
 
 ################################################################################
 
+
 def __architecture_list(d, args):
     q = d.session().query(Architecture).order_by(Architecture.arch_string)
     for j in q.all():
@@ -161,6 +167,7 @@ def __architecture_list(d, args):
             continue
         print j.arch_string
     sys.exit(0)
+
 
 def __architecture_add(d, args):
     die_arglen(args, 4, "E: adding an architecture requires a name and a description")
@@ -188,6 +195,7 @@ def __architecture_add(d, args):
             die("E: Error adding architecture %s (%s)" % (args[2], e))
     print "Architecture %s added" % (args[2])
 
+
 def __architecture_rm(d, args):
     die_arglen(args, 3, "E: removing an architecture requires at least a name")
     print "Removing architecture %s" % args[2]
@@ -204,6 +212,7 @@ def __architecture_rm(d, args):
         except SQLAlchemyError as e:
             die("E: Error removing architecture %s (%s)" % (args[2], e))
     print "Architecture %s removed" % args[2]
+
 
 def architecture(command):
     args = [str(x) for x in command]
@@ -227,10 +236,12 @@ dispatch['a'] = architecture
 
 ################################################################################
 
+
 def component_list():
     session = DBConn().session()
     for component in session.query(Component).order_by(Component.component_name):
         print "{0} ordering={1}".format(component.component_name, component.ordering)
+
 
 def component_add(args):
     (name, description, ordering) = args[0:3]
@@ -259,6 +270,7 @@ def component_add(args):
     else:
         session.commit()
 
+
 def component_rm(name):
     session = DBConn().session()
     component = get_component(name, session)
@@ -270,6 +282,7 @@ def component_rm(name):
     else:
         session.commit()
 
+
 def component_rename(oldname, newname):
     session = DBConn().session()
     component = get_component(oldname, session)
@@ -280,6 +293,7 @@ def component_rename(oldname, newname):
         session.rollback()
     else:
         session.commit()
+
 
 def component(command):
     mode = command[1]
@@ -298,6 +312,7 @@ dispatch['component'] = component
 
 ################################################################################
 
+
 def __suite_list(d, args):
     s = d.session()
     for j in s.query(Suite).join(Suite.archive).order_by(Archive.archive_name, Suite.suite_name).all():
@@ -305,6 +320,7 @@ def __suite_list(d, args):
             print "{0} {1}".format(j.archive.archive_name, j.suite_name)
         else:
             print "{0}".format(j.suite_name)
+
 
 def __suite_show(d, args):
     if len(args) < 2:
@@ -316,6 +332,7 @@ def __suite_show(d, args):
         die("E: can't find suite entry for %s" % (args[2].lower()))
 
     print su.details()
+
 
 def __suite_add(d, args, addallarches=False):
     die_arglen(args, 4, "E: adding a suite requires at least a name and a version")
@@ -372,6 +389,7 @@ def __suite_add(d, args, addallarches=False):
 
     s.commit()
 
+
 def __suite_rm(d, args):
     die_arglen(args, 3, "E: removing a suite requires at least a name")
     name = args[2]
@@ -389,6 +407,7 @@ def __suite_rm(d, args):
         except SQLAlchemyError as e:
             die("E: Error removing suite {0} ({1})".format(name, e))
     print "Suite {0} removed".format(name)
+
 
 def __suite_add_build_queue(d, args):
     session = d.session()
@@ -444,6 +463,7 @@ def __suite_add_build_queue(d, args):
 
     session.commit()
 
+
 def suite(command):
     args = [str(x) for x in command]
     Cnf = utils.get_conf()
@@ -473,12 +493,14 @@ dispatch['s'] = suite
 
 ################################################################################
 
+
 def __suite_architecture_list(d, args):
     s = d.session()
     for j in s.query(Suite).order_by(Suite.suite_name):
         architectures = j.get_architectures(skipsrc=True, skipall=True)
         print j.suite_name + ': ' + \
               ', '.join([a.arch_string for a in architectures])
+
 
 def __suite_architecture_listarch(d, args):
     die_arglen(args, 3, "E: suite-architecture list-arch requires a suite")
@@ -528,6 +550,7 @@ def __suite_architecture_add(d, args):
         s.commit()
 
     s.close()
+
 
 def __suite_architecture_rm(d, args):
     if len(args) < 3:
@@ -580,6 +603,7 @@ dispatch['suite-architecture'] = suite_architecture
 dispatch['s-a'] = suite_architecture
 
 ################################################################################
+
 
 def __suite_component_list(d, args):
     s = d.session()
@@ -636,6 +660,7 @@ def __suite_component_add(d, args):
         s.commit()
     s.close()
 
+
 def __suite_component_rm(d, args):
     if len(args) < 3:
         die("E: removing an suite-component entry requires a suite and component")
@@ -688,10 +713,12 @@ dispatch['s-c'] = suite_component
 
 ################################################################################
 
+
 def archive_list():
     session = DBConn().session()
     for archive in session.query(Archive).order_by(Archive.archive_name):
         print "{0} path={1} description={2} tainted={3}".format(archive.archive_name, archive.path, archive.description, archive.tainted)
+
 
 def archive_add(args):
     (name, path, description) = args[0:3]
@@ -720,6 +747,7 @@ def archive_add(args):
     else:
         session.commit()
 
+
 def archive_rm(name):
     session = DBConn().session()
     archive = get_archive(name, session)
@@ -731,6 +759,7 @@ def archive_rm(name):
     else:
         session.commit()
 
+
 def archive_rename(oldname, newname):
     session = DBConn().session()
     archive = get_archive(oldname, session)
@@ -741,6 +770,7 @@ def archive_rename(oldname, newname):
         session.rollback()
     else:
         session.commit()
+
 
 def archive(command):
     mode = command[1]
@@ -759,15 +789,18 @@ dispatch['archive'] = archive
 
 ################################################################################
 
+
 def __version_check_list(d):
     session = d.session()
     for s in session.query(Suite).order_by(Suite.suite_name):
         __version_check_list_suite(d, s.suite_name)
 
+
 def __version_check_list_suite(d, suite_name):
     vcs = get_version_checks(suite_name)
     for vc in vcs:
         print "%s %s %s" % (suite_name, vc.check, vc.reference.suite_name)
+
 
 def __version_check_add(d, suite_name, check, reference_name):
     suite = get_suite(suite_name)
@@ -785,6 +818,7 @@ def __version_check_add(d, suite_name, check, reference_name):
     session.add(vc)
     session.commit()
 
+
 def __version_check_rm(d, suite_name, check, reference_name):
     suite = get_suite(suite_name)
     if not suite:
@@ -800,6 +834,7 @@ def __version_check_rm(d, suite_name, check, reference_name):
         session.commit()
     except NoResultFound:
         print "W: version-check not found."
+
 
 def version_check(command):
     args = [str(x) for x in command]
@@ -830,6 +865,7 @@ dispatch['version-check'] = version_check
 dispatch['v-c'] = version_check
 
 ################################################################################
+
 
 def show_config(command):
     args = [str(x) for x in command]
@@ -886,6 +922,7 @@ dispatch['c'] = show_config
 
 ################################################################################
 
+
 def show_keyring(command):
     args = [str(x) for x in command]
     cnf = utils.get_conf()
@@ -909,6 +946,7 @@ def show_keyring(command):
 
     for k in q.all():
         print k.keyring_name
+
 
 def keyring_add_buildd(command):
     name = command[2]
@@ -934,6 +972,7 @@ def keyring_add_buildd(command):
 
     session.commit()
 
+
 def keyring(command):
     if command[1].startswith('list-'):
         show_keyring(command)
@@ -946,6 +985,7 @@ dispatch['keyring'] = keyring
 dispatch['k'] = keyring
 
 ################################################################################
+
 
 def change_component_source(transaction, suite, component, source_names):
     session = transaction.session
@@ -961,6 +1001,7 @@ def change_component_source(transaction, suite, component, source_names):
         print "Copying {0}={1}".format(source.source, source.version)
         transaction.copy_source(source, suite, component)
 
+
 def change_component_binary(transaction, suite, component, binary_names):
     session = transaction.session
 
@@ -975,6 +1016,7 @@ def change_component_binary(transaction, suite, component, binary_names):
         print "Copying {0}={1} [{2}]".format(binary.package, binary.version, binary.architecture.arch_string)
         transaction.copy_binary(binary, suite, component)
     pass
+
 
 def change_component(args):
     with daklib.archive.ArchiveTransaction() as transaction:
@@ -996,6 +1038,7 @@ dispatch['change-component'] = change_component
 
 ################################################################################
 
+
 def forget_signature(args):
     filename = args[1]
     with open(filename, 'r') as fh:
@@ -1015,6 +1058,7 @@ def forget_signature(args):
 dispatch['forget-signature'] = forget_signature
 
 ################################################################################
+
 
 def main():
     """Perform administrative work on the dak database"""

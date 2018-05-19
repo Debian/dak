@@ -29,11 +29,13 @@ from daklib.fstransactions import FilesystemTransaction
 from daklib.gpg import GpgException
 from daklib.utils import find_next_free
 
+
 def usage():
     print """Usage: dak process-commands [-d <directory>] [<command-file>...]
 
 process command files
 """
+
 
 def main(argv=None):
     if argv is None:

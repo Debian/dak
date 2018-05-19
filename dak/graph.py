@@ -35,6 +35,7 @@ default_names = ["byhand", "new", "deferred"]
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak graph
 Graphs the number of packages in queue directories (usually new and byhand).
@@ -50,11 +51,13 @@ Graphs the number of packages in queue directories (usually new and byhand).
 
 ################################################################################
 
+
 def graph(*args):
     if args[2] == "deferred":
         graph_deferred(*args)
     else:
         graph_normal(*args)
+
 
 def deferred_colours():
     colours = [0]*16
@@ -64,6 +67,7 @@ def deferred_colours():
     return colours
 
 colours = deferred_colours()
+
 
 def graph_deferred(rrd_dir, image_dir, name, extra_args, graph, title, start, year_lines=False):
     image_file = os.path.join(image_dir, "%s-%s.png" % (name, graph))
@@ -107,6 +111,7 @@ GPRINT:avgd%i:avg\\: %%.0lf\\j
         ret = rrdtool.graph(*rrd_args)
     except rrdtool.error as e:
         print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
+
 
 def graph_normal(rrd_dir, image_dir, name, extra_args, graph, title, start, year_lines=False):
     image_file = os.path.join(image_dir, "%s-%s.png" % (name, graph))
@@ -161,6 +166,7 @@ GPRINT:avgds0:avg\\: %%.0lf\\j
         print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
 
 ################################################################################
+
 
 def main():
     global Cnf

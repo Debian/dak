@@ -38,10 +38,12 @@ from daklib.regexes import re_html_escaping, html_escaping
 
 row_number = 1
 
+
 def html_escape(s):
     return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 
 ################################################################################
+
 
 def header():
     return """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
@@ -79,11 +81,13 @@ def header():
         </table>
         """
 
+
 def footer():
     res = "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     res += "<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>"
     res += "</body></html>"
     return res.encode('utf-8')
+
 
 def table_header():
     return """<h1>Deferred uploads</h1>
@@ -96,8 +100,10 @@ def table_header():
         </tr>
         """
 
+
 def table_footer():
     return '</table><br/><p>non-NEW uploads are <a href="/deferred/">available</a> (<a href="/deferred/status">machine readable version</a>), see the <a href="ftp://ftp.upload.debian.org/pub/UploadQueue/README">UploadQueue-README</a> and <a href="https://www.debian.org/doc/manuals/developers-reference/ch05.en.html#delayed-incoming">Developer\'s reference</a> for more information on the DELAYED queue.</p></center><br/>\n'
+
 
 def table_row(changesname, delay, changed_by, closes, fingerprint):
     global row_number
@@ -110,6 +116,7 @@ def table_row(changesname, delay, changed_by, closes, fingerprint):
     res += '</tr>\n'
     row_number+=1
     return res
+
 
 def update_graph_database(rrd_dir, *counts):
     if not rrd_dir:
@@ -164,6 +171,7 @@ RRA:MAX:0.5:288:795
     except NameError:
         pass
 
+
 def get_upload_data(changesfn):
     achanges = deb822.Changes(file(changesfn))
     changesname = os.path.basename(changesfn)
@@ -205,6 +213,7 @@ def get_upload_data(changesfn):
                     os.chmod(qfn, 0o644)
     return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes','').split(), fingerprint, achanges, delaydays)
 
+
 def list_uploads(filelist, rrd_dir):
     uploads = map(get_upload_data, filelist)
     uploads.sort()
@@ -243,6 +252,7 @@ Fingerprint: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u
             os.unlink(fn)
             raise
 
+
 def usage(exit_code=0):
     if exit_code:
         f = sys.stderr
@@ -255,6 +265,7 @@ def usage(exit_code=0):
   -r, --rrd=key                 Directory where rrd files to be updated are stored
   """
     sys.exit(exit_code)
+
 
 def init():
     global Cnf, Options
@@ -282,6 +293,7 @@ def init():
     DBConn()
 
     return args
+
 
 def main():
     args = init()

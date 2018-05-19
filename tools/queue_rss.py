@@ -39,6 +39,7 @@ parser.add_option("-l", "--logdir", dest="logdir",
 parser.add_option("-m", "--max-entries", dest="max_entries", type="int",
         help="Max number of entries to keep (%default)")
 
+
 class Status:
     def __init__(self):
         self.feed_in = PyRSS2Gen.RSS2(
@@ -53,6 +54,7 @@ class Status:
 
         self.queue = {}
 
+
 def purge_old_items(feed, max):
     """ Purge RSSItem from feed, no more than max. """
     if feed.items is None or len(feed.items) == 0:
@@ -60,6 +62,7 @@ def purge_old_items(feed, max):
 
     feed.items = feed.items[:max]
     return True
+
 
 def parse_changes(fname):
     """ Parse a .changes file named fname.
@@ -75,6 +78,7 @@ def parse_changes(fname):
         return None
 
     return {os.path.basename(fname): m}
+
 
 def parse_queuedir(dir):
     """ Parse dir for .changes files.
@@ -94,6 +98,7 @@ def parse_queuedir(dir):
             res.update(parsed)
 
     return res
+
 
 def parse_leave_reason(fname):
     """ Parse a dak log file fname for ACCEPT/REJECT reason from process-new.
@@ -116,6 +121,7 @@ def parse_leave_reason(fname):
 
     f.close()
     return res
+
 
 def add_rss_item(status, msg, direction):
     if direction == "in":
@@ -159,6 +165,7 @@ def add_rss_item(status, msg, direction):
             guid=guid
         )
     )
+
 
 def update_feeds(curqueue, status, settings):
     # inrss -> append all items in curqueue not in status.queue

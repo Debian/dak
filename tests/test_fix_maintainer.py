@@ -8,6 +8,7 @@ import unittest
 from daklib.textutils import fix_maintainer
 from daklib.dak_exceptions import ParseMaintError
 
+
 class FixMaintainerTestCase(DakTestCase):
     def assertValid(self, input, a, b, c, d):
         a_, b_, c_, d_ = fix_maintainer(input)

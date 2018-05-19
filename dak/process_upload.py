@@ -189,6 +189,7 @@ Logger = None
 
 ###############################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak process-upload [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
@@ -201,6 +202,7 @@ def usage(exit_code=0):
     sys.exit(exit_code)
 
 ###############################################################################
+
 
 def try_or_reject(function):
     """Try to call function or reject the upload if that fails
@@ -226,6 +228,7 @@ def try_or_reject(function):
         raise Exception('Rejecting upload failed after multiple tries. Giving up. Last reason:\n{0}'.format(reason))
 
     return wrapper
+
 
 def get_processed_upload(upload):
     changes = upload.changes
@@ -253,6 +256,7 @@ def get_processed_upload(upload):
     pu.warnings = upload.warnings
 
     return pu
+
 
 @try_or_reject
 def accept(directory, upload):
@@ -296,6 +300,7 @@ def accept(directory, upload):
     SummaryStats().accept_count += 1
     SummaryStats().accept_bytes += upload.changes.bytes
 
+
 @try_or_reject
 def accept_to_new(directory, upload):
 
@@ -311,9 +316,11 @@ def accept_to_new(directory, upload):
     SummaryStats().accept_count += 1
     SummaryStats().accept_bytes += upload.changes.bytes
 
+
 @try_or_reject
 def reject(directory, upload, reason=None, notify=True):
     real_reject(directory, upload, reason, notify)
+
 
 def real_reject(directory, upload, reason=None, notify=True):
     # XXX: rejection itself should go to daklib.archive.ArchiveUpload
@@ -355,6 +362,7 @@ def real_reject(directory, upload, reason=None, notify=True):
     SummaryStats().reject_count += 1
 
 ###############################################################################
+
 
 def action(directory, upload):
     changes = upload.changes
@@ -445,12 +453,14 @@ def action(directory, upload):
 
 ###############################################################################
 
+
 def unlink_if_exists(path):
     try:
         os.unlink(path)
     except OSError as e:
         if e.errno != errno.ENOENT:
             raise
+
 
 def process_it(directory, changes, keyrings):
     global Logger
@@ -474,6 +484,7 @@ def process_it(directory, changes, keyrings):
 
 ###############################################################################
 
+
 def process_changes(changes_filenames):
     session = DBConn().session()
     keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
@@ -494,6 +505,7 @@ def process_changes(changes_filenames):
     for directory, c in changes:
         process_it(directory, c, keyring_files)
 
+
 def process_buildinfos(upload):
     cnf = Config()
 
@@ -513,6 +525,7 @@ def process_buildinfos(upload):
         upload.transaction.fs.copy(src, dst, mode=0o644)
 
 ###############################################################################
+
 
 def main():
     global Options, Logger

@@ -73,6 +73,7 @@ blacklist = {}
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak check-overrides
 Check for cruft in overrides.
@@ -83,6 +84,7 @@ Check for cruft in overrides.
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def process(osuite, affected_suites, originosuite, component, otype, session):
     global Logger, Options, sections, priorities

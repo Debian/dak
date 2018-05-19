@@ -57,6 +57,7 @@ Logger = None                  #: Our logging object
 
 ################################################################################
 
+
 def usage(exit_code=0):
     """ Usage information"""
 
@@ -77,6 +78,7 @@ SUITE can be a space separated list, e.g.
     sys.exit(exit_code)
 
 ########################################################################
+
 
 def sign_release_dir(suite, dirname):
     cnf = Config()
@@ -106,6 +108,7 @@ def sign_release_dir(suite, dirname):
             stdin.seek(0)
             with open(inlinedest, 'w') as stdout:
                 daklib.gpg.sign(stdin, stdout, inline=True, **args)
+
 
 class XzFile(object):
     def __init__(self, filename, mode='r'):
@@ -517,6 +520,7 @@ def main():
     Logger.close()
 
     sys.exit(retcode)
+
 
 def generate_helper(suite_id):
     '''

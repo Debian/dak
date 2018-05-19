@@ -64,6 +64,7 @@ from daklib.regexes import re_no_epoch
 
 filelist = 'filelist.yaml'
 
+
 def usage(exit_code=0):
     print """Generate changelog between two suites
 
@@ -83,6 +84,7 @@ Options:
   -p, --progress            display progress status"""
 
     sys.exit(exit_code)
+
 
 def get_source_uploads(suite, base_suite, session):
     """
@@ -116,6 +118,7 @@ def get_source_uploads(suite, base_suite, session):
                ORDER BY c.source, c.version DESC"""
 
     return session.execute(query, {'suite': suite, 'base_suite': base_suite})
+
 
 def get_binary_uploads(suite, base_suite, session):
     """
@@ -156,6 +159,7 @@ def get_binary_uploads(suite, base_suite, session):
 
     return session.execute(query, {'suite': suite, 'base_suite': base_suite})
 
+
 def display_changes(uploads, index):
     prev_upload = None
     for upload in uploads:
@@ -163,6 +167,7 @@ def display_changes(uploads, index):
             print
         print upload[index]
         prev_upload = upload[0]
+
 
 def export_files(session, archive, clpool, progress=False):
     """
@@ -270,6 +275,7 @@ def export_files(session, archive, clpool, progress=False):
     print '  * Unpack errors: %d' % stats['errors']
     print '  * Files available into changelog pool: %d' % stats['files']
 
+
 def generate_export_filelist(clpool):
     clfiles = {}
     for root, dirs, files in os.walk(clpool):
@@ -289,6 +295,7 @@ def generate_export_filelist(clpool):
                 clfiles[source][elements[0]].append(clpath)
     with open(os.path.join(clpool, filelist), 'w+') as fd:
         safe_dump(clfiles, fd, default_flow_style=False)
+
 
 def main():
     Cnf = utils.get_conf()

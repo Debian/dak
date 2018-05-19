@@ -49,6 +49,7 @@ from daklib import utils
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print("""Usage: dak contents [options] subcommand
 
@@ -89,12 +90,14 @@ OPTIONS for scan-source and scan-binary
 
 ################################################################################
 
+
 def write_all(cnf, archive_names=[], suite_names=[], component_names=[], force=None):
     Logger = daklog.Logger('contents generate')
     ContentsWriter.write_all(Logger, archive_names, suite_names, component_names, force)
     Logger.close()
 
 ################################################################################
+
 
 def binary_scan_all(cnf, limit):
     Logger = daklog.Logger('contents scan-binary')
@@ -106,6 +109,7 @@ def binary_scan_all(cnf, limit):
 
 ################################################################################
 
+
 def source_scan_all(cnf, limit):
     Logger = daklog.Logger('contents scan-source')
     result = SourceContentsScanner.scan_all(limit)
@@ -115,6 +119,7 @@ def source_scan_all(cnf, limit):
     Logger.close()
 
 ################################################################################
+
 
 def main():
     cnf = Config()

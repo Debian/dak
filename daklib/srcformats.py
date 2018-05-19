@@ -37,6 +37,7 @@ from dak_exceptions import UnknownFormatError
 
 srcformats = []
 
+
 def get_format_from_string(txt):
     """
     Returns the SourceFormat class that corresponds to the specified .changes
@@ -49,6 +50,7 @@ def get_format_from_string(txt):
             return format
 
     raise UnknownFormatError("Unknown format %r" % txt)
+
 
 class SourceFormat(type):
     def __new__(cls, name, bases, attrs):
@@ -72,6 +74,7 @@ class SourceFormat(type):
             if has[key]:
                 yield "contains source files not allowed in format %s" % cls.name
 
+
 class FormatOne(SourceFormat):
     __metaclass__ = SourceFormat
 
@@ -94,6 +97,7 @@ class FormatOne(SourceFormat):
         for msg in super(FormatOne, cls).reject_msgs(has):
             yield msg
 
+
 class FormatThree(SourceFormat):
     __metaclass__ = SourceFormat
 
@@ -102,6 +106,7 @@ class FormatThree(SourceFormat):
 
     requires = ('native_tar',)
     disallowed = ('orig_tar', 'debian_diff', 'debian_tar', 'more_orig_tar')
+
 
 class FormatThreeQuilt(SourceFormat):
     __metaclass__ = SourceFormat

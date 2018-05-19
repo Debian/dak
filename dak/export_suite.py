@@ -24,6 +24,7 @@ from daklib.config import Config
 from daklib.dbconn import *
 from daklib.fstransactions import FilesystemTransaction
 
+
 def usage():
     print """Usage: dak export-suite -s <suite> [options]
 
@@ -35,6 +36,7 @@ Export binaries and sources from a suite to a flat directory structure.
  -r --relative     use symlinks relative to target directory
  -s <suite>        suite to grab uploads from
 """
+
 
 def main(argv=None):
     if argv is None:

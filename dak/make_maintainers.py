@@ -44,6 +44,7 @@ from sqlalchemy.sql import text
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak make-maintainers [OPTION] -a ARCHIVE EXTRA_FILE[...]
 Generate an index of packages <=> Maintainers / Uploaders.
@@ -57,11 +58,13 @@ Generate an index of packages <=> Maintainers / Uploaders.
 
 ################################################################################
 
+
 def format(package, person):
     '''Return a string nicely formatted for writing to the output file.'''
     return '%-20s %s\n' % (package, person)
 
 ################################################################################
+
 
 def main():
     cnf = Config()

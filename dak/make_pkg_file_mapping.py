@@ -37,6 +37,7 @@ from daklib.dbconn import *
 
 ################################################################################
 
+
 def build_mapping(archive, session):
     # The ORDER BY is in the queries so that compression of the output works
     # better.  It's the difference between a 9 megabyte bzip2 and a 2.5 mb
@@ -94,11 +95,13 @@ def build_mapping(archive, session):
 
 ################################################################################
 
+
 def usage():
     print "usage: dak make-pkg-file-mapping <archive>"
     sys.exit(0)
 
 ################################################################################
+
 
 def main():
     if len(sys.argv) != 2:

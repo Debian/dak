@@ -6,6 +6,7 @@ from dak.copy_installer import InstallerCopier
 
 import unittest
 
+
 class ImportTestCase(DakTestCase):
     def test_arguments(self):
         '''test constructor arguments'''

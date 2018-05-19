@@ -48,6 +48,7 @@
 
 from regexes import re_parse_lintian
 
+
 def parse_lintian_output(output):
     """
     Parses Lintian output and returns a generator with the data.
@@ -63,6 +64,7 @@ def parse_lintian_output(output):
         m = re_parse_lintian.match(line)
         if m:
             yield m.groupdict()
+
 
 def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: args):
     """

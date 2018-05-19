@@ -37,6 +37,7 @@ import daklib.daksubprocess
 import os.path
 import sqlalchemy.sql as sql
 
+
 class BinaryContentsWriter(object):
     '''
     BinaryContentsWriter writes the Contents-$arch.gz files.
@@ -245,6 +246,7 @@ def binary_helper(suite_id, arch_id, overridetype_id, component_id):
     session.close()
     return log_message
 
+
 def source_helper(suite_id, component_id):
     '''
     This function is called in a new subprocess and multiprocessing wants a top
@@ -258,6 +260,7 @@ def source_helper(suite_id, component_id):
     contents_writer.write_file()
     session.close()
     return log_message
+
 
 class ContentsWriter(object):
     '''
@@ -370,12 +373,14 @@ class BinaryContentsScanner(object):
         session.close()
         return { 'processed': processed, 'remaining': remaining }
 
+
 def binary_scan_helper(binary_id):
     '''
     This function runs in a subprocess.
     '''
     scanner = BinaryContentsScanner(binary_id)
     scanner.scan()
+
 
 class UnpackedSource(object):
     '''
@@ -486,6 +491,7 @@ class SourceContentsScanner(object):
         remaining = remaining()
         session.close()
         return { 'processed': processed, 'remaining': remaining }
+
 
 def source_scan_helper(source_id):
     '''

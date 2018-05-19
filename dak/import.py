@@ -29,6 +29,7 @@ import daklib.daklog
 import daklib.upload
 import daklib.regexes
 
+
 def usage():
     print("""Usage:
 
@@ -53,6 +54,7 @@ File format used by --dump:
 
   <filename>:<md5>:<sha1>:<sha256>:[<fingerprint>]:[<changed-by>]
 """)
+
 
 def import_source(log, transaction, suite, component, directory, hashed_file,
                   fingerprint=None, changed_by=None,
@@ -86,6 +88,7 @@ def import_source(log, transaction, suite, component, directory, hashed_file,
         session.add(override)
         log.log(['add-source-override', suite.suite_name, component.component_name, source.dsc['Source'], section.section, priority.priority])
 
+
 def import_binary(log, transaction, suite, component, directory, hashed_file, fingerprint=None, add_overrides=False):
     filename = hashed_file.filename
     session = transaction.session
@@ -105,6 +108,7 @@ def import_binary(log, transaction, suite, component, directory, hashed_file, fi
         session.add(override)
         log.log(['add-binary-override', suite.suite_name, component.component_name, binary.control['Package'], section.section, priority.priority])
 
+
 def import_file(log, transaction, suite, component, directory, hashed_file,
                 fingerprint=None, changed_by=None, keyrings=None, require_signature=True,
                 add_overrides=False):
@@ -118,6 +122,7 @@ def import_file(log, transaction, suite, component, directory, hashed_file,
                       require_signature=require_signature, add_overrides=add_overrides)
     else:
         raise Exception('File is neither source nor binary package: {0}'.format(filename))
+
 
 def import_dump(log, transaction, suite, component, fh,
                 keyrings=None, require_signature=True, add_overrides=False):
@@ -171,6 +176,7 @@ WHERE
 ORDER BY tmp.order, f.filename;
 """
 
+
 def export_dump(transaction, suite, component):
     session = transaction.session
     query = session.execute(_export_query,
@@ -178,6 +184,7 @@ def export_dump(transaction, suite, component):
                              'component_id': component.component_id})
     for row in query:
         print(":".join(row))
+
 
 def main(argv=None):
     if argv is None:

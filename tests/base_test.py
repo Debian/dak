@@ -6,9 +6,11 @@ from os.path import abspath, dirname, join
 
 DAK_ROOT_DIR = dirname(dirname(abspath(__file__)))
 
+
 class DakTestCase(unittest.TestCase):
     def setUp(self):
         pass
+
 
 def fixture(*dirs):
     return join(DAK_ROOT_DIR, 'tests', 'fixtures', *dirs)

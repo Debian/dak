@@ -29,6 +29,7 @@ from regexes import re_parse_maintainer
 
 ################################################################################
 
+
 def force_to_utf8(s):
     """
     Forces a string to UTF-8.  If the string isn't already UTF-8,
@@ -42,6 +43,7 @@ def force_to_utf8(s):
     except UnicodeError:
         latin1_s = unicode(s,'iso8859-1')
         return latin1_s.encode('utf-8')
+
 
 def rfc2047_encode(s):
     """
@@ -63,6 +65,7 @@ def rfc2047_encode(s):
 # <Culus> 'The standard sucks, but my tool is supposed to interoperate
 #          with it. I know - I'll fix the suckage and make things
 #          incompatible!'
+
 
 def fix_maintainer(maintainer):
     """
@@ -113,6 +116,7 @@ def fix_maintainer(maintainer):
     return (rfc822_maint, rfc2047_maint, name, email)
 
 ################################################################################
+
 
 def split_uploaders(field):
     import re

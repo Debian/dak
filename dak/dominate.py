@@ -253,6 +253,7 @@ SUITE can be comma (or space) separated list, e.g.
     --suite=testing,unstable"""
     sys.exit()
 
+
 def main():
     global Options, Logger
     cnf = Config()

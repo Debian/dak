@@ -27,6 +27,7 @@ import errno
 import os
 import shutil
 
+
 class UploadCopy(object):
     """export a policy queue upload
 
@@ -117,6 +118,7 @@ class UploadCopy(object):
             shutil.rmtree(self.directory)
             self.directory = None
         return None
+
 
 class PolicyQueueUploadHandler(object):
     """process uploads to policy queues

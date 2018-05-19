@@ -51,6 +51,7 @@ Cnf = None
 
 ################################################################################
 
+
 class UpdateDB:
     def usage(self, exit_code=0):
         print """Usage: dak update-db
@@ -241,6 +242,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 if __name__ == '__main__':
     app = UpdateDB()
     app.init()
+
 
 def main():
     app = UpdateDB()

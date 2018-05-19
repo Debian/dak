@@ -23,6 +23,7 @@ import sys
 
 from daklib.dbconn import DBConn, Fingerprint, Keyring, Uid, ACL
 
+
 def usage():
     print("""Usage:
   dak acl set-fingerprints <acl-name>
@@ -41,6 +42,7 @@ def usage():
   allow, deny:
     Grant (revoke) per-source upload rights for ACL <acl-name>.
 """)
+
 
 def get_fingerprint(entry, session):
     """get fingerprint for given ACL entry
@@ -76,6 +78,7 @@ def get_fingerprint(entry, session):
 
     return q.all()
 
+
 def acl_set_fingerprints(acl_name, entries):
     session = DBConn().session()
     acl = session.query(ACL).filter_by(name=acl_name).one()
@@ -93,6 +96,7 @@ def acl_set_fingerprints(acl_name, entries):
             acl.fingerprints.update(fps)
 
     session.commit()
+
 
 def acl_export_per_source(acl_name):
     session = DBConn().session()
@@ -126,6 +130,7 @@ def acl_export_per_source(acl_name):
     session.rollback()
     session.close()
 
+
 def acl_allow(acl_name, fingerprint, sources):
     tbl = DBConn().tbl_acl_per_source
 
@@ -150,6 +155,7 @@ def acl_allow(acl_name, fingerprint, sources):
 
     session.commit()
 
+
 def acl_deny(acl_name, fingerprint, sources):
     tbl = DBConn().tbl_acl_per_source
 
@@ -166,6 +172,7 @@ def acl_deny(acl_name, fingerprint, sources):
             print("W: Tried to deny uploads of '{}', but was not allowed before.".format(source))
 
     session.commit()
+
 
 def main(argv=None):
     if argv is None:

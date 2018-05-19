@@ -39,6 +39,8 @@ CREATE TABLE external_signature_requests (
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

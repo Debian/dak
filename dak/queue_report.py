@@ -58,6 +58,7 @@ row_number = 0
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak queue-report
 Prints a report of packages in queues (usually new and byhand).
@@ -82,6 +83,7 @@ Prints a report of packages in queues (usually new and byhand).
 
 ################################################################################
 
+
 def plural(x):
     if x > 1:
         return "s"
@@ -89,6 +91,7 @@ def plural(x):
         return ""
 
 ################################################################################
+
 
 def time_pp(x):
     if x < 60:
@@ -116,6 +119,7 @@ def time_pp(x):
 
 ################################################################################
 
+
 def sg_compare(a, b):
     a = a[1]
     b = b[1]
@@ -140,6 +144,7 @@ def sg_compare(a, b):
     return cmp(a["oldest"], b["oldest"])
 
 ############################################################
+
 
 def sortfunc(a,b):
     for sorting in direction:
@@ -177,6 +182,7 @@ def sortfunc(a,b):
     return 0
 
 ############################################################
+
 
 def header():
     print """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -234,6 +240,7 @@ def header():
     </div>
     """
 
+
 def footer():
     print "<p class=\"timestamp\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     print "<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>"
@@ -246,6 +253,7 @@ def footer():
       for possible reasons why one of the above packages may get rejected.</p>
     </div> </body> </html>
     """
+
 
 def table_header(type, source_count, total_count):
     print "<h1 class='sourceNEW'>Summary for: %s</h1>" % (type)
@@ -271,6 +279,7 @@ def table_header(type, source_count, total_count):
       </thead>
       <tbody>
     """
+
 
 def table_footer(type):
     print "</tbody></table>"
@@ -337,6 +346,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
 
 ############################################################
 
+
 def update_graph_database(rrd_dir, type, n_source, n_binary):
     if not rrd_dir:
         return
@@ -372,6 +382,7 @@ RRA:MAX:0.5:288:795
         pass
 
 ############################################################
+
 
 def process_queue(queue, log, rrd_dir):
     msg = ""
@@ -614,6 +625,7 @@ def process_queue(queue, log, rrd_dir):
             print
 
 ################################################################################
+
 
 def main():
     global Cnf

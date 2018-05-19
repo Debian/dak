@@ -69,6 +69,8 @@ CLUSTER src_contents USING src_contents_pkey
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

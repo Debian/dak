@@ -53,6 +53,8 @@ COMMENT ON VIEW src_associations_full IS
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

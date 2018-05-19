@@ -65,6 +65,7 @@ old_ACTION = '^(\d{14})\|(?:lisa|process-new)\|(Accepting changes|rejected)\|'
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak stats MODE
 Print various stats.
@@ -82,6 +83,7 @@ The following MODEs are available:
 
 ################################################################################
 
+
 def per_arch_space_use():
     session = DBConn().session()
     q = session.execute("""
@@ -96,6 +98,7 @@ SELECT a.arch_string as Architecture, sum(f.size) AS sum
     print "%-15.15s %s" % ("Source", q[0][0])
 
 ################################################################################
+
 
 def daily_install_stats():
     stats = {}
@@ -127,6 +130,7 @@ def daily_install_stats():
 
 ################################################################################
 
+
 def longest(list):
     longest = 0
     for i in list:
@@ -135,11 +139,13 @@ def longest(list):
             longest = l
     return longest
 
+
 def output_format(suite):
     output_suite = []
     for word in suite.split("-"):
         output_suite.append(word[0])
     return "-".join(output_suite)
+
 
 def number_of_packages():
     arches = {}
@@ -212,6 +218,7 @@ def number_of_packages():
     print output
 
 ################################################################################
+
 
 def parse_new_uploads(data):
     global stats
@@ -382,6 +389,7 @@ def new_stats(logdir, yaml):
         safe_dump(stats, fd)
 
 ################################################################################
+
 
 def main():
     global Cnf

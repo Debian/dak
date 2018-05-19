@@ -29,6 +29,7 @@ import sys
 
 from collections import defaultdict
 
+
 def usage(status=0):
     print("""
 dak import-repository
@@ -53,6 +54,7 @@ Things to think about:
 """)
     sys.exit(status)
 
+
 def entry_is_newer(entry, packages):
     version = entry['Version']
     for p in packages[entry['Package']]:
@@ -60,8 +62,10 @@ def entry_is_newer(entry, packages):
             return False
     return True
 
+
 def entry_in_packages(entry, packages):
     return entry['Package'] in packages
+
 
 def get_packages_in_suite(suite):
     sources = defaultdict(list)
@@ -73,6 +77,7 @@ def get_packages_in_suite(suite):
         packages[b.package].append(b)
 
     return sources, packages
+
 
 def import_sources(base, sources, transaction, target_suite, component, target_sources, extra_sources, extra_sources_comp, max_packages=None):
     n = 0
@@ -92,6 +97,7 @@ def import_sources(base, sources, transaction, target_suite, component, target_s
             #transaction.commit()
     return n
 
+
 def import_built_using(base, source, version, transaction, target_suite, component, extra_sources, extra_sources_comp):
     if not daklib.import_repository.source_in_archive(bu_source, bu_version, target_suite.archive):
         print("Importing extra source {0}={1}".format(bu_source, bu_version))
@@ -106,6 +112,7 @@ def import_built_using(base, source, version, transaction, target_suite, compone
             # TODO: Take preferred components from those listed...
             raise Exception("Not implemented.")
         daklib.import_repository.import_source_to_suite(base, extra_entry, transaction, target_suite, extra_component)
+
 
 def import_packages(base, packages, transaction, target_suite, component, architecture, target_binaries, extra_sources, extra_sources_comp, max_packages=None):
     n = 0
@@ -122,6 +129,7 @@ def import_packages(base, packages, transaction, target_suite, component, archit
             n += 1
             #transaction.commit()
     return n
+
 
 def main(argv=None):
     if argv is None:

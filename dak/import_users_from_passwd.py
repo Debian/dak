@@ -41,6 +41,7 @@ from daklib import utils
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak import-users-from-passwd [OPTION]...
 Sync PostgreSQL's users with system users.
@@ -52,6 +53,7 @@ Sync PostgreSQL's users with system users.
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def main():
     cnf = Config()

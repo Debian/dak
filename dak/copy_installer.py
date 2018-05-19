@@ -28,6 +28,7 @@ import os.path
 import re
 import sys
 
+
 def usage(exit_code=0):
     print """Usage: dak copy-installer [OPTION]... VERSION
   -h, --help         show this help and exit
@@ -37,6 +38,7 @@ def usage(exit_code=0):
 
 Exactly 1 version must be specified."""
     sys.exit(exit_code)
+
 
 def main():
     cnf = Config()
@@ -73,6 +75,7 @@ def main():
         print 'Installer has been copied successfully.'
 
 root_dir = Config()['Dir::Root']
+
 
 class InstallerCopier:
     def __init__(self, source='unstable', dest='testing',

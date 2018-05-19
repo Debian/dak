@@ -45,8 +45,10 @@ schema_component = Schema({
     Required('Summary'): All(dict, Length(min=1)),
 }, extra=True)
 
+
 def add_issue(msg):
     print(msg)
+
 
 def test_custom_objects(lines):
     ret = True
@@ -55,6 +57,7 @@ def test_custom_objects(lines):
             add_issue("Python object encoded in line %i." % (i))
             ret = False
     return ret
+
 
 def test_localized_dict(doc, ldict, id_string):
     ret = True
@@ -71,12 +74,14 @@ def test_localized_dict(doc, ldict, id_string):
             ret = False
     return ret
 
+
 def test_localized(doc, key):
     ldict = doc.get(key, None)
     if not ldict:
         return True
 
     return test_localized_dict(doc, ldict, key)
+
 
 def validate_data(data):
     ret = True
@@ -151,6 +156,7 @@ def validate_data(data):
 
     return ret
 
+
 def validate_file(fname):
     f = None
     if fname.endswith(".gz"):
@@ -164,6 +170,7 @@ def validate_file(fname):
     f.close()
 
     return validate_data(data)
+
 
 def validate_dir(dirname):
     ret = True
@@ -187,6 +194,7 @@ def validate_dir(dirname):
                 ret = False
 
     return ret
+
 
 def main():
     parser = OptionParser()

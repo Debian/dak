@@ -82,6 +82,7 @@ f.close()
 os.rename(CACHE_FILE+".tmp", CACHE_FILE)
 datakeys = datakeys[-ITEMS_TO_KEEP:]
 
+
 def dump_file(outfn,keystolist, showothers):
     showothers = (showothers and 1) or 0
     # careful, outfn is NOT ESCAPED

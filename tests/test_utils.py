@@ -26,6 +26,7 @@ from daklib.utils import (arch_compare_sw, is_in_debug_section,
 
 apt_pkg.init()
 
+
 class UtilsTest(DakTestCase):
 
     def test_utils_arch_compare_sw(self):

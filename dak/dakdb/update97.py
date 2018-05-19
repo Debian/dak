@@ -29,6 +29,8 @@ import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 
 ################################################################################
+
+
 def do_update(self):
     """
     Move changelogs related config values into projectb

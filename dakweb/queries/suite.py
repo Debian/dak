@@ -52,6 +52,7 @@ def suites():
 
 QueryRegister().register_path('/suites', suites)
 
+
 @bottle.route('/suite/<suite>')
 def suite(suite=None):
     """

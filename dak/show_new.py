@@ -135,6 +135,7 @@ def html_header(name, missing):
     result += "    </div>"
     return result
 
+
 def html_footer():
     result = """    <p class="validate">Timestamp: %s (UTC)</p>
 """% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
@@ -200,6 +201,7 @@ def do_pkg(upload_id):
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak show-new [OPTION]... [CHANGES]...
   -h, --help                show this help and exit.
@@ -208,6 +210,7 @@ def usage(exit_code=0):
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def init(session):
     global cnf, Options

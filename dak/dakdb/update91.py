@@ -90,6 +90,8 @@ CREATE CONSTRAINT TRIGGER trigger_new_comments_permission
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

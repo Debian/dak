@@ -55,6 +55,7 @@ Logger = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak clean-suites [OPTIONS]
 Clean old packages from suites.
@@ -65,6 +66,7 @@ Clean old packages from suites.
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def check_binaries(now_date, session):
     Logger.log(["Checking for orphaned binary packages..."])
@@ -107,6 +109,7 @@ def check_binaries(now_date, session):
         Logger.log([op, i[0], i[1]])
 
 ########################################
+
 
 def check_sources(now_date, session):
     Logger.log(["Checking for orphaned source packages..."])
@@ -167,6 +170,7 @@ def check_sources(now_date, session):
 
 ########################################
 
+
 def check_files(now_date, session):
     # FIXME: this is evil; nothing should ever be in this state.  if
     # they are, it's a bug.
@@ -194,6 +198,7 @@ def check_files(now_date, session):
     if not Options["No-Action"]:
         session.commit()
 
+
 def clean_binaries(now_date, session):
     # We do this here so that the binaries we remove will have their
     # source also removed (if possible).
@@ -216,6 +221,7 @@ def clean_binaries(now_date, session):
         Logger.log(["delete binary", b[0]])
 
 ########################################
+
 
 def clean(now_date, archives, max_delete, session):
     cnf = Config()
@@ -331,6 +337,7 @@ def clean(now_date, archives, max_delete, session):
 
 ################################################################################
 
+
 def clean_maintainers(now_date, session):
     Logger.log(["Cleaning out unused Maintainer entries..."])
 
@@ -357,6 +364,7 @@ SELECT m.id, m.name FROM maintainer m
         Logger.log(["total", count])
 
 ################################################################################
+
 
 def clean_fingerprints(now_date, session):
     Logger.log(["Cleaning out unused fingerprint entries..."])
@@ -385,6 +393,7 @@ SELECT f.id, f.fingerprint FROM fingerprint f
         Logger.log(["total", count])
 
 ################################################################################
+
 
 def clean_byhash(now_date, session):
     cnf = Config()
@@ -419,6 +428,7 @@ def clean_byhash(now_date, session):
 
 ################################################################################
 
+
 def clean_empty_directories(session):
     """
     Removes empty directories from pool directories.
@@ -447,6 +457,7 @@ def clean_empty_directories(session):
 
 ################################################################################
 
+
 def set_archive_delete_dates(now_date, session):
     session.execute("""
         CREATE TEMPORARY TABLE archive_delete_date (
@@ -464,6 +475,7 @@ def set_archive_delete_dates(now_date, session):
     session.flush()
 
 ################################################################################
+
 
 def main():
     global Options, Logger

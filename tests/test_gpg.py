@@ -26,10 +26,12 @@ fpr_valid = '0ABB89079CB58F8F94F6F310CB9D5C5828606E84'
 fpr_expired = '05A558AE65B77B559BBE0C4D543B2BAEDA044F0B'
 fpr_expired_subkey = '8865D9EC71713394ADBD8F729F7A24B7F6388CE1'
 
+
 def verify(filename, require_signature=True):
     with open(fixture(filename)) as fh:
         data = fh.read()
     return SignedFile(data, [keyring], require_signature)
+
 
 class GpgTest(DakTestCase):
     def test_valid(self):

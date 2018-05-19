@@ -46,6 +46,7 @@ class TemporaryDirectory:
             self.directory = None
         return None
 
+
 class FilesystemTransactionTestCase(DakTestCase):
     def _copy_a_b(self, tmp, fs, **kwargs):
         fs.copy(tmp.filename('a'), tmp.filename('b'), **kwargs)

@@ -76,6 +76,8 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 # Monkeypatch commands.getstatusoutput as it may not return the correct exit
 # code in lenny's Python. This also affects commands.getoutput and
 # commands.getstatus.
+
+
 def dak_getstatusoutput(cmd):
     pipe = daklib.daksubprocess.Popen(cmd, shell=True, universal_newlines=True,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -96,11 +98,13 @@ commands.getstatusoutput = dak_getstatusoutput
 
 ################################################################################
 
+
 def html_escape(s):
     """ Escape html chars """
     return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 
 ################################################################################
+
 
 def open_file(filename, mode='r'):
     """
@@ -126,6 +130,7 @@ def open_file(filename, mode='r'):
 
 ################################################################################
 
+
 def our_raw_input(prompt=""):
     if prompt:
         while 1:
@@ -144,6 +149,7 @@ def our_raw_input(prompt=""):
 
 ################################################################################
 
+
 def extract_component_from_section(section):
     component = ""
 
@@ -157,6 +163,7 @@ def extract_component_from_section(section):
     return (section, component)
 
 ################################################################################
+
 
 def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None):
     require_signature = True
@@ -231,6 +238,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
 
 ################################################################################
 
+
 def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
     """
     Parses a changes file and returns a dictionary where each field is a
@@ -279,10 +287,12 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
 
 ################################################################################
 
+
 def hash_key(hashname):
     return '%ssum' % hashname
 
 ################################################################################
+
 
 def check_dsc_files(dsc_filename, dsc, dsc_files):
     """
@@ -362,6 +372,7 @@ def check_dsc_files(dsc_filename, dsc, dsc_files):
 
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
+
 def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     files = {}
 
@@ -403,6 +414,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
     return files
 
 ################################################################################
+
 
 def send_mail(message, filename="", whitelists=None):
     """sendmail wrapper, takes _either_ a message string or a file as arguments
@@ -505,6 +517,7 @@ def send_mail(message, filename="", whitelists=None):
 
 ################################################################################
 
+
 def poolify(source):
     if source[:3] == "lib":
         return source[:4] + '/' + source + '/'
@@ -512,6 +525,7 @@ def poolify(source):
         return source[:1] + '/' + source + '/'
 
 ################################################################################
+
 
 def move(src, dest, overwrite=0, perms=0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
@@ -535,6 +549,7 @@ def move(src, dest, overwrite=0, perms=0o664):
     shutil.copy2(src, dest)
     os.chmod(dest, perms)
     os.unlink(src)
+
 
 def copy(src, dest, overwrite=0, perms=0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
@@ -560,6 +575,7 @@ def copy(src, dest, overwrite=0, perms=0o664):
 
 ################################################################################
 
+
 def which_conf_file():
     if os.getenv('DAK_CONFIG'):
         return os.getenv('DAK_CONFIG')
@@ -581,6 +597,7 @@ def which_conf_file():
 
 ################################################################################
 
+
 def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     with open_file(filename) as templatefile:
@@ -591,9 +608,11 @@ def TemplateSubst(subst_map, filename):
 
 ################################################################################
 
+
 def fubar(msg, exit_code=1):
     sys.stderr.write("E: %s\n" % (msg))
     sys.exit(exit_code)
+
 
 def warn(msg):
     sys.stderr.write("W: %s\n" % (msg))
@@ -602,13 +621,17 @@ def warn(msg):
 
 # Returns the user name with a laughable attempt at rfc822 conformancy
 # (read: removing stray periods).
+
+
 def whoami():
     return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '')
+
 
 def getusername():
     return pwd.getpwuid(os.getuid())[0]
 
 ################################################################################
+
 
 def size_type(c):
     t  = " B"
@@ -622,6 +645,7 @@ def size_type(c):
 
 ################################################################################
 
+
 def find_next_free(dest, too_many=100):
     extra = 0
     orig_dest = dest
@@ -634,6 +658,7 @@ def find_next_free(dest, too_many=100):
 
 ################################################################################
 
+
 def result_join(original, sep='\t'):
     resultlist = []
     for i in xrange(len(original)):
@@ -644,6 +669,7 @@ def result_join(original, sep='\t'):
     return sep.join(resultlist)
 
 ################################################################################
+
 
 def prefix_multi_line_string(str, prefix, include_blank_lines=0):
     out = ""
@@ -658,6 +684,7 @@ def prefix_multi_line_string(str, prefix, include_blank_lines=0):
 
 ################################################################################
 
+
 def join_with_commas_and(list):
     if len(list) == 0:
         return "nothing"
@@ -666,6 +693,7 @@ def join_with_commas_and(list):
     return ", ".join(list[:-1]) + " and " + list[-1]
 
 ################################################################################
+
 
 def pp_deps(deps):
     pp_deps = []
@@ -680,10 +708,12 @@ def pp_deps(deps):
 
 ################################################################################
 
+
 def get_conf():
     return Cnf
 
 ################################################################################
+
 
 def parse_args(Options):
     """ Handle -a, -c and -s arguments; returns them as SQL constraints """
@@ -749,6 +779,7 @@ def parse_args(Options):
 
 ################################################################################
 
+
 def arch_compare_sw(a, b):
     """
     Function for use in sorting lists of architectures.
@@ -766,6 +797,7 @@ def arch_compare_sw(a, b):
     return cmp(a, b)
 
 ################################################################################
+
 
 def split_args(s, dwim=True):
     """
@@ -785,6 +817,7 @@ def split_args(s, dwim=True):
 
 ################################################################################
 
+
 def gpg_keyring_args(keyrings=None):
     if not keyrings:
         keyrings = get_active_keyring_paths()
@@ -792,6 +825,7 @@ def gpg_keyring_args(keyrings=None):
     return " ".join(["--keyring %s" % x for x in keyrings])
 
 ################################################################################
+
 
 def gpg_get_key_addresses(fingerprint):
     """retreive email addresses from gpg key uids for a given fingerprint"""
@@ -839,6 +873,7 @@ def gpg_get_key_addresses(fingerprint):
 
 ################################################################################
 
+
 def get_logins_from_ldap(fingerprint='*'):
     """retrieve login from LDAP linked to a given fingerprint"""
 
@@ -855,6 +890,7 @@ def get_logins_from_ldap(fingerprint='*'):
     return login
 
 ################################################################################
+
 
 def get_users_from_ldap():
     """retrieve login and user names from LDAP"""
@@ -880,6 +916,7 @@ def get_users_from_ldap():
 
 ################################################################################
 
+
 def clean_symlink(src, dest, root):
     """
     Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
@@ -892,6 +929,7 @@ def clean_symlink(src, dest, root):
     return new_src + src
 
 ################################################################################
+
 
 def temp_filename(directory=None, prefix="dak", suffix="", mode=None, group=None):
     """
@@ -925,6 +963,7 @@ def temp_filename(directory=None, prefix="dak", suffix="", mode=None, group=None
     return (tfd, tfname)
 
 ################################################################################
+
 
 def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
     """
@@ -960,6 +999,7 @@ def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
 
 ################################################################################
 
+
 def is_email_alias(email):
     """ checks if the user part of the email is listed in the alias file """
     global alias_cache
@@ -973,6 +1013,7 @@ def is_email_alias(email):
     return uid in alias_cache
 
 ################################################################################
+
 
 def get_changes_files(from_dir):
     """
@@ -996,6 +1037,7 @@ def get_changes_files(from_dir):
 Cnf = config.Config().Cnf
 
 ################################################################################
+
 
 def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm"):
     """
@@ -1032,11 +1074,13 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
 
 ################################################################################
 
+
 def deb_extract_control(fh):
     """extract DEBIAN/control from a binary package"""
     return apt_inst.DebFile(fh).control.extractdata("control")
 
 ################################################################################
+
 
 def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
     """mail addresses to contact for an upload
@@ -1100,6 +1144,7 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 
 ################################################################################
 
+
 def call_editor(text="", suffix=".txt"):
     """run editor and return the result as a string
 
@@ -1123,6 +1168,7 @@ def call_editor(text="", suffix=".txt"):
         os.unlink(tmp.name)
 
 ################################################################################
+
 
 def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False, quiet=False, include_arch_all=True):
     dbsuite = get_suite(suite, session)
@@ -1320,6 +1366,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 
 ################################################################################
 
+
 def parse_built_using(control):
     """source packages referenced via Built-Using
 
@@ -1344,6 +1391,7 @@ def parse_built_using(control):
 
 ################################################################################
 
+
 def is_in_debug_section(control):
     """binary package is a debug package
 
@@ -1358,6 +1406,7 @@ def is_in_debug_section(control):
     return section == "debug" and auto_built_package == "debug-symbols"
 
 ################################################################################
+
 
 def find_possibly_compressed_file(filename):
     """

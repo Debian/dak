@@ -40,6 +40,7 @@ Logger = None
 ################################################################################
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak archive-dedup-pool [OPTION]...
   -h, --help                show this help and exit.
@@ -48,6 +49,7 @@ def usage(exit_code=0):
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def dedup_one(size, reference, *filenames):
     stat_reference = os.stat(reference)
@@ -83,6 +85,7 @@ def dedup_one(size, reference, *filenames):
 
 ################################################################################
 
+
 def dedup(session):
     results = session.execute("""
 SELECT DISTINCT *
@@ -112,6 +115,7 @@ SELECT DISTINCT *
         dedup_one(i['size'], *i['filenames'])
 
 ################################################################################
+
 
 def main():
     global Options, Logger

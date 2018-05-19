@@ -4,6 +4,7 @@ from base_test import DakTestCase
 
 from daklib import regexes
 
+
 class re_single_line_field(DakTestCase):
     MATCH = regexes.re_single_line_field.match
 
@@ -28,6 +29,7 @@ class re_single_line_field(DakTestCase):
         self.assertEqual(self.MATCH(': ::').groups(), ('', '::'))
         self.assertEqual(self.MATCH('Foo::bar').groups(), ('Foo', ':bar'))
         self.assertEqual(self.MATCH('Foo: :bar').groups(), ('Foo', ':bar'))
+
 
 class re_parse_lintian(DakTestCase):
     MATCH = regexes.re_parse_lintian.match

@@ -39,11 +39,14 @@ import sqlalchemy.exc
 import tempfile
 import traceback
 
+
 class ArchiveException(Exception):
     pass
 
+
 class HashMismatchException(ArchiveException):
     pass
+
 
 class ArchiveTransaction(object):
     """manipulate the archive in a transaction
@@ -553,6 +556,7 @@ class ArchiveTransaction(object):
             self.rollback()
         return None
 
+
 def source_component_from_package_list(package_list, suite):
     """Get component for a source package
 
@@ -580,6 +584,7 @@ def source_component_from_package_list(package_list, suite):
     query = session.query(Component).order_by(Component.ordering) \
             .filter(Component.component_name.in_(components))
     return query.first()
+
 
 class ArchiveUpload(object):
     """handle an upload

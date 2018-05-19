@@ -56,6 +56,7 @@ source_versions = {}
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak cruft-report
 Check for obsolete or duplicated packages.
@@ -68,6 +69,7 @@ Check for obsolete or duplicated packages.
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def add_nbs(nbs_d, source, version, package, suite_id, session):
     # Ensure the package is still in the suite (someone may have already removed it)
@@ -89,6 +91,8 @@ def add_nbs(nbs_d, source, version, package, suite_id, session):
 ################################################################################
 
 # Check for packages built on architectures they shouldn't be.
+
+
 def do_anais(architecture, binaries_list, source, session):
     if architecture == "any" or architecture == "all":
         return ""
@@ -164,6 +168,7 @@ def do_nfu(nfu_packages):
                     (suite.suite_name, architecture, " ".join(a2p[architecture])))
         print
 
+
 def parse_nfu(architecture):
     cnf = Config()
     # utils/hpodder_1.1.5.0: Not-For-Us [optional:out-of-date]
@@ -191,6 +196,7 @@ def parse_nfu(architecture):
     return ret
 
 ################################################################################
+
 
 def do_newer_version(lowersuite_name, highersuite_name, code, session):
     list = newer_version(lowersuite_name, highersuite_name, session)
@@ -234,6 +240,7 @@ def reportWithoutSource(suite_name, suite_id, session, rdeps=False):
         else:
             print
 
+
 def queryNewerAll(suite_name, session):
     """searches for arch != all packages that have an arch == all
     package with a higher version in the same suite"""
@@ -252,6 +259,7 @@ select bab1.package, bab1.version as oldver,
     where s.suite_name = :suite_name
     group by bab1.package, oldver, bab1.suite, newver"""
     return session.execute(query, { 'suite_name': suite_name })
+
 
 def reportNewerAll(suite_name, session):
     rows = queryNewerAll(suite_name, session)
@@ -296,12 +304,14 @@ def reportNBS(suite_name, suite_id, rdeps=False):
             print
     session.close()
 
+
 def reportAllNBS(suite_name, suite_id, session, rdeps=False):
     reportWithoutSource(suite_name, suite_id, session, rdeps)
     reportNewerAll(suite_name, session)
     reportNBS(suite_name, suite_id, rdeps)
 
 ################################################################################
+
 
 def do_dubious_nbs(dubious_nbs):
     print "Dubious NBS"
@@ -325,6 +335,7 @@ def do_dubious_nbs(dubious_nbs):
         print
 
 ################################################################################
+
 
 def obsolete_source(suite_name, session):
     """returns obsolete source packages for suite_name without binaries
@@ -354,6 +365,7 @@ SELECT ss.src, ss.source, ss.version,
     args = { 'suite_name': suite_name }
     return session.execute(query, args)
 
+
 def source_bin(source, session):
     """returns binaries built by source for all or no suite grouped and
     ordered by package name"""
@@ -367,6 +379,7 @@ SELECT b.package
     ORDER BY b.package"""
     args = { 'source': source }
     return session.execute(query, args)
+
 
 def newest_source_bab(suite_name, package, session):
     """returns newest source that builds binary package in suite grouped
@@ -382,6 +395,7 @@ SELECT sas.source, MAX(sas.version) AS srcver
         ORDER BY sas.source, bab.package"""
     args = { 'suite_name': suite_name, 'package': package }
     return session.execute(query, args)
+
 
 def report_obsolete_source(suite_name, session):
     rows = obsolete_source(suite_name, session)
@@ -406,6 +420,7 @@ def report_obsolete_source(suite_name, session):
         rm_opts = "-S -p -m \"[auto-cruft] obsolete source package\""
         print "     dak rm -s %s %s %s\n" % (suite_name, rm_opts, old_source)
 
+
 def get_suite_binaries(suite, session):
     # Initalize a large hash table of all binary packages
     binaries = {}
@@ -421,6 +436,7 @@ def get_suite_binaries(suite, session):
     return binaries
 
 ################################################################################
+
 
 def report_outdated_nonfree(suite, session, rdeps=False):
 
@@ -499,6 +515,7 @@ def report_outdated_nonfree(suite, session, rdeps=False):
                 print
 
 ################################################################################
+
 
 def main():
     global suite, suite_id, source_binaries, source_versions

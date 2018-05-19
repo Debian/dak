@@ -39,6 +39,7 @@ from daklib import utils
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak make-overrides
 Outputs the override tables to text files.
@@ -47,6 +48,7 @@ Outputs the override tables to text files.
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def do_list(output_file, suite, component, otype, session):
     """
@@ -97,6 +99,7 @@ def do_list(output_file, suite, component, otype, session):
             output_file.write(utils.result_join(i) + '\n')
 
 ################################################################################
+
 
 def main():
     cnf = Config()

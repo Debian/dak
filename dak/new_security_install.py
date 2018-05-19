@@ -47,6 +47,7 @@ Logger = None
 Queue = None
 changes = []
 
+
 def usage():
     print """Usage: dak security-install [OPTIONS] changesfiles
 Do whatever there is to do for a security release
@@ -77,6 +78,7 @@ def spawn(command):
 #
 ##################### ! ! ! N O T E ! ! !  #####################
 
+
 def sudo(arg, fn, exit):
     if Options["Sudo"]:
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
@@ -86,7 +88,10 @@ def sudo(arg, fn, exit):
     if exit:
         quit()
 
+
 def do_Approve(): sudo("A", _do_Approve, True)
+
+
 def _do_Approve():
     print "Locking unchecked"
     with os.fdopen(os.open('/srv/security-master.debian.org/lock/unchecked.lock', os.O_CREAT | os.O_RDWR ), 'r') as lock_fd:
@@ -116,6 +121,7 @@ def _do_Approve():
 
 ########################################################################
 ########################################################################
+
 
 def main():
     global Options, Logger, Queue, changes

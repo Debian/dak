@@ -31,6 +31,7 @@ COMPONENT='main'
 ARCH='amd64'
 LANG='en'
 
+
 class FileWriterTest(DakTestCase):
 
 

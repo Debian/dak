@@ -37,6 +37,8 @@ from daklib import utils
 ################################################################################
 
 # Shamelessly stolen from 'dak rm'. Should probably end up in utils.py
+
+
 def game_over():
     answer = utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
@@ -55,6 +57,7 @@ Make microchanges or microqueries of the binary overrides
   -s, --suite                specify the suite to use
 """
     sys.exit(exit_code)
+
 
 def main():
     cnf = Config()

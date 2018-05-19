@@ -24,6 +24,7 @@ import daklib.daksql as daksql
 from daklib.dbconn import DBConn
 from collections import defaultdict
 
+
 def list_packages(packages, suites=None, components=None, architectures=None, binary_types=None,
                   source_and_binary=False, regex=False,
                   format=None, highest=None):

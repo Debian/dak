@@ -20,9 +20,11 @@ from base_test import DakTestCase
 import unittest
 from daklib.packagelist import PackageList
 
+
 class FakeArchitecture(object):
     def __init__(self, name):
         self.arch_string = name
+
 
 class FakeSuite(object):
     def __init__(self, *architectures):
@@ -61,6 +63,7 @@ source_noarch = {
 source_fallback = {
     'Binary': 'libdune-common-dev\n',
 }
+
 
 class TestPackageList(DakTestCase):
     def testArchAll(self):
