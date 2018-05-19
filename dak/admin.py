@@ -139,7 +139,7 @@ Perform administrative work on the dak database.
      v-c rm SUITE CHECK REFERENCE    remove a version check
        where
          CHECK     is one of Enhances, MustBeNewerThan, MustBeOlderThan
-	 REFERENCE is another suite name
+         REFERENCE is another suite name
 
   change-component:
      change-component SUITE COMPONENT source SOURCE...

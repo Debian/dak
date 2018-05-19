@@ -549,7 +549,7 @@ def check_dsc (suite, dsc_filename, session = None):
     return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
            "\n" + \
            foldable_output("lintian check for %s" % dsc_basename,
-	       "source-lintian", do_lintian(dsc_filename)) + \
+               "source-lintian", do_lintian(dsc_filename)) + \
            "\n" + \
            foldable_output("README.source for %s" % dsc_basename,
                "source-readmesource", get_readme_source(dsc_filename))
@@ -568,20 +568,20 @@ def check_deb (suite, deb_filename, session = None):
 
     if is_a_udeb:
         result += foldable_output("skipping lintian check for udeb",
-	    "binary-%s-lintian"%packagename, "") + "\n"
+            "binary-%s-lintian"%packagename, "") + "\n"
     else:
         result += foldable_output("lintian check for %s" % (filename),
-	    "binary-%s-lintian"%packagename, do_lintian(deb_filename)) + "\n"
+            "binary-%s-lintian"%packagename, do_lintian(deb_filename)) + "\n"
 
     result += foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
                               do_command(["dpkg", "-c", deb_filename])) + "\n"
 
     if is_a_udeb:
         result += foldable_output("skipping copyright for udeb",
-	    "binary-%s-copyright"%packagename, "") + "\n"
+            "binary-%s-copyright"%packagename, "") + "\n"
     else:
         result += foldable_output("copyright of %s" % (filename),
-	    "binary-%s-copyright"%packagename, get_copyright(deb_filename)) + "\n"
+            "binary-%s-copyright"%packagename, get_copyright(deb_filename)) + "\n"
 
     return result
 

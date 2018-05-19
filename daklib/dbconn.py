@@ -2107,7 +2107,7 @@ class MetadataProxy(object):
 
 class VersionCheck(ORMObject):
     def __init__(self, *args, **kwargs):
-	pass
+        pass
 
     def properties(self):
         #return ['suite_id', 'check', 'reference_id']
@@ -2484,12 +2484,12 @@ class DBConn(object):
                 key = relation(MetadataKey),
                 value = self.tbl_source_metadata.c.value))
 
-	mapper(VersionCheck, self.tbl_version_check,
-	    properties = dict(
-		suite_id = self.tbl_version_check.c.suite,
-		suite = relation(Suite, primaryjoin=self.tbl_version_check.c.suite==self.tbl_suite.c.id),
-		reference_id = self.tbl_version_check.c.reference,
-		reference = relation(Suite, primaryjoin=self.tbl_version_check.c.reference==self.tbl_suite.c.id, lazy='joined')))
+        mapper(VersionCheck, self.tbl_version_check,
+            properties = dict(
+                suite_id = self.tbl_version_check.c.suite,
+                suite = relation(Suite, primaryjoin=self.tbl_version_check.c.suite==self.tbl_suite.c.id),
+                reference_id = self.tbl_version_check.c.reference,
+                reference = relation(Suite, primaryjoin=self.tbl_version_check.c.reference==self.tbl_suite.c.id, lazy='joined')))
 
     ## Connection functions
     def __createconn(self):

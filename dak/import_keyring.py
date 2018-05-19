@@ -55,13 +55,13 @@ def list_uids(session, pattern):
     print message
     uid_query = session.query(Uid).filter(Uid.uid.ilike(sql_pattern))
     for uid in uid_query.all():
-	print "\nuid %s" % uid.uid
-	for fp in uid.fingerprint:
-	    print "    fingerprint %s" % fp.fingerprint
-	    keyring = "unknown"
-	    if fp.keyring:
-		keyring = fp.keyring.keyring_name
-	    print "        keyring %s" % keyring
+        print "\nuid %s" % uid.uid
+        for fp in uid.fingerprint:
+            print "    fingerprint %s" % fp.fingerprint
+            keyring = "unknown"
+            if fp.keyring:
+                keyring = fp.keyring.keyring_name
+            print "        keyring %s" % keyring
 
 ################################################################################
 
@@ -107,8 +107,8 @@ def main():
     session = DBConn().session()
 
     if Options["List-UIDs"]:
-	list_uids(session, Options["List-UIDs"])
-	sys.exit(0)
+        list_uids(session, Options["List-UIDs"])
+        sys.exit(0)
 
     if len(keyring_names) != 1:
         usage(1)
@@ -246,9 +246,9 @@ def main():
 
     # All done!
     if Options["No-Action"]:
-	session.rollback()
+        session.rollback()
     else:
-	session.commit()
+        session.commit()
 
     # Print a summary
     changesd = {}

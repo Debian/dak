@@ -99,7 +99,7 @@ def dump_file(outfn,keystolist, showothers):
   k = setdiff(names(d),c("ts","timestamp"))
   #palette(rainbow(max(length(k),2)))
   palette(c("midnightblue", "gold", "turquoise", "plum4", "palegreen1", "OrangeRed", "green4", "blue",
-	"magenta", "darkgoldenrod3", "tomato4", "violetred2","thistle4", "steelblue2", "springgreen4", "salmon","gray"))
+        "magenta", "darkgoldenrod3", "tomato4", "violetred2","thistle4", "steelblue2", "springgreen4", "salmon","gray"))
   #plot(d[["runtime"]],d[["compress"]],type="l",col="blue")
   #lines(d[["runtime"]],d[["logremove"]],type="l",col="red")
   #legend(as.POSIXct("2008-12-05"),9500,"logremove",col="red",lty=1)
