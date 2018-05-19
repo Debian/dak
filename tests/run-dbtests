@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Create the database that will be used by the fixtures, populating it with the
+# default data.  Also create a test dak directory.
+
+# After that, run all dbtests
+
+# At the end, clean up.
+
+DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
+
+test-setup() {
+  # Create the database as expected by the tests
+  export PGDATABASE=test_projectb
+  export DAKBASE=${DAK_ROOT}/tests/fixtures/tmpdak
+  ${DAK_ROOT}/setup/dak-setup.sh
+}
+
+test-cleanup() {
+  echo Dropping DB ${PGDATABASE}
+  dropdb ${PGDATABASE}
+  echo Deleting temporary directory
+  rm -rf -- ${DAKBASE}
+}
+
+trap test-cleanup EXIT
+test-setup
+${DAK_ROOT}/tests/dbtest_all.py

@@ -8,34 +8,25 @@ from sqlalchemy.schema import DDL
 
 import pickle
 
-all_tables = ['architecture', 'archive', 'bin_associations', 'bin_contents',
-    'binaries', 'binary_acl', 'binary_acl_map', 'build_queue', 'build_queue_files',
-    'changes', 'changes_pending_binaries', 'changes_pending_files',
-    'changes_pending_files_map', 'changes_pending_source',
-    'changes_pending_source_files', 'changes_pool_files', 'component', 'config',
-    'dsc_files', 'files', 'fingerprint', 'keyring_acl_map', 'keyrings', 'location',
-    'maintainer', 'new_comments', 'override', 'override_type', 'policy_queue',
-    'priority', 'section', 'source', 'source_acl', 'src_associations',
-    'src_format', 'src_uploaders', 'suite', 'suite_architectures',
-    'suite_build_queue_copy', 'suite_src_formats', 'uid', 'upload_blocks']
-
-drop_plpgsql = "DROP LANGUAGE IF EXISTS plpgsql CASCADE"
-create_plpgsql = "CREATE LANGUAGE plpgsql"
-create_function = """CREATE OR REPLACE FUNCTION tfunc_set_modified() RETURNS trigger AS $$
-    BEGIN NEW.modified = now(); return NEW; END;
-    $$ LANGUAGE 'plpgsql'"""
-create_trigger = """CREATE TRIGGER modified_%s BEFORE UPDATE ON %s
-    FOR EACH ROW EXECUTE PROCEDURE tfunc_set_modified()"""
+all_tables = [
+    'acl', 'acl_architecture_map', 'acl_fingerprint_map', 'acl_per_source',
+    'architecture', 'archive', 'bin_associations', 'bin_contents', 'binaries',
+    'binaries_metadata', 'build_queue', 'changelogs_text', 'changes',
+    'component', 'component_suite', 'config', 'dsc_files', 'external_files',
+    'external_overrides', 'external_signature_requests', 'extra_src_references',
+    'files', 'files_archive_map', 'fingerprint', 'hashfile', 'keyrings',
+    'maintainer', 'metadata_keys', 'new_comments', 'override', 'override_type',
+    'policy_queue', 'policy_queue_byhand_file', 'policy_queue_upload',
+    'policy_queue_upload_binaries_map', 'priority', 'section',
+    'signature_history', 'source', 'source_metadata', 'src_associations',
+    'src_contents', 'src_format', 'src_uploaders', 'suite', 'suite_acl_map',
+    'suite_architectures', 'suite_build_queue_copy', 'suite_permission',
+    'suite_src_formats', 'uid', 'version_check',
+]
 
 class DBDakTestCase(DakTestCase):
     def execute(self, statement):
         DDL(statement).execute(self.metadata.bind)
-
-    def create_all_triggers(self):
-        for statement in (drop_plpgsql, create_plpgsql, create_function):
-            self.execute(statement)
-        for table in all_tables:
-            self.execute(create_trigger % (table, table))
 
     metadata = None
 
@@ -56,24 +47,28 @@ class DBDakTestCase(DakTestCase):
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 
-        pickle_filename = 'db-metadata-%s.pkl' % __version__
-        pickle_file = open(fixture(pickle_filename), 'r')
-        DBDakTestCase.metadata = pickle.load(pickle_file)
-        self.metadata.ddl_listeners = pickle.load(pickle_file)
-        pickle_file.close()
+        self.metadata = DBConn().db_meta
         self.metadata.bind = create_engine(connstr)
         self.metadata.create_all()
-        self.create_all_triggers()
+
+    def setup_archive(self):
+        if 'archive' in self.__dict__:
+            return
+        self.archive = self.session.query(Archive).get(1)
 
     def setup_suites(self):
         "setup a hash of Suite objects in self.suite"
 
         if 'suite' in self.__dict__:
             return
+        self.setup_archive()
         self.suite = {}
         for suite_name in ('lenny', 'squeeze', 'sid'):
-            self.suite[suite_name] = Suite(suite_name=suite_name, version='-')
-        self.session.add_all(self.suite.values())
+            self.suite[suite_name] = get_suite(suite_name, self.session)
+            if not self.suite[suite_name]:
+                self.suite[suite_name] = Suite(suite_name=suite_name, version='-')
+                self.suite[suite_name].archive_id = self.archive.archive_id
+                self.session.add(self.suite[suite_name])
 
     def setup_architectures(self):
         "setup Architecture objects in self.arch and connect to suites"
@@ -83,14 +78,14 @@ class DBDakTestCase(DakTestCase):
         self.setup_suites()
         self.arch = {}
         for arch_string in ('source', 'all', 'i386', 'amd64', 'kfreebsd-i386'):
-            self.arch[arch_string] = Architecture(arch_string)
+            self.arch[arch_string] = get_architecture(arch_string, self.session)
+            if not self.arch[arch_string]:
+                self.arch[arch_string] = Architecture(arch_string)
             if arch_string != 'kfreebsd-i386':
                 self.arch[arch_string].suites = self.suite.values()
             else:
                 self.arch[arch_string].suites = [self.suite['squeeze'], self.suite['sid']]
         # hard code ids for source and all
-        self.arch['source'].arch_id = 1
-        self.arch['all'].arch_id = 2
         self.session.add_all(self.arch.values())
 
     def setup_components(self):
@@ -100,56 +95,58 @@ class DBDakTestCase(DakTestCase):
             return
         self.comp = {}
         for name in ('main', 'contrib', 'non-free'):
-            self.comp[name] = Component(component_name=name)
-        self.session.add_all(self.comp.values())
-
-    def setup_locations(self):
-        'create some Location objects'
-
-        if 'loc' in self.__dict__:
-            return
-        self.setup_components()
-        self.loc = {}
-        self.loc['main'] = Location( \
-            path=fixture('ftp/pool/'), component=self.comp['main'])
-        self.loc['contrib'] = Location( \
-            path=fixture('ftp/pool/'), component=self.comp['contrib'])
-        self.session.add_all(self.loc.values())
+            self.comp[name] = get_component(name, self.session)
+            if not self.comp[name]:
+                self.comp[name] = Component(component_name=name)
+                self.session.add(self.comp[name])
 
     def setup_poolfiles(self):
         'create some PoolFile objects'
 
         if 'file' in self.__dict__:
             return
-        self.setup_locations()
+        self.setup_archive()
+        self.setup_components()
         self.file = {}
-        self.file['hello_2.2-3.dsc'] = PoolFile(filename='main/h/hello/hello_2.2-3.dsc', \
-            location=self.loc['main'], filesize=0, md5sum='')
-        self.file['hello_2.2-2.dsc'] = PoolFile(filename='main/h/hello/hello_2.2-2.dsc', \
-            location=self.loc['main'], filesize=0, md5sum='')
-        self.file['hello_2.2-1.dsc'] = PoolFile(filename='main/h/hello/hello_2.2-1.dsc', \
-            location=self.loc['main'], filesize=0, md5sum='')
+        self.file['hello_2.2-3.dsc'] = PoolFile(filename='h/hello/hello_2.2-3.dsc', \
+            filesize=0, md5sum='')
+        self.file['hello_2.2-2.dsc'] = PoolFile(filename='h/hello/hello_2.2-2.dsc', \
+            filesize=0, md5sum='')
+        self.file['hello_2.2-1.dsc'] = PoolFile(filename='h/hello/hello_2.2-1.dsc', \
+            filesize=0, md5sum='')
         self.file['gnome-hello_3.0-1.dsc'] = PoolFile( \
-            filename='main/g/gnome-hello/gnome-hello_3.0-1.dsc', \
-            location=self.loc['contrib'], filesize=0, md5sum='')
+            filename='g/gnome-hello/gnome-hello_3.0-1.dsc', \
+            filesize=0, md5sum='')
         self.file['hello_2.2-1_i386.deb'] = PoolFile( \
-            filename='main/h/hello/hello_2.2-1_i386.deb', \
-            location=self.loc['main'], filesize=0, md5sum='')
+            filename='h/hello/hello_2.2-1_i386.deb', \
+            filesize=0, md5sum='')
         self.file['gnome-hello_2.2-1_i386.deb'] = PoolFile( \
-            filename='main/h/hello/gnome-hello_2.2-1_i386.deb', \
-            location=self.loc['main'], filesize=0, md5sum='')
+            filename='h/hello/gnome-hello_2.2-1_i386.deb', \
+            filesize=0, md5sum='')
         self.file['python-hello_2.2-1_all.deb'] = PoolFile( \
-            filename='main/h/hello/python-hello_2.2-1_all.deb', \
-            location=self.loc['main'], filesize=0, md5sum='')
+            filename='h/hello/python-hello_2.2-1_all.deb', \
+            filesize=0, md5sum='')
         self.file['gnome-hello_3.0-1_i386.deb'] = PoolFile( \
-            filename='main/g/gnome-hello/gnome-hello_3.0-1_i386.deb', \
-            location=self.loc['contrib'], filesize=0, md5sum='')
-        self.file['sl_3.03-16.dsc'] = PoolFile(filename='main/s/sl/sl_3.03-16.dsc', \
-            location=self.loc['main'], filesize=0, md5sum='')
+            filename='g/gnome-hello/gnome-hello_3.0-1_i386.deb', \
+            filesize=0, md5sum='')
+        self.file['sl_3.03-16.dsc'] = PoolFile(filename='s/sl/sl_3.03-16.dsc', \
+            filesize=0, md5sum='')
         self.file['python2.6_2.6.6-8.dsc'] = PoolFile( \
-            filename='main/p/python2.6/python2.6_2.6.6-8.dsc', \
-            location=self.loc['main'], filesize=0, md5sum='')
+            filename='p/python2.6/python2.6_2.6.6-8.dsc', \
+            filesize=0, md5sum='')
+
+        archive_files = []
+        for f in self.file.values():
+            f.sha1sum = 'sha1sum'
+            f.sha256sum = 'sha256sum'
+            if not 'gnome-hello_3.0-1' in f.filename:
+                archive_files.append(ArchiveFile(
+                    archive=self.archive, component=self.comp['main'], file=f))
+            else:
+                archive_files.append(ArchiveFile(
+                    archive=self.archive, component=self.comp['contrib'], file=f))
         self.session.add_all(self.file.values())
+        self.session.add_all(archive_files)
 
     def setup_maintainers(self):
         'create some Maintainer objects'
@@ -157,10 +154,9 @@ class DBDakTestCase(DakTestCase):
         if 'maintainer' in self.__dict__:
             return
         self.maintainer = {}
-        self.maintainer['maintainer'] = Maintainer(name='Mr. Maintainer')
-        self.maintainer['uploader'] = Maintainer(name='Mrs. Uploader')
-        self.maintainer['lazyguy'] = Maintainer(name='Lazy Guy')
-        self.session.add_all(self.maintainer.values())
+        self.maintainer['maintainer'] = get_or_set_maintainer('Mr.  Maintainer', self.session)
+        self.maintainer['uploader'] = get_or_set_maintainer('Mrs.  Uploader', self.session)
+        self.maintainer['lazyguy'] = get_or_set_maintainer('Lazy Guy', self.session)
 
     def setup_sources(self):
         'create DBSource objects'
@@ -239,9 +235,7 @@ class DBDakTestCase(DakTestCase):
             return
         self.otype = {}
         for type_ in ('deb', 'udeb'):
-            self.otype[type_] = OverrideType(overridetype=type_)
-        self.session.add_all(self.otype.values())
-        self.session.flush()
+            self.otype[type_] = get_override_type(type_, self.session)
 
     def setup_sections(self):
         '''
@@ -250,9 +244,7 @@ class DBDakTestCase(DakTestCase):
         if 'section' in self.__dict__:
             return
         self.section = {}
-        self.section['python'] = Section(section='python')
-        self.session.add_all(self.section.values())
-        self.session.flush()
+        self.section['python'] = get_section('python', self.session)
 
     def setup_priorities(self):
         '''
@@ -261,9 +253,7 @@ class DBDakTestCase(DakTestCase):
         if 'prio' in self.__dict__:
             return
         self.prio = {}
-        self.prio['standard'] = Priority(priority='standard', level=7)
-        self.session.add_all(self.prio.values())
-        self.session.flush()
+        self.prio['standard'] = get_priority('standard', self.session)
 
     def setup_overrides(self):
         '''

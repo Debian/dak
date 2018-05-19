@@ -8,14 +8,18 @@ from sqlalchemy import Table, Column, Integer, func
 from sqlalchemy.orm import mapper
 import unittest
 
+
 class Version(object):
+
     def __init__(self, version):
         self.version = version
 
     def __repr__(self):
         return "<Version('%s')>" % self.version
 
+
 class DebVersionTestCase(DBDakTestCase):
+
     """
     The DebVersionTestCase tests both comparison (<=, ==, >, !=), the in_()
     method and aggregate functions (min, max) for the DebVersion type. To
@@ -25,10 +29,10 @@ class DebVersionTestCase(DBDakTestCase):
 
     def setUp(self):
         super(DebVersionTestCase, self).setUp()
-        self.version_table = Table('version', self.metadata, \
-            Column('id', Integer, primary_key=True), \
-            Column('version', DebVersion), \
-            )
+        self.version_table = Table('version', self.metadata,
+                                   Column('id', Integer, primary_key=True),
+                                   Column('version', DebVersion),
+                                   )
         self.version_table.create(checkfirst=True)
         mapper(Version, self.version_table)
 
@@ -47,7 +51,8 @@ class DebVersionTestCase(DBDakTestCase):
         self.assertEqual(1, q.filter(Version.version > '0.5').count())
         self.assertEqual(0, q.filter(Version.version > '1.0').count())
         self.assertEqual(2, q.filter(Version.version != '1.0').count())
-        self.assertEqual(2, q.filter(Version.version.in_(['0.5~', '1.0'])).count())
+        self.assertEqual(
+            2, q.filter(Version.version.in_(['0.5~', '1.0'])).count())
         q = self.session.query(func.min(Version.version))
         self.assertEqual('0.5~', q.scalar())
         q = self.session.query(func.max(Version.version))

@@ -3,7 +3,7 @@
 from db_test import DBDakTestCase
 
 from daklib.dbconn import Architecture, Suite
-from daklib.dak_exceptions import DBUpdateError
+from sqlalchemy.exc import IntegrityError
 
 try:
     # python >= 2.6
@@ -15,7 +15,9 @@ except:
 import re
 import unittest
 
+
 class ORMObjectTestCase(DBDakTestCase):
+
     """
     The ORMObjectTestCase tests the behaviour of the ORMObject.
     """
@@ -39,7 +41,7 @@ class ORMObjectTestCase(DBDakTestCase):
     def test_validation(self):
         suite = Suite()
         self.session.add(suite)
-        self.assertRaises(DBUpdateError, self.session.flush)
+        self.assertRaises(IntegrityError, self.session.flush)
 
 if __name__ == '__main__':
     unittest.main()
