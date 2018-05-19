@@ -113,7 +113,7 @@ def main ():
     d = DBConn()
     session = d.session()
 
-    for suite in session.query(Suite).filter(Suite.overrideprocess==True):
+    for suite in session.query(Suite).filter(Suite.overrideprocess == True):  # noqa:E712
         if suite.untouchable:
             print "Skipping %s as it is marked as untouchable" % suite.suite_name
             continue

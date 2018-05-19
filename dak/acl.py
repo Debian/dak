@@ -61,7 +61,7 @@ def get_fingerprint(entry, session):
     @return: fingerprint for the entry
     """
     field, value = entry.split(":", 1)
-    q = session.query(Fingerprint).join(Fingerprint.keyring).filter(Keyring.active == True)
+    q = session.query(Fingerprint).join(Fingerprint.keyring).filter(Keyring.active == True)  # noqa:E712
 
     if field == 'uid':
         q = q.join(Fingerprint.uid).filter(Uid.uid == value)

@@ -896,14 +896,14 @@ def show_keyring(command):
 
     d = DBConn()
 
-    q = d.session().query(Keyring).filter(Keyring.active == True)
+    q = d.session().query(Keyring).filter(Keyring.active == True)  # noqa:E712
 
     if mode == 'list-all':
         pass
     elif mode == 'list-binary':
-        q = q.join(Keyring.acl).filter(ACL.allow_source == False)
+        q = q.join(Keyring.acl).filter(ACL.allow_source == False)  # noqa:E712
     elif mode == 'list-source':
-        q = q.join(Keyring.acl).filter(ACL.allow_source == True)
+        q = q.join(Keyring.acl).filter(ACL.allow_source == True)  # noqa:E712
     else:
         die("E: keyring command unknown")
 

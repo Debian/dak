@@ -484,7 +484,7 @@ def main ():
                 print "cannot find suite %s" % s
                 Logger.log(['cannot find suite %s' % s])
     else:
-        query = session.query(Suite).filter(Suite.untouchable == False)
+        query = session.query(Suite).filter(Suite.untouchable == False)  # noqa:E712
         if 'Archive' in Options:
             archive_names = utils.split_args(Options['Archive'])
             query = query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))

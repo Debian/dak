@@ -157,7 +157,7 @@ class ArchiveTransaction(object):
         source_query = session.query(DBSource).filter_by(source=source_name, version=source_version)
         source = source_query.filter(DBSource.suites.contains(suite)).first()
         if source is None:
-            if source_suites != True:
+            if source_suites is not True:
                 source_query = source_query.join(DBSource.suites) \
                     .filter(Suite.suite_id == source_suites.c.id)
             source = source_query.first()
@@ -400,7 +400,7 @@ class ArchiveTransaction(object):
         if session.query(ArchiveFile).filter_by(archive=archive, component=component, file=db_file).first() is None:
             query = session.query(ArchiveFile).filter_by(file=db_file)
             if not allow_tainted:
-                query = query.join(Archive).filter(Archive.tainted == False)
+                query = query.join(Archive).filter(Archive.tainted == False)  # noqa:E712
 
             source_af = query.first()
             if source_af is None:
@@ -846,7 +846,7 @@ class ArchiveUpload(object):
             files.extend(self.changes.source.files.values())
         for f in files:
             query = session.query(ArchiveFile).join(PoolFile).filter(PoolFile.sha1sum == f.sha1sum)
-            query_untainted = query.join(Archive).filter(Archive.tainted == False)
+            query_untainted = query.join(Archive).filter(Archive.tainted == False)  # noqa:E712
 
             in_archive = (query.first() is not None)
             in_untainted_archive = (query_untainted.first() is not None)

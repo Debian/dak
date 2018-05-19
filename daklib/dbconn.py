@@ -1029,7 +1029,7 @@ def get_active_keyring_paths(session=None):
     @rtype: list
     @return: list of active keyring paths
     """
-    return [ x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).order_by(desc(Keyring.priority)).all() ]
+    return [ x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).order_by(desc(Keyring.priority)).all() ]  # noqa:E712
 
 __all__.append('get_active_keyring_paths')
 
