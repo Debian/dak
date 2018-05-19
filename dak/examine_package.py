@@ -121,25 +121,25 @@ def headline(s, level=2, bodyelement=None):
 # Colour definitions, 'end' isn't really for use
 
 ansi_colours = {
-  'main': "\033[36m",
-  'contrib': "\033[33m",
-  'nonfree': "\033[31m",
-  'provides': "\033[35m",
-  'arch': "\033[32m",
-  'end': "\033[0m",
-  'bold': "\033[1m",
-  'maintainer': "\033[32m",
-  'distro': "\033[1m\033[41m"}
+    'main': "\033[36m",
+    'contrib': "\033[33m",
+    'nonfree': "\033[31m",
+    'provides': "\033[35m",
+    'arch': "\033[32m",
+    'end': "\033[0m",
+    'bold': "\033[1m",
+    'maintainer': "\033[32m",
+    'distro': "\033[1m\033[41m"}
 
 html_colours = {
-  'main': ('<span style="color: aqua">',"</span>"),
-  'contrib': ('<span style="color: yellow">',"</span>"),
-  'nonfree': ('<span style="color: red">',"</span>"),
-  'provides': ('<span style="color: magenta">',"</span>"),
-  'arch': ('<span style="color: green">',"</span>"),
-  'bold': ('<span style="font-weight: bold">',"</span>"),
-  'maintainer': ('<span style="color: green">',"</span>"),
-  'distro': ('<span style="font-weight: bold; background-color: red">',"</span>")}
+    'main': ('<span style="color: aqua">',"</span>"),
+    'contrib': ('<span style="color: yellow">',"</span>"),
+    'nonfree': ('<span style="color: red">',"</span>"),
+    'provides': ('<span style="color: magenta">',"</span>"),
+    'arch': ('<span style="color: green">',"</span>"),
+    'bold': ('<span style="font-weight: bold">',"</span>"),
+    'maintainer': ('<span style="color: green">',"</span>"),
+    'distro': ('<span style="font-weight: bold; background-color: red">',"</span>")}
 
 
 def colour_output(s, colour):

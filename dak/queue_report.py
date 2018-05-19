@@ -475,11 +475,11 @@ def process_queue(queue, log, rrd_dir):
                 try:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
-                     fix_maintainer(dbc.changedby)
+                        fix_maintainer(dbc.changedby)
                 except ParseMaintError as msg:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
-                     ("", "", "", "")
+                        ("", "", "", "")
                 changedby = "%s:%s" % (changeby["changedbyname"], changeby["changedbyemail"])
 
                 distribution = dbc.distribution.split()
