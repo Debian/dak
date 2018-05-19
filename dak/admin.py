@@ -476,7 +476,7 @@ dispatch['s'] = suite
 def __suite_architecture_list(d, args):
     s = d.session()
     for j in s.query(Suite).order_by(Suite.suite_name):
-        architectures = j.get_architectures(skipsrc = True, skipall = True)
+        architectures = j.get_architectures(skipsrc=True, skipall=True)
         print j.suite_name + ': ' + \
               ', '.join([a.arch_string for a in architectures])
 
@@ -485,7 +485,7 @@ def __suite_architecture_listarch(d, args):
     suite = get_suite(args[2].lower(), d.session())
     if suite is None:
         die('E: suite %s is invalid' % args[2].lower())
-    a = suite.get_architectures(skipsrc = True, skipall = True)
+    a = suite.get_architectures(skipsrc=True, skipall=True)
     for j in a:
         print j.arch_string
 
@@ -876,7 +876,7 @@ def show_config(command):
     else:
         session = DBConn().session()
         try:
-            o = session.query(DBConfig).filter_by(name = mode).one()
+            o = session.query(DBConfig).filter_by(name=mode).one()
             print o.value
         except NoResultFound:
             print "W: option '%s' not set" % mode

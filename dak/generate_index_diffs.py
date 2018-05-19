@@ -115,7 +115,7 @@ def pipe_file(f, t):
     t.close()
 
 class Updates:
-    def __init__(self, readpath = None, max = 56):
+    def __init__(self, readpath=None, max=56):
         self.can_path = None
         self.history = {}
         self.history_order = []
@@ -264,7 +264,7 @@ def sizehashes(f):
     sha256sum = apt_pkg.sha256sum(f)
     return (size, sha1sum, sha256sum)
 
-def genchanges(Options, outdir, oldfile, origfile, maxdiffs = 56):
+def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if "NoAct" in Options:
         print "Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs)
         return

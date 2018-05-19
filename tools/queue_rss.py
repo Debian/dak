@@ -42,14 +42,14 @@ parser.add_option("-m", "--max-entries", dest="max_entries", type="int",
 class Status:
     def __init__(self):
         self.feed_in = PyRSS2Gen.RSS2(
-                       title = "Packages entering NEW",
-                       link = "https://ftp-master.debian.org/new.html",
-                       description = "Debian packages entering the NEW queue" )
+                       title="Packages entering NEW",
+                       link="https://ftp-master.debian.org/new.html",
+                       description="Debian packages entering the NEW queue" )
 
         self.feed_out = PyRSS2Gen.RSS2(
-                       title = "Packages leaving NEW",
-                       link = "https://ftp-master.debian.org/new.html",
-                       description = "Debian packages leaving the NEW queue" )
+                       title="Packages leaving NEW",
+                       link="https://ftp-master.debian.org/new.html",
+                       description="Debian packages leaving the NEW queue" )
 
         self.queue = {}
 
@@ -152,11 +152,11 @@ def add_rss_item(status, msg, direction):
     feed.items.insert(0,
         PyRSS2Gen.RSSItem(
             title,
-            pubDate = pubdate,
-            description = description,
-            author = cgi.escape(author),
-            link = link,
-            guid = guid
+            pubDate=pubdate,
+            description=description,
+            author=cgi.escape(author),
+            link=link,
+            guid=guid
         )
     )
 

@@ -182,7 +182,7 @@ def edit_note(note, upload, session, trainee=False):
 def get_suite_version_by_source(source, session):
     'returns a list of tuples (suite_name, version) for source package'
     q = session.query(Suite.suite_name, DBSource.version). \
-        join(Suite.sources).filter_by(source = source)
+        join(Suite.sources).filter_by(source=source)
     return q.all()
 
 def get_suite_version_by_package(package, arch_string, session):
@@ -191,7 +191,7 @@ def get_suite_version_by_package(package, arch_string, session):
     arch_string
     '''
     return session.query(Suite.suite_name, DBBinary.version). \
-        join(Suite.binaries).filter_by(package = package). \
+        join(Suite.binaries).filter_by(package=package). \
         join(DBBinary.architecture). \
         filter(Architecture.arch_string.in_([arch_string, 'all'])).all()
 

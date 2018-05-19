@@ -293,7 +293,7 @@ class Changes(object):
                 chg.poolfiles.append(poolfile)
 
         session.commit()
-        chg = session.query(DBChange).filter_by(changesname = self.changes_file).one();
+        chg = session.query(DBChange).filter_by(changesname=self.changes_file).one();
 
         return chg
 

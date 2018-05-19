@@ -20,13 +20,13 @@ class ContentsTestCase(DBDakTestCase):
         Test the BinContents class for duplication problems.
         '''
         self.setup_binaries()
-        contents1 = BinContents(file = 'usr/bin/hello', \
-            binary = self.binary['hello_2.2-1_i386'])
+        contents1 = BinContents(file='usr/bin/hello', \
+            binary=self.binary['hello_2.2-1_i386'])
         self.session.add(contents1)
         self.session.flush()
         # test duplicates
-        contents2 = BinContents(file = 'usr/bin/hello', \
-            binary = self.binary['hello_2.2-1_i386'])
+        contents2 = BinContents(file='usr/bin/hello', \
+            binary=self.binary['hello_2.2-1_i386'])
         self.session.add(contents2)
         self.assertRaises(FlushError, self.session.flush)
 
@@ -35,11 +35,11 @@ class ContentsTestCase(DBDakTestCase):
         Test the BinContents class for more duplication problems.
         '''
         self.setup_binaries()
-        contents1 = BinContents(file = 'usr/bin/hello', \
-            binary = self.binary['hello_2.2-1_i386'])
+        contents1 = BinContents(file='usr/bin/hello', \
+            binary=self.binary['hello_2.2-1_i386'])
         self.session.add(contents1)
-        contents2 = BinContents(file = 'usr/bin/gruezi', \
-            binary = self.binary['hello_2.2-1_i386'])
+        contents2 = BinContents(file='usr/bin/gruezi', \
+            binary=self.binary['hello_2.2-1_i386'])
         self.session.add(contents2)
         self.session.flush()
         # test duplicates
@@ -51,12 +51,12 @@ class ContentsTestCase(DBDakTestCase):
         Test the BinContents class even more.
         '''
         self.setup_binaries()
-        contents1 = BinContents(file = 'usr/bin/hello', \
-            binary = self.binary['hello_2.2-1_i386'])
+        contents1 = BinContents(file='usr/bin/hello', \
+            binary=self.binary['hello_2.2-1_i386'])
         self.session.add(contents1)
         # same file in different binary packages should be okay
-        contents2 = BinContents(file = 'usr/bin/hello', \
-            binary = self.binary['gnome-hello_2.2-1_i386'])
+        contents2 = BinContents(file='usr/bin/hello', \
+            binary=self.binary['gnome-hello_2.2-1_i386'])
         self.session.add(contents2)
         self.session.flush()
 
@@ -101,23 +101,23 @@ class ContentsTestCase(DBDakTestCase):
         Test Override class.
         '''
         self.setup_overrides()
-        list = get_override('hello', session = self.session)
+        list = get_override('hello', session=self.session)
         self.assertEqual(3, len(list))
         self.assertTrue(self.override['hello_sid_main_udeb'] in list)
         self.assertTrue(self.override['hello_squeeze_main_deb'] in list)
-        list = get_override('hello', suite = 'sid', session = self.session)
+        list = get_override('hello', suite='sid', session=self.session)
         self.assertEqual([self.override['hello_sid_main_udeb']], list)
-        list = get_override('hello', suite = ['sid'], session = self.session)
+        list = get_override('hello', suite=['sid'], session=self.session)
         self.assertEqual([self.override['hello_sid_main_udeb']], list)
-        list = get_override('hello', component = 'contrib', session = self.session)
+        list = get_override('hello', component='contrib', session=self.session)
         self.assertEqual([self.override['hello_lenny_contrib_deb']], list)
-        list = get_override('hello', component = ['contrib'], session = self.session)
+        list = get_override('hello', component=['contrib'], session=self.session)
         self.assertEqual([self.override['hello_lenny_contrib_deb']], list)
-        list = get_override('hello', overridetype = 'deb', session = self.session)
+        list = get_override('hello', overridetype='deb', session=self.session)
         self.assertEqual(2, len(list))
         self.assertTrue(self.override['hello_sid_main_udeb'] not in list)
         self.assertTrue(self.override['hello_squeeze_main_deb'] in list)
-        list = get_override('hello', overridetype = ['deb'], session = self.session)
+        list = get_override('hello', overridetype=['deb'], session=self.session)
         self.assertEqual(2, len(list))
         self.assertTrue(self.override['hello_sid_main_udeb'] not in list)
         self.assertTrue(self.override['hello_squeeze_main_deb'] in list)
@@ -126,7 +126,7 @@ class ContentsTestCase(DBDakTestCase):
             self.suite['sid'].overrides.one())
         self.assertEqual(2, self.comp['main'].overrides.count())
         self.assertEqual(self.override['hello_sid_main_udeb'], \
-            self.comp['main'].overrides.filter_by(suite = self.suite['sid']).one())
+            self.comp['main'].overrides.filter_by(suite=self.suite['sid']).one())
         self.assertEqual(self.override['hello_sid_main_udeb'], \
             self.otype['udeb'].overrides.one())
 
@@ -139,7 +139,7 @@ class ContentsTestCase(DBDakTestCase):
         self.setup_overridetypes()
         self.setup_binaries()
         self.setup_overrides()
-        self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '/usr/bin/hello'))
+        self.binary['hello_2.2-1_i386'].contents.append(BinContents(file='/usr/bin/hello'))
         self.session.commit()
         cw = BinaryContentsWriter(self.suite['squeeze'], self.arch['i386'], \
             self.otype['deb'], self.comp['main'])
@@ -149,7 +149,7 @@ class ContentsTestCase(DBDakTestCase):
         self.assertEqual('/usr/bin/hello                                          python/hello\n', \
             cw.formatline('/usr/bin/hello', 'python/hello'))
         # test unicode support
-        self.binary['hello_2.2-1_i386'].contents.append(BinContents(file = '\xc3\xb6'))
+        self.binary['hello_2.2-1_i386'].contents.append(BinContents(file='\xc3\xb6'))
         self.session.commit()
         # test delete cascading
         self.session.delete(self.binary['hello_2.2-1_i386'])

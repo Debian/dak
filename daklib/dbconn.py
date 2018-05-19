@@ -241,7 +241,7 @@ class ORMObject(object):
 
     @classmethod
     @session_wrapper
-    def get(cls, primary_key,  session = None):
+    def get(cls, primary_key,  session=None):
         '''
         This is a support function that allows getting an object by its primary
         key.
@@ -254,7 +254,7 @@ class ORMObject(object):
         '''
         return session.query(cls).get(primary_key)
 
-    def session(self, replace = False):
+    def session(self, replace=False):
         '''
         Returns the current session that is associated with the object. May
         return None is object is in detached state.
@@ -262,7 +262,7 @@ class ORMObject(object):
 
         return object_session(self)
 
-    def clone(self, session = None):
+    def clone(self, session=None):
         """
         Clones the current object in a new session and returns the new clone. A
         fresh session is created if the optional session parameter is not
@@ -317,7 +317,7 @@ __all__.append('ACLPerSource')
 ################################################################################
 
 class Architecture(ORMObject):
-    def __init__(self, arch_string = None, description = None):
+    def __init__(self, arch_string=None, description=None):
         self.arch_string = arch_string
         self.description = description
 
@@ -417,7 +417,7 @@ __all__.append('ArchiveFile')
 ################################################################################
 
 class BinContents(ORMObject):
-    def __init__(self, file = None, binary = None):
+    def __init__(self, file=None, binary=None):
         self.file = file
         self.binary = binary
 
@@ -429,9 +429,9 @@ __all__.append('BinContents')
 ################################################################################
 
 class DBBinary(ORMObject):
-    def __init__(self, package = None, source = None, version = None, \
-        maintainer = None, architecture = None, poolfile = None, \
-        binarytype = 'deb', fingerprint=None):
+    def __init__(self, package=None, source=None, version=None, \
+        maintainer=None, architecture=None, poolfile=None, \
+        binarytype='deb', fingerprint=None):
         self.package = package
         self.source = source
         self.version = version
@@ -462,7 +462,7 @@ class DBBinary(ORMObject):
         fullpath = self.poolfile.fullpath
         dpkg_cmd = ('dpkg-deb', '--fsys-tarfile', fullpath)
         dpkg = daklib.daksubprocess.Popen(dpkg_cmd, stdout=subprocess.PIPE)
-        tar = TarFile.open(fileobj = dpkg.stdout, mode = 'r|')
+        tar = TarFile.open(fileobj=dpkg.stdout, mode='r|')
         for member in tar.getmembers():
             if not member.isdir():
                 name = normpath(member.name)
@@ -543,7 +543,7 @@ def get_component_by_package_suite(package, suite_list, arch_list=[], session=No
     @return: name of component or None
     '''
 
-    q = session.query(DBBinary).filter_by(package = package). \
+    q = session.query(DBBinary).filter_by(package=package). \
         join(DBBinary.suites).filter(Suite.suite_name.in_(suite_list))
     if len(arch_list) > 0:
         q = q.join(DBBinary.architecture). \
@@ -570,7 +570,7 @@ __all__.append('BuildQueue')
 ################################################################################
 
 class Component(ORMObject):
-    def __init__(self, component_name = None):
+    def __init__(self, component_name=None):
         self.component_name = component_name
 
     def __eq__(self, val):
@@ -730,8 +730,8 @@ __all__.append('ExternalOverride')
 ################################################################################
 
 class PoolFile(ORMObject):
-    def __init__(self, filename = None, filesize = -1, \
-        md5sum = None):
+    def __init__(self, filename=None, filesize=-1, \
+        md5sum=None):
         self.filename = filename
         self.filesize = filesize
         self.md5sum = md5sum
@@ -755,7 +755,7 @@ class PoolFile(ORMObject):
     def basename(self):
         return os.path.basename(self.filename)
 
-    def is_valid(self, filesize = -1, md5sum = None):
+    def is_valid(self, filesize=-1, md5sum=None):
         return self.filesize == long(filesize) and self.md5sum == md5sum
 
     def properties(self):
@@ -785,7 +785,7 @@ __all__.append('PoolFile')
 ################################################################################
 
 class Fingerprint(ORMObject):
-    def __init__(self, fingerprint = None):
+    def __init__(self, fingerprint=None):
         self.fingerprint = fingerprint
 
     def properties(self):
@@ -1072,7 +1072,7 @@ __all__.append('get_dbchange')
 ################################################################################
 
 class Maintainer(ORMObject):
-    def __init__(self, name = None):
+    def __init__(self, name=None):
         self.name = name
 
     def properties(self):
@@ -1213,8 +1213,8 @@ __all__.append('get_new_comments')
 ################################################################################
 
 class Override(ORMObject):
-    def __init__(self, package = None, suite = None, component = None, overridetype = None, \
-        section = None, priority = None):
+    def __init__(self, package=None, suite=None, component=None, overridetype=None, \
+        section=None, priority=None):
         self.package = package
         self.suite = suite
         self.component = component
@@ -1282,7 +1282,7 @@ __all__.append('get_override')
 ################################################################################
 
 class OverrideType(ORMObject):
-    def __init__(self, overridetype = None):
+    def __init__(self, overridetype=None):
         self.overridetype = overridetype
 
     def properties(self):
@@ -1379,7 +1379,7 @@ __all__.append('PolicyQueueByhandFile')
 ################################################################################
 
 class Priority(ORMObject):
-    def __init__(self, priority = None, level = None):
+    def __init__(self, priority=None, level=None):
         self.priority = priority
         self.level = level
 
@@ -1450,7 +1450,7 @@ __all__.append('get_priorities')
 ################################################################################
 
 class Section(ORMObject):
-    def __init__(self, section = None):
+    def __init__(self, section=None):
         self.section = section
 
     def properties(self):
@@ -1543,7 +1543,7 @@ __all__.append('SignatureHistory')
 ################################################################################
 
 class SrcContents(ORMObject):
-    def __init__(self, file = None, source = None):
+    def __init__(self, file=None, source=None):
         self.file = file
         self.source = source
 
@@ -1609,8 +1609,8 @@ class Dak822(Deb822):
 
 
 class DBSource(ORMObject):
-    def __init__(self, source = None, version = None, maintainer = None, \
-        changedby = None, poolfile = None, install_date = None, fingerprint = None):
+    def __init__(self, source=None, version=None, maintainer=None, \
+        changedby=None, poolfile=None, install_date=None, fingerprint=None):
         self.source = source
         self.version = version
         self.maintainer = maintainer
@@ -1773,7 +1773,7 @@ SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
 # Why the heck don't we have any UNIQUE constraints in table suite?
 # TODO: Add UNIQUE constraints for appropriate columns.
 class Suite(ORMObject):
-    def __init__(self, suite_name = None, version = None):
+    def __init__(self, suite_name=None, version=None):
         self.suite_name = suite_name
         self.version = version
 
@@ -1840,7 +1840,7 @@ class Suite(ORMObject):
         """
 
         session = object_session(self)
-        return session.query(DBSource).filter_by(source = source). \
+        return session.query(DBSource).filter_by(source=source). \
             with_parent(self)
 
     def get_overridesuite(self):
@@ -1940,7 +1940,7 @@ __all__.append('get_suite_architectures')
 ################################################################################
 
 class Uid(ORMObject):
-    def __init__(self, uid = None, name = None):
+    def __init__(self, uid=None, name=None):
         self.uid = uid
         self.name = name
 
@@ -2010,7 +2010,7 @@ __all__.append('get_uid_from_fingerprint')
 ################################################################################
 
 class MetadataKey(ORMObject):
-    def __init__(self, key = None):
+    def __init__(self, key=None):
         self.key = key
 
     def properties(self):
@@ -2053,7 +2053,7 @@ __all__.append('get_or_set_metadatakey')
 ################################################################################
 
 class BinaryMetadata(ORMObject):
-    def __init__(self, key = None, value = None, binary = None):
+    def __init__(self, key=None, value=None, binary=None):
         self.key = key
         self.value = value
         if binary is not None:
@@ -2067,7 +2067,7 @@ __all__.append('BinaryMetadata')
 ################################################################################
 
 class SourceMetadata(ORMObject):
-    def __init__(self, key = None, value = None, source = None):
+    def __init__(self, key=None, value=None, source=None):
         self.key = key
         self.value = value
         if source is not None:
@@ -2122,7 +2122,7 @@ class VersionCheck(ORMObject):
 __all__.append('VersionCheck')
 
 @session_wrapper
-def get_version_checks(suite_name, check = None, session = None):
+def get_version_checks(suite_name, check=None, session=None):
     suite = get_suite(suite_name, session)
     if not suite:
         # Make sure that what we return is iterable so that list comprehensions
@@ -2239,263 +2239,263 @@ class DBConn(object):
 
     def __setupmappers(self):
         mapper(Architecture, self.tbl_architecture,
-            properties = dict(arch_id = self.tbl_architecture.c.id,
-               suites = relation(Suite, secondary=self.tbl_suite_architectures,
+            properties=dict(arch_id=self.tbl_architecture.c.id,
+               suites=relation(Suite, secondary=self.tbl_suite_architectures,
                    order_by=self.tbl_suite.c.suite_name,
                    backref=backref('architectures', order_by=self.tbl_architecture.c.arch_string))),
             )
 
         mapper(ACL, self.tbl_acl,
-               properties = dict(
-                architectures = relation(Architecture, secondary=self.tbl_acl_architecture_map, collection_class=set),
-                fingerprints = relation(Fingerprint, secondary=self.tbl_acl_fingerprint_map, collection_class=set),
-                match_keyring = relation(Keyring, primaryjoin=(self.tbl_acl.c.match_keyring_id == self.tbl_keyrings.c.id)),
-                per_source = relation(ACLPerSource, collection_class=set),
+               properties=dict(
+                architectures=relation(Architecture, secondary=self.tbl_acl_architecture_map, collection_class=set),
+                fingerprints=relation(Fingerprint, secondary=self.tbl_acl_fingerprint_map, collection_class=set),
+                match_keyring=relation(Keyring, primaryjoin=(self.tbl_acl.c.match_keyring_id == self.tbl_keyrings.c.id)),
+                per_source=relation(ACLPerSource, collection_class=set),
                 ))
 
         mapper(ACLPerSource, self.tbl_acl_per_source,
-               properties = dict(
-                acl = relation(ACL),
-                fingerprint = relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.fingerprint_id == self.tbl_fingerprint.c.id)),
-                created_by = relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.created_by_id == self.tbl_fingerprint.c.id)),
+               properties=dict(
+                acl=relation(ACL),
+                fingerprint=relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.fingerprint_id == self.tbl_fingerprint.c.id)),
+                created_by=relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.created_by_id == self.tbl_fingerprint.c.id)),
                 ))
 
         mapper(Archive, self.tbl_archive,
-               properties = dict(archive_id = self.tbl_archive.c.id,
-                                 archive_name = self.tbl_archive.c.name))
+               properties=dict(archive_id=self.tbl_archive.c.id,
+                                 archive_name=self.tbl_archive.c.name))
 
         mapper(ArchiveFile, self.tbl_files_archive_map,
-               properties = dict(archive = relation(Archive, backref='files'),
-                                 component = relation(Component),
-                                 file = relation(PoolFile, backref='archives')))
+               properties=dict(archive=relation(Archive, backref='files'),
+                                 component=relation(Component),
+                                 file=relation(PoolFile, backref='archives')))
 
         mapper(BuildQueue, self.tbl_build_queue,
-               properties = dict(queue_id = self.tbl_build_queue.c.id,
-                                 suite = relation(Suite, primaryjoin=(self.tbl_build_queue.c.suite_id==self.tbl_suite.c.id))))
+               properties=dict(queue_id=self.tbl_build_queue.c.id,
+                                 suite=relation(Suite, primaryjoin=(self.tbl_build_queue.c.suite_id==self.tbl_suite.c.id))))
 
         mapper(DBBinary, self.tbl_binaries,
-               properties = dict(binary_id = self.tbl_binaries.c.id,
-                                 package = self.tbl_binaries.c.package,
-                                 version = self.tbl_binaries.c.version,
-                                 maintainer_id = self.tbl_binaries.c.maintainer,
-                                 maintainer = relation(Maintainer),
-                                 source_id = self.tbl_binaries.c.source,
-                                 source = relation(DBSource, backref='binaries'),
-                                 arch_id = self.tbl_binaries.c.architecture,
-                                 architecture = relation(Architecture),
-                                 poolfile_id = self.tbl_binaries.c.file,
-                                 poolfile = relation(PoolFile),
-                                 binarytype = self.tbl_binaries.c.type,
-                                 fingerprint_id = self.tbl_binaries.c.sig_fpr,
-                                 fingerprint = relation(Fingerprint),
-                                 install_date = self.tbl_binaries.c.install_date,
-                                 suites = relation(Suite, secondary=self.tbl_bin_associations,
+               properties=dict(binary_id=self.tbl_binaries.c.id,
+                                 package=self.tbl_binaries.c.package,
+                                 version=self.tbl_binaries.c.version,
+                                 maintainer_id=self.tbl_binaries.c.maintainer,
+                                 maintainer=relation(Maintainer),
+                                 source_id=self.tbl_binaries.c.source,
+                                 source=relation(DBSource, backref='binaries'),
+                                 arch_id=self.tbl_binaries.c.architecture,
+                                 architecture=relation(Architecture),
+                                 poolfile_id=self.tbl_binaries.c.file,
+                                 poolfile=relation(PoolFile),
+                                 binarytype=self.tbl_binaries.c.type,
+                                 fingerprint_id=self.tbl_binaries.c.sig_fpr,
+                                 fingerprint=relation(Fingerprint),
+                                 install_date=self.tbl_binaries.c.install_date,
+                                 suites=relation(Suite, secondary=self.tbl_bin_associations,
                                      backref=backref('binaries', lazy='dynamic')),
-                                 extra_sources = relation(DBSource, secondary=self.tbl_extra_src_references,
+                                 extra_sources=relation(DBSource, secondary=self.tbl_extra_src_references,
                                      backref=backref('extra_binary_references', lazy='dynamic')),
-                                 key = relation(BinaryMetadata, cascade='all',
+                                 key=relation(BinaryMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
         )
 
         mapper(Component, self.tbl_component,
-               properties = dict(component_id = self.tbl_component.c.id,
-                                 component_name = self.tbl_component.c.name),
+               properties=dict(component_id=self.tbl_component.c.id,
+                                 component_name=self.tbl_component.c.name),
         )
 
         mapper(DBConfig, self.tbl_config,
-               properties = dict(config_id = self.tbl_config.c.id))
+               properties=dict(config_id=self.tbl_config.c.id))
 
         mapper(DSCFile, self.tbl_dsc_files,
-               properties = dict(dscfile_id = self.tbl_dsc_files.c.id,
-                                 source_id = self.tbl_dsc_files.c.source,
-                                 source = relation(DBSource),
-                                 poolfile_id = self.tbl_dsc_files.c.file,
-                                 poolfile = relation(PoolFile)))
+               properties=dict(dscfile_id=self.tbl_dsc_files.c.id,
+                                 source_id=self.tbl_dsc_files.c.source,
+                                 source=relation(DBSource),
+                                 poolfile_id=self.tbl_dsc_files.c.file,
+                                 poolfile=relation(PoolFile)))
 
         mapper(ExternalOverride, self.tbl_external_overrides,
-                properties = dict(
-                    suite_id = self.tbl_external_overrides.c.suite,
-                    suite = relation(Suite),
-                    component_id = self.tbl_external_overrides.c.component,
-                    component = relation(Component)))
+                properties=dict(
+                    suite_id=self.tbl_external_overrides.c.suite,
+                    suite=relation(Suite),
+                    component_id=self.tbl_external_overrides.c.component,
+                    component=relation(Component)))
 
         mapper(PoolFile, self.tbl_files,
-               properties = dict(file_id = self.tbl_files.c.id,
-                                 filesize = self.tbl_files.c.size),
+               properties=dict(file_id=self.tbl_files.c.id,
+                                 filesize=self.tbl_files.c.size),
         )
 
         mapper(Fingerprint, self.tbl_fingerprint,
-               properties = dict(fingerprint_id = self.tbl_fingerprint.c.id,
-                                 uid_id = self.tbl_fingerprint.c.uid,
-                                 uid = relation(Uid),
-                                 keyring_id = self.tbl_fingerprint.c.keyring,
-                                 keyring = relation(Keyring),
-                                 acl = relation(ACL)),
+               properties=dict(fingerprint_id=self.tbl_fingerprint.c.id,
+                                 uid_id=self.tbl_fingerprint.c.uid,
+                                 uid=relation(Uid),
+                                 keyring_id=self.tbl_fingerprint.c.keyring,
+                                 keyring=relation(Keyring),
+                                 acl=relation(ACL)),
         )
 
         mapper(Keyring, self.tbl_keyrings,
-               properties = dict(keyring_name = self.tbl_keyrings.c.name,
-                                 keyring_id = self.tbl_keyrings.c.id,
-                                 acl = relation(ACL, primaryjoin=(self.tbl_keyrings.c.acl_id == self.tbl_acl.c.id)))),
+               properties=dict(keyring_name=self.tbl_keyrings.c.name,
+                                 keyring_id=self.tbl_keyrings.c.id,
+                                 acl=relation(ACL, primaryjoin=(self.tbl_keyrings.c.acl_id == self.tbl_acl.c.id)))),
 
         mapper(DBChange, self.tbl_changes,
-               properties = dict(change_id = self.tbl_changes.c.id,
-                                 seen = self.tbl_changes.c.seen,
-                                 source = self.tbl_changes.c.source,
-                                 binaries = self.tbl_changes.c.binaries,
-                                 architecture = self.tbl_changes.c.architecture,
-                                 distribution = self.tbl_changes.c.distribution,
-                                 urgency = self.tbl_changes.c.urgency,
-                                 maintainer = self.tbl_changes.c.maintainer,
-                                 changedby = self.tbl_changes.c.changedby,
-                                 date = self.tbl_changes.c.date,
-                                 version = self.tbl_changes.c.version))
+               properties=dict(change_id=self.tbl_changes.c.id,
+                                 seen=self.tbl_changes.c.seen,
+                                 source=self.tbl_changes.c.source,
+                                 binaries=self.tbl_changes.c.binaries,
+                                 architecture=self.tbl_changes.c.architecture,
+                                 distribution=self.tbl_changes.c.distribution,
+                                 urgency=self.tbl_changes.c.urgency,
+                                 maintainer=self.tbl_changes.c.maintainer,
+                                 changedby=self.tbl_changes.c.changedby,
+                                 date=self.tbl_changes.c.date,
+                                 version=self.tbl_changes.c.version))
 
         mapper(Maintainer, self.tbl_maintainer,
-               properties = dict(maintainer_id = self.tbl_maintainer.c.id,
-                   maintains_sources = relation(DBSource, backref='maintainer',
+               properties=dict(maintainer_id=self.tbl_maintainer.c.id,
+                   maintains_sources=relation(DBSource, backref='maintainer',
                        primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.maintainer)),
-                   changed_sources = relation(DBSource, backref='changedby',
+                   changed_sources=relation(DBSource, backref='changedby',
                        primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))),
         )
 
         mapper(NewComment, self.tbl_new_comments,
-               properties = dict(comment_id = self.tbl_new_comments.c.id,
-                                 policy_queue = relation(PolicyQueue)))
+               properties=dict(comment_id=self.tbl_new_comments.c.id,
+                                 policy_queue=relation(PolicyQueue)))
 
         mapper(Override, self.tbl_override,
-               properties = dict(suite_id = self.tbl_override.c.suite,
-                                 suite = relation(Suite, \
+               properties=dict(suite_id=self.tbl_override.c.suite,
+                                 suite=relation(Suite, \
                                     backref=backref('overrides', lazy='dynamic')),
-                                 package = self.tbl_override.c.package,
-                                 component_id = self.tbl_override.c.component,
-                                 component = relation(Component, \
+                                 package=self.tbl_override.c.package,
+                                 component_id=self.tbl_override.c.component,
+                                 component=relation(Component, \
                                     backref=backref('overrides', lazy='dynamic')),
-                                 priority_id = self.tbl_override.c.priority,
-                                 priority = relation(Priority, \
+                                 priority_id=self.tbl_override.c.priority,
+                                 priority=relation(Priority, \
                                     backref=backref('overrides', lazy='dynamic')),
-                                 section_id = self.tbl_override.c.section,
-                                 section = relation(Section, \
+                                 section_id=self.tbl_override.c.section,
+                                 section=relation(Section, \
                                     backref=backref('overrides', lazy='dynamic')),
-                                 overridetype_id = self.tbl_override.c.type,
-                                 overridetype = relation(OverrideType, \
+                                 overridetype_id=self.tbl_override.c.type,
+                                 overridetype=relation(OverrideType, \
                                     backref=backref('overrides', lazy='dynamic'))))
 
         mapper(OverrideType, self.tbl_override_type,
-               properties = dict(overridetype = self.tbl_override_type.c.type,
-                                 overridetype_id = self.tbl_override_type.c.id))
+               properties=dict(overridetype=self.tbl_override_type.c.type,
+                                 overridetype_id=self.tbl_override_type.c.id))
 
         mapper(PolicyQueue, self.tbl_policy_queue,
-               properties = dict(policy_queue_id = self.tbl_policy_queue.c.id,
-                                 suite = relation(Suite, primaryjoin=(self.tbl_policy_queue.c.suite_id == self.tbl_suite.c.id))))
+               properties=dict(policy_queue_id=self.tbl_policy_queue.c.id,
+                                 suite=relation(Suite, primaryjoin=(self.tbl_policy_queue.c.suite_id == self.tbl_suite.c.id))))
 
         mapper(PolicyQueueUpload, self.tbl_policy_queue_upload,
-               properties = dict(
-                   changes = relation(DBChange),
-                   policy_queue = relation(PolicyQueue, backref='uploads'),
-                   target_suite = relation(Suite),
-                   source = relation(DBSource),
-                   binaries = relation(DBBinary, secondary=self.tbl_policy_queue_upload_binaries_map),
+               properties=dict(
+                   changes=relation(DBChange),
+                   policy_queue=relation(PolicyQueue, backref='uploads'),
+                   target_suite=relation(Suite),
+                   source=relation(DBSource),
+                   binaries=relation(DBBinary, secondary=self.tbl_policy_queue_upload_binaries_map),
                 ))
 
         mapper(PolicyQueueByhandFile, self.tbl_policy_queue_byhand_file,
-               properties = dict(
-                   upload = relation(PolicyQueueUpload, backref='byhand'),
+               properties=dict(
+                   upload=relation(PolicyQueueUpload, backref='byhand'),
                    )
                )
 
         mapper(Priority, self.tbl_priority,
-               properties = dict(priority_id = self.tbl_priority.c.id))
+               properties=dict(priority_id=self.tbl_priority.c.id))
 
         mapper(Section, self.tbl_section,
-               properties = dict(section_id = self.tbl_section.c.id,
+               properties=dict(section_id=self.tbl_section.c.id,
                                  section=self.tbl_section.c.section))
 
         mapper(SignatureHistory, self.tbl_signature_history)
 
         mapper(DBSource, self.tbl_source,
-               properties = dict(source_id = self.tbl_source.c.id,
-                                 version = self.tbl_source.c.version,
-                                 maintainer_id = self.tbl_source.c.maintainer,
-                                 poolfile_id = self.tbl_source.c.file,
-                                 poolfile = relation(PoolFile),
-                                 fingerprint_id = self.tbl_source.c.sig_fpr,
-                                 fingerprint = relation(Fingerprint),
-                                 changedby_id = self.tbl_source.c.changedby,
-                                 srcfiles = relation(DSCFile,
+               properties=dict(source_id=self.tbl_source.c.id,
+                                 version=self.tbl_source.c.version,
+                                 maintainer_id=self.tbl_source.c.maintainer,
+                                 poolfile_id=self.tbl_source.c.file,
+                                 poolfile=relation(PoolFile),
+                                 fingerprint_id=self.tbl_source.c.sig_fpr,
+                                 fingerprint=relation(Fingerprint),
+                                 changedby_id=self.tbl_source.c.changedby,
+                                 srcfiles=relation(DSCFile,
                                                      primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
-                                 suites = relation(Suite, secondary=self.tbl_src_associations,
+                                 suites=relation(Suite, secondary=self.tbl_src_associations,
                                      backref=backref('sources', lazy='dynamic')),
-                                 uploaders = relation(Maintainer,
+                                 uploaders=relation(Maintainer,
                                      secondary=self.tbl_src_uploaders),
-                                 key = relation(SourceMetadata, cascade='all',
+                                 key=relation(SourceMetadata, cascade='all',
                                      collection_class=attribute_mapped_collection('key'))),
         )
 
         mapper(SrcFormat, self.tbl_src_format,
-               properties = dict(src_format_id = self.tbl_src_format.c.id,
-                                 format_name = self.tbl_src_format.c.format_name))
+               properties=dict(src_format_id=self.tbl_src_format.c.id,
+                                 format_name=self.tbl_src_format.c.format_name))
 
         mapper(Suite, self.tbl_suite,
-               properties = dict(suite_id = self.tbl_suite.c.id,
-                                 policy_queue = relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.policy_queue_id == self.tbl_policy_queue.c.id)),
-                                 new_queue = relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.new_queue_id == self.tbl_policy_queue.c.id)),
-                                 debug_suite = relation(Suite, remote_side=[self.tbl_suite.c.id]),
-                                 copy_queues = relation(BuildQueue,
+               properties=dict(suite_id=self.tbl_suite.c.id,
+                                 policy_queue=relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.policy_queue_id == self.tbl_policy_queue.c.id)),
+                                 new_queue=relation(PolicyQueue, primaryjoin=(self.tbl_suite.c.new_queue_id == self.tbl_policy_queue.c.id)),
+                                 debug_suite=relation(Suite, remote_side=[self.tbl_suite.c.id]),
+                                 copy_queues=relation(BuildQueue,
                                      secondary=self.tbl_suite_build_queue_copy),
-                                 srcformats = relation(SrcFormat, secondary=self.tbl_suite_src_formats,
+                                 srcformats=relation(SrcFormat, secondary=self.tbl_suite_src_formats,
                                      backref=backref('suites', lazy='dynamic')),
-                                 archive = relation(Archive, backref='suites'),
-                                 acls = relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
-                                 components = relation(Component, secondary=self.tbl_component_suite,
+                                 archive=relation(Archive, backref='suites'),
+                                 acls=relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
+                                 components=relation(Component, secondary=self.tbl_component_suite,
                                                    order_by=self.tbl_component.c.ordering,
                                                    backref=backref('suites'))),
         )
 
         mapper(Uid, self.tbl_uid,
-               properties = dict(uid_id = self.tbl_uid.c.id,
-                                 fingerprint = relation(Fingerprint)),
+               properties=dict(uid_id=self.tbl_uid.c.id,
+                                 fingerprint=relation(Fingerprint)),
         )
 
         mapper(BinContents, self.tbl_bin_contents,
-            properties = dict(
-                binary = relation(DBBinary,
+            properties=dict(
+                binary=relation(DBBinary,
                     backref=backref('contents', lazy='dynamic', cascade='all')),
-                file = self.tbl_bin_contents.c.file))
+                file=self.tbl_bin_contents.c.file))
 
         mapper(SrcContents, self.tbl_src_contents,
-            properties = dict(
-                source = relation(DBSource,
+            properties=dict(
+                source=relation(DBSource,
                     backref=backref('contents', lazy='dynamic', cascade='all')),
-                file = self.tbl_src_contents.c.file))
+                file=self.tbl_src_contents.c.file))
 
         mapper(MetadataKey, self.tbl_metadata_keys,
-            properties = dict(
-                key_id = self.tbl_metadata_keys.c.key_id,
-                key = self.tbl_metadata_keys.c.key))
+            properties=dict(
+                key_id=self.tbl_metadata_keys.c.key_id,
+                key=self.tbl_metadata_keys.c.key))
 
         mapper(BinaryMetadata, self.tbl_binaries_metadata,
-            properties = dict(
-                binary_id = self.tbl_binaries_metadata.c.bin_id,
-                binary = relation(DBBinary),
-                key_id = self.tbl_binaries_metadata.c.key_id,
-                key = relation(MetadataKey),
-                value = self.tbl_binaries_metadata.c.value))
+            properties=dict(
+                binary_id=self.tbl_binaries_metadata.c.bin_id,
+                binary=relation(DBBinary),
+                key_id=self.tbl_binaries_metadata.c.key_id,
+                key=relation(MetadataKey),
+                value=self.tbl_binaries_metadata.c.value))
 
         mapper(SourceMetadata, self.tbl_source_metadata,
-            properties = dict(
-                source_id = self.tbl_source_metadata.c.src_id,
-                source = relation(DBSource),
-                key_id = self.tbl_source_metadata.c.key_id,
-                key = relation(MetadataKey),
-                value = self.tbl_source_metadata.c.value))
+            properties=dict(
+                source_id=self.tbl_source_metadata.c.src_id,
+                source=relation(DBSource),
+                key_id=self.tbl_source_metadata.c.key_id,
+                key=relation(MetadataKey),
+                value=self.tbl_source_metadata.c.value))
 
         mapper(VersionCheck, self.tbl_version_check,
-            properties = dict(
-                suite_id = self.tbl_version_check.c.suite,
-                suite = relation(Suite, primaryjoin=self.tbl_version_check.c.suite==self.tbl_suite.c.id),
-                reference_id = self.tbl_version_check.c.reference,
-                reference = relation(Suite, primaryjoin=self.tbl_version_check.c.reference==self.tbl_suite.c.id, lazy='joined')))
+            properties=dict(
+                suite_id=self.tbl_version_check.c.suite,
+                suite=relation(Suite, primaryjoin=self.tbl_version_check.c.suite==self.tbl_suite.c.id),
+                reference_id=self.tbl_version_check.c.reference,
+                reference=relation(Suite, primaryjoin=self.tbl_version_check.c.reference==self.tbl_suite.c.id, lazy='joined')))
 
     ## Connection functions
     def __createconn(self):
@@ -2554,7 +2554,7 @@ class DBConn(object):
 
         self.pid = os.getpid()
 
-    def session(self, work_mem = 0):
+    def session(self, work_mem=0):
         '''
         Returns a new session object. If a work_mem parameter is provided a new
         transaction is started and the work_mem parameter is set for this

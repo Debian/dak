@@ -22,7 +22,7 @@ class TimestampTestCase(DBDakTestCase):
         timestamp01 = self.now()
         self.session.rollback()
         self.sleep()
-        uid = Uid(uid = 'ftp-master@debian.org')
+        uid = Uid(uid='ftp-master@debian.org')
         self.session.add(uid)
         self.session.commit()
         created01 = uid.created

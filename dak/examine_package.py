@@ -294,7 +294,7 @@ def read_control (filename):
 
     return (control, control_keys, section, predepends, depends, recommends, arch, maintainer)
 
-def read_changes_or_dsc (suite, filename, session = None):
+def read_changes_or_dsc (suite, filename, session=None):
     dsc = {}
 
     dsc_file = utils.open_file(filename)
@@ -357,7 +357,7 @@ def get_provides(suite):
     session.close()
     return provides
 
-def create_depends_string (suite, depends_tree, session = None):
+def create_depends_string (suite, depends_tree, session=None):
     result = ""
     if suite == 'experimental':
         suite_list = ['experimental','unstable']
@@ -376,7 +376,7 @@ def create_depends_string (suite, depends_tree, session = None):
             # doesn't do version lookup yet.
 
             component = get_component_by_package_suite(d['name'], suite_list, \
-                session = session)
+                session=session)
             if component is not None:
                 adepends = d['name']
                 if d['version'] != '' :
@@ -420,7 +420,7 @@ def output_package_relations ():
     package_relations.clear()
     return foldable_output("Package relations", "relations", to_print)
 
-def output_deb_info(suite, filename, packagename, session = None):
+def output_deb_info(suite, filename, packagename, session=None):
     (control, control_keys, section, predepends, depends, recommends, arch, maintainer) = read_control(filename)
 
     if control == '':
@@ -543,7 +543,7 @@ def get_readme_source (dsc_filename):
 
     return res
 
-def check_dsc (suite, dsc_filename, session = None):
+def check_dsc (suite, dsc_filename, session=None):
     dsc = read_changes_or_dsc(suite, dsc_filename, session)
     dsc_basename = os.path.basename(dsc_filename)
     return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
@@ -554,7 +554,7 @@ def check_dsc (suite, dsc_filename, session = None):
            foldable_output("README.source for %s" % dsc_basename,
                "source-readmesource", get_readme_source(dsc_filename))
 
-def check_deb (suite, deb_filename, session = None):
+def check_deb (suite, deb_filename, session=None):
     filename = os.path.basename(deb_filename)
     packagename = filename.split('_')[0]
 

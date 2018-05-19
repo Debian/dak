@@ -29,11 +29,11 @@ class MultiProcTestCase(DBDakTestCase):
         '''
         self.result = 0
         pool = Pool()
-        pool.apply_async(read_number, (), callback = self.save_result)
-        pool.apply_async(read_number, (), callback = self.save_result)
-        pool.apply_async(read_number, (), callback = self.save_result)
-        pool.apply_async(read_number, (), callback = self.save_result)
-        pool.apply_async(read_number, (), callback = self.save_result)
+        pool.apply_async(read_number, (), callback=self.save_result)
+        pool.apply_async(read_number, (), callback=self.save_result)
+        pool.apply_async(read_number, (), callback=self.save_result)
+        pool.apply_async(read_number, (), callback=self.save_result)
+        pool.apply_async(read_number, (), callback=self.save_result)
         pool.close()
         pool.join()
         self.assertEqual(5 * 7, self.result)

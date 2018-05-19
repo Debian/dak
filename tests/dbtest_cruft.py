@@ -24,12 +24,12 @@ class CruftTestCase(DBDakTestCase):
 
         list = newer_version('squeeze', 'sid', self.session)
         self.assertEqual([], list)
-        self.file['sl_3.03-17.dsc'] = PoolFile(filename = 'main/s/sl/sl_3.03-17.dsc', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.source['sl_3.03-17'] = DBSource(source = 'sl', version = '3.03-17', \
-            maintainer = self.maintainer['maintainer'], \
-            changedby = self.maintainer['uploader'], \
-            poolfile = self.file['sl_3.03-17.dsc'], install_date = self.install_date)
+        self.file['sl_3.03-17.dsc'] = PoolFile(filename='main/s/sl/sl_3.03-17.dsc', \
+            location=self.loc['main'], filesize=0, md5sum='')
+        self.source['sl_3.03-17'] = DBSource(source='sl', version='3.03-17', \
+            maintainer=self.maintainer['maintainer'], \
+            changedby=self.maintainer['uploader'], \
+            poolfile=self.file['sl_3.03-17.dsc'], install_date=self.install_date)
         self.source['sl_3.03-17'].suites.append(self.suite['squeeze'])
         list = newer_version('squeeze', 'sid', self.session)
         self.assertEqual([('sl', '3.03-16', '3.03-17')], list)
@@ -50,13 +50,13 @@ class CruftTestCase(DBDakTestCase):
         bin = DejavuBinary(suite, 'hello')
         self.assertEqual(False, bin.has_multiple_sources())
         # add another binary
-        self.file['hello_2.2-3'] = PoolFile(filename = 'main/s/sl/hello_2.2-3_i386.deb', \
-            location = self.loc['main'], filesize = 0, md5sum = '')
-        self.binary['hello_2.2-3_i386'] = DBBinary(package = 'hello', \
-            source = self.source['sl_3.03-16'], version = '2.2-3', \
-            maintainer = self.maintainer['maintainer'], \
-            architecture = self.arch['i386'], \
-            poolfile = self.file['hello_2.2-3'])
+        self.file['hello_2.2-3'] = PoolFile(filename='main/s/sl/hello_2.2-3_i386.deb', \
+            location=self.loc['main'], filesize=0, md5sum='')
+        self.binary['hello_2.2-3_i386'] = DBBinary(package='hello', \
+            source=self.source['sl_3.03-16'], version='2.2-3', \
+            maintainer=self.maintainer['maintainer'], \
+            architecture=self.arch['i386'], \
+            poolfile=self.file['hello_2.2-3'])
         self.session.add(self.binary['hello_2.2-3_i386'])
         bin = DejavuBinary(suite, 'hello')
         self.assertEqual(False, bin.has_multiple_sources())

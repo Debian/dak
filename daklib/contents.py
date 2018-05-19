@@ -231,7 +231,7 @@ def binary_helper(suite_id, arch_id, overridetype_id, component_id):
     This function is called in a new subprocess and multiprocessing wants a top
     level function.
     '''
-    session = DBConn().session(work_mem = 1000)
+    session = DBConn().session(work_mem=1000)
     suite = Suite.get(suite_id, session)
     architecture = Architecture.get(arch_id, session)
     overridetype = OverrideType.get(overridetype_id, session)
@@ -248,7 +248,7 @@ def source_helper(suite_id, component_id):
     This function is called in a new subprocess and multiprocessing wants a top
     level function.
     '''
-    session = DBConn().session(work_mem = 1000)
+    session = DBConn().session(work_mem=1000)
     suite = Suite.get(suite_id, session)
     component = Component.get(component_id, session)
     log_message = [suite.suite_name, 'source', component.component_name]
@@ -270,7 +270,7 @@ class ContentsWriter(object):
         class_.logger.log(result)
 
     @classmethod
-    def write_all(class_, logger, archive_names = [], suite_names = [], component_names = [], force = False):
+    def write_all(class_, logger, archive_names=[], suite_names=[], component_names=[], force=False):
         '''
         Writes all Contents files for suites in list suite_names which defaults
         to all 'touchable' suites if not specified explicitely. Untouchable
@@ -302,15 +302,15 @@ class ContentsWriter(object):
                 component_id = component.component_id
                 # handle source packages
                 pool.apply_async(source_helper, (suite_id, component_id),
-                    callback = class_.log_result)
-                for architecture in suite.get_architectures(skipsrc = True, skipall = True):
+                    callback=class_.log_result)
+                for architecture in suite.get_architectures(skipsrc=True, skipall=True):
                     arch_id = architecture.arch_id
                     # handle 'deb' packages
                     pool.apply_async(binary_helper, (suite_id, arch_id, deb_id, component_id), \
-                        callback = class_.log_result)
+                        callback=class_.log_result)
                     # handle 'udeb' packages
                     pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, component_id), \
-                        callback = class_.log_result)
+                        callback=class_.log_result)
         pool.close()
         pool.join()
         session.close()
@@ -328,7 +328,7 @@ class BinaryContentsScanner(object):
         '''
         self.binary_id = binary_id
 
-    def scan(self, dummy_arg = None):
+    def scan(self, dummy_arg=None):
         '''
         This method does the actual scan and fills in the associated BinContents
         property. It commits any changes to the database. The argument dummy_arg
@@ -340,12 +340,12 @@ class BinaryContentsScanner(object):
         if len(fileset) == 0:
             fileset.add('EMPTY_PACKAGE')
         for filename in fileset:
-            binary.contents.append(BinContents(file = filename))
+            binary.contents.append(BinContents(file=filename))
         session.commit()
         session.close()
 
     @classmethod
-    def scan_all(class_, limit = None):
+    def scan_all(class_, limit=None):
         '''
         The class method scan_all() scans all binaries using multiple threads.
         The number of binaries to be scanned can be limited with the limit
@@ -384,7 +384,7 @@ class UnpackedSource(object):
         The dscfilename is a name of a DSC file that will be extracted.
         '''
         basedir = tmpbasedir if tmpbasedir else Config()['Dir::TempPath']
-        temp_directory = mkdtemp(dir = basedir)
+        temp_directory = mkdtemp(dir=basedir)
         self.root_directory = os.path.join(temp_directory, 'root')
         command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
             dscfilename, self.root_directory)
@@ -455,12 +455,12 @@ class SourceContentsScanner(object):
         source = session.query(DBSource).get(self.source_id)
         fileset = set(source.scan_contents())
         for filename in fileset:
-            source.contents.append(SrcContents(file = filename))
+            source.contents.append(SrcContents(file=filename))
         session.commit()
         session.close()
 
     @classmethod
-    def scan_all(class_, limit = None):
+    def scan_all(class_, limit=None):
         '''
         The class method scan_all() scans all source using multiple processes.
         The number of sources to be scanned can be limited with the limit

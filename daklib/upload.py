@@ -180,7 +180,7 @@ class HashedFile(object):
         if hashes.sha256 != self.sha256sum:
             raise InvalidHashException(self.filename, 'sha256sum', self.sha256sum, hashes.sha256)
 
-def parse_file_list(control, has_priority_and_section, safe_file_regexp = re_file_safe, fields = ('Files', 'Checksums-Sha1', 'Checksums-Sha256')):
+def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_safe, fields=('Files', 'Checksums-Sha1', 'Checksums-Sha256')):
     """Parse Files and Checksums-* fields
 
     @type  control: dict-like
