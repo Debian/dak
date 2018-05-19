@@ -649,7 +649,7 @@ class ACLCheck(Check):
 
         for acl in session.query(ACL).filter_by(is_global=True):
             result, reason = self._check_acl(session, upload, acl)
-            if result == False:
+            if result is False:
                 raise RejectACL(acl, reason)
 
         return True
@@ -660,7 +660,7 @@ class ACLCheck(Check):
             accept = False
             for acl in acls:
                 result, reason = self._check_acl(upload.session, upload, acl)
-                if result == False:
+                if result is False:
                     raise Reject(reason)
                 accept = accept or result
             if not accept:

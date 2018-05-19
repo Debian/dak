@@ -352,7 +352,7 @@ def main ():
     else:
         Logger = daklog.Logger("check-overrides", 1)
 
-    for suite in session.query(Suite).filter(Suite.overrideprocess==True):
+    for suite in session.query(Suite).filter(Suite.overrideprocess == True):  # noqa:E712
         originosuite = None
         originremark = ''
 

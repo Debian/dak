@@ -394,7 +394,7 @@ def main():
                 print "I: Cannot find suite %s" % s
                 logger.log(['Cannot find suite %s' % s])
     else:
-        query = session.query(Suite).filter(Suite.untouchable == False)
+        query = session.query(Suite).filter(Suite.untouchable == False)  # noqa:E712
         if 'Archive' in Options:
             archive_names = daklib.utils.split_args(Options['Archive'])
             query = query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))

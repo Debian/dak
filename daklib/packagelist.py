@@ -144,7 +144,7 @@ class PackageList(object):
         has_arch_dep = False
         for entry in self.package_list:
             built_on_all = entry.built_on_architecture('all')
-            if built_on_all == False:
+            if built_on_all is False:
                 return True
             if built_on_all is None:
                 has_arch_dep = None
