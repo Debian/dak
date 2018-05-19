@@ -44,18 +44,18 @@ class PackageTestCase(DBDakTestCase):
         self.assertEqual(4, len(self.suite['lenny'].architectures))
         self.assertEqual(3, len(self.arch['i386'].suites))
         # check the function get_suite_architectures()
-        architectures = get_suite_architectures('lenny', session = self.session)
+        architectures = get_suite_architectures('lenny', session=self.session)
         self.assertEqual(4, len(architectures))
         self.assertTrue(self.arch['source'] in architectures)
         self.assertTrue(self.arch['all'] in architectures)
         self.assertTrue(self.arch['kfreebsd-i386'] not in architectures)
-        architectures = get_suite_architectures('sid', session = self.session)
+        architectures = get_suite_architectures('sid', session=self.session)
         self.assertEqual(5, len(architectures))
         self.assertTrue(self.arch['kfreebsd-i386'] in architectures)
-        architectures = get_suite_architectures('lenny', skipsrc = True, session = self.session)
+        architectures = get_suite_architectures('lenny', skipsrc=True, session=self.session)
         self.assertEqual(3, len(architectures))
         self.assertTrue(self.arch['source'] not in architectures)
-        architectures = get_suite_architectures('lenny', skipall = True, session = self.session)
+        architectures = get_suite_architectures('lenny', skipall=True, session=self.session)
         self.assertEqual(3, len(architectures))
         self.assertTrue(self.arch['all'] not in architectures)
         # check overrides
@@ -305,27 +305,27 @@ class PackageTestCase(DBDakTestCase):
         'test get_component_by_package_suite()'
 
         result = get_component_by_package_suite('hello', ['sid'], \
-            session = self.session)
+            session=self.session)
         self.assertEqual('main', result)
         result = get_component_by_package_suite('hello', ['hamm'], \
-            session = self.session)
+            session=self.session)
         self.assertEqual(None, result)
         result = get_component_by_package_suite('foobar', ['sid'], \
-            session = self.session)
+            session=self.session)
         self.assertEqual(None, result)
         # test that the newest version is returned
         result = get_component_by_package_suite('gnome-hello', ['squeeze'], \
-            session = self.session)
+            session=self.session)
         self.assertEqual('main', result)
         result = get_component_by_package_suite('gnome-hello', ['sid'], \
-            session = self.session)
+            session=self.session)
         self.assertEqual('contrib', result)
         # test arch_list
         result = get_component_by_package_suite('hello', ['sid'], \
-            arch_list = ['i386'], session = self.session)
+            arch_list=['i386'], session=self.session)
         self.assertEqual('main', result)
         result = get_component_by_package_suite('hello', ['sid'], \
-            arch_list = ['amd64'], session = self.session)
+            arch_list=['amd64'], session=self.session)
         self.assertEqual(None, result)
 
 if __name__ == '__main__':

@@ -180,7 +180,7 @@ def main():
 
     logging.basicConfig( level=level,
                          format='%(asctime)s %(levelname)s %(message)s',
-                         stream = sys.stderr )
+                         stream=sys.stderr )
 
     body = BugClassifier().email_text()
 

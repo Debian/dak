@@ -28,7 +28,7 @@ import os.path
 import re
 import sys
 
-def usage(exit_code = 0):
+def usage(exit_code=0):
     print """Usage: dak copy-installer [OPTION]... VERSION
   -h, --help         show this help and exit
   -s, --source       source suite      (defaults to unstable)
@@ -75,7 +75,7 @@ def main():
 root_dir = Config()['Dir::Root']
 
 class InstallerCopier:
-    def __init__(self, source = 'unstable', dest = 'testing',
+    def __init__(self, source='unstable', dest='testing',
             **keywords):
         self.source = source
         self.dest = dest

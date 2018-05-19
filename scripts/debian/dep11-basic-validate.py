@@ -36,14 +36,14 @@ schema_header = Schema({
 schema_translated = Schema({
     Required('C'): All(str, Length(min=1), msg="Must have an unlocalized 'C' key"),
     dict: All(str, Length(min=1)),
-}, extra = True)
+}, extra=True)
 
 schema_component = Schema({
     Required('Type'): All(str, Length(min=1)),
     Required('ID'): All(str, Length(min=1)),
     Required('Name'): All(dict, Length(min=1), schema_translated),
     Required('Summary'): All(dict, Length(min=1)),
-}, extra = True)
+}, extra=True)
 
 def add_issue(msg):
     print(msg)

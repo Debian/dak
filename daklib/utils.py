@@ -513,7 +513,7 @@ def poolify (source):
 
 ################################################################################
 
-def move (src, dest, overwrite = 0, perms = 0o664):
+def move (src, dest, overwrite=0, perms=0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
@@ -536,7 +536,7 @@ def move (src, dest, overwrite = 0, perms = 0o664):
     os.chmod(dest, perms)
     os.unlink(src)
 
-def copy (src, dest, overwrite = 0, perms = 0o664):
+def copy (src, dest, overwrite=0, perms=0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
@@ -634,7 +634,7 @@ def find_next_free (dest, too_many=100):
 
 ################################################################################
 
-def result_join (original, sep = '\t'):
+def result_join (original, sep='\t'):
     resultlist = []
     for i in xrange(len(original)):
         if original[i] is None:
@@ -997,7 +997,7 @@ Cnf = config.Config().Cnf
 
 ################################################################################
 
-def parse_wnpp_bug_file(file = "/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm"):
+def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm"):
     """
     Parses the wnpp bug list available at https://qa.debian.org/data/bts/wnpp_rm
     Well, actually it parsed a local copy, but let's document the source

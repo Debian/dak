@@ -89,7 +89,7 @@ OPTIONS for scan-source and scan-binary
 
 ################################################################################
 
-def write_all(cnf, archive_names = [], suite_names = [], component_names = [], force = None):
+def write_all(cnf, archive_names=[], suite_names=[], component_names=[], force=None):
     Logger = daklog.Logger('contents generate')
     ContentsWriter.write_all(Logger, archive_names, suite_names, component_names, force)
     Logger.close()

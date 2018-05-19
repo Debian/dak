@@ -26,10 +26,10 @@ class DebVersionTestCase(DBDakTestCase):
     def setUp(self):
         super(DebVersionTestCase, self).setUp()
         self.version_table = Table('version', self.metadata, \
-            Column('id', Integer, primary_key = True), \
+            Column('id', Integer, primary_key=True), \
             Column('version', DebVersion), \
             )
-        self.version_table.create(checkfirst = True)
+        self.version_table.create(checkfirst=True)
         mapper(Version, self.version_table)
 
     def test_debversion(self):

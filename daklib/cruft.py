@@ -43,7 +43,7 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
     list = []
     for (source, higherversion) in query:
         q = session.query(func.max(DBSource.version)). \
-            filter_by(source = source)
+            filter_by(source=source)
         if include_equal:
             q = q.filter(DBSource.version >= higherversion)
         else:
@@ -72,7 +72,7 @@ class NamedSource(object):
     '''
     def __init__(self, suite, source):
         self.source = source
-        query = suite.sources.filter_by(source = source). \
+        query = suite.sources.filter_by(source=source). \
             order_by(DBSource.version)
         self.versions = [src.version for src in query]
 
@@ -96,7 +96,7 @@ class DejavuBinary(object):
         session = object_session(suite)
         # We need a subquery to make sure that both binary and source packages
         # are in the right suite.
-        bin_query = suite.binaries.filter_by(package = package).subquery()
+        bin_query = suite.binaries.filter_by(package=package).subquery()
         src_query = session.query(DBSource.source).with_parent(suite). \
             join(bin_query).order_by(DBSource.source).group_by(DBSource.source)
         self.sources = []

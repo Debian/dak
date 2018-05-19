@@ -107,7 +107,7 @@ def import_binary(log, transaction, suite, component, directory, hashed_file, fi
 
 def import_file(log, transaction, suite, component, directory, hashed_file,
                 fingerprint=None, changed_by=None, keyrings=None, require_signature=True,
-                add_overrides = False):
+                add_overrides=False):
     filename = hashed_file.filename
     if daklib.regexes.re_file_binary.match(filename):
         import_binary(log, transaction, suite, component, directory, hashed_file,

@@ -94,7 +94,7 @@ class ExternalOverrideReader(object):
 
 #############################################################################
 
-def external_overrides_copy(from_suite_name, to_suite_name, force = False):
+def external_overrides_copy(from_suite_name, to_suite_name, force=False):
     session = DBConn().session()
 
     from_suite = get_suite(from_suite_name, session)
@@ -122,7 +122,7 @@ def external_overrides_copy(from_suite_name, to_suite_name, force = False):
 
     session.commit()
 
-def external_overrides_import(suite_name, component_name, key, file, force = False):
+def external_overrides_import(suite_name, component_name, key, file, force=False):
     session = DBConn().session()
 
     suite = get_suite(suite_name, session)

@@ -154,7 +154,7 @@ def britney_changelog(packages, suite, session):
 
 #######################################################################################
 
-def version_checks(package, architecture, target_suite, new_version, session, force = False):
+def version_checks(package, architecture, target_suite, new_version, session, force=False):
     if architecture == "source":
         suite_version_list = get_suite_version_by_source(package, session)
     else:
