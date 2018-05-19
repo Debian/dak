@@ -130,7 +130,7 @@ class GenerateRejectMessages(DakTestCase):
                 'package': 'pkgname',
                 'tag': 'non-fatal-tag',
                 'description': ''},
-            ], {'fatal': [], 'nonfatal': ['non-fatal-tag']},
+                ], {'fatal': [], 'nonfatal': ['non-fatal-tag']},
             0,
         )
 

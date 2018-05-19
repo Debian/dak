@@ -77,7 +77,7 @@ datakeys.sort()
 f = open(CACHE_FILE+".tmp","w")
 for dk in datakeys:
     print >> f, dk+'\t'+'\t'.join(
-      ["%s:%s"%(k,str(d[dk][k])) for k in kl if k in d[dk]])
+        ["%s:%s"%(k,str(d[dk][k])) for k in kl if k in d[dk]])
 f.close()
 os.rename(CACHE_FILE+".tmp", CACHE_FILE)
 datakeys = datakeys[-ITEMS_TO_KEEP:]
