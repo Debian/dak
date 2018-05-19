@@ -7,9 +7,12 @@ punew                  stable-new                 p-u-new                    fal
 opunew                 oldstable-new              o-p-u-new                  false     false
 backports_policy       none                       backports-policy           false     false
 cleanpolicy            none                       cleanpolicy                false     false
-fetchqueuedpackages    none                       fetchqueuedpackages        false     false
+fetchqueuedpackages    upload-master              fetchqueuedpackages        false     false
 LOCK                   BUILDD                     300                        exclusive false
 do_unchecked           none                       unchecked                  false     false
+sync_debbugs           none                       none                       false     false
+make_buildd_dir        none                       none                       false     false
+trigger_wb             none                       none                       false     false
 UNLOCK                 BUILDD                     none                       false     false
 ddaccess               none                       none                       false     true
 scancontents           none                       contentsscan               false     false
