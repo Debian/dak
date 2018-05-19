@@ -404,7 +404,7 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 
 ################################################################################
 
-def send_mail (message, filename="", whitelists=None):
+def send_mail(message, filename="", whitelists=None):
     """sendmail wrapper, takes _either_ a message string or a file as arguments
 
     @type  whitelists: list of (str or None)
@@ -429,8 +429,8 @@ def send_mail (message, filename="", whitelists=None):
     # If we've been passed a string dump it into a temporary file
     if message:
         (fd, filename) = tempfile.mkstemp()
-        os.write (fd, message)
-        os.close (fd)
+        os.write(fd, message)
+        os.close(fd)
 
     if whitelists is None or None in whitelists:
         whitelists = []
@@ -487,12 +487,12 @@ def send_mail (message, filename="", whitelists=None):
                 # Clean up any temporary files
                 # and return, as we removed all recipients.
                 if message:
-                    os.unlink (filename);
+                    os.unlink(filename);
                 return;
 
         fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0o700);
-        os.write (fd, message_raw.as_string(True));
-        os.close (fd);
+        os.write(fd, message_raw.as_string(True));
+        os.close(fd);
 
     # Invoke sendmail
     (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
@@ -501,11 +501,11 @@ def send_mail (message, filename="", whitelists=None):
 
     # Clean up any temporary files
     if message:
-        os.unlink (filename)
+        os.unlink(filename)
 
 ################################################################################
 
-def poolify (source):
+def poolify(source):
     if source[:3] == "lib":
         return source[:4] + '/' + source + '/'
     else:
@@ -513,7 +513,7 @@ def poolify (source):
 
 ################################################################################
 
-def move (src, dest, overwrite=0, perms=0o664):
+def move(src, dest, overwrite=0, perms=0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
@@ -536,7 +536,7 @@ def move (src, dest, overwrite=0, perms=0o664):
     os.chmod(dest, perms)
     os.unlink(src)
 
-def copy (src, dest, overwrite=0, perms=0o664):
+def copy(src, dest, overwrite=0, perms=0o664):
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
@@ -560,7 +560,7 @@ def copy (src, dest, overwrite=0, perms=0o664):
 
 ################################################################################
 
-def which_conf_file ():
+def which_conf_file():
     if os.getenv('DAK_CONFIG'):
         return os.getenv('DAK_CONFIG')
 
@@ -602,15 +602,15 @@ def warn(msg):
 
 # Returns the user name with a laughable attempt at rfc822 conformancy
 # (read: removing stray periods).
-def whoami ():
+def whoami():
     return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '')
 
-def getusername ():
+def getusername():
     return pwd.getpwuid(os.getuid())[0]
 
 ################################################################################
 
-def size_type (c):
+def size_type(c):
     t  = " B"
     if c > 10240:
         c = c / 1024
@@ -622,7 +622,7 @@ def size_type (c):
 
 ################################################################################
 
-def find_next_free (dest, too_many=100):
+def find_next_free(dest, too_many=100):
     extra = 0
     orig_dest = dest
     while os.path.lexists(dest) and extra < too_many:
@@ -634,7 +634,7 @@ def find_next_free (dest, too_many=100):
 
 ################################################################################
 
-def result_join (original, sep='\t'):
+def result_join(original, sep='\t'):
     resultlist = []
     for i in xrange(len(original)):
         if original[i] is None:
@@ -667,7 +667,7 @@ def join_with_commas_and(list):
 
 ################################################################################
 
-def pp_deps (deps):
+def pp_deps(deps):
     pp_deps = []
     for atom in deps:
         (pkg, version, constraint) = atom
@@ -749,7 +749,7 @@ def parse_args(Options):
 
 ################################################################################
 
-def arch_compare_sw (a, b):
+def arch_compare_sw(a, b):
     """
     Function for use in sorting lists of architectures.
 
@@ -763,11 +763,11 @@ def arch_compare_sw (a, b):
     elif b == "source":
         return 1
 
-    return cmp (a, b)
+    return cmp(a, b)
 
 ################################################################################
 
-def split_args (s, dwim=True):
+def split_args(s, dwim=True):
     """
     Split command line arguments which can be separated by either commas
     or whitespace.  If dwim is set, it will complain about string ending
@@ -880,7 +880,7 @@ def get_users_from_ldap():
 
 ################################################################################
 
-def clean_symlink (src, dest, root):
+def clean_symlink(src, dest, root):
     """
     Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
     Returns fixed 'src'

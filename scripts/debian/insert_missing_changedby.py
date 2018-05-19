@@ -54,7 +54,7 @@ maintainer_id_cache={}
 
 ###############################################################################
 
-def get_or_set_maintainer_id (maintainer):
+def get_or_set_maintainer_id(maintainer):
     global maintainer_id_cache
 
     if maintainer in maintainer_id_cache:
@@ -90,7 +90,7 @@ def __get_changedby__(package, version):
     cur.close()
     return res
 
-def insert ():
+def insert():
     print "Adding missing changedby fields."
 
     listcursor = projectBdb.cursor()

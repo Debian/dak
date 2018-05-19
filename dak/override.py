@@ -44,7 +44,7 @@ def game_over():
         sys.exit(1)
 
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak override [OPTIONS] package [section] [priority]
 Make microchanges or microqueries of the binary overrides
 
@@ -56,7 +56,7 @@ Make microchanges or microqueries of the binary overrides
 """
     sys.exit(exit_code)
 
-def main ():
+def main():
     cnf = Config()
 
     Arguments = [('h',"help","Override::Options::Help"),

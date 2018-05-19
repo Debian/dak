@@ -52,7 +52,7 @@ Cnf = None
 ################################################################################
 
 class UpdateDB:
-    def usage (self, exit_code=0):
+    def usage(self, exit_code=0):
         print """Usage: dak update-db
 Updates dak's database schema to the lastest version. You should disable crontabs while this is running
 
@@ -205,7 +205,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
 ################################################################################
 
-    def init (self):
+    def init(self):
         cnf = Config()
         arguments = [('h', "help", "Update-DB::Options::Help"),
                      ("y", "yes", "Update-DB::Options::Yes")]

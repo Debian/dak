@@ -44,7 +44,7 @@ from sqlalchemy.sql import text
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak make-maintainers [OPTION] -a ARCHIVE EXTRA_FILE[...]
 Generate an index of packages <=> Maintainers / Uploaders.
 

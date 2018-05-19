@@ -49,7 +49,7 @@ from daklib import utils
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print("""Usage: dak contents [options] subcommand
 
 SUBCOMMANDS

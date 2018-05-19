@@ -30,7 +30,7 @@ Central repository of regexes for dak
 import re
 
 #: Is it a number?
-re_isanum = re.compile (r"^\d+$")
+re_isanum = re.compile(r"^\d+$")
 
 #: Looking for the default reply
 re_default_answer = re.compile(r"\[(.*)\]")
@@ -42,8 +42,8 @@ re_comments = re.compile(r"\#.*")
 #: To ignore comment and whitespace lines.
 re_whitespace_comment = re.compile(r"^\s*(#|$)")
 re_no_epoch = re.compile(r"^\d+\:")
-re_extract_src_version = re.compile (r"(\S+)\s*\((.*)\)")
-re_isadeb = re.compile (r"(.+?)_(.+?)_(.+)\.u?deb$")
+re_extract_src_version = re.compile(r"(\S+)\s*\((.*)\)")
+re_isadeb = re.compile(r"(.+?)_(.+?)_(.+)\.u?deb$")
 
 orig_source_ext_re = r"orig(?:-[a-zA-Z0-9-]+)?\.tar\.(?:gz|bz2|xz)(?:\.asc)?"
 file_source_ext_re = "(" + orig_source_ext_re + r"|(?:debian\.)?tar\.(?:gz|bz2|xz)|diff\.gz)"
@@ -63,7 +63,7 @@ html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
 re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
 
 # From clean_proposed_updates.py
-re_isdeb = re.compile (r"^(.+)_(.+?)_(.+?).u?deb$")
+re_isdeb = re.compile(r"^(.+)_(.+?)_(.+?).u?deb$")
 
 # From examine_package.py
 re_package = re.compile(r"^(.+?)_.*")
@@ -85,7 +85,7 @@ re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$")
 re_changelog_versions = re.compile(r"^\w[-+0-9a-z.]+ \([^\(\) \t]+\)")
 
 # From dak/rm.py
-re_strip_source_version = re.compile (r'\s+.*$')
+re_strip_source_version = re.compile(r'\s+.*$')
 re_build_dep_arch = re.compile(r"\[[^]]+\]")
 
 # From dak/transitions.py
@@ -102,9 +102,9 @@ re_re_mark = re.compile(r'^RE:')
 re_parse_lintian = re.compile(r"^(?P<level>W|E|O): (?P<package>.*?): (?P<tag>[^ ]*) ?(?P<description>.*)$")
 
 # in generate-releases
-re_gensubrelease = re.compile (r".*/(binary-[0-9a-z-]+|source)$")
-re_includeinrelease_byhash = re.compile (r"(Translation-[a-zA-Z_]+\.(?:bz2|xz)|Contents-[0-9a-z-]+.gz|Index|Packages(.gz|.bz2|.xz)?|Sources(.gz|.bz2|.xz)?|Components-[0-9a-z-]+.yml(.gz|.xz)|icons-[0-9x-]+.tar(.gz|.xz)|Release)$")
-re_includeinrelease_plain = re.compile (r"(MD5SUMS|SHA256SUMS)$")
+re_gensubrelease = re.compile(r".*/(binary-[0-9a-z-]+|source)$")
+re_includeinrelease_byhash = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz)|Contents-[0-9a-z-]+.gz|Index|Packages(.gz|.bz2|.xz)?|Sources(.gz|.bz2|.xz)?|Components-[0-9a-z-]+.yml(.gz|.xz)|icons-[0-9x-]+.tar(.gz|.xz)|Release)$")
+re_includeinrelease_plain = re.compile(r"(MD5SUMS|SHA256SUMS)$")
 
 # in generate_index_diffs
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")

@@ -65,7 +65,7 @@ Logger = None
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak control-overrides [OPTIONS]
   -h, --help               print this help and exit
 
@@ -295,7 +295,7 @@ def list_overrides(suite, component, otype, session):
 
 ################################################################################
 
-def main ():
+def main():
     global Logger
 
     cnf = Config()

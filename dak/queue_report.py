@@ -116,7 +116,7 @@ def time_pp(x):
 
 ################################################################################
 
-def sg_compare (a, b):
+def sg_compare(a, b):
     a = a[1]
     b = b[1]
     # Sort by have pending action, have note, time of oldest upload.
@@ -454,7 +454,7 @@ def process_queue(queue, log, rrd_dir):
                 try:
                     (maintainer["maintainer822"], maintainer["maintainer2047"],
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
-                    fix_maintainer (dbc.maintainer)
+                    fix_maintainer(dbc.maintainer)
                 except ParseMaintError as msg:
                     print "Problems while parsing maintainer address\n"
                     maintainer["maintainername"] = "Unknown"
@@ -464,7 +464,7 @@ def process_queue(queue, log, rrd_dir):
                 try:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \
-                     fix_maintainer (dbc.changedby)
+                     fix_maintainer(dbc.changedby)
                 except ParseMaintError as msg:
                     (changeby["changedby822"], changeby["changedby2047"],
                      changeby["changedbyname"], changeby["changedbyemail"]) = \

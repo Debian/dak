@@ -73,7 +73,7 @@ blacklist = {}
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak check-overrides
 Check for cruft in overrides.
 
@@ -317,7 +317,7 @@ SELECT s.source FROM source s
 
 ################################################################################
 
-def main ():
+def main():
     global Logger, Options, sections, priorities
 
     cnf = Config()

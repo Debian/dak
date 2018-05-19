@@ -53,7 +53,7 @@ delete_date = None
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak clean-queues [OPTIONS]
 Clean out incoming directories.
 
@@ -67,7 +67,7 @@ Clean out incoming directories.
 
 ################################################################################
 
-def init (cnf):
+def init(cnf):
     global delete_date, del_dir
 
     # Used for directory naming
@@ -106,7 +106,7 @@ def init (cnf):
         utils.fubar("Cannot chdir to %s" % incoming)
 
 # Remove a file to the morgue
-def remove (from_dir, f):
+def remove(from_dir, f):
     fname = os.path.basename(f)
     if os.access(f, os.R_OK):
         Logger.log(["move file to morgue", from_dir, fname, del_dir])
@@ -128,7 +128,7 @@ def remove (from_dir, f):
 # Removes any old files.
 # [Used for Incoming/REJECT]
 #
-def flush_old ():
+def flush_old():
     Logger.log(["check Incoming/REJECT for old files", os.getcwd()])
     for f in os.listdir('.'):
         if os.path.isfile(f):
@@ -141,7 +141,7 @@ def flush_old ():
 # Removes any files which are old orphans (not associated with a valid .changes file).
 # [Used for Incoming]
 #
-def flush_orphans ():
+def flush_orphans():
     all_files = {}
     changes_files = []
 
@@ -193,7 +193,7 @@ def flush_orphans ():
 
 ################################################################################
 
-def main ():
+def main():
     global Options, Logger
 
     cnf = Config()

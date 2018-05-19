@@ -83,7 +83,7 @@ use_html = False
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak examine-package [PACKAGE]...
 Check NEW package(s).
 
@@ -207,7 +207,7 @@ def get_comma_list(depend) :
     dep_list = depend.split(",")
     return dep_list
 
-def split_depends (d_str) :
+def split_depends(d_str) :
     # creates a list of lists of dictionaries of depends (package,version relation)
 
     d_str = re_spacestrip.sub('',d_str)
@@ -231,7 +231,7 @@ def split_depends (d_str) :
         d += 1
     return depends_tree
 
-def read_control (filename):
+def read_control(filename):
     recommends = []
     predepends = []
     depends = []
@@ -294,7 +294,7 @@ def read_control (filename):
 
     return (control, control_keys, section, predepends, depends, recommends, arch, maintainer)
 
-def read_changes_or_dsc (suite, filename, session=None):
+def read_changes_or_dsc(suite, filename, session=None):
     dsc = {}
 
     dsc_file = utils.open_file(filename)
@@ -357,7 +357,7 @@ def get_provides(suite):
     session.close()
     return provides
 
-def create_depends_string (suite, depends_tree, session=None):
+def create_depends_string(suite, depends_tree, session=None):
     result = ""
     if suite == 'experimental':
         suite_list = ['experimental','unstable']
@@ -402,7 +402,7 @@ def create_depends_string (suite, depends_tree, session=None):
         comma_count += 1
     return result
 
-def output_package_relations ():
+def output_package_relations():
     """
     Output the package relations, if there is more than one package checked in this run.
     """
@@ -461,7 +461,7 @@ def output_deb_info(suite, filename, packagename, session=None):
         to_print += " "+format_field(key,field_value)+'\n'
     return to_print
 
-def do_command (command, escaped=False):
+def do_command(command, escaped=False):
     process = daklib.daksubprocess.Popen(command, stdout=subprocess.PIPE)
     o = process.stdout
     try:
@@ -472,7 +472,7 @@ def do_command (command, escaped=False):
     finally:
         process.wait()
 
-def do_lintian (filename):
+def do_lintian(filename):
     cnf = Config()
     cmd = []
 
@@ -488,7 +488,7 @@ def do_lintian (filename):
 
     return do_command(cmd, escaped=True)
 
-def get_copyright (deb_filename):
+def get_copyright(deb_filename):
     global printed
 
     package = re_package.sub(r'\1', os.path.basename(deb_filename))
@@ -514,7 +514,7 @@ def get_copyright (deb_filename):
         printed.copyrights[copyrightmd5] = "%s (%s)" % (package, os.path.basename(deb_filename))
     return res+formatted_text(cright)
 
-def get_readme_source (dsc_filename):
+def get_readme_source(dsc_filename):
     tempdir = utils.temp_dirname()
     os.rmdir(tempdir)
 
@@ -543,7 +543,7 @@ def get_readme_source (dsc_filename):
 
     return res
 
-def check_dsc (suite, dsc_filename, session=None):
+def check_dsc(suite, dsc_filename, session=None):
     dsc = read_changes_or_dsc(suite, dsc_filename, session)
     dsc_basename = os.path.basename(dsc_filename)
     return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
@@ -554,7 +554,7 @@ def check_dsc (suite, dsc_filename, session=None):
            foldable_output("README.source for %s" % dsc_basename,
                "source-readmesource", get_readme_source(dsc_filename))
 
-def check_deb (suite, deb_filename, session=None):
+def check_deb(suite, deb_filename, session=None):
     filename = os.path.basename(deb_filename)
     packagename = filename.split('_')[0]
 
@@ -587,7 +587,7 @@ def check_deb (suite, deb_filename, session=None):
 
 # Read a file, strip the signature and return the modified contents as
 # a string.
-def strip_pgp_signature (filename):
+def strip_pgp_signature(filename):
     with utils.open_file(filename) as f:
         data = f.read()
         signedfile = SignedFile(data, keyrings=(), require_signature=False)
@@ -599,9 +599,9 @@ def display_changes(suite, changes_filename):
     printed.copyrights = {}
     return foldable_output(changes_filename, "changes", changes, norow=True)
 
-def check_changes (changes_filename):
+def check_changes(changes_filename):
     try:
-        changes = utils.parse_changes (changes_filename)
+        changes = utils.parse_changes(changes_filename)
     except ChangesUnicodeError:
         utils.warn("Encoding problem with changes file %s" % (changes_filename))
     print display_changes(changes['distribution'], changes_filename)
@@ -614,7 +614,7 @@ def check_changes (changes_filename):
             print check_dsc(changes['distribution'], f)
         # else: => byhand
 
-def main ():
+def main():
     global Cnf, db_files, waste, excluded
 
 #    Cnf = utils.get_conf()

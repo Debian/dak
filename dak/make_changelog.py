@@ -64,7 +64,7 @@ from daklib.regexes import re_no_epoch
 
 filelist = 'filelist.yaml'
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Generate changelog between two suites
 
        Usage:

@@ -189,7 +189,7 @@ Logger = None
 
 ###############################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak process-upload [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -d, --directory <DIR>     process uploads in <DIR>

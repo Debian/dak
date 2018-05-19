@@ -71,7 +71,7 @@ class Logger(object):
 
         self.logfile = logfile
 
-    def log (self, details):
+    def log(self, details):
         "Log an event"
         # Prepend timestamp, program name, and user name
         details.insert(0, utils.getusername())
@@ -87,7 +87,7 @@ class Logger(object):
         self.logfile.flush()
         fcntl.lockf(self.logfile, fcntl.LOCK_UN)
 
-    def close (self):
+    def close(self):
         "Close a Logger object"
         self.log(["program end"])
         self.logfile.close()

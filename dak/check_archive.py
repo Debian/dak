@@ -78,7 +78,7 @@ The following MODEs are available:
 
 ################################################################################
 
-def process_dir (unused, dirname, filenames):
+def process_dir(unused, dirname, filenames):
     """
     Process a directory and output every files name which is not listed already
     in the C{filenames} or global C{excluded} dictionaries.
@@ -461,7 +461,7 @@ def check_files_not_symlinks():
 
 ################################################################################
 
-def chk_bd_process_dir (unused, dirname, filenames):
+def chk_bd_process_dir(unused, dirname, filenames):
     for name in filenames:
         if not name.endswith(".dsc"):
             continue
@@ -525,7 +525,7 @@ def add_missing_source_checksums():
 
 ################################################################################
 
-def main ():
+def main():
     global db_files, waste, excluded
 
     cnf = Config()

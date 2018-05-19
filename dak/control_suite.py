@@ -58,7 +58,7 @@ Logger = None
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak control-suite [OPTIONS] [FILE]
 Display or alter the contents of a suite using FILE(s), or stdin.
 
@@ -385,7 +385,7 @@ def get_list(suite, session):
 
 #######################################################################################
 
-def main ():
+def main():
     global Logger
 
     cnf = Config()

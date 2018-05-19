@@ -68,7 +68,7 @@ def list_uids(session, pattern):
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak import-keyring [OPTION]... [KEYRING]
   -h, --help                  show this help and exit.
   -L, --import-ldap-users     generate uid entries for keyring from LDAP

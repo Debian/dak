@@ -243,7 +243,7 @@ Fingerprint: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u
             os.unlink(fn)
             raise
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     if exit_code:
         f = sys.stderr
     else:
@@ -297,7 +297,7 @@ def main():
 
     filelist = []
     for r,d,f  in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
-        filelist += map (lambda x: os.path.join(r,x),
+        filelist += map(lambda x: os.path.join(r,x),
                          filter(lambda x: x.endswith('.changes'), f))
     list_uploads(filelist, rrd_dir)
 

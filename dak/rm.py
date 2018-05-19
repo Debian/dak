@@ -61,7 +61,7 @@ Options = None
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak rm [OPTIONS] PACKAGE[...]
 Remove PACKAGE(s) from suite(s).
 
@@ -114,7 +114,7 @@ def reverse_depends_check(removals, suite, arches=None, session=None, include_ar
 
 ################################################################################
 
-def main ():
+def main():
     global Options
 
     cnf = Config()
@@ -309,7 +309,7 @@ def main ():
         editor = os.environ.get("EDITOR","vi")
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
-            utils.fubar ("vi invocation failed for `%s'!" % (temp_filename), result)
+            utils.fubar("vi invocation failed for `%s'!" % (temp_filename), result)
         temp_file = utils.open_file(temp_filename)
         for line in temp_file.readlines():
             Options["Reason"] += line

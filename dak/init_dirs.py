@@ -169,7 +169,7 @@ def create_directories():
 
 ################################################################################
 
-def main ():
+def main():
     """Initial setup of an archive."""
 
     global Cnf

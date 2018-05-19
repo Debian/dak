@@ -55,7 +55,7 @@ Logger = None
 
 ################################################################################
 
-def usage (exit_code=0):
+def usage(exit_code=0):
     print """Usage: dak clean-suites [OPTIONS]
 Clean old packages from suites.
 
