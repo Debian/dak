@@ -108,8 +108,8 @@ def _do_Approve():
 
         # 1. Install accepted packages
         print "Installing accepted packages into security archive"
-        for queue in ("embargoed",):
-            spawn("dak process-policy {0}".format(queue))
+        for queue_name in ("embargoed",):
+            spawn("dak process-policy {0}".format(queue_name))
 
     # 2. Run all the steps that are needed to publish the changed archive
     print "Doing loadsa stuff in the archive, will take time, please be patient"
