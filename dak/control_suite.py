@@ -58,6 +58,7 @@ Logger = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak control-suite [OPTIONS] [FILE]
 Display or alter the contents of a suite using FILE(s), or stdin.
@@ -72,6 +73,7 @@ Display or alter the contents of a suite using FILE(s), or stdin.
     sys.exit(exit_code)
 
 #######################################################################################
+
 
 def get_pkg(package, version, architecture, session):
     if architecture == 'source':
@@ -88,6 +90,7 @@ def get_pkg(package, version, architecture, session):
     return pkg
 
 #######################################################################################
+
 
 def britney_changelog(packages, suite, session):
 
@@ -154,6 +157,7 @@ def britney_changelog(packages, suite, session):
 
 #######################################################################################
 
+
 def version_checks(package, architecture, target_suite, new_version, session, force=False):
     if architecture == "source":
         suite_version_list = get_suite_version_by_source(package, session)
@@ -186,6 +190,7 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
 
 #######################################################################################
 
+
 def cmp_package_version(a, b):
     """
     comparison function for tuples of the form (package-name, version, arch, ...)
@@ -202,6 +207,7 @@ def cmp_package_version(a, b):
     return res
 
 #######################################################################################
+
 
 def set_suite(file, suite, transaction, britney=False, force=False):
     session = transaction.session
@@ -270,6 +276,7 @@ def set_suite(file, suite, transaction, britney=False, force=False):
         britney_changelog(current, suite, session)
 
 #######################################################################################
+
 
 def process_file(file, suite, action, transaction, britney=False, force=False):
     session = transaction.session
@@ -365,6 +372,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
 
 #######################################################################################
 
+
 def get_list(suite, session):
     suite_id = suite.suite_id
     # List binaries
@@ -384,6 +392,7 @@ def get_list(suite, session):
         print " ".join(i) + " source"
 
 #######################################################################################
+
 
 def main():
     global Logger

@@ -52,6 +52,7 @@ Options = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak generate-index-diffs [OPTIONS] [suites]
 Write out ed-style diffs to Packages/Source lists
@@ -67,17 +68,20 @@ Write out ed-style diffs to Packages/Source lists
     """
     sys.exit(exit_code)
 
+
 def tryunlink(file):
     try:
         os.unlink(file)
     except OSError:
         print "warning: removing of %s denied" % (file)
 
+
 def smartstat(file):
     for ext in ["", ".gz", ".bz2", ".xz"]:
         if os.path.isfile(file + ext):
             return (ext, os.stat(file + ext))
     return (None, None)
+
 
 def smartlink(f, t):
     if os.path.isfile(f):
@@ -92,6 +96,7 @@ def smartlink(f, t):
         print "missing: %s" % (f)
         raise IOError(f)
 
+
 def smartopen(file):
     if os.path.isfile(file):
         f = open(file, "r")
@@ -105,6 +110,7 @@ def smartopen(file):
         f = None
     return f
 
+
 def pipe_file(f, t):
     f.seek(0)
     while 1:
@@ -113,6 +119,7 @@ def pipe_file(f, t):
             break
         t.write(l)
     t.close()
+
 
 class Updates:
     def __init__(self, readpath=None, max=56):
@@ -243,6 +250,7 @@ class Updates:
             if hs[h][2] and hs[h][2][2]:
                 out.write(" %s %7d %s.gz\n" % (hs[h][2][2], hs[h][2][0], h))
 
+
 def create_temp_file(r):
     f = tempfile.TemporaryFile()
     while 1:
@@ -256,6 +264,7 @@ def create_temp_file(r):
     f.seek(0)
     return f
 
+
 def sizehashes(f):
     size = os.fstat(f.fileno())[6]
     f.seek(0)
@@ -263,6 +272,7 @@ def sizehashes(f):
     f.seek(0)
     sha256sum = apt_pkg.sha256sum(f)
     return (size, sha1sum, sha256sum)
+
 
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if "NoAct" in Options:

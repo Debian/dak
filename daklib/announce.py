@@ -25,6 +25,7 @@ from daklib.config import Config
 from daklib.textutils import fix_maintainer
 from daklib.utils import mail_addresses_for_upload, TemplateSubst, send_mail
 
+
 class ProcessedUpload(object):
     # people
     maintainer = None
@@ -48,6 +49,7 @@ class ProcessedUpload(object):
     program = "unknown-program"
 
     warnings = []
+
 
 def _subst_for_upload(upload):
     cnf = Config()
@@ -90,8 +92,10 @@ def _subst_for_upload(upload):
 
     return subst
 
+
 def _whitelists(upload):
     return [ s.mail_whitelist for s in upload.suites ]
+
 
 def announce_reject(upload, reason, rejected_by=None):
     cnf = Config()
@@ -111,6 +115,7 @@ def announce_reject(upload, reason, rejected_by=None):
 
     message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'queue.rejected'))
     send_mail(message, whitelists=whitelists)
+
 
 def announce_accept(upload):
     cnf = Config()
@@ -163,6 +168,7 @@ def announce_accept(upload):
 
             message = TemplateSubst(my_subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.bug-close'))
             send_mail(message, whitelists=whitelists)
+
 
 def announce_new(upload):
     cnf = Config()

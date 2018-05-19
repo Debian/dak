@@ -65,6 +65,7 @@ dakerrors = {
     "CantGetLockError":    """Exception raised - lockfile already in use""",
 } #: All dak exceptions
 
+
 def construct_dak_exception(name, description):
     class Er(DakError):
         __doc__ = description

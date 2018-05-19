@@ -31,6 +31,7 @@ Generate Packages/Sources files
 import apt_pkg
 import sys
 
+
 def usage():
     print """Usage: dak generate-packages-sources2 [OPTIONS]
 Generate the Packages/Sources files
@@ -102,6 +103,7 @@ LEFT JOIN suite on suite.id = :suite
 ORDER BY
 s.source, s.version
 """
+
 
 def generate_sources(suite_id, component_id):
     global _sources_query
@@ -232,6 +234,7 @@ WHERE
 ORDER BY tmp.source, tmp.package, tmp.version
 """
 
+
 def generate_packages(suite_id, component_id, architecture_id, type_name):
     global _packages_query
     from daklib.filewriter import PackagesFileWriter
@@ -317,6 +320,7 @@ GROUP BY b.package, bm_description_md5.value, bm_description.value
 ORDER BY MIN(s.source), b.package, bm_description_md5.value
 """
 
+
 def generate_translations(suite_id, component_id):
     global _translations_query
     from daklib.filewriter import TranslationFileWriter
@@ -349,6 +353,7 @@ def generate_translations(suite_id, component_id):
     return (PROC_STATUS_SUCCESS, message)
 
 #############################################################################
+
 
 def main():
     from daklib.config import Config

@@ -34,6 +34,7 @@
 from regexes import re_verwithext
 from dak_exceptions import UnknownFormatError
 
+
 def parse_format(txt):
     """
     Parse a .changes Format string into a tuple representation for easy
@@ -71,6 +72,7 @@ def parse_format(txt):
         format = format[:2]
 
     return format
+
 
 def validate_changes_format(format, field):
     """

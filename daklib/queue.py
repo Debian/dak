@@ -38,6 +38,7 @@ from dbconn import *
 
 ################################################################################
 
+
 def check_valid(overrides, session):
     """Check if section and priority for new overrides exist in database.
 
@@ -80,6 +81,7 @@ def check_valid(overrides, session):
     return all_valid
 
 ###############################################################################
+
 
 def prod_maintainer(notes, upload):
     cnf = Config()
@@ -141,6 +143,7 @@ def prod_maintainer(notes, upload):
 
 ################################################################################
 
+
 def edit_note(note, upload, session, trainee=False):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
@@ -179,11 +182,13 @@ def edit_note(note, upload, session, trainee=False):
 
 ###############################################################################
 
+
 def get_suite_version_by_source(source, session):
     'returns a list of tuples (suite_name, version) for source package'
     q = session.query(Suite.suite_name, DBSource.version). \
         join(Suite.sources).filter_by(source=source)
     return q.all()
+
 
 def get_suite_version_by_package(package, arch_string, session):
     '''
@@ -194,6 +199,7 @@ def get_suite_version_by_package(package, arch_string, session):
         join(Suite.binaries).filter_by(package=package). \
         join(DBBinary.architecture). \
         filter(Architecture.arch_string.in_([arch_string, 'all'])).all()
+
 
 class Upload(object):
     """

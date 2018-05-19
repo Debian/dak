@@ -42,6 +42,7 @@ from daklib import utils
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print("""Usage: dak ls [OPTION] PACKAGE[...]
 Display information about PACKAGE(s).
@@ -62,6 +63,7 @@ ARCH, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def main():
     cnf = Config()

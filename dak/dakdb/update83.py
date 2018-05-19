@@ -79,6 +79,7 @@ statements = [
 
 ################################################################################
 
+
 def get_buildd_acl_id(c, keyring_id):
     c.execute("""
         SELECT 'buildd-' || STRING_AGG(a.arch_string, '+' ORDER BY a.arch_string)
@@ -108,6 +109,7 @@ def get_buildd_acl_id(c, keyring_id):
 
     return acl_id
 
+
 def get_acl_id(c, acl_dd, acl_dm, keyring_id, source_acl_id, binary_acl_id):
     c.execute('SELECT access_level FROM source_acl WHERE id = %(source_acl_id)s', {'source_acl_id': source_acl_id})
     row = c.fetchone()
@@ -131,6 +133,7 @@ def get_acl_id(c, acl_dd, acl_dm, keyring_id, source_acl_id, binary_acl_id):
         return get_buildd_acl_id(c, keyring_id)
 
     raise Exception('Cannot convert ACL combination automatically: binary_acl={0}, source_acl={1}'.format(binary_acl, source_acl))
+
 
 def do_update(self):
     print __doc__

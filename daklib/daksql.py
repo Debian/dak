@@ -23,6 +23,7 @@ from sqlalchemy.sql.expression import ColumnElement, ClauseElement, ClauseList, 
 from sqlalchemy.types import Text
 from sqlalchemy.util import to_list
 
+
 class array_agg(ColumnElement):
     def __init__(self, expr, order_by=None):
         self.expr = ClauseElement(expr)
@@ -30,11 +31,13 @@ class array_agg(ColumnElement):
         if order_by is not None:
             self.order_by = ClauseList(*to_list(order_by))
 
+
 @compiles(array_agg)
 def compile_array_agg(element, compiler, **kw):
     if element.order_by is not None:
         return "ARRAY_AGG({0} ORDER BY {1})".format(compiler.process(element.expr), compiler.process(element.order_by))
     return "ARRAY_AGG({0})".format(compiler.process(element.expr))
+
 
 class string_agg(ColumnElement):
     type = Text()
@@ -45,6 +48,7 @@ class string_agg(ColumnElement):
         self.order_by = None
         if order_by is not None:
             self.order_by = ClauseList(*to_list(order_by))
+
 
 @compiles(string_agg)
 def compile_string_agg(element, compiler, **kw):

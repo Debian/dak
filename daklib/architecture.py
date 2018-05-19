@@ -20,6 +20,7 @@
 
 import errno
 
+
 def _load_table(path):
     table = []
     with open(path, 'r') as fh:
@@ -30,6 +31,8 @@ def _load_table(path):
     return table
 
 _cached_cputable = None
+
+
 def _cputable():
     global _cached_cputable
     if _cached_cputable is None:
@@ -38,6 +41,8 @@ def _cputable():
 
 _cached_arch2tuple = None
 _cached_tuple2arch = None
+
+
 def _tupletable():
     global _cached_arch2tuple, _cached_tuple2arch
     if _cached_arch2tuple is None or _cached_tuple2arch is None:
@@ -71,8 +76,10 @@ def _tupletable():
         _cached_tuple2arch = tuple2arch
     return _cached_tuple2arch, _cached_arch2tuple
 
+
 class InvalidArchitecture(Exception):
     pass
+
 
 def Debian_arch_to_Debian_tuple(arch):
     parts = arch.split('-')
@@ -95,6 +102,7 @@ def Debian_arch_to_Debian_tuple(arch):
     if tuple is None:
         return None
     return tuple.split('-', 3)
+
 
 def match_architecture(arch, wildcard):
     # 'all' has no valid tuple

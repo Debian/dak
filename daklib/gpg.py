@@ -32,8 +32,10 @@ try:
 except:
     _MAXFD = 256
 
+
 class GpgException(Exception):
     pass
+
 
 class _Pipe(object):
     """context manager for pipes
@@ -62,6 +64,7 @@ class _Pipe(object):
         if self.w:
             os.close(self.w)
             self.w = None
+
 
 class SignedFile(object):
     """handle files signed with PGP
@@ -284,6 +287,7 @@ class SignedFile(object):
 
     def contents_sha1(self):
         return apt_pkg.sha1sum(self.contents)
+
 
 def sign(infile, outfile, keyids=[], inline=False, pubring=None, secring=None, homedir=None, passphrase_file=None):
     args = [

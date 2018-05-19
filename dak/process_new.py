@@ -79,6 +79,7 @@ Sections = None
 ################################################################################
 ################################################################################
 
+
 class Section_Completer:
     def __init__(self, session):
         self.sections = []
@@ -100,6 +101,7 @@ class Section_Completer:
 
 ############################################################
 
+
 class Priority_Completer:
     def __init__(self, session):
         self.priorities = []
@@ -120,6 +122,7 @@ class Priority_Completer:
             return None
 
 ################################################################################
+
 
 def takenover_binaries(upload, missing, session):
     rows = []
@@ -143,6 +146,7 @@ def takenover_binaries(upload, missing, session):
     return rows
 
 ################################################################################
+
 
 def print_new(upload, missing, indexed, session, file=sys.stdout):
     check_valid(missing, session)
@@ -180,6 +184,7 @@ def print_new(upload, missing, indexed, session, file=sys.stdout):
 
 ################################################################################
 
+
 def index_range(index):
     if index == 1:
         return "1"
@@ -188,6 +193,7 @@ def index_range(index):
 
 ################################################################################
 ################################################################################
+
 
 def edit_new(overrides, upload, session):
     # Write the current data to a temporary file
@@ -240,6 +246,7 @@ def edit_new(overrides, upload, session):
     return new_overrides
 
 ################################################################################
+
 
 def edit_index(new, upload, index):
     package = new[index]['package']
@@ -311,6 +318,7 @@ def edit_index(new, upload, index):
     return new
 
 ################################################################################
+
 
 def edit_overrides(new, upload, session):
     print
@@ -389,6 +397,7 @@ def check_pkg(upload, upload_copy, session):
 
 ## FIXME: horribly Debian specific
 
+
 def do_bxa_notification(new, upload, session):
     cnf = Config()
 
@@ -417,6 +426,7 @@ def do_bxa_notification(new, upload, session):
 
 ################################################################################
 
+
 def add_overrides(new_overrides, suite, session):
     if suite.overridesuite is not None:
         suite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
@@ -442,6 +452,7 @@ def add_overrides(new_overrides, suite, session):
 
 ################################################################################
 
+
 def run_user_inspect_command(upload, upload_copy):
     command = os.environ.get('DAK_INSPECT_UPLOAD')
     if command is None:
@@ -463,6 +474,7 @@ def run_user_inspect_command(upload, upload_copy):
     daklib.daksubprocess.check_call(shell_command, shell=True)
 
 ################################################################################
+
 
 def get_reject_reason(reason=''):
     """get reason for rejection
@@ -496,6 +508,7 @@ def get_reject_reason(reason=''):
     return None
 
 ################################################################################
+
 
 def do_new(upload, upload_copy, handler, session):
     cnf = Config()
@@ -628,6 +641,7 @@ def do_new(upload, upload_copy, handler, session):
 ################################################################################
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
@@ -666,6 +680,7 @@ ENVIRONMENT VARIABLES
 
 ################################################################################
 
+
 @contextlib.contextmanager
 def lock_package(package):
     """
@@ -690,6 +705,7 @@ def lock_package(package):
         yield fd
     finally:
         os.unlink(path)
+
 
 def do_pkg(upload, session):
     # Try to get an included dsc
@@ -716,6 +732,7 @@ def do_pkg(upload, session):
     except AlreadyLockedError as e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
+
 def show_new_comments(uploads, session):
     sources = [ upload.changes.source for upload in uploads ]
     if len(sources) == 0:
@@ -734,6 +751,7 @@ def show_new_comments(uploads, session):
     session.rollback()
 
 ################################################################################
+
 
 def sort_uploads(new_queue, uploads, session, nobinaries=False):
     sources = {}
@@ -772,6 +790,7 @@ def sort_uploads(new_queue, uploads, session, nobinaries=False):
 
 ################################################################################
 
+
 def end():
     accept_count = SummaryStats().accept_count
     accept_bytes = SummaryStats().accept_bytes
@@ -787,6 +806,7 @@ def end():
         Logger.close()
 
 ################################################################################
+
 
 def main():
     global Options, Logger, Sections, Priorities

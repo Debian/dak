@@ -30,6 +30,8 @@ from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
 
 ################################################################################
+
+
 def do_update(self):
     """
     Add column to store list of checksums per suite

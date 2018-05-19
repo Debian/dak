@@ -22,6 +22,7 @@ import unittest
 
 from daklib.architecture import match_architecture
 
+
 class MatchArchitecture(DakTestCase):
     def testEqual(self):
         self.assert_(match_architecture('amd64', 'amd64'))

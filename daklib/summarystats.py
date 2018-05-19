@@ -26,6 +26,7 @@ Simple summary class for dak
 
 ###############################################################################
 
+
 class SummaryStats(object):
     __shared_state = {}
 

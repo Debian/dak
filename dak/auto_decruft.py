@@ -412,6 +412,7 @@ def decruft_newer_version_in(othersuite, suite_name, suite_id, rm_msg, session, 
 
 ################################################################################
 
+
 def main():
     global Options
     cnf = Config()

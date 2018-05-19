@@ -50,9 +50,11 @@ Additional switches:
  --no-act
 """
 
+
 def usage():
     print("dak update-suite [-n|--no-act] <origin> <target>")
     sys.exit(0)
+
 
 class SuiteUpdater(object):
     def __init__(self, transaction, origin, target,
@@ -252,6 +254,7 @@ class SuiteUpdater(object):
             self.logger.log(args)
         else:
             print(args)
+
 
 def main():
     from daklib.config import Config

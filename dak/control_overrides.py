@@ -65,6 +65,7 @@ Logger = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak control-overrides [OPTIONS]
   -h, --help               print this help and exit
@@ -88,6 +89,7 @@ def usage(exit_code=0):
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def process_file(file, suite, component, otype, mode, action, session):
     cnf = Config()
@@ -257,6 +259,7 @@ def process_file(file, suite, component, otype, mode, action, session):
 
 ################################################################################
 
+
 def list_overrides(suite, component, otype, session):
     dat = {}
     s = get_suite(suite, session)
@@ -294,6 +297,7 @@ def list_overrides(suite, component, otype, session):
             print utils.result_join(i[:-1])
 
 ################################################################################
+
 
 def main():
     global Logger

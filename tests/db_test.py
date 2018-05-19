@@ -24,6 +24,7 @@ all_tables = [
     'suite_src_formats', 'uid', 'version_check',
 ]
 
+
 class DBDakTestCase(DakTestCase):
     def execute(self, statement):
         DDL(statement).execute(self.metadata.bind)

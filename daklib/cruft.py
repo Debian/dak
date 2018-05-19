@@ -26,6 +26,7 @@ from daklib.dbconn import *
 from sqlalchemy import func
 from sqlalchemy.orm import object_session
 
+
 def newer_version(lowersuite_name, highersuite_name, session, include_equal=False):
     '''
     Finds newer versions in lowersuite_name than in highersuite_name. Returns a
@@ -55,6 +56,7 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
     list.sort()
     return list
 
+
 def get_package_names(suite):
     '''
     Returns a query that selects all distinct package names from suite ordered
@@ -64,6 +66,7 @@ def get_package_names(suite):
     session = object_session(suite)
     return session.query(DBBinary.package).with_parent(suite). \
         group_by(DBBinary.package).order_by(DBBinary.package)
+
 
 class NamedSource(object):
     '''
@@ -79,6 +82,7 @@ class NamedSource(object):
 
     def __str__(self):
         return "%s(%s)" % (self.source, ", ".join(self.versions))
+
 
 class DejavuBinary(object):
     '''
@@ -111,6 +115,7 @@ class DejavuBinary(object):
 
     def __str__(self):
         return "%s built by: %s" % (self.package, ", ".join(self.sources))
+
 
 def report_multiple_source(suite):
     '''

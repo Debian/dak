@@ -7,6 +7,7 @@ import unittest
 
 from os.path import join, basename, splitext
 
+
 class ImportTestCase(DakTestCase):
     for filename in glob.glob(join(DAK_ROOT_DIR, 'dak', '*.py')):
         cmd, ext = splitext(basename(filename))

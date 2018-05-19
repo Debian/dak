@@ -7,6 +7,7 @@ import unittest
 from daklib.formats import parse_format, validate_changes_format
 from daklib.dak_exceptions import UnknownFormatError
 
+
 class ParseFormatTestCase(DakTestCase):
     def assertParse(self, format, expected):
         self.assertEqual(parse_format(format), expected)
@@ -28,6 +29,7 @@ class ParseFormatTestCase(DakTestCase):
     def textText(self):
         self.assertParse('1.2 (three)', (1, 2, 'three'))
         self.assertParseFail('0.0 ()')
+
 
 class ValidateChangesFormat(DakTestCase):
     def assertValid(self, changes, field='files'):

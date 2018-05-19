@@ -30,17 +30,22 @@ from daklib.gpg import SignedFile
 from daklib.regexes import *
 import daklib.packagelist
 
+
 class UploadException(Exception):
     pass
+
 
 class InvalidChangesException(UploadException):
     pass
 
+
 class InvalidBinaryException(UploadException):
     pass
 
+
 class InvalidSourceException(UploadException):
     pass
+
 
 class InvalidHashException(UploadException):
     def __init__(self, filename, hash_name, expected, actual):
@@ -58,6 +63,7 @@ class InvalidHashException(UploadException):
                 "might already be known to the archive software.") \
                 .format(self.hash_name, self.filename, self.expected, self.actual)
 
+
 class InvalidFilenameException(UploadException):
     def __init__(self, filename):
         self.filename = filename
@@ -65,12 +71,14 @@ class InvalidFilenameException(UploadException):
     def __str__(self):
         return "Invalid filename '{0}'.".format(self.filename)
 
+
 class FileDoesNotExist(UploadException):
     def __init__(self, filename):
         self.filename = filename
 
     def __str__(self):
         return "Refers to non-existing file '{0}'".format(self.filename)
+
 
 class HashedFile(object):
     """file with checksums
@@ -184,6 +192,7 @@ class HashedFile(object):
         if hashes.sha256 != self.sha256sum:
             raise InvalidHashException(self.filename, 'sha256sum', self.sha256sum, hashes.sha256)
 
+
 def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_safe, fields=('Files', 'Checksums-Sha1', 'Checksums-Sha256')):
     """Parse Files and Checksums-* fields
 
@@ -252,6 +261,7 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
         f = files[filename] = HashedFile(**entry)
 
     return files
+
 
 class Changes(object):
     """Representation of a .changes file
@@ -473,6 +483,7 @@ class Changes(object):
 
         return ret
 
+
 class Binary(object):
     """Representation of a binary package
     """
@@ -535,6 +546,7 @@ class Binary(object):
         if len(fields) > 1:
             return fields[0]
         return "main"
+
 
 class Source(object):
     """Representation of a source package

@@ -34,6 +34,7 @@ Options = None
 
 ################################################################################
 
+
 def get_uid_info(session):
     byname = {}
     byid = {}
@@ -44,12 +45,14 @@ def get_uid_info(session):
 
     return (byname, byid)
 
+
 def get_fingerprint_info(session):
     fins = {}
     q = session.execute("SELECT f.fingerprint, f.id, f.uid, f.keyring FROM fingerprint f")
     for (fingerprint, fingerprint_id, uid, keyring) in q.fetchall():
         fins[fingerprint] = (uid, fingerprint_id, keyring)
     return fins
+
 
 def list_uids(session, pattern):
     sql_pattern = "%%%s%%" % pattern
@@ -67,6 +70,7 @@ def list_uids(session, pattern):
             print "        keyring %s" % keyring
 
 ################################################################################
+
 
 def usage(exit_code=0):
     print """Usage: dak import-keyring [OPTION]... [KEYRING]

@@ -49,6 +49,8 @@ INSERT INTO config(name, value) VALUES ('use_extfiles', 0);
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

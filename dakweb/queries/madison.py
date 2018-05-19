@@ -12,6 +12,7 @@ import json
 from daklib.ls import list_packages
 from dakweb.webregister import QueryRegister
 
+
 @bottle.route('/madison')
 def madison():
     """

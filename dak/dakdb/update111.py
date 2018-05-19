@@ -36,6 +36,8 @@ ALTER TABLE source ALTER COLUMN install_date SET DEFAULT now()
 ]
 
 ################################################################################
+
+
 def do_update(self):
     print __doc__
     try:

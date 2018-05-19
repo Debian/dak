@@ -51,6 +51,8 @@ Options = None  #: Parsed CommandLine arguments
 #####################################
 #### This may run within sudo !! ####
 #####################################
+
+
 def init():
     """
     Initialize. Sets up database connection, parses commandline arguments.
@@ -94,6 +96,7 @@ def init():
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: transitions [OPTION]...
 Update and check the release managers transition file.
@@ -115,6 +118,8 @@ Options:
 #####################################
 #### This may run within sudo !! ####
 #####################################
+
+
 def load_transitions(trans_file):
     """
     Parse a transition yaml file and check it for validity.
@@ -214,6 +219,8 @@ def load_transitions(trans_file):
 #####################################
 #### This may run within sudo !! ####
 #####################################
+
+
 def lock_file(f):
     """
     Lock a file
@@ -241,6 +248,8 @@ def lock_file(f):
 #####################################
 #### This may run within sudo !! ####
 #####################################
+
+
 def write_transitions(from_trans):
     """
     Update the active transitions file safely.
@@ -275,6 +284,8 @@ def write_transitions(from_trans):
 ##########################################
 #### This usually runs within sudo !! ####
 ##########################################
+
+
 def write_transitions_from_file(from_file):
     """
     We have a file we think is valid; if we're using sudo, we invoke it
@@ -303,6 +314,7 @@ def write_transitions_from_file(from_file):
 
 ################################################################################
 
+
 def temp_transitions_file(transitions):
     """
     Open a temporary file and dump the current transitions into it, so users
@@ -326,6 +338,7 @@ def temp_transitions_file(transitions):
     return path
 
 ################################################################################
+
 
 def edit_transitions():
     """ Edit the defined transitions. """
@@ -384,6 +397,7 @@ def edit_transitions():
     print "Transitions file updated."
 
 ################################################################################
+
 
 def check_transitions(transitions):
     """
@@ -482,6 +496,7 @@ def check_transitions(transitions):
 
 ################################################################################
 
+
 def get_info(trans, source, expected, rm, reason, packages):
     """
     Print information about a single transition.
@@ -514,6 +529,7 @@ Blocked Packages (total: %d): %s
 """ % (trans, source, expected, rm, reason, len(packages), ", ".join(packages))
 
 ################################################################################
+
 
 def transition_info(transitions):
     """
@@ -553,6 +569,7 @@ def transition_info(transitions):
         print "-------------------------------------------------------------------------"
 
 ################################################################################
+
 
 def main():
     """

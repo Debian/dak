@@ -60,6 +60,7 @@ Logger = None
 
 ################################################################################
 
+
 def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
     session = transaction.session
     actions = []
@@ -99,6 +100,7 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
 
 ################################################################################
 
+
 def try_or_reject(function):
     def wrapper(upload, srcqueue, comments, transaction):
         try:
@@ -119,6 +121,7 @@ def try_or_reject(function):
     return wrapper
 
 ################################################################################
+
 
 @try_or_reject
 def comment_accept(upload, srcqueue, comments, transaction):
@@ -290,9 +293,11 @@ def comment_accept(upload, srcqueue, comments, transaction):
 
 ################################################################################
 
+
 @try_or_reject
 def comment_reject(*args):
     real_comment_reject(*args, manual=True)
+
 
 def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, manual=False):
     cnf = Config()
@@ -361,6 +366,7 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, ma
 
 ################################################################################
 
+
 def remove_upload(upload, transaction):
     fs = transaction.fs
     session = transaction.session
@@ -390,6 +396,7 @@ def remove_upload(upload, transaction):
 
 ################################################################################
 
+
 def get_processed_upload(upload):
     pu = daklib.announce.ProcessedUpload()
 
@@ -414,6 +421,7 @@ def get_processed_upload(upload):
     return pu
 
 ################################################################################
+
 
 def remove_unreferenced_binaries(policy_queue, transaction):
     """Remove binaries that are no longer referenced by an upload
@@ -440,6 +448,7 @@ def remove_unreferenced_binaries(policy_queue, transaction):
     for binary in binaries:
         Logger.log(["removed binary from policy queue", policy_queue.queue_name, binary.package, binary.version])
         transaction.remove_binary(binary, suite)
+
 
 def remove_unreferenced_sources(policy_queue, transaction):
     """Remove sources that are no longer referenced by an upload or a binary
@@ -471,6 +480,7 @@ def remove_unreferenced_sources(policy_queue, transaction):
         transaction.remove_source(source, suite)
 
 ################################################################################
+
 
 def main():
     global Options, Logger

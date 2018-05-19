@@ -42,6 +42,7 @@ Logger = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: dak manage-build-queues [OPTIONS] buildqueue1 buildqueue2
 Manage the contents of one or more build queues
@@ -53,6 +54,7 @@ Manage the contents of one or more build queues
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def clean(build_queue, transaction, now=None):
     session = transaction.session
@@ -121,6 +123,7 @@ def clean(build_queue, transaction, now=None):
     for source in sources:
         Logger.log(["removed source from build queue", build_queue.queue_name, source.source, source.version])
         transaction.remove_source(source, suite)
+
 
 def main():
     global Options, Logger

@@ -7,6 +7,7 @@ from daklib.dakmultiprocessing import DakProcessPool, \
                                       PROC_STATUS_EXCEPTION, PROC_STATUS_SIGNALRAISED
 import signal
 
+
 def async_function(num, num2):
     from os import kill, getpid
 
@@ -21,6 +22,7 @@ def async_function(num, num2):
         return (PROC_STATUS_MISCFAILURE, 'Test custom error return')
 
     return (PROC_STATUS_SUCCESS, 'blah, %d, %d' % (num, num2))
+
 
 class DakProcessPoolTestCase(DakTestCase):
     def testPool(self):

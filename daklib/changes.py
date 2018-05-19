@@ -81,6 +81,7 @@ __all__.append('CHANGESFIELDS_ORIGFILES')
 
 ###############################################################################
 
+
 class Changes(object):
     """ Convenience wrapper to carry around all the package information """
 

@@ -6,6 +6,7 @@ from daklib import srcformats
 from collections import defaultdict
 from daklib.dak_exceptions import UnknownFormatError
 
+
 class SourceFormatTestCase(DakTestCase):
     def get_rejects(self, has_vars):
         has = defaultdict(lambda: 0)
@@ -17,6 +18,7 @@ class SourceFormatTestCase(DakTestCase):
 
     def assertRejected(self, has):
         self.assertNotEqual(self.get_rejects(has), [])
+
 
 class FormatOneTestCase(SourceFormatTestCase):
     fmt = srcformats.FormatOne
@@ -56,6 +58,7 @@ class FormatOneTestCase(SourceFormatTestCase):
             'debian_diff': 1,
         })
 
+
 class FormatTreeTestCase(SourceFormatTestCase):
     fmt = srcformats.FormatThree
 
@@ -70,6 +73,7 @@ class FormatTreeTestCase(SourceFormatTestCase):
         self.assertRejected({'native_tar': 1, 'debian_diff': 1})
         self.assertRejected({'native_tar': 1, 'debian_tar': 1})
         self.assertRejected({'native_tar': 1, 'more_orig_tar': 1})
+
 
 class FormatTreeQuiltTestCase(SourceFormatTestCase):
     fmt = srcformats.FormatThreeQuilt
@@ -98,6 +102,7 @@ class FormatTreeQuiltTestCase(SourceFormatTestCase):
             'debian_tar': 1,
             'native_tar': 1,
         })
+
 
 class FormatFromStringTestCase(DakTestCase):
     def assertFormat(self, txt, klass):

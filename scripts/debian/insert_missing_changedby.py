@@ -54,6 +54,7 @@ maintainer_id_cache={}
 
 ###############################################################################
 
+
 def get_or_set_maintainer_id(maintainer):
     global maintainer_id_cache
 
@@ -89,6 +90,7 @@ def __get_changedby__(package, version):
     res = cur.fetchone()
     cur.close()
     return res
+
 
 def insert():
     print "Adding missing changedby fields."

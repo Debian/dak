@@ -40,6 +40,7 @@ PROC_STATUS_MISCFAILURE  = 3  # Process specific error; see message
 __all__.extend(['PROC_STATUS_SUCCESS',      'PROC_STATUS_EXCEPTION',
                 'PROC_STATUS_SIGNALRAISED', 'PROC_STATUS_MISCFAILURE'])
 
+
 class SignalException(Exception):
     def __init__(self, signum):
         self.signum = signum
@@ -49,8 +50,10 @@ class SignalException(Exception):
 
 __all__.append('SignalException')
 
+
 def signal_handler(signum, info):
     raise SignalException(signum)
+
 
 def _func_wrapper(func, *args, **kwds):
     # We need to handle signals to avoid hanging

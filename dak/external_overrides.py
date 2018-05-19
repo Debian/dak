@@ -29,6 +29,7 @@ from daklib import utils, daklog
 import apt_pkg
 import sys
 
+
 def usage():
     print """Usage: dak external-overrides COMMAND
 Modify external overrides.
@@ -50,6 +51,7 @@ should be given as lines of the form 'PACKAGE KEY VALUE'.
     sys.exit()
 
 #############################################################################
+
 
 class ExternalOverrideReader(object):
     """
@@ -95,6 +97,7 @@ class ExternalOverrideReader(object):
 
 #############################################################################
 
+
 def external_overrides_copy(from_suite_name, to_suite_name, force=False):
     session = DBConn().session()
 
@@ -123,6 +126,7 @@ def external_overrides_copy(from_suite_name, to_suite_name, force=False):
 
     session.commit()
 
+
 def external_overrides_import(suite_name, component_name, key, file, force=False):
     session = DBConn().session()
 
@@ -148,6 +152,7 @@ def external_overrides_import(suite_name, component_name, key, file, force=False
     session.commit()
 
 #############################################################################
+
 
 def main():
     cnf = Config()

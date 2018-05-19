@@ -29,6 +29,7 @@ import daklib.gpg
 from daklib.config import Config
 from daklib.dbconn import DBConn
 
+
 def export_external_signature_requests(session, path):
     tbl_arch  = DBConn().tbl_architecture
     tbl_ba    = DBConn().tbl_bin_associations
@@ -55,10 +56,12 @@ def export_external_signature_requests(session, path):
     with open(path, 'w') as fh:
         json.dump(data, fh, indent=2)
 
+
 def sign_external_signature_requests(session, path, keyids, args={}):
     outpath = '{}.gpg'.format(path)
     with open(path, 'r') as infile, open(outpath, 'w') as outfile:
         daklib.gpg.sign(infile, outfile, keyids, inline=False, **args)
+
 
 def add_external_signature_request(session, target_suite, suite, binary):
     tbl_ba  = DBConn().tbl_bin_associations
@@ -74,6 +77,7 @@ def add_external_signature_request(session, target_suite, suite, binary):
     if exists is None:
         insert = sql.insert(tbl_esr).values(association_id=ba_id, suite_id=target_suite.suite_id)
         session.execute(insert)
+
 
 def check_upload_for_external_signature_request(session, target_suite, suite, binary):
     if 'External-Signature-Requests' not in Config():

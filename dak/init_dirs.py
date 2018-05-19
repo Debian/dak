@@ -33,6 +33,7 @@ Cnf = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     """Print a usage message and exit with 'exit_code'."""
 
@@ -43,6 +44,7 @@ Creates directories for an archive based on dak.conf configuration file.
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def do_dir(target, config_name):
     """If 'target' exists, make sure it is a directory.  If it doesn't, create
@@ -56,12 +58,14 @@ it."""
         print("Creating {} ...".format(target))
         os.makedirs(target)
 
+
 def process_file(config, config_name):
     """Create directories for a config entry that's a filename."""
 
     if config_name in config:
         target = os.path.dirname(config[config_name])
         do_dir(target, config_name)
+
 
 def process_tree(config, tree):
     """Create directories for a config tree."""
@@ -72,6 +76,7 @@ def process_tree(config, tree):
         target = config[config_name]
         do_dir(target, config_name)
 
+
 def process_morguesubdir(subdir):
     """Create directories for morgue sub directories."""
 
@@ -79,6 +84,7 @@ def process_morguesubdir(subdir):
     if config_name in Cnf:
         target = os.path.join(Cnf["Dir::Morgue"], Cnf[config_name])
         do_dir(target, config_name)
+
 
 def process_keyring(fullpath, secret=False):
     """Create empty keyring if necessary."""
@@ -104,6 +110,7 @@ def process_keyring(fullpath, secret=False):
         os.chmod(fullpath, 0o644)
 
 ######################################################################
+
 
 def create_directories():
     """Create directories referenced in dak.conf."""
@@ -168,6 +175,7 @@ def create_directories():
                 do_dir(suite_arch_dir, "%s/%s/%s" % (suite.suite_name, component_name, arch_string))
 
 ################################################################################
+
 
 def main():
     """Initial setup of an archive."""

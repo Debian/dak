@@ -11,6 +11,7 @@ import json
 from daklib.dbconn import DBConn, DBBinary, DBSource, SourceMetadata, MetadataKey
 from dakweb.webregister import QueryRegister
 
+
 @bottle.route('/binary/metadata_keys/')
 def binary_metadata_keys():
     """

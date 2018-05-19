@@ -32,6 +32,7 @@ Logger = None
 
 ################################################################################
 
+
 def usage(exit_code=0):
     print """Usage: add-user [OPTION]...
 Adds a new user to the dak databases and keyrings
@@ -42,6 +43,7 @@ Adds a new user to the dak databases and keyrings
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def main():
     global Cnf

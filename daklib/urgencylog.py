@@ -34,6 +34,7 @@ from utils import warn, open_file, move
 
 ###############################################################################
 
+
 class UrgencyLog(object):
     "Urgency Logger object"
 

@@ -6,6 +6,7 @@ from daklib.textutils import split_uploaders
 
 import unittest
 
+
 class SplitUploadersTestCase(DakTestCase):
     def test_main(self):
         expected = ['"A, B" <a@b.c>', 'D E <d@e.f>']

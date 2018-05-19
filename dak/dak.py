@@ -44,6 +44,7 @@ from daklib.dak_exceptions import CantOpenError
 
 ################################################################################
 
+
 def init():
     """Setup the list of modules and brief explanation of what they
     do."""
@@ -162,6 +163,7 @@ def init():
 
 ################################################################################
 
+
 def usage(functionality, exit_code=0):
     """Print a usage message and exit with 'exit_code'."""
 
@@ -174,6 +176,7 @@ Available commands:"""
     sys.exit(exit_code)
 
 ################################################################################
+
 
 def main():
     """Launch dak functionality."""

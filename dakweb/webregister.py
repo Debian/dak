@@ -4,6 +4,7 @@
 @license: GNU General Public License version 2 or later
 """
 
+
 class QueryRegister(object):
     __shared_state = {}
 
