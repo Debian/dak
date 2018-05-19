@@ -25,7 +25,8 @@ Remove obsolete source and binary associations from suites.
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import daklog, utils
-import apt_pkg, sys
+import apt_pkg
+import sys
 
 from sqlalchemy.sql import exists, text
 from tabulate import tabulate

@@ -35,7 +35,10 @@ Check for obsolete binary packages
 
 ################################################################################
 
-import commands, os, sys, re
+import commands
+import os
+import sys
+import re
 import apt_pkg
 
 from daklib.config import Config

@@ -54,7 +54,8 @@
 
 ################################################################################
 
-import sys, os
+import os
+import sys
 import apt_pkg
 
 from daklib.config import Config

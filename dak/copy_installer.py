@@ -22,7 +22,11 @@
 from daklib.config import Config
 import daklib.daksubprocess
 
-import apt_pkg, glob, os.path, re, sys
+import apt_pkg
+import glob
+import os.path
+import re
+import sys
 
 def usage(exit_code = 0):
     print """Usage: dak copy-installer [OPTION]... VERSION

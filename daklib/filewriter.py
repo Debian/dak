@@ -28,7 +28,8 @@ Helper code for file writing with optional compression.
 from daklib.daksubprocess import check_call
 
 import errno
-import os, os.path
+import os
+import os.path
 
 class CompressionMethod(object):
     def __init__(self, keyword, extension, command):

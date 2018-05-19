@@ -21,7 +21,8 @@
 
 from __future__ import print_function
 
-import os, sys
+import os
+import sys
 import apt_pkg
 from daklib import utils
 from daklib.dbconn import *

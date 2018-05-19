@@ -20,8 +20,11 @@
 
 ################################################################################
 
-import sys, os, re
-import apt_pkg, ldap
+import sys
+import os
+import re
+import apt_pkg
+import ldap
 
 from daklib.config import Config
 from daklib.dbconn import *
