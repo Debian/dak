@@ -41,6 +41,7 @@ class BinaryContentsWriter(object):
     '''
     BinaryContentsWriter writes the Contents-$arch.gz files.
     '''
+
     def __init__(self, suite, architecture, overridetype, component):
         self.suite = suite
         self.architecture = architecture
@@ -146,6 +147,7 @@ class SourceContentsWriter(object):
     '''
     SourceContentsWriter writes the Contents-source.gz files.
     '''
+
     def __init__(self, suite, component):
         self.suite = suite
         self.component = component
@@ -321,6 +323,7 @@ class BinaryContentsScanner(object):
     BinaryContentsScanner provides a threadsafe method scan() to scan the
     contents of a DBBinary object.
     '''
+
     def __init__(self, binary_id):
         '''
         The argument binary_id is the id of the DBBinary object that
@@ -379,6 +382,7 @@ class UnpackedSource(object):
     UnpackedSource extracts a source package into a temporary location and
     gives you some convinient function for accessing it.
     '''
+
     def __init__(self, dscfilename, tmpbasedir=None):
         '''
         The dscfilename is a name of a DSC file that will be extracted.
@@ -439,6 +443,7 @@ class SourceContentsScanner(object):
     SourceContentsScanner provides a method scan() to scan the contents of a
     DBSource object.
     '''
+
     def __init__(self, source_id):
         '''
         The argument source_id is the id of the DBSource object that

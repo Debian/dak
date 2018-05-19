@@ -39,6 +39,7 @@ class UploadCopy(object):
     given by the C{directory} attribute.  The copy will be removed on leaving
     the with-block.
     """
+
     def __init__(self, upload, group=None):
         """initializer
 
@@ -123,6 +124,7 @@ class PolicyQueueUploadHandler(object):
     This class allows to accept or reject uploads and to get a list of missing
     overrides (for NEW processing).
     """
+
     def __init__(self, upload, session):
         """initializer
 

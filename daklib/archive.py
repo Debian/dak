@@ -48,6 +48,7 @@ class HashMismatchException(ArchiveException):
 class ArchiveTransaction(object):
     """manipulate the archive in a transaction
     """
+
     def __init__(self):
         self.fs = FilesystemTransaction()
         self.session = DBConn().session()
@@ -591,6 +592,7 @@ class ArchiveUpload(object):
     Doing so will automatically run any required cleanup and also rollback the
     transaction if it was not committed.
     """
+
     def __init__(self, directory, changes, keyrings):
         self.transaction = ArchiveTransaction()
         """transaction used to handle the upload

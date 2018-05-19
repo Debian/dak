@@ -200,6 +200,7 @@ class Upload(object):
     Everything that has to do with an upload processed.
 
     """
+
     def __init__(self):
         self.logger = None
         self.pkg = Changes()

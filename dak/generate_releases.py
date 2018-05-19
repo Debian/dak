@@ -110,6 +110,7 @@ def sign_release_dir(suite, dirname):
 class XzFile(object):
     def __init__(self, filename, mode='r'):
         self.filename = filename
+
     def read(self):
         cmd = ("xz", "-d")
         with open(self.filename, 'r') as stdin:

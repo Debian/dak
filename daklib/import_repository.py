@@ -40,20 +40,26 @@ class Release(object):
         self._suite_name = suite_name
         self._dict = apt_pkg.TagSection(data)
         self._hashes = daklib.upload.parse_file_list(self._dict, False, daklib.regexes.re_file_safe_slash, _release_hashes_fields)
+
     def architectures(self):
         return self._dict['Architectures'].split()
+
     def components(self):
         return self._dict['Components'].split()
+
     def packages(self, component, architecture):
         fn = '{0}/binary-{1}/Packages'.format(component, architecture)
         tmp = obtain_release_file(self, fn)
         return apt_pkg.TagFile(tmp.fh())
+
     def sources(self, component):
         fn = '{0}/source/Sources'.format(component)
         tmp = obtain_release_file(self, fn)
         return apt_pkg.TagFile(tmp.fh())
+
     def suite(self):
         return self._dict['Suite']
+
     def codename(self):
         return self._dict['Codename']
     # TODO: Handle Date/Valid-Until to make sure we import
@@ -63,9 +69,11 @@ class File(object):
     def __init__(self):
         config = daklib.config.Config()
         self._tmp = tempfile.NamedTemporaryFile(dir=config['Dir::TempPath'])
+
     def fh(self):
         self._tmp.seek(0)
         return self._tmp
+
     def hashes(self):
         return apt_pkg.Hashes(self.fh())
 

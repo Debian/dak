@@ -118,6 +118,7 @@ class _FilesystemCreateAction(_FilesystemAction):
 
 class FilesystemTransaction(object):
     """transactions for filesystem actions"""
+
     def __init__(self):
         self.actions = []
 
