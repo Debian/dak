@@ -50,6 +50,7 @@ class BaseFileWriter(object):
     '''
     Base class for compressed and uncompressed file writing.
     '''
+
     def __init__(self, template, **keywords):
         '''
         The template argument is a string template like

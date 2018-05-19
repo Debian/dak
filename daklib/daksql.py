@@ -38,6 +38,7 @@ def compile_array_agg(element, compiler, **kw):
 
 class string_agg(ColumnElement):
     type = Text()
+
     def __init__(self, column, seperator, order_by=None):
         self.column = ClauseList(*to_list(column))
         self.seperator = literal(seperator)

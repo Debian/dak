@@ -41,18 +41,22 @@ class _Pipe(object):
     Note: When the pipe is closed by other means than the close_r and close_w
     methods, you have to set self.r (self.w) to None.
     """
+
     def __enter__(self):
         (self.r, self.w) = os.pipe()
         return self
+
     def __exit__(self, type, value, traceback):
         self.close_w()
         self.close_r()
         return False
+
     def close_r(self):
         """close reading side of the pipe"""
         if self.r:
             os.close(self.r)
             self.r = None
+
     def close_w(self):
         """close writing part of the pipe"""
         if self.w:
@@ -69,6 +73,7 @@ class SignedFile(object):
       fingerprint         - fingerprint of the key used for signing
       primary_fingerprint - fingerprint of the primary key associated to the key used for signing
     """
+
     def __init__(self, data, keyrings, require_signature=True, gpg="/usr/bin/gpg"):
         """
         @param data: string containing the message

@@ -31,6 +31,7 @@ class MatchArchitecture(DakTestCase):
         self.assert_(not match_architecture('amd64', 'i386'))
         self.assert_(match_architecture('kfreebsd-amd64', 'kfreebsd-amd64'))
         self.assert_(not match_architecture('kfreebsd-amd64', 'amd64'))
+
     def testAny(self):
         self.assert_(match_architecture('amd64', 'any'))
         self.assert_(match_architecture('amd64', 'any-amd64'))
@@ -40,6 +41,7 @@ class MatchArchitecture(DakTestCase):
 
         self.assert_(match_architecture('kfreebsd-amd64', 'kfreebsd-any'))
         self.assert_(not match_architecture('amd64', 'kfreebsd-any'))
+
     def testAll(self):
         self.assert_(match_architecture('all', 'all'))
 

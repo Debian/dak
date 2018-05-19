@@ -55,6 +55,7 @@ class ExternalOverrideReader(object):
     """
     Parses an external override file
     """
+
     def __init__(self, fh):
         self.fh = fh
         self.package = None

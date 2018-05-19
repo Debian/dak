@@ -70,6 +70,7 @@ class NamedSource(object):
     A source package identified by its name with all of its versions in a
     suite.
     '''
+
     def __init__(self, suite, source):
         self.source = source
         query = suite.sources.filter_by(source=source). \

@@ -408,6 +408,7 @@ class ArchiveFile(object):
         self.archive = archive
         self.component = component
         self.file = file
+
     @property
     def path(self):
         return os.path.join(self.archive.path, 'pool', self.component.component_name, self.file.filename)
