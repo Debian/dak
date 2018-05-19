@@ -28,7 +28,8 @@ Generate Packages/Sources files
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import apt_pkg, sys
+import apt_pkg
+import sys
 
 def usage():
     print """Usage: dak generate-packages-sources2 [OPTIONS]

@@ -51,7 +51,8 @@ import sys
 import time
 import contextlib
 import pwd
-import apt_pkg, apt_inst
+import apt_pkg
+import apt_inst
 import examine_package
 import subprocess
 import daklib.daksubprocess

@@ -3,7 +3,10 @@
 # Free software licensed under the GPL version 2 or later
 
 
-import os,re,datetime, sys
+import os
+import re
+import datetime
+import sys
 import tempfile
 
 ITEMS_TO_KEEP = 20

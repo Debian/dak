@@ -32,7 +32,12 @@
 
 ###############################################################################
 
-import errno, fcntl, os, sys, time, re
+import errno
+import fcntl
+import os
+import sys
+import time
+import re
 import apt_pkg
 import daklib.database
 import daklib.queue

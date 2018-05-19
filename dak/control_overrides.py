@@ -49,7 +49,8 @@
 
 ################################################################################
 
-import sys, time
+import sys
+import time
 import apt_pkg
 
 from daklib.dbconn import *

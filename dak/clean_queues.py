@@ -33,7 +33,11 @@
 
 ################################################################################
 
-import os, os.path, stat, sys, time
+import os
+import os.path
+import stat
+import sys
+import time
 from datetime import datetime, timedelta
 import apt_pkg
 from daklib import utils

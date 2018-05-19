@@ -26,7 +26,9 @@
 ################################################################################
 
 from copy import copy
-import os, sys, time
+import os
+import sys
+import time
 import apt_pkg
 import examine_package
 

@@ -20,7 +20,10 @@
 
 ################################################################################
 
-import sys, os, re, time
+import sys
+import os
+import re
+import time
 import apt_pkg
 import rrdtool
 
