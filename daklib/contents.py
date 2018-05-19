@@ -353,7 +353,7 @@ class BinaryContentsScanner(object):
         dict.
         '''
         session = DBConn().session()
-        query = session.query(DBBinary).filter(DBBinary.contents == None)
+        query = session.query(DBBinary).filter(DBBinary.contents == None) # noqa:E711
         remaining = query.count
         if limit is not None:
             query = query.limit(limit)
@@ -468,7 +468,7 @@ class SourceContentsScanner(object):
         dict.
         '''
         session = DBConn().session()
-        query = session.query(DBSource).filter(DBSource.contents == None)
+        query = session.query(DBSource).filter(DBSource.contents == None) # noqa:E711
         remaining = query.count
         if limit is not None:
             query = query.limit(limit)

@@ -327,7 +327,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
 
             elif action == "remove":
-                if association_id == None:
+                if association_id is None:
                     utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
@@ -353,7 +353,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
                     transaction.copy_binary(pkg, suite, component)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
             elif action == "remove":
-                if association_id == None:
+                if association_id is None:
                     utils.warn("'%s_%s_%s' doesn't exist in suite %s." % (package, version, architecture, suite))
                     continue
                 else:

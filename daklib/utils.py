@@ -160,7 +160,7 @@ def extract_component_from_section(section):
 
 def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None):
     require_signature = True
-    if keyrings == None:
+    if keyrings is None:
         keyrings = []
         require_signature = False
 
@@ -455,7 +455,7 @@ def send_mail (message, filename="", whitelists=None):
         for field in fields:
             # Check each field
             value = message_raw.get(field, None)
-            if value != None:
+            if value is not None:
                 match = [];
                 for item in value.split(","):
                     (rfc822_maint, rfc2047_maint, name, email) = fix_maintainer(item.strip())
@@ -637,7 +637,7 @@ def find_next_free (dest, too_many=100):
 def result_join (original, sep = '\t'):
     resultlist = []
     for i in xrange(len(original)):
-        if original[i] == None:
+        if original[i] is None:
             resultlist.append("")
         else:
             resultlist.append(original[i])
@@ -794,7 +794,7 @@ def gpg_keyring_args(keyrings=None):
 def gpg_get_key_addresses(fingerprint):
     """retreive email addresses from gpg key uids for a given fingerprint"""
     addresses = key_uid_email_cache.get(fingerprint)
-    if addresses != None:
+    if addresses is not None:
         return addresses
     addresses = list()
     try:
@@ -961,7 +961,7 @@ def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
 def is_email_alias(email):
     """ checks if the user part of the email is listed in the alias file """
     global alias_cache
-    if alias_cache == None:
+    if alias_cache is None:
         aliasfn = which_alias_file()
         alias_cache = set()
         if aliasfn:
