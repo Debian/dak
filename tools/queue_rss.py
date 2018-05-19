@@ -136,7 +136,6 @@ def add_rss_item(status, msg, direction):
         else:
             title = "%s %s left NEW" % (msg['Source'], msg['Version'])
 
-
         pubdate = datetime.utcnow()
     else:
         return False
@@ -189,7 +188,6 @@ def update_feeds(curqueue, status, settings):
                 parsed['Leave-Reason'] = leave_reason[name][0]
                 parsed['Processed-By'] = leave_reason[name][1] + "@debian.org"
             add_rss_item(status, parsed, "out")
-
 
 
 if __name__ == "__main__":

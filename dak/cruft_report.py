@@ -154,7 +154,6 @@ def do_nfu(nfu_packages):
             output += "  * [%s] does not want %s (binary %s, source %s)\n" % (architecture, package, bver, sver)
             a2p[architecture].append(package)
 
-
     if output:
         print "Obsolete by Not-For-Us"
         print "----------------------"
@@ -274,7 +273,6 @@ def reportNewerAll(suite_name, session):
         print "  - suggested command:"
         print "    dak rm -m %s -s %s -a %s -p -b %s\n" % \
             (message, suite_name, oldarch, package)
-
 
 
 def reportNBS(suite_name, suite_id, rdeps=False):

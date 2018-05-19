@@ -34,7 +34,6 @@ LANG='en'
 
 class FileWriterTest(DakTestCase):
 
-
     def test_writer_test(self):
         tmpdir = tempfile.mkdtemp()
         try:

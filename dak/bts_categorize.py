@@ -102,7 +102,6 @@ class BugClassifier(object):
         return [ bug for bug in bts.get_status( bts.get_bugs("package", "ftp.debian.org" ) ) \
                      if bug.pending=='pending' and not bug.bug_num in tagged_bugs_ftp ]
 
-
     def classify_bug(self, bug):
         """
         if any of our classifiers match, return a newline terminated
