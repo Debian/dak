@@ -157,7 +157,8 @@ def __architecture_list(d, args):
     q = d.session().query(Architecture).order_by(Architecture.arch_string)
     for j in q.all():
         # HACK: We should get rid of source from the arch table
-        if j.arch_string == 'source': continue
+        if j.arch_string == 'source':
+            continue
         print j.arch_string
     sys.exit(0)
 
@@ -505,11 +506,13 @@ def __suite_architecture_add(d, args):
     s = d.session()
 
     suite = get_suite(args[2].lower(), s)
-    if suite is None: die("E: Can't find suite %s" % args[2].lower())
+    if suite is None:
+        die("E: Can't find suite %s" % args[2].lower())
 
     for arch_name in args[3:]:
         arch = get_architecture(arch_name.lower(), s)
-        if arch is None: die("E: Can't find architecture %s" % args[3].lower())
+        if arch is None:
+            die("E: Can't find architecture %s" % args[3].lower())
 
         try:
             suite.architectures.append(arch)
@@ -611,11 +614,13 @@ def __suite_component_add(d, args):
     s = d.session()
 
     suite = get_suite(args[2].lower(), s)
-    if suite is None: die("E: Can't find suite %s" % args[2].lower())
+    if suite is None:
+        die("E: Can't find suite %s" % args[2].lower())
 
     for component_name in args[3:]:
         component = get_component(component_name.lower(), s)
-        if component is None: die("E: Can't find component %s" % args[3].lower())
+        if component is None:
+            die("E: Can't find component %s" % args[3].lower())
 
         try:
             suite.components.append(component)

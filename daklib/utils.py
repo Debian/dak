@@ -659,8 +659,10 @@ def prefix_multi_line_string(str, prefix, include_blank_lines=0):
 ################################################################################
 
 def join_with_commas_and(list):
-    if len(list) == 0: return "nothing"
-    if len(list) == 1: return list[0]
+    if len(list) == 0:
+        return "nothing"
+    if len(list) == 1:
+        return list[0]
     return ", ".join(list[:-1]) + " and " + list[-1]
 
 ################################################################################
@@ -1182,7 +1184,8 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             if provides is not None:
                 for virtual_pkg in provides.split(","):
                     virtual_pkg = virtual_pkg.strip()
-                    if virtual_pkg == package: continue
+                    if virtual_pkg == package:
+                        continue
                     if virtual_pkg not in virtual_packages:
                         virtual_packages[virtual_pkg] = 0
                     if package not in removals:
@@ -1194,7 +1197,8 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 
         # Check binary dependencies (Depends)
         for package in deps:
-            if package in removals: continue
+            if package in removals:
+                continue
             try:
                 parsed_dep = apt_pkg.parse_depends(deps[package])
             except ValueError as e:
@@ -1265,7 +1269,8 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
     query = session.query('source', 'build_dep').from_statement(statement). \
         params(params)
     for source, build_dep in query:
-        if source in removals: continue
+        if source in removals:
+            continue
         parsed_dep = []
         if build_dep is not None:
             # Remove [arch] information since we want to see breakage on all arches

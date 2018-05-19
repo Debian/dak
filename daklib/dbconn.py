@@ -1199,9 +1199,12 @@ def get_new_comments(policy_queue, package=None, version=None, comment_id=None, 
     """
 
     q = session.query(NewComment).filter_by(policy_queue=policy_queue)
-    if package is not None: q = q.filter_by(package=package)
-    if version is not None: q = q.filter_by(version=version)
-    if comment_id is not None: q = q.filter_by(comment_id=comment_id)
+    if package is not None:
+        q = q.filter_by(package=package)
+    if version is not None:
+        q = q.filter_by(version=version)
+    if comment_id is not None:
+        q = q.filter_by(comment_id=comment_id)
 
     return q.all()
 
@@ -1257,15 +1260,18 @@ def get_override(package, suite=None, component=None, overridetype=None, session
     q = q.filter_by(package=package)
 
     if suite is not None:
-        if not isinstance(suite, list): suite = [suite]
+        if not isinstance(suite, list):
+            suite = [suite]
         q = q.join(Suite).filter(Suite.suite_name.in_(suite))
 
     if component is not None:
-        if not isinstance(component, list): component = [component]
+        if not isinstance(component, list):
+            component = [component]
         q = q.join(Component).filter(Component.component_name.in_(component))
 
     if overridetype is not None:
-        if not isinstance(overridetype, list): overridetype = [overridetype]
+        if not isinstance(overridetype, list):
+            overridetype = [overridetype]
         q = q.join(OverrideType).filter(OverrideType.overridetype.in_(overridetype))
 
     return q.all()
