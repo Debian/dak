@@ -122,7 +122,7 @@ def external_overrides_copy(from_suite_name, to_suite_name, force=False):
     session.execute("""
     INSERT INTO external_overrides (suite, component, package, key, value)
       SELECT :to_suite, component, package, key, value FROM external_overrides WHERE suite = :from_suite
-    """, { 'from_suite': from_suite.suite_id, 'to_suite': to_suite.suite_id })
+    """, {'from_suite': from_suite.suite_id, 'to_suite': to_suite.suite_id})
 
     session.commit()
 

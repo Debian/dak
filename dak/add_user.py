@@ -56,7 +56,7 @@ def main():
                  ('u',"user","Add-User::Options::User", "HasArg"),
                  ]
 
-    for i in [ "help" ]:
+    for i in ["help"]:
         key = "Add-User::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

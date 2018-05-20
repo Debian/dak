@@ -86,7 +86,7 @@ def check_valid(overrides, session):
 def prod_maintainer(notes, upload):
     cnf = Config()
     changes = upload.changes
-    whitelists = [ upload.target_suite.mail_whitelist ]
+    whitelists = [upload.target_suite.mail_whitelist]
 
     # Here we prepare an editor and get them ready to prod...
     (fd, temp_filename) = utils.temp_filename()
@@ -223,7 +223,7 @@ class Upload(object):
         # If 'dak process-unchecked' crashed out in the right place, architecture may still be a string.
         if "architecture" not in self.pkg.changes or not \
            isinstance(self.pkg.changes["architecture"], dict):
-            self.pkg.changes["architecture"] = { "Unknown" : "" }
+            self.pkg.changes["architecture"] = {"Unknown": ""}
 
         # and maintainer2047 may not exist.
         if "maintainer2047" not in self.pkg.changes:

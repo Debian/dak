@@ -79,9 +79,9 @@ def main(argv=None):
     sources = suite.sources
 
     files = []
-    files.extend([ b.poolfile for b in binaries ])
+    files.extend([b.poolfile for b in binaries])
     for s in sources:
-        files.extend([ ds.poolfile for ds in s.srcfiles ])
+        files.extend([ds.poolfile for ds in s.srcfiles])
 
     with FilesystemTransaction() as fs:
         for f in files:

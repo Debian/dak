@@ -67,7 +67,7 @@ def _tupletable():
         for row in table:
             if '<cpu>' in row[0] or '<cpu>' in row[1]:
                 for cpu in _cputable():
-                    replaced_row = [ column.replace('<cpu>', cpu[0]) for column in row ]
+                    replaced_row = [column.replace('<cpu>', cpu[0]) for column in row]
                     add_tuple(replaced_row[0], replaced_row[1])
             else:
                 add_tuple(row[0], row[1])

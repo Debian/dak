@@ -125,7 +125,6 @@ class ArchiveTestCase(DBDakTestCase):
             self.assertTrue(attempt.new)
             self.assertEquals(attempt.reject_reasons, [])
 
-
     def classes_to_clean(self):
         if 'suite' in self.__dict__:
             self.clean_suites()

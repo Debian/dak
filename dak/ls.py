@@ -78,9 +78,9 @@ def main():
                  ('s', "suite", "Ls::Options::Suite", "HasArg"),
                  ('S', "source-and-binary", "Ls::Options::Source-And-Binary"),
                  ('h', "help", "Ls::Options::Help")]
-    for i in [ "architecture", "binarytype", "component", "format",
+    for i in ["architecture", "binarytype", "component", "format",
                "greaterorequal", "greaterthan", "regex", "suite",
-               "source-and-binary", "help" ]:
+               "source-and-binary", "help"]:
         key = "Ls::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

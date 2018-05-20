@@ -201,26 +201,26 @@ def foldable_output(title, elementnameprefix, content, norow=False):
 ################################################################################
 
 
-def get_depends_parts(depend) :
+def get_depends_parts(depend):
     v_match = re_version.match(depend)
     if v_match:
-        d_parts = { 'name' : v_match.group(1), 'version' : v_match.group(2) }
-    else :
-        d_parts = { 'name' : depend , 'version' : '' }
+        d_parts = {'name': v_match.group(1), 'version': v_match.group(2)}
+    else:
+        d_parts = {'name': depend, 'version': ''}
     return d_parts
 
 
-def get_or_list(depend) :
+def get_or_list(depend):
     or_list = depend.split("|")
     return or_list
 
 
-def get_comma_list(depend) :
+def get_comma_list(depend):
     dep_list = depend.split(",")
     return dep_list
 
 
-def split_depends(d_str) :
+def split_depends(d_str):
     # creates a list of lists of dictionaries of depends (package,version relation)
 
     d_str = re_spacestrip.sub('',d_str)
@@ -284,13 +284,13 @@ def read_control(filename):
 
         c_match = re_contrib.search(section_str)
         nf_match = re_nonfree.search(section_str)
-        if c_match :
+        if c_match:
             # contrib colour
             section = colour_output(section_str, 'contrib')
-        elif nf_match :
+        elif nf_match:
             # non-free colour
             section = colour_output(section_str, 'nonfree')
-        else :
+        else:
             # main
             section = colour_output(section_str, 'main')
     if "Architecture" in control:
@@ -388,7 +388,7 @@ def create_depends_string(suite, depends_tree, session=None):
             result += ", "
         or_count = 1
         for d in l:
-            if (or_count >= 2 ):
+            if (or_count >= 2):
                 result += " | "
             # doesn't do version lookup yet.
 
@@ -396,18 +396,18 @@ def create_depends_string(suite, depends_tree, session=None):
                 session=session)
             if component is not None:
                 adepends = d['name']
-                if d['version'] != '' :
+                if d['version'] != '':
                     adepends += " (%s)" % (d['version'])
 
                 if component == "contrib":
                     result += colour_output(adepends, "contrib")
                 elif component == "non-free":
                     result += colour_output(adepends, "nonfree")
-                else :
+                else:
                     result += colour_output(adepends, "main")
             else:
                 adepends = d['name']
-                if d['version'] != '' :
+                if d['version'] != '':
                     adepends += " (%s)" % (d['version'])
                 if not provides:
                     provides = get_provides(suite)
@@ -447,7 +447,7 @@ def output_deb_info(suite, filename, packagename, session=None):
     to_print = ""
     if packagename not in package_relations:
         package_relations[packagename] = {}
-    for key in control_keys :
+    for key in control_keys:
         if key == 'Pre-Depends':
             field_value = create_depends_string(suite, predepends, session)
             package_relations[packagename][key] = field_value
@@ -530,7 +530,7 @@ def get_copyright(deb_filename):
 
     res = ""
     if copyrightmd5 in printed.copyrights and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, os.path.basename(deb_filename)):
-        res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
+        res += formatted_text("NOTE: Copyright is the same as %s.\n\n" % \
                                (printed.copyrights[copyrightmd5]))
     else:
         printed.copyrights[copyrightmd5] = "%s (%s)" % (package, os.path.basename(deb_filename))
@@ -652,7 +652,7 @@ def main():
     Arguments = [('h',"help","Examine-Package::Options::Help"),
                  ('H',"html-output","Examine-Package::Options::Html-Output"),
                 ]
-    for i in [ "Help", "Html-Output", "partial-html" ]:
+    for i in ["Help", "Html-Output", "partial-html"]:
         key = "Examine-Package::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

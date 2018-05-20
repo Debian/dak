@@ -50,7 +50,7 @@ def export_external_signature_requests(session, path):
                 'architecture': row[2],
                 'version':      row[3],
             }
-            for row in requests ],
+            for row in requests],
     }
 
     with open(path, 'w') as fh:

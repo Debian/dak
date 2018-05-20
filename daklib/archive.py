@@ -238,7 +238,7 @@ class ArchiveTransaction(object):
         # Try to copy file from one extra archive
         if extra_archives is None:
             extra_archives = []
-        db_file = session.query(ArchiveFile).filter_by(file=source.poolfile).filter(ArchiveFile.archive_id.in_([ a.archive_id for a in extra_archives])).first()
+        db_file = session.query(ArchiveFile).filter_by(file=source.poolfile).filter(ArchiveFile.archive_id.in_([a.archive_id for a in extra_archives])).first()
         if db_file is None:
             raise ArchiveException('{0}: Built-Using refers to package {1} (= {2}) not in target archive {3}.'.format(filename, source.source, source.version, archive.archive_name))
 
@@ -799,7 +799,7 @@ class ArchiveUpload(object):
         # Check binaries listed in the source package's Package-List field:
         if source is not None and not source.package_list.fallback:
             packages = source.package_list.packages_for_suite(suite)
-            binaries = [ entry for entry in packages ]
+            binaries = [entry for entry in packages]
             for b in binaries:
                 override = self._binary_override(overridesuite, b)
                 if override is None:

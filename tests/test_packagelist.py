@@ -28,7 +28,7 @@ class FakeArchitecture(object):
 
 class FakeSuite(object):
     def __init__(self, *architectures):
-        self.architectures = [ FakeArchitecture(a) for a in architectures ]
+        self.architectures = [FakeArchitecture(a) for a in architectures]
 
 source_all = {
     'Package-List': '\n libdune-common-doc deb doc optional arch=all\n',

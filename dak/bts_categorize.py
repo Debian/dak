@@ -78,12 +78,12 @@ class BugClassifier(object):
     >>> BugClassifier.dak_re.match( "[dak] Packages.diff/Index broken" ) != None
     True
     """
-    rm_re = re.compile( "^RM" )
-    dak_re = re.compile( "^\[dak\]" )
-    arch_re = re.compile( "^\[Architectures\]" )
-    override_re = re.compile( "^override" )
+    rm_re = re.compile("^RM")
+    dak_re = re.compile("^\[dak\]")
+    arch_re = re.compile("^\[Architectures\]")
+    override_re = re.compile("^override")
 
-    classifiers = { rm_re: 'remove',
+    classifiers = {rm_re: 'remove',
                     dak_re: 'dak',
                     arch_re: 'archs',
                     override_re: 'override'}
@@ -99,8 +99,8 @@ class BugClassifier(object):
         for tags in tagged_bugs.keys():
             tagged_bugs_ftp += tagged_bugs[tags]
 
-        return [ bug for bug in bts.get_status( bts.get_bugs("package", "ftp.debian.org" ) ) \
-                     if bug.pending=='pending' and bug.bug_num not in tagged_bugs_ftp ]
+        return [bug for bug in bts.get_status(bts.get_bugs("package", "ftp.debian.org")) \
+                     if bug.pending=='pending' and bug.bug_num not in tagged_bugs_ftp]
 
     def classify_bug(self, bug):
         """
@@ -140,7 +140,7 @@ class BugClassifier(object):
 def send_email(commands, simulate=False):
     global Cnf
 
-    Subst = {'__COMMANDS__' : commands,
+    Subst = {'__COMMANDS__': commands,
              "__DAK_ADDRESS__": Cnf["Dinstall::MyAdminAddress"]}
 
     bts_mail_message = utils.TemplateSubst(
@@ -149,7 +149,7 @@ def send_email(commands, simulate=False):
     if simulate:
         print bts_mail_message
     else:
-        utils.send_mail( bts_mail_message )
+        utils.send_mail(bts_mail_message)
 
 
 def main():
@@ -170,7 +170,7 @@ def main():
 
     if Options["Help"]:
         usage()
-        sys.exit( 0 )
+        sys.exit(0)
 
     if Options["Quiet"]:
         level=logging.ERROR
@@ -181,9 +181,9 @@ def main():
     else:
         level=logging.INFO
 
-    logging.basicConfig( level=level,
+    logging.basicConfig(level=level,
                          format='%(asctime)s %(levelname)s %(message)s',
-                         stream=sys.stderr )
+                         stream=sys.stderr)
 
     body = BugClassifier().email_text()
 
@@ -191,7 +191,7 @@ def main():
         send_email(body, Options["Simulate"])
 
     else:
-        log.info( "nothing to do" )
+        log.info("nothing to do")
 
 
 if __name__ == '__main__':

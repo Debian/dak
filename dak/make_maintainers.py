@@ -73,7 +73,7 @@ def main():
                  ('a',"archive","Make-Maintainers::Options::Archive",'HasArg'),
                  ('s',"source","Make-Maintainers::Options::Source"),
                  ('p',"print","Make-Maintainers::Options::Print")]
-    for i in ["Help", "Source", "Print" ]:
+    for i in ["Help", "Source", "Print"]:
         key = "Make-Maintainers::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

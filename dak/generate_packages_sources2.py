@@ -422,7 +422,7 @@ def main():
     session.execute("LOCK TABLE bin_associations IN SHARE MODE")
 
     for s in suites:
-        component_ids = [ c.component_id for c in s.components ]
+        component_ids = [c.component_id for c in s.components]
         if s.untouchable and not force:
             import daklib.utils
             daklib.utils.fubar("Refusing to touch %s (untouchable and not forced)" % s.suite_name)

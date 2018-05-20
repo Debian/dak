@@ -129,7 +129,7 @@ class CommandFile(object):
         session = DBConn().session()
 
         keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
-        keyring_files = [ k.keyring_name for k in keyrings ]
+        keyring_files = [k.keyring_name for k in keyrings]
 
         signed_file = SignedFile(self.data, keyring_files)
         if not signed_file.valid:
