@@ -102,11 +102,10 @@ WITH
         ) AS source_rank
       WHERE
         -- we only want to retain the newest of each
-        version_rank_any = 1
---        CASE
---          WHEN arch != 'all' AND arch_first != 'all' THEN version_rank_any = 1
---          ELSE version_rank_all = 1
---        END
+        CASE
+          WHEN arch != 'all' AND arch_first != 'all' THEN version_rank_any = 1
+          ELSE version_rank_all = 1
+        END
   ),
   -- Figure out which source we should remove
   -- A binary forces the corresponding source to remain
