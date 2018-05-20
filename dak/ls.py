@@ -80,7 +80,7 @@ def main():
                  ('h', "help", "Ls::Options::Help")]
     for i in ["architecture", "binarytype", "component", "format",
                "greaterorequal", "greaterthan", "regex", "suite",
-               "source-and-binary", "help" ]:
+               "source-and-binary", "help"]:
         key = "Ls::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

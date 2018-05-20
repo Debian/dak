@@ -45,12 +45,12 @@ class Status:
         self.feed_in = PyRSS2Gen.RSS2(
                        title="Packages entering NEW",
                        link="https://ftp-master.debian.org/new.html",
-                       description="Debian packages entering the NEW queue" )
+                       description="Debian packages entering the NEW queue")
 
         self.feed_out = PyRSS2Gen.RSS2(
                        title="Packages leaving NEW",
                        link="https://ftp-master.debian.org/new.html",
-                       description="Debian packages leaving the NEW queue" )
+                       description="Debian packages leaving the NEW queue")
 
         self.queue = {}
 

@@ -257,7 +257,7 @@ select bab1.package, bab1.version as oldver,
     join suite s on bab1.suite = s.id
     where s.suite_name = :suite_name
     group by bab1.package, oldver, bab1.suite, newver"""
-    return session.execute(query, {'suite_name': suite_name })
+    return session.execute(query, {'suite_name': suite_name})
 
 
 def reportNewerAll(suite_name, session):
@@ -360,7 +360,7 @@ SELECT ss.src, ss.source, ss.version,
     WHERE s.suite_name = :suite_name AND bab.id IS NULL
       AND now() - ss.install_date > '1 day'::interval
     ORDER BY install_date"""
-    args = {'suite_name': suite_name }
+    args = {'suite_name': suite_name}
     return session.execute(query, args)
 
 
@@ -375,7 +375,7 @@ SELECT b.package
     WHERE sas.source = :source
     GROUP BY b.package
     ORDER BY b.package"""
-    args = {'source': source }
+    args = {'source': source}
     return session.execute(query, args)
 
 
@@ -391,7 +391,7 @@ SELECT sas.source, MAX(sas.version) AS srcver
     WHERE s.suite_name = :suite_name AND bab.package = :package
         GROUP BY sas.source, bab.package
         ORDER BY sas.source, bab.package"""
-    args = {'suite_name': suite_name, 'package': package }
+    args = {'suite_name': suite_name, 'package': package}
     return session.execute(query, args)
 
 
@@ -525,7 +525,7 @@ def main():
                  ('R',"rdep-check", "Cruft-Report::Options::Rdep-Check"),
                  ('s',"suite","Cruft-Report::Options::Suite","HasArg"),
                  ('w',"wanna-build-dump","Cruft-Report::Options::Wanna-Build-Dump","HasArg")]
-    for i in ["help", "Rdep-Check" ]:
+    for i in ["help", "Rdep-Check"]:
         key = "Cruft-Report::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""
@@ -551,11 +551,11 @@ def main():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu" ]
+        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu"]
     elif Options["Mode"] == "full":
-        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu", "dubious nbs", "bnb", "bms", "anais" ]
+        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu", "dubious nbs", "bnb", "bms", "anais"]
     elif Options["Mode"] == "bdo":
-        checks = ["nbs",  "obsolete source" ]
+        checks = ["nbs",  "obsolete source"]
     else:
         utils.warn("%s is not a recognised mode - only 'full', 'daily' or 'bdo' are understood." % (Options["Mode"]))
         usage(1)
@@ -605,7 +605,7 @@ def main():
                 source_version = Sources.section.find('Version')
                 architecture = Sources.section.find('Architecture')
                 binaries = Sources.section.find('Binary')
-                binaries_list = [i.strip() for i in binaries.split(',') ]
+                binaries_list = [i.strip() for i in binaries.split(',')]
 
                 if "bnb" in checks:
                     # Check for binaries not built on any architecture.
@@ -633,7 +633,7 @@ def main():
     for component in check_components:
         architectures = [a.arch_string for a in get_suite_architectures(suite_name,
                                                                          skipsrc=True, skipall=True,
-                                                                         session=session) ]
+                                                                         session=session)]
         for architecture in architectures:
             if component == 'main/debian-installer' and re.match("kfreebsd", architecture):
                 continue

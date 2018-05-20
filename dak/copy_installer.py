@@ -48,7 +48,7 @@ def main():
             ('d', "destination", "Copy-Installer::Options::Destination", "HasArg"),
             ('n', "no-action",   "Copy-Installer::Options::No-Action"),
             ]
-    for option in ["help", "source", "destination", "no-action" ]:
+    for option in ["help", "source", "destination", "no-action"]:
         key = "Copy-Installer::Options::%s" % option
         if key not in cnf:
             cnf[key] = ""
@@ -60,7 +60,7 @@ def main():
     if len(extra_arguments) != 1:
         usage(1)
 
-    initializer = {"version": extra_arguments[0] }
+    initializer = {"version": extra_arguments[0]}
     if Options["Source"] != "":
         initializer["source"] = Options["Source"]
     if Options["Destination"] != "":

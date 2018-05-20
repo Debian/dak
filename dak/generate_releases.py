@@ -293,7 +293,7 @@ class ReleaseWriter(object):
         subattribs = (('Archive',  'suite_name'),
                        ('Origin',   'origin'),
                        ('Label',    'label'),
-                       ('Version',  'version') )
+                       ('Version',  'version'))
 
         # Boolean stuff. If we find it true in database, write out "yes" into the release file
         boolattrs = (('NotAutomatic',         'notautomatic'),
@@ -331,7 +331,7 @@ class ReleaseWriter(object):
 
         out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
 
-        components = [c.component_name for c in suite.components ]
+        components = [c.component_name for c in suite.components]
 
         out.write("Components: %s\n" % (" ".join(components)))
 

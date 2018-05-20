@@ -96,7 +96,7 @@ def main():
                 ]
 
     for i in ["help", "report-changes", "generate-users",
-            "import-ldap-users", "list-uids", "no-action" ]:
+            "import-ldap-users", "list-uids", "no-action"]:
         key = "Import-Keyring::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

@@ -87,7 +87,7 @@ changes
 --lower-limit
 0
 -E
-""" % (name.upper(), title) ).strip().split("\n")
+""" % (name.upper(), title)).strip().split("\n")
 
     if year_lines:
         rrd_args += ["--x-grid", "MONTH:1:YEAR:1:YEAR:1:31536000:%Y"]
@@ -131,7 +131,7 @@ packages
 --lower-limit
 0
 -E
-""" % (name.upper(), title) ).strip().split("\n")
+""" % (name.upper(), title)).strip().split("\n")
 
     if year_lines:
         rrd_args += ["--x-grid", "MONTH:1:YEAR:1:YEAR:1:31536000:%Y"]
@@ -177,7 +177,7 @@ def main():
                  ('r',"rrd","Graph::Options::Rrd", "HasArg"),
                  ('i',"images","Graph::Options::Images", "HasArg"),
                  ('n',"names","Graph::Options::Names", "HasArg")]
-    for i in ["help" ]:
+    for i in ["help"]:
         key = "Graph::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

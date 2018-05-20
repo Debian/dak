@@ -204,9 +204,9 @@ def foldable_output(title, elementnameprefix, content, norow=False):
 def get_depends_parts(depend) :
     v_match = re_version.match(depend)
     if v_match:
-        d_parts = {'name' : v_match.group(1), 'version' : v_match.group(2) }
+        d_parts = {'name' : v_match.group(1), 'version' : v_match.group(2)}
     else :
-        d_parts = {'name' : depend , 'version' : '' }
+        d_parts = {'name' : depend , 'version' : ''}
     return d_parts
 
 
@@ -388,7 +388,7 @@ def create_depends_string(suite, depends_tree, session=None):
             result += ", "
         or_count = 1
         for d in l:
-            if (or_count >= 2 ):
+            if (or_count >= 2):
                 result += " | "
             # doesn't do version lookup yet.
 
@@ -652,7 +652,7 @@ def main():
     Arguments = [('h',"help","Examine-Package::Options::Help"),
                  ('H',"html-output","Examine-Package::Options::Html-Output"),
                 ]
-    for i in ["Help", "Html-Output", "partial-html" ]:
+    for i in ["Help", "Html-Output", "partial-html"]:
         key = "Examine-Package::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

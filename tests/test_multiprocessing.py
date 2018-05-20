@@ -57,7 +57,7 @@ class DakProcessPoolTestCase(DakTestCase):
                     (PROC_STATUS_SUCCESS,      'blah, 2, 2'),
                     (PROC_STATUS_EXCEPTION,    'Test uncaught exception handling')]
 
-        self.assertEqual(len(p.results), len(expected) )
+        self.assertEqual(len(p.results), len(expected))
 
         for r in range(len(p.results)):
             self.assertEqual(p.results[r], expected[r])

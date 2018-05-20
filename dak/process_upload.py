@@ -332,7 +332,7 @@ def real_reject(directory, upload, reason=None, notify=True):
     fs = upload.transaction.fs
     rejectdir = cnf['Dir::Reject']
 
-    files = [f.filename for f in upload.changes.files.itervalues() ]
+    files = [f.filename for f in upload.changes.files.itervalues()]
     files.append(upload.changes.filename)
 
     for fn in files:
@@ -488,7 +488,7 @@ def process_it(directory, changes, keyrings):
 def process_changes(changes_filenames):
     session = DBConn().session()
     keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
-    keyring_files = [k.keyring_name for k in keyrings ]
+    keyring_files = [k.keyring_name for k in keyrings]
     session.close()
 
     changes = []

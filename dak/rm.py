@@ -143,7 +143,7 @@ def main():
     for i in ['NoArchAllRdeps',
                "architecture", "binary", "binary-only", "carbon-copy", "component",
                "done", "help", "no-action", "partial", "rdep-check", "reason",
-               "source-only", "Do-Close" ]:
+               "source-only", "Do-Close"]:
         key = "Rm::Options::%s" % (i)
         if key not in cnf:
             cnf[key] = ""
@@ -189,7 +189,7 @@ def main():
         field = "b.package"
     else:
         field = "s.source"
-    con_packages = "AND %s IN (%s)" % (field, ", ".join([repr(i) for i in arguments ]))
+    con_packages = "AND %s IN (%s)" % (field, ", ".join([repr(i) for i in arguments]))
 
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options)

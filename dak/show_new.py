@@ -178,7 +178,7 @@ def do_pkg(upload_id):
     with open(htmlfile, 'w') as outfile, \
             policy.UploadCopy(upload, group=group) as upload_copy:
         handler = policy.PolicyQueueUploadHandler(upload, session)
-        missing = [(o['type'], o['package']) for o in handler.missing_overrides() ]
+        missing = [(o['type'], o['package']) for o in handler.missing_overrides()]
         distribution = changes.distribution
 
         print >>outfile, html_header(changes.source, missing)
@@ -251,7 +251,7 @@ def main():
     pool = DakProcessPool(processes=5)
 
     session = DBConn().session()
-    upload_ids = [u.id for u in init(session) ]
+    upload_ids = [u.id for u in init(session)]
     session.close()
 
     for upload_id in upload_ids:

@@ -164,8 +164,8 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
     else:
         suite_version_list = get_suite_version_by_package(package, architecture, session)
 
-    must_be_newer_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan") ]
-    must_be_older_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan") ]
+    must_be_newer_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan")]
+    must_be_older_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan")]
 
     # Must be newer than an existing version in target_suite
     if target_suite not in must_be_newer_than:
@@ -407,7 +407,7 @@ def main():
                  ('r',"remove", "Control-Suite::Options::Remove", "HasArg"),
                  ('s',"set", "Control-Suite::Options::Set", "HasArg")]
 
-    for i in ["add", "britney", "help", "list", "remove", "set", "version" ]:
+    for i in ["add", "britney", "help", "list", "remove", "set", "version"]:
         key = "Control-Suite::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

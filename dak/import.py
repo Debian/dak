@@ -222,7 +222,7 @@ def main(argv=None):
         suite = session.query(Suite).filter_by(suite_name=suite_name).one()
         component = session.query(Component).filter_by(component_name=component_name).one()
         keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
-        keyring_files = [k.keyring_name for k in keyrings ]
+        keyring_files = [k.keyring_name for k in keyrings]
 
         dump = options.find('Dump') or None
         if options.find_b('Export'):

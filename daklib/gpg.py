@@ -155,8 +155,8 @@ class SignedFile(object):
             old = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, old | os.O_NONBLOCK)
 
-        read_lines = dict((fd, []) for fd in read )
-        write_pos = dict((fd, 0) for fd in write )
+        read_lines = dict((fd, []) for fd in read)
+        write_pos = dict((fd, 0) for fd in write)
 
         read_set = list(read)
         write_set = write.keys()
@@ -176,7 +176,7 @@ class SignedFile(object):
                     bytes_written = os.write(fd, data)
                     write_pos[fd] += bytes_written
 
-        return dict((fd, "".join(read_lines[fd])) for fd in read_lines.keys() )
+        return dict((fd, "".join(read_lines[fd])) for fd in read_lines.keys())
 
     def _parse_timestamp(self, timestamp, datestring=None):
         """parse timestamp in GnuPG's format

@@ -799,7 +799,7 @@ class ArchiveUpload(object):
         # Check binaries listed in the source package's Package-List field:
         if source is not None and not source.package_list.fallback:
             packages = source.package_list.packages_for_suite(suite)
-            binaries = [entry for entry in packages ]
+            binaries = [entry for entry in packages]
             for b in binaries:
                 override = self._binary_override(overridesuite, b)
                 if override is None:

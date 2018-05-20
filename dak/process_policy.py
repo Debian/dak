@@ -64,7 +64,7 @@ Logger = None
 def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
     session = transaction.session
     actions = []
-    for comm in [x for x in os.listdir(dir) if x.startswith(opref) ]:
+    for comm in [x for x in os.listdir(dir) if x.startswith(opref)]:
         lines = open(os.path.join(dir, comm)).readlines()
         if len(lines) == 0 or lines[0] != line + "\n":
             continue
@@ -242,7 +242,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
     if copydir is not None:
         mode = upload.target_suite.archive.mode
         if upload.source is not None:
-            for f in [df.poolfile for df in upload.source.srcfiles ]:
+            for f in [df.poolfile for df in upload.source.srcfiles]:
                 dst = os.path.join(copydir, f.basename)
                 if not os.path.exists(dst):
                     fs.copy(f.fullpath, dst, mode=mode)
@@ -317,7 +317,7 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, ma
     files = [af.path for af in session.query(ArchiveFile) \
                   .filter_by(archive=upload.policy_queue.suite.archive) \
                   .join(ArchiveFile.file) \
-                  .filter(PoolFile.file_id.in_([f.file_id for f in poolfiles ])) ]
+                  .filter(PoolFile.file_id.in_([f.file_id for f in poolfiles]))]
     for byhand in upload.byhand:
         path = os.path.join(queuedir, byhand.filename)
         if os.path.exists(path):
@@ -404,8 +404,8 @@ def get_processed_upload(upload):
     pu.changed_by = upload.changes.changedby
     pu.fingerprint = upload.changes.fingerprint
 
-    pu.suites = [upload.target_suite ]
-    pu.from_policy_suites = [upload.target_suite ]
+    pu.suites = [upload.target_suite]
+    pu.from_policy_suites = [upload.target_suite]
 
     changes_path = os.path.join(upload.policy_queue.path, upload.changes.changesname)
     pu.changes = open(changes_path, 'r').read()

@@ -1045,7 +1045,7 @@ def forget_signature(args):
         data = fh.read()
 
     session = DBConn().session()
-    keyrings = [k.keyring_name for k in session.query(Keyring).filter_by(active=True).order_by(Keyring.priority) ]
+    keyrings = [k.keyring_name for k in session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)]
     signed_file = daklib.gpg.SignedFile(data, keyrings)
     history = SignatureHistory.from_signed_file(signed_file).query(session)
     if history is not None:
@@ -1066,7 +1066,7 @@ def main():
     Cnf = utils.get_conf()
     arguments = [('h', "help", "Admin::Options::Help"),
                  ('n', "dry-run", "Admin::Options::Dry-Run")]
-    for i in ["help", "dry-run" ]:
+    for i in ["help", "dry-run"]:
         key = "Admin::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

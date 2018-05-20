@@ -207,7 +207,7 @@ def check_override():
     """
     session = DBConn().session()
 
-    for suite_name in ["stable", "unstable" ]:
+    for suite_name in ["stable", "unstable"]:
         print suite_name
         print "-" * len(suite_name)
         print
@@ -442,10 +442,10 @@ def check_indices_files_exist():
     """
     Ensure files mentioned in Packages & Sources exist
     """
-    for suite in ["stable", "testing", "unstable" ]:
+    for suite in ["stable", "testing", "unstable"]:
         for component in get_component_names():
             architectures = get_suite_architectures(suite)
-            for arch in [i.arch_string.lower() for i in architectures ]:
+            for arch in [i.arch_string.lower() for i in architectures]:
                 if arch == "source":
                     validate_sources(suite, component)
                 elif arch == "all":
@@ -481,7 +481,7 @@ def chk_bd_process_dir(unused, dirname, filenames):
             continue
         filename = os.path.abspath(dirname+'/'+name)
         dsc = utils.parse_changes(filename, dsc_file=1)
-        for field_name in ["build-depends", "build-depends-indep" ]:
+        for field_name in ["build-depends", "build-depends-indep"]:
             field = dsc.get(field_name)
             if field:
                 try:
@@ -548,7 +548,7 @@ def main():
     cnf = Config()
 
     Arguments = [('h',"help","Check-Archive::Options::Help")]
-    for i in ["help" ]:
+    for i in ["help"]:
         key = "Check-Archive::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

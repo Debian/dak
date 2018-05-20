@@ -315,7 +315,7 @@ def main():
                  ('t', "type", "Control-Overrides::Options::Type", "HasArg")]
 
     # Default arguments
-    for i in ["add", "help", "list", "quiet", "set", "change", "no-action" ]:
+    for i in ["add", "help", "list", "quiet", "set", "change", "no-action"]:
         key = "Control-Overrides::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""
@@ -334,7 +334,7 @@ def main():
     session = DBConn().session()
 
     mode = None
-    for i in ["add", "list", "set", "change" ]:
+    for i in ["add", "list", "set", "change"]:
         if cnf["Control-Overrides::Options::%s" % (i)]:
             if mode:
                 utils.fubar("Can not perform more than one action at once.")

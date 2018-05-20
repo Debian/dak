@@ -994,7 +994,7 @@ class VersionCheck(Check):
 
         vc_newer = session.query(dbconn.VersionCheck).filter_by(suite=suite) \
             .filter(dbconn.VersionCheck.check.in_(['MustBeNewerThan', 'Enhances']))
-        must_be_newer_than = [vc.reference for vc in vc_newer ]
+        must_be_newer_than = [vc.reference for vc in vc_newer]
         # Must be newer than old versions in `suite`
         must_be_newer_than.append(suite)
 
@@ -1002,7 +1002,7 @@ class VersionCheck(Check):
             self._version_checks(upload, suite, s, lambda result: result > 0, 'higher')
 
         vc_older = session.query(dbconn.VersionCheck).filter_by(suite=suite, check='MustBeOlderThan')
-        must_be_older_than = [vc.reference for vc in vc_older ]
+        must_be_older_than = [vc.reference for vc in vc_older]
 
         for s in must_be_older_than:
             self._version_checks(upload, suite, s, lambda result: result < 0, 'lower')

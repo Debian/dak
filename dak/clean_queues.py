@@ -207,7 +207,7 @@ def main():
 
     cnf = Config()
 
-    for i in ["Help", "Incoming", "No-Action", "Verbose" ]:
+    for i in ["Help", "Incoming", "No-Action", "Verbose"]:
         key = "Clean-Queues::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

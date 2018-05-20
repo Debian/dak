@@ -124,7 +124,7 @@ SELECT b.package
   JOIN suite ON ba.suite = suite.id
   JOIN files_archive_map af ON b.file = af.file_id AND suite.archive_id = af.archive_id
  WHERE b.type = :otype AND ba.suite IN (%s) AND af.component_id = :component_id
-""" % (",".join([str(i) for i in affected_suites ])), {'otype': otype, 'component_id': component_id})
+""" % (",".join([str(i) for i in affected_suites])), {'otype': otype, 'component_id': component_id})
         for i in q.fetchall():
             packages[i[0]] = 0
 
@@ -326,7 +326,7 @@ def main():
 
     Arguments = [('h',"help","Check-Overrides::Options::Help"),
                  ('n',"no-action", "Check-Overrides::Options::No-Action")]
-    for i in ["help", "no-action" ]:
+    for i in ["help", "no-action"]:
         key = "Check-Overrides::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""
