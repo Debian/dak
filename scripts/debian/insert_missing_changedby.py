@@ -74,7 +74,7 @@ def get_or_set_maintainer_id(maintainer):
     cursor.execute("SELECT id FROM maintainer WHERE name=%s", (maintainer, ))
     row = cursor.fetchone()
     if not row:
-        cursor.execute("INSERT INTO maintainer (name) VALUES (%s)" , (maintainer, ))
+        cursor.execute("INSERT INTO maintainer (name) VALUES (%s)", (maintainer, ))
         cursor.execute("SELECT id FROM maintainer WHERE name=%s", (maintainer, ))
         row = cursor.fetchone()
     maintainer_id = row[0]

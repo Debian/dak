@@ -140,7 +140,7 @@ class BugClassifier(object):
 def send_email(commands, simulate=False):
     global Cnf
 
-    Subst = {'__COMMANDS__' : commands,
+    Subst = {'__COMMANDS__': commands,
              "__DAK_ADDRESS__": Cnf["Dinstall::MyAdminAddress"]}
 
     bts_mail_message = utils.TemplateSubst(
