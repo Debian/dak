@@ -11,7 +11,7 @@ fetchqueuedpackages    upload-master              fetchqueuedpackages        fal
 LOCK                   BUILDD                     300                        exclusive false
 do_unchecked           none                       unchecked                  false     false
 sync_debbugs           none                       none                       false     false
-make_buildd_dir        none                       none                       false     false
+make_buildd_dir        debian                     none                       false     false
 trigger_wb             none                       none                       false     false
 UNLOCK                 BUILDD                     none                       false     false
 ddaccess               none                       none                       false     true
