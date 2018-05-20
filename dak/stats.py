@@ -174,7 +174,7 @@ def number_of_packages():
                                 FROM bin_associations
                            LEFT JOIN binaries ON bin = binaries.id
                             GROUP BY suite, architecture""").fetchall():
-        d[ i[0] ][ i[1] ] = i[2]
+        d[i[0] ][i[1] ] = i[2]
     # Get the raw data for source
     arch_id = arch_ids["source"]
     for i in session.execute('SELECT suite, COUNT(suite) FROM src_associations GROUP BY suite').fetchall():
@@ -191,7 +191,7 @@ def number_of_packages():
         for arch in get_suite_architectures(suite):
             suite_arches[suite_id][arch.arch_string] = ""
         suite_id_list.append(suite_id)
-    output_list = [ output_format(i) for i in suite_list ]
+    output_list = [output_format(i) for i in suite_list ]
     longest_suite = longest(output_list)
     arch_list = arches.values()
     arch_list.sort()
@@ -397,7 +397,7 @@ def main():
 
     Cnf = utils.get_conf()
     Arguments = [('h',"help","Stats::Options::Help")]
-    for i in [ "help" ]:
+    for i in ["help" ]:
         key = "Stats::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

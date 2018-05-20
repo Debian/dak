@@ -104,7 +104,7 @@ def do_list(output_file, suite, component, otype, session):
 def main():
     cnf = Config()
     Arguments = [('h',"help","Make-Overrides::Options::Help")]
-    for i in [ "help" ]:
+    for i in ["help" ]:
         key = "Make-Overrides::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

@@ -24,7 +24,7 @@ def binary_metadata_keys():
     q = s.query(MetadataKey)
     ret = []
     for p in q:
-        ret.append( p.key)
+        ret.append(p.key)
 
     s.close()
 

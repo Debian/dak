@@ -250,7 +250,7 @@ class PolicyQueueUploadHandler(object):
 
         if hints is None:
             hints = []
-        hints_map = dict([ ((o['type'], o['package']), o) for o in hints ])
+        hints_map = dict([((o['type'], o['package']), o) for o in hints ])
 
         def check_override(name, type, priority, section, included):
             component = 'main'
@@ -290,7 +290,7 @@ class PolicyQueueUploadHandler(object):
             # see daklib.archive.source_component_from_package_list
             # which we cannot use here as we might not have a Package-List
             # field for old packages
-            mapped_components = [ get_mapped_component_name(c) for c in components ]
+            mapped_components = [get_mapped_component_name(c) for c in components ]
             query = self.session.query(Component).order_by(Component.ordering) \
                     .filter(Component.component_name.in_(mapped_components))
             source_component = query.first().component_name

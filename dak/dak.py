@@ -187,7 +187,7 @@ def main():
         logger = None
 
     functionality = init()
-    modules = [ command for (command, _) in functionality ]
+    modules = [command for (command, _) in functionality ]
 
     if len(sys.argv) == 0:
         daklib.utils.fubar("err, argc == 0? how is that possible?")

@@ -368,7 +368,7 @@ def main():
     os.umask(0o002)
 
     Cnf = utils.get_conf()
-    Arguments = [ ('h', "help", "Generate-Index-Diffs::Options::Help"),
+    Arguments = [('h', "help", "Generate-Index-Diffs::Options::Help"),
                   ('a', 'archive', 'Generate-Index-Diffs::Options::Archive', 'hasArg'),
                   ('c', None, "Generate-Index-Diffs::Options::CanonicalPath", "hasArg"),
                   ('p', "patchname", "Generate-Index-Diffs::Options::PatchName", "hasArg"),
@@ -389,7 +389,7 @@ def main():
 
     if "PatchName" not in Options:
         format = "%Y-%m-%d-%H%M.%S"
-        Options["PatchName"] = time.strftime( format )
+        Options["PatchName"] = time.strftime(format )
 
     session = DBConn().session()
 
@@ -398,7 +398,7 @@ def main():
         if Options.get('Archive'):
             archives = [a.strip() for a in Options['Archive'].split(',')]
             query = query.join(Suite.archive).filter(Archive.archive_name.in_(archives))
-        suites = [ s.suite_name for s in query ]
+        suites = [s.suite_name for s in query ]
 
     for suitename in suites:
         print "Processing: " + suitename
@@ -413,7 +413,7 @@ def main():
             continue
 
         architectures = get_suite_architectures(suite, skipall=True, session=session)
-        components = [ c.component_name for c in session.query(Component.component_name) ]
+        components = [c.component_name for c in session.query(Component.component_name) ]
 
         suite_suffix = Cnf.find("Dinstall::SuiteSuffix")
         if components and suite_suffix:

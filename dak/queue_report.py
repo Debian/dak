@@ -454,7 +454,7 @@ def process_queue(queue, log, rrd_dir):
         if len(source) > max_source_len:
             max_source_len = len(source)
         binary_list = i[1]["list"][0].binaries
-        binary = ', '.join([ b.package for b in binary_list ])
+        binary = ', '.join([b.package for b in binary_list ])
         arches = set()
         versions = set()
         for j in i[1]["list"]:
@@ -562,7 +562,7 @@ def process_queue(queue, log, rrd_dir):
             log.write("Binary: " + binary + "\n")
             log.write("Version: " + version_list + "\n")
             log.write("Architectures: ")
-            log.write( (", ".join(arch_list.split(" "))) + "\n")
+            log.write((", ".join(arch_list.split(" "))) + "\n")
             log.write("Age: " + time_pp(last_modified) + "\n")
             log.write("Last-Modified: " + str(int(time.time()) - int(last_modified)) + "\n")
             log.write("Queue: " + type + "\n")
@@ -638,7 +638,7 @@ def main():
                  ('a',"age","Queue-Report::Options::Age", "HasArg"),
                  ('r',"rrd","Queue-Report::Options::Rrd", "HasArg"),
                  ('d',"directories","Queue-Report::Options::Directories", "HasArg")]
-    for i in [ "help" ]:
+    for i in ["help" ]:
         key = "Queue-Report::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""
@@ -660,7 +660,7 @@ def main():
     elif "Queue-Report::Directories" in Cnf:
         queue_names = Cnf.value_list("Queue-Report::Directories")
     else:
-        queue_names = [ "byhand", "new" ]
+        queue_names = ["byhand", "new" ]
 
     if "Queue-Report::Options::Rrd" in Cnf:
         rrd_dir = Cnf["Queue-Report::Options::Rrd"]

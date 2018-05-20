@@ -80,7 +80,7 @@ class Logger(object):
         timestamp = time.strftime("%Y%m%d%H%M%S")
         details.insert(0, timestamp)
         # Force the contents of the list to be string.join-able
-        details = [ str(i) for i in details ]
+        details = [str(i) for i in details ]
         fcntl.lockf(self.logfile, fcntl.LOCK_EX)
         # Write out the log in TSV
         self.logfile.write("|".join(details)+'\n')

@@ -282,7 +282,7 @@ def clean(now_date, archives, max_delete, session):
         Logger.log(["Limiting removals to %d" % max_delete])
 
     if archives is not None:
-        archive_ids = [ a.archive_id for a in archives ]
+        archive_ids = [a.archive_id for a in archives ]
         old_files = old_files.filter(ArchiveFile.archive_id.in_(archive_ids))
 
     for af in old_files:

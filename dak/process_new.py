@@ -212,7 +212,7 @@ def edit_new(overrides, upload, session):
     temp_file.close()
     os.unlink(temp_filename)
 
-    overrides_map = dict([ ((o['type'], o['package']), o) for o in overrides ])
+    overrides_map = dict([((o['type'], o['package']), o) for o in overrides ])
     new_overrides = []
     # Parse the new data
     for line in lines:
@@ -401,7 +401,7 @@ def check_pkg(upload, upload_copy, session):
 def do_bxa_notification(new, upload, session):
     cnf = Config()
 
-    new = set([ o['package'] for o in new if o['type'] == 'deb' ])
+    new = set([o['package'] for o in new if o['type'] == 'deb' ])
     if len(new) == 0:
         return
 
@@ -581,7 +581,7 @@ def do_new(upload, upload_copy, handler, session):
                 answer = m.group(1)
             answer = answer[:1].upper()
 
-        if answer in ( 'A', 'E', 'M', 'O', 'R' ) and Options["Trainee"]:
+        if answer in ('A', 'E', 'M', 'O', 'R' ) and Options["Trainee"]:
             utils.warn("Trainees can't do that")
             continue
 
@@ -734,7 +734,7 @@ def do_pkg(upload, session):
 
 
 def show_new_comments(uploads, session):
-    sources = [ upload.changes.source for upload in uploads ]
+    sources = [upload.changes.source for upload in uploads ]
     if len(sources) == 0:
         return
 

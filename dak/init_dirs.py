@@ -131,11 +131,11 @@ def create_directories():
         if queue.queue_name == 'new':
             do_dir(os.path.join(queue.path, "COMMENTS"), '%s queue comments' % queue.queue_name)
 
-    for config_name in [ "Rm::LogFile",
+    for config_name in ["Rm::LogFile",
                          "Import-Archive::ExportDir" ]:
         process_file(Cnf, config_name)
 
-    for subdir in [ "Clean-Queues", "Clean-Suites" ]:
+    for subdir in ["Clean-Queues", "Clean-Suites" ]:
         process_morguesubdir(subdir)
 
     suite_suffix = "%s" % (Cnf.find("Dinstall::SuiteSuffix"))
@@ -184,7 +184,7 @@ def main():
 
     Cnf = utils.get_conf()
     arguments = [('h', "help", "Init-Dirs::Options::Help")]
-    for i in [ "help" ]:
+    for i in ["help" ]:
         key = "Init-Dirs::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

@@ -62,7 +62,7 @@ def main():
                  ('q', "quiet", "Import-Users-From-Passwd::Options::Quiet"),
                  ('v', "verbose", "Import-Users-From-Passwd::Options::Verbose"),
                  ('h', "help", "Import-Users-From-Passwd::Options::Help")]
-    for i in [ "no-action", "quiet", "verbose", "help" ]:
+    for i in ["no-action", "quiet", "verbose", "help" ]:
         key = "Import-Users-From-Passwd::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""

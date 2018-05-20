@@ -371,7 +371,7 @@ class BinaryContentsScanner(object):
         pool.join()
         remaining = remaining()
         session.close()
-        return { 'processed': processed, 'remaining': remaining }
+        return {'processed': processed, 'remaining': remaining }
 
 
 def binary_scan_helper(binary_id):
@@ -490,7 +490,7 @@ class SourceContentsScanner(object):
         pool.join()
         remaining = remaining()
         session.close()
-        return { 'processed': processed, 'remaining': remaining }
+        return {'processed': processed, 'remaining': remaining }
 
 
 def source_scan_helper(source_id):

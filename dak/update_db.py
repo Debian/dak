@@ -210,7 +210,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
         cnf = Config()
         arguments = [('h', "help", "Update-DB::Options::Help"),
                      ("y", "yes", "Update-DB::Options::Yes")]
-        for i in [ "help" ]:
+        for i in ["help" ]:
             key = "Update-DB::Options::%s" % i
             if key not in cnf:
                 cnf[key] = ""

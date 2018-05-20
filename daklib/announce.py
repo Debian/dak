@@ -94,7 +94,7 @@ def _subst_for_upload(upload):
 
 
 def _whitelists(upload):
-    return [ s.mail_whitelist for s in upload.suites ]
+    return [s.mail_whitelist for s in upload.suites ]
 
 
 def announce_reject(upload, reason, rejected_by=None):

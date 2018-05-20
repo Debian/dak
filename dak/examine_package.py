@@ -204,9 +204,9 @@ def foldable_output(title, elementnameprefix, content, norow=False):
 def get_depends_parts(depend) :
     v_match = re_version.match(depend)
     if v_match:
-        d_parts = { 'name' : v_match.group(1), 'version' : v_match.group(2) }
+        d_parts = {'name' : v_match.group(1), 'version' : v_match.group(2) }
     else :
-        d_parts = { 'name' : depend , 'version' : '' }
+        d_parts = {'name' : depend , 'version' : '' }
     return d_parts
 
 
@@ -530,7 +530,7 @@ def get_copyright(deb_filename):
 
     res = ""
     if copyrightmd5 in printed.copyrights and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, os.path.basename(deb_filename)):
-        res += formatted_text( "NOTE: Copyright is the same as %s.\n\n" % \
+        res += formatted_text("NOTE: Copyright is the same as %s.\n\n" % \
                                (printed.copyrights[copyrightmd5]))
     else:
         printed.copyrights[copyrightmd5] = "%s (%s)" % (package, os.path.basename(deb_filename))
@@ -652,7 +652,7 @@ def main():
     Arguments = [('h',"help","Examine-Package::Options::Help"),
                  ('H',"html-output","Examine-Package::Options::Html-Output"),
                 ]
-    for i in [ "Help", "Html-Output", "partial-html" ]:
+    for i in ["Help", "Html-Output", "partial-html" ]:
         key = "Examine-Package::Options::%s" % i
         if key not in Cnf:
             Cnf[key] = ""

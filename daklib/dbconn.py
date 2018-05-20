@@ -677,7 +677,7 @@ def get_component_names(session=None):
     @return: list of strings of component names
     """
 
-    return [ x.component_name for x in session.query(Component).all() ]
+    return [x.component_name for x in session.query(Component).all() ]
 
 __all__.append('get_component_names')
 
@@ -1062,7 +1062,7 @@ def get_active_keyring_paths(session=None):
     @rtype: list
     @return: list of active keyring paths
     """
-    return [ x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).order_by(desc(Keyring.priority)).all() ]  # noqa:E712
+    return [x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).order_by(desc(Keyring.priority)).all() ]  # noqa:E712
 
 __all__.append('get_active_keyring_paths')
 
@@ -1817,7 +1817,7 @@ __all__.append('SrcFormat')
 
 ################################################################################
 
-SUITE_FIELDS = [ ('SuiteName', 'suite_name'),
+SUITE_FIELDS = [('SuiteName', 'suite_name'),
                  ('SuiteID', 'suite_id'),
                  ('Version', 'version'),
                  ('Origin', 'origin'),
@@ -2593,7 +2593,7 @@ class DBConn(object):
             if "DB::Port" in cnf and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 
-        engine_args = { 'echo': self.debug }
+        engine_args = {'echo': self.debug }
         if 'DB::PoolSize' in cnf:
             engine_args['pool_size'] = int(cnf['DB::PoolSize'])
         if 'DB::MaxOverflow' in cnf:

@@ -42,19 +42,19 @@ __all__ = []
 
 ###############################################################################
 
-CHANGESFIELDS_MANDATORY = [ "distribution", "source", "architecture",
+CHANGESFIELDS_MANDATORY = ["distribution", "source", "architecture",
         "version", "maintainer", "urgency", "fingerprint", "changedby822",
         "changedby2047", "changedbyname", "maintainer822", "maintainer2047",
         "maintainername", "maintaineremail", "closes", "changes" ]
 
 __all__.append('CHANGESFIELDS_MANDATORY')
 
-CHANGESFIELDS_OPTIONAL = [ "changed-by", "filecontents", "format",
+CHANGESFIELDS_OPTIONAL = ["changed-by", "filecontents", "format",
         "process-new note", "adv id", "distribution-version", "sponsoremail" ]
 
 __all__.append('CHANGESFIELDS_OPTIONAL')
 
-CHANGESFIELDS_FILES = [ "package", "version", "architecture", "type", "size",
+CHANGESFIELDS_FILES = ["package", "version", "architecture", "type", "size",
         "md5sum", "sha1sum", "sha256sum", "component", "location id",
         "source package", "source version", "maintainer", "dbtype", "files id",
         "new", "section", "priority", "othercomponents", "pool name",
@@ -62,20 +62,20 @@ CHANGESFIELDS_FILES = [ "package", "version", "architecture", "type", "size",
 
 __all__.append('CHANGESFIELDS_FILES')
 
-CHANGESFIELDS_DSC = [ "source", "version", "maintainer", "fingerprint",
+CHANGESFIELDS_DSC = ["source", "version", "maintainer", "fingerprint",
         "uploaders", "bts changelog", "dm-upload-allowed" ]
 
 __all__.append('CHANGESFIELDS_DSC')
 
-CHANGESFIELDS_DSCFILES_MANDATORY = [ "size", "md5sum" ]
+CHANGESFIELDS_DSCFILES_MANDATORY = ["size", "md5sum" ]
 
 __all__.append('CHANGESFIELDS_DSCFILES_MANDATORY')
 
-CHANGESFIELDS_DSCFILES_OPTIONAL = [ "files id" ]
+CHANGESFIELDS_DSCFILES_OPTIONAL = ["files id" ]
 
 __all__.append('CHANGESFIELDS_DSCFILES_OPTIONAL')
 
-CHANGESFIELDS_ORIGFILES = [ "id", "location" ]
+CHANGESFIELDS_ORIGFILES = ["id", "location" ]
 
 __all__.append('CHANGESFIELDS_ORIGFILES')
 
@@ -299,19 +299,19 @@ class Changes(object):
         return chg
 
     def unknown_files_fields(self, name):
-        return sorted(list( set(self.files[name].keys()) -
+        return sorted(list(set(self.files[name].keys()) -
                             set(CHANGESFIELDS_FILES)))
 
     def unknown_changes_fields(self):
-        return sorted(list( set(self.changes.keys()) -
+        return sorted(list(set(self.changes.keys()) -
                             set(CHANGESFIELDS_MANDATORY + CHANGESFIELDS_OPTIONAL)))
 
     def unknown_dsc_fields(self):
-        return sorted(list( set(self.dsc.keys()) -
+        return sorted(list(set(self.dsc.keys()) -
                             set(CHANGESFIELDS_DSC)))
 
     def unknown_dsc_files_fields(self, name):
-        return sorted(list( set(self.dsc_files[name].keys()) -
+        return sorted(list(set(self.dsc_files[name].keys()) -
                             set(CHANGESFIELDS_DSCFILES_MANDATORY + CHANGESFIELDS_DSCFILES_OPTIONAL)))
 
     def str_files(self):
