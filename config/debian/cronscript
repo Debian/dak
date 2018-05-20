@@ -223,9 +223,18 @@ function lock() {
         LOCKFILE=${!lvar}
     fi
 
+    # bash can't open a file read-only, while creating it,
+    # so we need to create it ourselves.
+    if ! [[ -e $LOCKFILE ]]; then
+        install -m 444 /dev/null $LOCKFILE || {
+            log_error "Could not create lock ${LOCKFILE}"
+            laststeps 2
+        }
+    fi
+
     # Get filehandle
     local randomstring
-    exec {randomstring}<>${LOCKFILE}
+    exec {randomstring}<${LOCKFILE}
     # Store filehandle for later
     LOCKFD[${LOCK}]=${randomstring}
 
