@@ -201,7 +201,6 @@ function do_new () {
 function sync_debbugs () {
     # sync with debbugs
     log "Sync debbugs version tracking information"
-    echo "--" >> $report
     timestamp=$(date "+%Y-%m-%d-%H:%M")
     mkdir -p $queuedir/bts_version_track_archive/${timestamp}
     rsync -aq $queuedir/bts_version_track/ $queuedir/bts_version_track_archive/${timestamp}
