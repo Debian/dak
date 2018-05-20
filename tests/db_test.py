@@ -85,8 +85,10 @@ class DBDakTestCase(DakTestCase):
             if arch_string != 'kfreebsd-i386':
                 self.arch[arch_string].suites = self.suite.values()
             else:
-                self.arch[arch_string].suites = [self.suite['squeeze'], self.suite['sid']]
-        # hard code ids for source and all
+                filtered = list(self.suite.values())
+                if 'lenny' in self.suite:
+                    filtered.remove(self.suite['lenny'])
+                self.arch[arch_string].suites = filtered
         self.session.add_all(self.arch.values())
 
     def setup_components(self):
@@ -305,6 +307,10 @@ class DBDakTestCase(DakTestCase):
         function should be overridden in derived test cases as needed.
         """
         return ()
+
+    def clean_suites(self):
+        for suite in self.suite.values():
+            self.session.delete(suite)
 
     def tearDown(self):
         self.session.rollback()

@@ -8,21 +8,33 @@
 # At the end, clean up.
 
 DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
+export PGDATABASE=test_projectb
+
+if [[ ! -v DAK_INTEGRATION_TEST ]]; then
+  SYS_CMD="sudo"
+  USER_CMD="sudo -u dak PGDATABASE=${PGDATABASE} DAKBASE=${DAKBASE}"
+else
+  SYS_CMD=""
+  USER_CMD=""
+fi
 
 test-setup() {
   # Create the database as expected by the tests
-  export PGDATABASE=test_projectb
   export DAKBASE=${DAK_ROOT}/tests/fixtures/tmpdak
   ${DAK_ROOT}/setup/dak-setup.sh
 }
 
 test-cleanup() {
   echo Dropping DB ${PGDATABASE}
-  dropdb ${PGDATABASE}
+  $USER_CMD  -E dropdb ${PGDATABASE}
   echo Deleting temporary directory
-  rm -rf -- ${DAKBASE}
+  $SYS_CMD rm -rf -- ${DAKBASE}
 }
 
-trap test-cleanup EXIT
+# Unless --nocleanup is passed, the script will cleanup at the end.
+if [[ "$1" != "--nocleanup" ]]; then
+	trap test-cleanup EXIT
+fi
+
 test-setup
-${DAK_ROOT}/tests/dbtest_all.py
+$USER_CMD ${DAK_ROOT}/tests/dbtest_all.py
