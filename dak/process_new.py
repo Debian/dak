@@ -728,7 +728,7 @@ def do_pkg(upload, session):
                 print "PENDING %s\n" % handler.get_action()
                 return
 
-        do_new(upload, upload_copy, handler, session)
+            do_new(upload, upload_copy, handler, session)
     except AlreadyLockedError as e:
         print "Seems to be locked by %s already, skipping..." % (e)
 
