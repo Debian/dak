@@ -20,4 +20,3 @@ flake8:
     - apt-get update
     - apt-get install -y python-flake8
     - python -mflake8
-  allow_failure: true
