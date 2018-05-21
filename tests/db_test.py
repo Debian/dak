@@ -57,18 +57,25 @@ class DBDakTestCase(DakTestCase):
             return
         self.archive = self.session.query(Archive).get(1)
 
-    def setup_suites(self):
+    def setup_suites(self, suites=None):
         "setup a hash of Suite objects in self.suite"
 
         if 'suite' in self.__dict__:
             return
+
+        # Default suites. Can be overridden by passing a parameter with a list
+        # of suite names and codenames.
+        if not suites:
+            suites = [('lenny',''),('squeeze',''),('sid','')]
+
         self.setup_archive()
         self.suite = {}
-        for suite_name in ('lenny', 'squeeze', 'sid'):
+        for suite_name, codename in suites:
             self.suite[suite_name] = get_suite(suite_name, self.session)
             if not self.suite[suite_name]:
                 self.suite[suite_name] = Suite(suite_name=suite_name, version='-')
                 self.suite[suite_name].archive_id = self.archive.archive_id
+                self.suite[suite_name].codename = codename
                 self.session.add(self.suite[suite_name])
 
     def setup_architectures(self):

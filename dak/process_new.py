@@ -427,32 +427,6 @@ def do_bxa_notification(new, upload, session):
 ################################################################################
 
 
-def add_overrides(new_overrides, suite, session):
-    if suite.overridesuite is not None:
-        suite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
-
-    for override in new_overrides:
-        package = override['package']
-        priority = session.query(Priority).filter_by(priority=override['priority']).first()
-        section = session.query(Section).filter_by(section=override['section']).first()
-        component = get_mapped_component(override['component'], session)
-        overridetype = session.query(OverrideType).filter_by(overridetype=override['type']).one()
-
-        if priority is None:
-            raise Exception('Invalid priority {0} for package {1}'.format(priority, package))
-        if section is None:
-            raise Exception('Invalid section {0} for package {1}'.format(section, package))
-        if component is None:
-            raise Exception('Invalid component {0} for package {1}'.format(component, package))
-
-        o = Override(package=package, suite=suite, component=component, priority=priority, section=section, overridetype=overridetype)
-        session.add(o)
-
-    session.commit()
-
-################################################################################
-
-
 def run_user_inspect_command(upload, upload_copy):
     command = os.environ.get('DAK_INSPECT_UPLOAD')
     if command is None:
@@ -586,7 +560,7 @@ def do_new(upload, upload_copy, handler, session):
             continue
 
         if answer == 'A' and not Options["Trainee"]:
-            add_overrides(missing, upload.target_suite, session)
+            handler.add_overrides(missing, upload.target_suite)
             if Config().find_b("Dinstall::BXANotify"):
                 do_bxa_notification(missing, upload, session)
             handler.accept()
