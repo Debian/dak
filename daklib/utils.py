@@ -500,7 +500,7 @@ def send_mail(message, filename="", whitelists=None):
                     os.unlink(filename)
                 return
 
-        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0o700)
+        fd = os.open(filename, os.O_RDWR | os.O_EXCL, 0o700)
         os.write(fd, message_raw.as_string(True))
         os.close(fd)
 
