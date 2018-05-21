@@ -268,7 +268,7 @@ def write_transitions(from_trans):
     trans_temp = trans_file + ".tmp"
 
     trans_lock = lock_file(trans_file)
-    temp_lock  = lock_file(trans_temp)
+    temp_lock = lock_file(trans_temp)
 
     destfile = file(trans_temp, 'w')
     yaml.safe_dump(from_trans, destfile, default_flow_style=False)

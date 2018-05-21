@@ -32,10 +32,10 @@ import sqlalchemy.orm.session
 
 __all__ = []
 
-PROC_STATUS_SUCCESS      = 0  # Everything ok
-PROC_STATUS_EXCEPTION    = 1  # An exception was caught
+PROC_STATUS_SUCCESS = 0  # Everything ok
+PROC_STATUS_EXCEPTION = 1  # An exception was caught
 PROC_STATUS_SIGNALRAISED = 2  # A signal was generated
-PROC_STATUS_MISCFAILURE  = 3  # Process specific error; see message
+PROC_STATUS_MISCFAILURE = 3  # Process specific error; see message
 
 __all__.extend(['PROC_STATUS_SUCCESS',      'PROC_STATUS_EXCEPTION',
                 'PROC_STATUS_SIGNALRAISED', 'PROC_STATUS_MISCFAILURE'])

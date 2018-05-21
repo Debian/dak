@@ -175,7 +175,7 @@ def edit_note(note, upload, session, trainee=False):
     comment.package = upload.changes.source
     comment.version = upload.changes.version
     comment.comment = newnote
-    comment.author  = utils.whoami()
+    comment.author = utils.whoami()
     comment.trainee = trainee
     session.add(comment)
     session.commit()

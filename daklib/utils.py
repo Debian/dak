@@ -632,7 +632,7 @@ def getusername():
 
 
 def size_type(c):
-    t  = " B"
+    t = " B"
     if c > 10240:
         c = c / 1024
         t = " KB"

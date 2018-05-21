@@ -2616,7 +2616,7 @@ class DBConn(object):
         sqlalchemy.dialects.postgresql.base.dialect = PGDialect_psycopg2_dak
 
         try:
-            self.db_pg   = create_engine(connstr, **engine_args)
+            self.db_pg = create_engine(connstr, **engine_args)
             self.db_meta = MetaData()
             self.db_meta.bind = self.db_pg
             self.db_smaker = sessionmaker(bind=self.db_pg,

@@ -115,7 +115,7 @@ def remove(from_dir, f):
     if os.access(f, os.R_OK):
         Logger.log(["move file to morgue", from_dir, fname, del_dir])
         if Options["Verbose"]:
-            print "Removing '%s' (to '%s')."  % (fname, del_dir)
+            print "Removing '%s' (to '%s')." % (fname, del_dir)
         if Options["No-Action"]:
             return
 

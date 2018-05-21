@@ -153,8 +153,8 @@ def main():
         binary_scan_all(cnf, limit)
         return
 
-    archive_names   = utils.split_args(options['Archive'])
-    suite_names     = utils.split_args(options['Suite'])
+    archive_names = utils.split_args(options['Archive'])
+    suite_names = utils.split_args(options['Suite'])
     component_names = utils.split_args(options['Component'])
 
     force = bool(options['Force'])

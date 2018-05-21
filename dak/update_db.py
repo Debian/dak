@@ -167,7 +167,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
         required_database_schema = max(map(int, findall('update(\d+).py', " ".join(dbfiles))))
 
         print "dak database schema at %d" % database_revision
-        print "dak version requires schema %d"  % required_database_schema
+        print "dak version requires schema %d" % required_database_schema
 
         if database_revision < required_database_schema:
             print "\nUpdates to be applied:"
