@@ -181,7 +181,7 @@ class Changes(object):
         """add "missing" in fields which we will require for the known_changes table"""
         for key in ['urgency', 'maintainer', 'fingerprint', 'changed-by']:
             if (key not in self.changes) or (not self.changes[key]):
-                self.changes[key]='missing'
+                self.changes[key] = 'missing'
 
     def __get_file_from_pool(self, filename, entry, session, logger):
         cnf = Config()

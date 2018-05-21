@@ -50,7 +50,7 @@ projectB = None
 projectBdb = None
 DBNAME = "uploads-queue.db"
 sqliteConn = None
-maintainer_id_cache={}
+maintainer_id_cache = {}
 
 ###############################################################################
 
@@ -109,7 +109,7 @@ def insert():
                 res = __get_changedby__(row[1], row[2])
             except:
                 print 'FAILED SQLITE'
-                res=None
+                res = None
             sqliteConn.text_factory = unicode
         if res:
             changedby_id = get_or_set_maintainer_id(res[0])

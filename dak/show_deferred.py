@@ -114,7 +114,7 @@ def table_row(changesname, delay, changed_by, closes, fingerprint):
     res += ('<td valign="top">%s</td>' %
              ''.join(map(lambda close:  '<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
     res += '</tr>\n'
-    row_number+=1
+    row_number += 1
     return res
 
 
@@ -179,8 +179,8 @@ def get_upload_data(changesfn):
     m = re.match(r'([0-9]+)-day', delay)
     if m:
         delaydays = int(m.group(1))
-        remainingtime = (delaydays>0)*max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
-        delay = "%d days %02d:%02d" %(max(delaydays-1,0), int(remainingtime/3600),int(remainingtime/60)%60)
+        remainingtime = (delaydays > 0)*max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
+        delay = "%d days %02d:%02d" % (max(delaydays-1,0), int(remainingtime/3600),int(remainingtime/60)%60)
     else:
         delaydays = 0
         remainingtime = 0
@@ -297,7 +297,7 @@ def init():
 
 def main():
     args = init()
-    if len(args)!=0:
+    if len(args) != 0:
         usage(1)
 
     if "Show-Deferred::Options::Rrd" in Cnf:

@@ -451,9 +451,9 @@ def check_transitions(transitions):
         answer = ""
 
         if Options["no-action"]:
-            answer="n"
+            answer = "n"
         elif Options["automatic"]:
-            answer="y"
+            answer = "y"
         else:
             answer = utils.our_raw_input(prompt).lower()
 

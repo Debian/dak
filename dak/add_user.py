@@ -100,7 +100,7 @@ def main():
         name = n.group(1)
 
 # Look for all email addresses on the key.
-    emails=[]
+    emails = []
     for line in output.split('\n'):
         e = re_user_mails.search(line)
         if not e:
@@ -134,7 +134,7 @@ def main():
 
         # Should we send mail to the newly added user?
         if Cnf.find_b("Add-User::SendEmail"):
-            mail = name + "<" + emails[0] +">"
+            mail = name + "<" + emails[0] + ">"
             Subst = {}
             Subst["__NEW_MAINTAINER__"] = mail
             Subst["__UID__"] = uid

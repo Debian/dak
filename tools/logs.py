@@ -13,7 +13,7 @@ ITEMS_TO_KEEP = 20
 CACHE_FILE = '/srv/ftp-master.debian.org/misc/dinstall_time_cache'
 GRAPH_DIR = '/srv/ftp.debian.org/web/stat'
 
-LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)?:'+
+LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)?:' +
                   r'Archive maintenance timestamp \(([^\)]*)\): (\d{2}):(\d{2}):(\d{2})$')
 UNSAFE = re.compile(r'[^a-zA-Z/\._:0-9\- ]')
 

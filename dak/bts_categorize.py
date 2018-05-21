@@ -100,7 +100,7 @@ class BugClassifier(object):
             tagged_bugs_ftp += tagged_bugs[tags]
 
         return [bug for bug in bts.get_status(bts.get_bugs("package", "ftp.debian.org")) \
-                     if bug.pending=='pending' and bug.bug_num not in tagged_bugs_ftp]
+                     if bug.pending == 'pending' and bug.bug_num not in tagged_bugs_ftp]
 
     def classify_bug(self, bug):
         """
@@ -173,13 +173,13 @@ def main():
         sys.exit(0)
 
     if Options["Quiet"]:
-        level=logging.ERROR
+        level = logging.ERROR
 
     elif Options["Verbose"]:
-        level=logging.DEBUG
+        level = logging.DEBUG
 
     else:
-        level=logging.INFO
+        level = logging.INFO
 
     logging.basicConfig(level=level,
                          format='%(asctime)s %(levelname)s %(message)s',

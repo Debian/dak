@@ -138,7 +138,7 @@ def html_header(name, missing):
 
 def html_footer():
     result = """    <p class="validate">Timestamp: %s (UTC)</p>
-"""% (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
+""" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     result += "</body></html>"
     return result
 

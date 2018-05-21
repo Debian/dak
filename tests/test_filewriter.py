@@ -26,10 +26,10 @@ from daklib.filewriter import (BinaryContentsFileWriter,
                                PackagesFileWriter,
                                TranslationFileWriter)
 
-SUITE='unstable'
-COMPONENT='main'
-ARCH='amd64'
-LANG='en'
+SUITE = 'unstable'
+COMPONENT = 'main'
+ARCH = 'amd64'
+LANG = 'en'
 
 
 class FileWriterTest(DakTestCase):

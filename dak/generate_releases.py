@@ -322,7 +322,7 @@ class ReleaseWriter(object):
         out.write("Date: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()))))
 
         if suite.validtime:
-            validtime=float(suite.validtime)
+            validtime = float(suite.validtime)
             out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()+validtime))))
 
         for key, dbfield in boolattrs:
@@ -493,7 +493,7 @@ def main():
             query = query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))
         suites = query.all()
 
-    broken=[]
+    broken = []
 
     for s in suites:
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.

@@ -145,11 +145,11 @@ def main():
     if Options['Help']:
         usage()
 
-    changesfiles={}
+    changesfiles = {}
     for a in changes_files:
         if not a.endswith(".changes"):
             utils.fubar("not a .changes file: %s" % (a))
-        changesfiles[a]=1
+        changesfiles[a] = 1
     changes = changesfiles.keys()
 
     username = utils.getusername()
@@ -176,16 +176,16 @@ def main():
     # Yes, we could do this inside do_Approve too. But this way we see who exactly
     # called it (ownership of the file)
 
-    acceptfiles={}
+    acceptfiles = {}
     for change in changes:
-        dbchange=get_dbchange(os.path.basename(change), session)
+        dbchange = get_dbchange(os.path.basename(change), session)
         # strip epoch from version
-        version=dbchange.version
-        version=version[(version.find(':')+1):]
+        version = dbchange.version
+        version = version[(version.find(':')+1):]
         # strip possible version from source (binNMUs)
         source = dbchange.source.split(None, 1)[0]
-        acceptfilename="%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), source, version)
-        acceptfiles[acceptfilename]=1
+        acceptfilename = "%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), source, version)
+        acceptfiles[acceptfilename] = 1
 
     print "Would create %s now and then go on to accept this package, if you allow me to." % (acceptfiles.keys())
     if Options["No-Action"]:

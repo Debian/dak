@@ -328,7 +328,7 @@ class Architecture(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
-            return (self.arch_string== val)
+            return (self.arch_string == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
@@ -2349,7 +2349,7 @@ class DBConn(object):
 
         mapper(BuildQueue, self.tbl_build_queue,
                properties=dict(queue_id=self.tbl_build_queue.c.id,
-                                 suite=relation(Suite, primaryjoin=(self.tbl_build_queue.c.suite_id==self.tbl_suite.c.id))))
+                                 suite=relation(Suite, primaryjoin=(self.tbl_build_queue.c.suite_id == self.tbl_suite.c.id))))
 
         mapper(DBBinary, self.tbl_binaries,
                properties=dict(binary_id=self.tbl_binaries.c.id,
@@ -2432,9 +2432,9 @@ class DBConn(object):
         mapper(Maintainer, self.tbl_maintainer,
                properties=dict(maintainer_id=self.tbl_maintainer.c.id,
                    maintains_sources=relation(DBSource, backref='maintainer',
-                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.maintainer)),
+                       primaryjoin=(self.tbl_maintainer.c.id == self.tbl_source.c.maintainer)),
                    changed_sources=relation(DBSource, backref='changedby',
-                       primaryjoin=(self.tbl_maintainer.c.id==self.tbl_source.c.changedby))),
+                       primaryjoin=(self.tbl_maintainer.c.id == self.tbl_source.c.changedby))),
         )
 
         mapper(NewComment, self.tbl_new_comments,
@@ -2501,7 +2501,7 @@ class DBConn(object):
                                  fingerprint=relation(Fingerprint),
                                  changedby_id=self.tbl_source.c.changedby,
                                  srcfiles=relation(DSCFile,
-                                                     primaryjoin=(self.tbl_source.c.id==self.tbl_dsc_files.c.source)),
+                                                     primaryjoin=(self.tbl_source.c.id == self.tbl_dsc_files.c.source)),
                                  suites=relation(Suite, secondary=self.tbl_src_associations,
                                      backref=backref('sources', lazy='dynamic')),
                                  uploaders=relation(Maintainer,
@@ -2571,9 +2571,9 @@ class DBConn(object):
         mapper(VersionCheck, self.tbl_version_check,
             properties=dict(
                 suite_id=self.tbl_version_check.c.suite,
-                suite=relation(Suite, primaryjoin=self.tbl_version_check.c.suite==self.tbl_suite.c.id),
+                suite =relation(Suite, primaryjoin=self.tbl_version_check.c.suite == self.tbl_suite.c.id),
                 reference_id=self.tbl_version_check.c.reference,
-                reference=relation(Suite, primaryjoin=self.tbl_version_check.c.reference==self.tbl_suite.c.id, lazy='joined')))
+                reference=relation(Suite, primaryjoin=self.tbl_version_check.c.reference == self.tbl_suite.c.id, lazy='joined')))
 
     ## Connection functions
     def __createconn(self):

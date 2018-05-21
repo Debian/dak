@@ -342,7 +342,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     for close in closes:
         print "<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close))
     print "</td></tr>"
-    row_number+=1
+    row_number += 1
 
 ############################################################
 
@@ -447,7 +447,7 @@ def process_queue(queue, log, rrd_dir):
         fingerprint = ""
         changeby = {}
         changedby = ""
-        sponsor= ""
+        sponsor = ""
         filename = i[1]["list"][0].changes.changesname
         last_modified = time.time()-i[1]["oldest"]
         source = i[1]["list"][0].changes.source

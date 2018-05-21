@@ -186,7 +186,7 @@ class Updates:
                         x = read_hashs(2,2,f,self)
                         continue
 
-                    if l[0] == "Canonical-Name:" or l[0]=="Canonical-Path:":
+                    if l[0] == "Canonical-Name:" or l[0] == "Canonical-Path:":
                         self.can_path = l[1]
 
                     if l[0] == "SHA1-Current:" and len(l) == 3:
@@ -318,7 +318,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     #        print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
     if "CanonicalPath" in Options:
-        upd.can_path=Options["CanonicalPath"]
+        upd.can_path = Options["CanonicalPath"]
 
     if os.path.exists(newfile):
         os.unlink(newfile)
@@ -427,7 +427,7 @@ def main():
         cwd = os.getcwd()
         for component in components:
             #print "DEBUG: Working on %s" % (component)
-            workpath=os.path.join(tree, component, "i18n")
+            workpath = os.path.join(tree, component, "i18n")
             if os.path.isdir(workpath):
                 os.chdir(workpath)
                 for dirpath, dirnames, filenames in os.walk(".", followlinks=True, topdown=True):
@@ -436,9 +436,9 @@ def main():
                             #print "EXCLUDING %s" % (entry)
                             continue
                         (fname, fext) = os.path.splitext(entry)
-                        processfile=os.path.join(workpath, fname)
+                        processfile = os.path.join(workpath, fname)
                         #print "Working: %s" % (processfile)
-                        storename="%s/%s_%s_%s" % (Options["TempDir"], suite, component, fname)
+                        storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, fname)
                         #print "Storefile: %s" % (storename)
                         genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs)
         os.chdir(cwd)

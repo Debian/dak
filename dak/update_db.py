@@ -130,7 +130,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
             if "DB::Service" in cnf:
                 connect_str = "service=%s" % cnf["DB::Service"]
             else:
-                connect_str = "dbname=%s"% (cnf["DB::Name"])
+                connect_str = "dbname=%s" % (cnf["DB::Name"])
                 if "DB::Host" in cnf and cnf["DB::Host"] != '':
                     connect_str += " host=%s" % (cnf["DB::Host"])
                 if "DB::Port" in cnf and cnf["DB::Port"] != '-1':
