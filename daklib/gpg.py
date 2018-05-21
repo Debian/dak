@@ -132,8 +132,8 @@ class SignedFile(object):
                 (pid_, exit_code, usage_) = os.wait4(pid, 0)
 
                 self.contents = read[contents.r]
-                self.status   = read[status.r]
-                self.stderr   = read[stderr.r]
+                self.status = read[status.r]
+                self.stderr = read[stderr.r]
 
                 if self.status == "":
                     raise GpgException("No status output from GPG. (GPG exited with status code %s)\n%s" % (exit_code, self.stderr))

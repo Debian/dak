@@ -83,7 +83,7 @@ class Logger(object):
         details = [str(i) for i in details]
         fcntl.lockf(self.logfile, fcntl.LOCK_EX)
         # Write out the log in TSV
-        self.logfile.write("|".join(details)+'\n')
+        self.logfile.write("|".join(details) + '\n')
         # Flush the output to enable tail-ing
         self.logfile.flush()
         fcntl.lockf(self.logfile, fcntl.LOCK_UN)

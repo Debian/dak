@@ -197,23 +197,23 @@ def number_of_packages():
     arch_list.sort()
     longest_arch = longest(arch_list)
     # Header
-    output = (" "*longest_arch) + " |"
+    output = (" " * longest_arch) + " |"
     for suite in output_list:
-        output = output + suite.center(longest_suite)+" |"
-    output = output + "\n"+(len(output)*"-")+"\n"
+        output = output + suite.center(longest_suite) + " |"
+    output = output + "\n" + (len(output) * "-") + "\n"
     # per-arch data
     arch_list = arches.values()
     arch_list.sort()
     longest_arch = longest(arch_list)
     for arch in arch_list:
         arch_id = arch_ids[arch]
-        output = output + arch.center(longest_arch)+" |"
+        output = output + arch.center(longest_arch) + " |"
         for suite_id in suite_id_list:
             if arch in suite_arches[suite_id]:
                 count = "%d" % d[suite_id][arch_id]
             else:
                 count = "-"
-            output = output + count.rjust(longest_suite)+" |"
+            output = output + count.rjust(longest_suite) + " |"
         output = output + "\n"
     print output
 

@@ -78,19 +78,19 @@ def build_mapping(archive, session):
 
     for row in session.execute(query_sources, {'archive_id': archive.archive_id}).fetchall():
         (source, version, path) = row
-        print "Path: %s"%path
-        print "Source: %s"%source
-        print "Source-Version: %s"%version
+        print "Path: %s" % path
+        print "Source: %s" % source
+        print "Source-Version: %s" % version
         print
 
     for row in session.execute(query_binaries, {'archive_id': archive.archive_id}).fetchall():
         (source, version, arch, path, bin, binv) = row
-        print "Path: %s"%path
-        print "Source: %s"%source
-        print "Source-Version: %s"%version
-        print "Architecture: %s"%arch
-        print "Binary: %s"%bin
-        print "Binary-Version: %s"%binv
+        print "Path: %s" % path
+        print "Source: %s" % source
+        print "Source-Version: %s" % version
+        print "Architecture: %s" % arch
+        print "Binary: %s" % bin
+        print "Binary-Version: %s" % binv
         print
 
 ################################################################################

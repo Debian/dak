@@ -75,7 +75,7 @@ class UrgencyLog(object):
         if self.log_file is None:
             return
 
-        self.log_file.write(" ".join([source, version, urgency])+'\n')
+        self.log_file.write(" ".join([source, version, urgency]) + '\n')
         self.log_file.flush()
         self.writes += 1
 

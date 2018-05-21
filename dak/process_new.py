@@ -221,7 +221,7 @@ def edit_new(overrides, upload, session):
             continue
         s = line.split()
         # Pad the list if necessary
-        s[len(s):3] = [None] * (3-len(s))
+        s[len(s):3] = [None] * (3 - len(s))
         (pkg, priority, section) = s[:3]
         if pkg.find(':') != -1:
             type, pkg = pkg.split(':', 1)

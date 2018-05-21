@@ -235,7 +235,7 @@ def lock_file(f):
         except OSError as e:
             if e.errno in (errno.EACCES, errno.EEXIST):
                 print "Unable to get lock for %s (try %d of 10)" % \
-                        (file, retry+1)
+                        (file, retry + 1)
                 time.sleep(60)
             else:
                 raise
@@ -268,7 +268,7 @@ def write_transitions(from_trans):
     trans_temp = trans_file + ".tmp"
 
     trans_lock = lock_file(trans_file)
-    temp_lock  = lock_file(trans_temp)
+    temp_lock = lock_file(trans_temp)
 
     destfile = file(trans_temp, 'w')
     yaml.safe_dump(from_trans, destfile, default_flow_style=False)
@@ -451,9 +451,9 @@ def check_transitions(transitions):
         answer = ""
 
         if Options["no-action"]:
-            answer="n"
+            answer = "n"
         elif Options["automatic"]:
-            answer="y"
+            answer = "y"
         else:
             answer = utils.our_raw_input(prompt).lower()
 

@@ -108,13 +108,13 @@ def table_footer():
 def table_row(changesname, delay, changed_by, closes, fingerprint):
     global row_number
 
-    res = '<tr class="%s">'%((row_number%2) and 'odd' or 'even')
-    res += (2*'<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay)))
+    res = '<tr class="%s">' % ((row_number % 2) and 'odd' or 'even')
+    res += (2 * '<td valign="top">%s</td>') % tuple(map(html_escape,(changesname,delay)))
     res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html_escape(changed_by), fingerprint)
     res += ('<td valign="top">%s</td>' %
              ''.join(map(lambda close:  '<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
     res += '</tr>\n'
-    row_number+=1
+    row_number += 1
     return res
 
 
@@ -124,12 +124,12 @@ def update_graph_database(rrd_dir, *counts):
 
     rrd_file = os.path.join(rrd_dir, 'deferred.rrd')
     counts = [str(count) for count in counts]
-    update = [rrd_file, "N:"+":".join(counts)]
+    update = [rrd_file, "N:" + ":".join(counts)]
 
     try:
         rrdtool.update(*update)
     except rrdtool.error:
-        create = [rrd_file]+"""
+        create = [rrd_file] + """
 --step
 300
 --start
@@ -179,8 +179,8 @@ def get_upload_data(changesfn):
     m = re.match(r'([0-9]+)-day', delay)
     if m:
         delaydays = int(m.group(1))
-        remainingtime = (delaydays>0)*max(0,24*60*60+os.stat(changesfn).st_mtime-time.time())
-        delay = "%d days %02d:%02d" %(max(delaydays-1,0), int(remainingtime/3600),int(remainingtime/60)%60)
+        remainingtime = (delaydays > 0) * max(0,24 * 60 * 60 + os.stat(changesfn).st_mtime - time.time())
+        delay = "%d days %02d:%02d" % (max(delaydays - 1,0), int(remainingtime / 3600),int(remainingtime / 60) % 60)
     else:
         delaydays = 0
         remainingtime = 0
@@ -211,7 +211,7 @@ def get_upload_data(changesfn):
                 if os.path.exists(qfn):
                     os.symlink(qfn,lfn)
                     os.chmod(qfn, 0o644)
-    return (max(delaydays-1,0)*24*60*60+remainingtime, changesname, delay, uploader, achanges.get('closes','').split(), fingerprint, achanges, delaydays)
+    return (max(delaydays - 1,0) * 24 * 60 * 60 + remainingtime, changesname, delay, uploader, achanges.get('closes','').split(), fingerprint, achanges, delaydays)
 
 
 def list_uploads(filelist, rrd_dir):
@@ -231,18 +231,18 @@ def list_uploads(filelist, rrd_dir):
         fn = os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp')
         f = open(fn,"w")
         try:
-            counts = [0]*16
+            counts = [0] * 16
             for u in uploads:
                 counts[u[7]] += 1
-                print >> f, "Changes-file: %s"%u[1]
+                print >> f, "Changes-file: %s" % u[1]
                 fields = """Location: DEFERRED
 Delayed-Until: %s
 Delay-Remaining: %s
-Fingerprint: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()+u[0])),u[2], u[5])
+Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])),u[2], u[5])
                 print >> f, fields
                 encoded = unicode(u[6]).encode('utf-8')
                 print >> f, encoded.rstrip()
-                open(os.path.join(Cnf["Show-Deferred::LinkPath"],u[1]),"w").write(encoded+fields+'\n')
+                open(os.path.join(Cnf["Show-Deferred::LinkPath"],u[1]),"w").write(encoded + fields + '\n')
                 print >> f
             f.close()
             os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp'),
@@ -297,7 +297,7 @@ def init():
 
 def main():
     args = init()
-    if len(args)!=0:
+    if len(args) != 0:
         usage(1)
 
     if "Show-Deferred::Options::Rrd" in Cnf:

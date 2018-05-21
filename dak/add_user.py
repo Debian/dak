@@ -100,7 +100,7 @@ def main():
         name = n.group(1)
 
 # Look for all email addresses on the key.
-    emails=[]
+    emails = []
     for line in output.split('\n'):
         e = re_user_mails.search(line)
         if not e:
@@ -126,7 +126,7 @@ def main():
         if "Dinstall::MailWhiteList" in Cnf and Cnf["Dinstall::MailWhiteList"] != "":
             f = utils.open_file(Cnf["Dinstall::MailWhiteList"], "a")
             for mail in emails:
-                f.write(mail+'\n')
+                f.write(mail + '\n')
             f.close()
 
         print "Added:\nUid:\t %s (ID: %s)\nMaint:\t %s\nFP:\t %s" % (uid, uid_id, \
@@ -134,7 +134,7 @@ def main():
 
         # Should we send mail to the newly added user?
         if Cnf.find_b("Add-User::SendEmail"):
-            mail = name + "<" + emails[0] +">"
+            mail = name + "<" + emails[0] + ">"
             Subst = {}
             Subst["__NEW_MAINTAINER__"] = mail
             Subst["__UID__"] = uid
@@ -145,7 +145,7 @@ def main():
             Subst["__HOSTNAME__"] = Cnf["Dinstall::MyHost"]
             Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
             Subst["__SUMMARY__"] = summary
-            new_add_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/add-user.added")
+            new_add_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"] + "/add-user.added")
             utils.send_mail(new_add_message)
 
     else:

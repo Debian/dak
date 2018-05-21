@@ -31,10 +31,10 @@ from daklib.dbconn import DBConn
 
 
 def export_external_signature_requests(session, path):
-    tbl_arch  = DBConn().tbl_architecture
-    tbl_ba    = DBConn().tbl_bin_associations
-    tbl_bin   = DBConn().tbl_binaries
-    tbl_esr   = DBConn().tbl_external_signature_requests
+    tbl_arch = DBConn().tbl_architecture
+    tbl_ba = DBConn().tbl_bin_associations
+    tbl_bin = DBConn().tbl_binaries
+    tbl_esr = DBConn().tbl_external_signature_requests
     tbl_suite = DBConn().tbl_suite
 
     query = sql.select([tbl_bin.c.package, tbl_suite.c.suite_name, tbl_arch.c.arch_string, sql.func.max(tbl_bin.c.version)]) \
@@ -64,7 +64,7 @@ def sign_external_signature_requests(session, path, keyids, args={}):
 
 
 def add_external_signature_request(session, target_suite, suite, binary):
-    tbl_ba  = DBConn().tbl_bin_associations
+    tbl_ba = DBConn().tbl_bin_associations
     tbl_esr = DBConn().tbl_external_signature_requests
 
     # TODO [sqlalchemy >= 1.1]: use `ON CONFLICT DO NOTHING`

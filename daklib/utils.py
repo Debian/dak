@@ -273,7 +273,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
         must_keywords = ('Format', 'Date', 'Source', 'Binary', 'Architecture', 'Version',
                          'Distribution', 'Maintainer', 'Description', 'Changes', 'Files')
 
-        missingfields=[]
+        missingfields = []
         for keyword in must_keywords:
             if keyword.lower() not in changes:
                 missingfields.append(keyword)
@@ -500,7 +500,7 @@ def send_mail(message, filename="", whitelists=None):
                     os.unlink(filename)
                 return
 
-        fd = os.open(filename, os.O_RDWR|os.O_EXCL, 0o700)
+        fd = os.open(filename, os.O_RDWR | os.O_EXCL, 0o700)
         os.write(fd, message_raw.as_string(True))
         os.close(fd)
 
@@ -632,7 +632,7 @@ def getusername():
 
 
 def size_type(c):
-    t  = " B"
+    t = " B"
     if c > 10240:
         c = c / 1024
         t = " KB"

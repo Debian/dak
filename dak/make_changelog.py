@@ -257,7 +257,7 @@ def export_files(session, archive, clpool, progress=False):
                         rmtree(root)
             for file in files:
                 if os.path.exists(os.path.join(root, file)):
-                    if os.stat(os.path.join(root, file)).st_nlink ==  1:
+                    if os.stat(os.path.join(root, file)).st_nlink == 1:
                         stats['removed'] += 1
                         os.unlink(os.path.join(root, file))
         for dir in dirs:

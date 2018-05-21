@@ -76,7 +76,7 @@ def init(cnf):
     now_date = datetime.now()
 
     # Used for working out times
-    delete_date = int(time.time())-(int(Options["Days"])*84600)
+    delete_date = int(time.time()) - (int(Options["Days"]) * 84600)
 
     morguedir = cnf.get("Dir::Morgue", os.path.join("Dir::Pool", 'morgue'))
     morguesubdir = cnf.get("Clean-Queues::MorgueSubDir", 'queue')
@@ -115,7 +115,7 @@ def remove(from_dir, f):
     if os.access(f, os.R_OK):
         Logger.log(["move file to morgue", from_dir, fname, del_dir])
         if Options["Verbose"]:
-            print "Removing '%s' (to '%s')."  % (fname, del_dir)
+            print "Removing '%s' (to '%s')." % (fname, del_dir)
         if Options["No-Action"]:
             return
 

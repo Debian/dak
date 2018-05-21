@@ -342,7 +342,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     for close in closes:
         print "<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close))
     print "</td></tr>"
-    row_number+=1
+    row_number += 1
 
 ############################################################
 
@@ -351,13 +351,13 @@ def update_graph_database(rrd_dir, type, n_source, n_binary):
     if not rrd_dir:
         return
 
-    rrd_file = os.path.join(rrd_dir, type.lower()+'.rrd')
+    rrd_file = os.path.join(rrd_dir, type.lower() + '.rrd')
     update = [rrd_file, "N:%s:%s" % (n_source, n_binary)]
 
     try:
         rrdtool.update(*update)
     except rrdtool.error:
-        create = [rrd_file]+"""
+        create = [rrd_file] + """
 --step
 300
 --start
@@ -447,9 +447,9 @@ def process_queue(queue, log, rrd_dir):
         fingerprint = ""
         changeby = {}
         changedby = ""
-        sponsor= ""
+        sponsor = ""
         filename = i[1]["list"][0].changes.changesname
-        last_modified = time.time()-i[1]["oldest"]
+        last_modified = time.time() - i[1]["oldest"]
         source = i[1]["list"][0].changes.source
         if len(source) > max_source_len:
             max_source_len = len(source)
@@ -520,7 +520,7 @@ def process_queue(queue, log, rrd_dir):
     # Look for the options for sort and then do the sort.
     age = "h"
     if "Queue-Report::Options::Age" in Cnf:
-        age =  Cnf["Queue-Report::Options::Age"]
+        age = Cnf["Queue-Report::Options::Age"]
     if "Queue-Report::Options::New" in Cnf:
     # If we produce html we always have oldest first.
         direction.append([6,-1,"ao"])
@@ -568,10 +568,10 @@ def process_queue(queue, log, rrd_dir):
             log.write("Queue: " + type + "\n")
 
             (name, mail) = maint.split(":", 1)
-            log.write("Maintainer: " + name + " <"+mail+">" + "\n")
+            log.write("Maintainer: " + name + " <" + mail + ">" + "\n")
             if changedby:
                 (name, mail) = changedby.split(":", 1)
-                log.write("Changed-By: " + name + " <"+mail+">" + "\n")
+                log.write("Changed-By: " + name + " <" + mail + ">" + "\n")
             if sponsor:
                 log.write("Sponsored-By: %s@debian.org\n" % sponsor)
             log.write("Distribution:")
@@ -582,7 +582,7 @@ def process_queue(queue, log, rrd_dir):
             if closes:
                 bug_string = ""
                 for bugs in closes:
-                    bug_string += "#"+bugs+", "
+                    bug_string += "#" + bugs + ", "
                 log.write("Closes: " + bug_string[:-2] + "\n")
             log.write("Changes-File: " + os.path.basename(changes_file) + "\n")
             log.write("\n")
@@ -615,7 +615,7 @@ def process_queue(queue, log, rrd_dir):
 
         if msg:
             print type.upper()
-            print "-"*len(type)
+            print "-" * len(type)
             print
             print msg
             print ("%s %s source package%s / %s %s package%s in total / %s %s package%s to be processed." %
