@@ -17,7 +17,7 @@
 """module to process policy queue uploads"""
 
 from .config import Config
-from .dbconn import Component, Override, OverrideType, Suite, get_mapped_component, get_mapped_component_name
+from .dbconn import Component, Override, OverrideType, Priority, Section, Suite, get_mapped_component, get_mapped_component_name
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
 from .packagelist import PackageList
@@ -314,3 +314,26 @@ class PolicyQueueUploadHandler(object):
                             ))
 
         return missing
+
+    def add_overrides(self, new_overrides, suite):
+        if suite.overridesuite is not None:
+            suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
+
+        for override in new_overrides:
+            package = override['package']
+            priority = self.session.query(Priority).filter_by(priority=override['priority']).first()
+            section = self.session.query(Section).filter_by(section=override['section']).first()
+            component = get_mapped_component(override['component'], self.session)
+            overridetype = self.session.query(OverrideType).filter_by(overridetype=override['type']).one()
+
+            if priority is None:
+                raise Exception('Invalid priority {0} for package {1}'.format(priority, package))
+            if section is None:
+                raise Exception('Invalid section {0} for package {1}'.format(section, package))
+            if component is None:
+                raise Exception('Invalid component {0} for package {1}'.format(component, package))
+
+            o = Override(package=package, suite=suite, component=component, priority=priority, section=section, overridetype=overridetype)
+            self.session.add(o)
+
+        self.session.commit()
