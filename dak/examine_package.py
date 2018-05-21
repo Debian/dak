@@ -112,7 +112,7 @@ def headline(s, level=2, bodyelement=None):
         if bodyelement:
             return """<thead>
                 <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
-              </thead>\n"""%{"bodyelement":bodyelement,"title":utils.html_escape(os.path.basename(s))}
+              </thead>\n""" % {"bodyelement":bodyelement,"title":utils.html_escape(os.path.basename(s))}
         else:
             return "<h%d>%s</h%d>\n" % (level, utils.html_escape(s), level)
     else:
@@ -176,9 +176,9 @@ def output_row(s):
 
 def format_field(k,v):
     if use_html:
-        return """<tr><td class="key">%s:</td><td class="val">%s</td></tr>"""%(k,v)
+        return """<tr><td class="key">%s:</td><td class="val">%s</td></tr>""" % (k,v)
     else:
-        return "%s: %s"%(k,v)
+        return "%s: %s" % (k,v)
 
 
 def foldable_output(title, elementnameprefix, content, norow=False):
@@ -186,10 +186,10 @@ def foldable_output(title, elementnameprefix, content, norow=False):
     result = ''
     if use_html:
         result += """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
-                   <table class="infobox rfc822">\n"""%d
-    result += headline(title, bodyelement="%(elementnameprefix)s-body"%d)
+                   <table class="infobox rfc822">\n""" % d
+    result += headline(title, bodyelement="%(elementnameprefix)s-body" % d)
     if use_html:
-        result += """    <tbody id="%(elementnameprefix)s-body" class="infobody">\n"""%d
+        result += """    <tbody id="%(elementnameprefix)s-body" class="infobody">\n""" % d
     if norow:
         result += content + "\n"
     else:
@@ -588,25 +588,25 @@ def check_deb(suite, deb_filename, session=None):
     else:
         is_a_udeb = 0
 
-    result = foldable_output("control file for %s" % (filename), "binary-%s-control"%packagename,
+    result = foldable_output("control file for %s" % (filename), "binary-%s-control" % packagename,
         output_deb_info(suite, deb_filename, packagename, session), norow=True) + "\n"
 
     if is_a_udeb:
         result += foldable_output("skipping lintian check for udeb",
-            "binary-%s-lintian"%packagename, "") + "\n"
+            "binary-%s-lintian" % packagename, "") + "\n"
     else:
         result += foldable_output("lintian check for %s" % (filename),
-            "binary-%s-lintian"%packagename, do_lintian(deb_filename)) + "\n"
+            "binary-%s-lintian" % packagename, do_lintian(deb_filename)) + "\n"
 
-    result += foldable_output("contents of %s" % (filename), "binary-%s-contents"%packagename,
+    result += foldable_output("contents of %s" % (filename), "binary-%s-contents" % packagename,
                               do_command(["dpkg", "-c", deb_filename])) + "\n"
 
     if is_a_udeb:
         result += foldable_output("skipping copyright for udeb",
-            "binary-%s-copyright"%packagename, "") + "\n"
+            "binary-%s-copyright" % packagename, "") + "\n"
     else:
         result += foldable_output("copyright of %s" % (filename),
-            "binary-%s-copyright"%packagename, get_copyright(deb_filename)) + "\n"
+            "binary-%s-copyright" % packagename, get_copyright(deb_filename)) + "\n"
 
     return result
 

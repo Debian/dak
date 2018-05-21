@@ -111,7 +111,7 @@ def html_header(name, missing):
       </span>
     </div>
 
-    """%{"name":name}
+    """ % {"name":name}
 
     # we assume only one source (.dsc) per changes here
     result += """
@@ -131,7 +131,7 @@ def html_header(name, missing):
         <p><a href="#binary-%(pkg)s-copyright" onclick="show('binary-%(pkg)s-copyright-body')">copyright</a></p>
         <p><a href="#binary-%(pkg)s-file-listing" onclick="show('binary-%(pkg)s-file-listing-body')">file listing</a></p>
 
-"""%{"pkg":packagename}
+""" % {"pkg":packagename}
     result += "    </div>"
     return result
 

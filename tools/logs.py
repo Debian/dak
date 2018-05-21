@@ -46,13 +46,13 @@ olddt = None
 args = sys.argv[1:]
 m = UNSAFE.search(' '.join(args))
 if m:
-    raise Exception("I don't like command line arguments including char '%s'"%m.group(0))
+    raise Exception("I don't like command line arguments including char '%s'" % m.group(0))
 
 if args:
     for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "' + '" "'.join(args) + '"'):
         m = LINE.match(l)
         if not m:
-            raise Exception("woops '%s'"%l)
+            raise Exception("woops '%s'" % l)
         g = map(lambda x: (not x.isdigit() and x) or int(x), m.groups())
         dt = datetime.datetime(*g[:6])
         if olddt != dt:
@@ -77,7 +77,7 @@ datakeys.sort()
 f = open(CACHE_FILE + ".tmp","w")
 for dk in datakeys:
     print >> f, dk + '\t' + '\t'.join(
-        ["%s:%s"%(k,str(d[dk][k])) for k in kl if k in d[dk]])
+        ["%s:%s" % (k,str(d[dk][k])) for k in kl if k in d[dk]])
 f.close()
 os.rename(CACHE_FILE + ".tmp", CACHE_FILE)
 datakeys = datakeys[-ITEMS_TO_KEEP:]
@@ -119,7 +119,7 @@ def dump_file(outfn,keystolist, showothers):
 
   dev.off()
   q()
-  """%{'datafile':n,'outfile':outfn,
+  """ % {'datafile':n,'outfile':outfn,
        'title':((not showothers) * "partial ") + "dinstall times"})
     p.flush()
     assert not p.close()

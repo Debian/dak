@@ -108,8 +108,8 @@ def table_footer():
 def table_row(changesname, delay, changed_by, closes, fingerprint):
     global row_number
 
-    res = '<tr class="%s">'%((row_number%2) and 'odd' or 'even')
-    res += (2 * '<td valign="top">%s</td>')%tuple(map(html_escape,(changesname,delay)))
+    res = '<tr class="%s">' % ((row_number % 2) and 'odd' or 'even')
+    res += (2 * '<td valign="top">%s</td>') % tuple(map(html_escape,(changesname,delay)))
     res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html_escape(changed_by), fingerprint)
     res += ('<td valign="top">%s</td>' %
              ''.join(map(lambda close:  '<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
@@ -234,11 +234,11 @@ def list_uploads(filelist, rrd_dir):
             counts = [0] * 16
             for u in uploads:
                 counts[u[7]] += 1
-                print >> f, "Changes-file: %s"%u[1]
+                print >> f, "Changes-file: %s" % u[1]
                 fields = """Location: DEFERRED
 Delayed-Until: %s
 Delay-Remaining: %s
-Fingerprint: %s"""%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])),u[2], u[5])
+Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])),u[2], u[5])
                 print >> f, fields
                 encoded = unicode(u[6]).encode('utf-8')
                 print >> f, encoded.rstrip()
