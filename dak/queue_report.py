@@ -520,7 +520,7 @@ def process_queue(queue, log, rrd_dir):
     # Look for the options for sort and then do the sort.
     age = "h"
     if "Queue-Report::Options::Age" in Cnf:
-        age =  Cnf["Queue-Report::Options::Age"]
+        age = Cnf["Queue-Report::Options::Age"]
     if "Queue-Report::Options::New" in Cnf:
     # If we produce html we always have oldest first.
         direction.append([6,-1,"ao"])

@@ -129,7 +129,7 @@ def britney_changelog(packages, suite, session):
         else:
             new[p] = [current[p], 0]
 
-    query =  "SELECT source, changelog FROM changelogs WHERE"
+    query = "SELECT source, changelog FROM changelogs WHERE"
     for p in new.keys():
         query += " source = '%s' AND version > '%s' AND version <= '%s'" \
                  % (p, new[p][1], new[p][0])

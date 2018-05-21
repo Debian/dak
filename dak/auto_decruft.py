@@ -312,7 +312,7 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
 
         # Rebuild the removal request with the remaining groups and off
         # we go to (not) break the world once more time
-        full_removal_request =  []
+        full_removal_request = []
         for group_info in groups.itervalues():
             full_removal_request.extend(group_info["removal_request"].iteritems())
         breakage = rdc.check_reverse_depends(full_removal_request)
