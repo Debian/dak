@@ -134,7 +134,7 @@ def prod_maintainer(notes, upload):
     Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
 
     prod_mail_message = utils.TemplateSubst(
-        Subst,cnf["Dir::Templates"]+"/process-new.prod")
+        Subst,cnf["Dir::Templates"] + "/process-new.prod")
 
     # Send the prod mail
     utils.send_mail(prod_mail_message, whitelists=whitelists)

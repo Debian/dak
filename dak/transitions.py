@@ -235,7 +235,7 @@ def lock_file(f):
         except OSError as e:
             if e.errno in (errno.EACCES, errno.EEXIST):
                 print "Unable to get lock for %s (try %d of 10)" % \
-                        (file, retry+1)
+                        (file, retry + 1)
                 time.sleep(60)
             else:
                 raise

@@ -169,7 +169,7 @@ def formatted_text(s, strip=False):
 
 def output_row(s):
     if use_html:
-        return """<tr><td>"""+s+"""</td></tr>"""
+        return """<tr><td>""" + s + """</td></tr>"""
     else:
         return s
 
@@ -339,13 +339,13 @@ def read_changes_or_dsc(suite, filename, session=None):
             if use_html:
                 dsc[k] = formatted_text(dsc[k], strip=True)
             else:
-                dsc[k] = ('\n'+'\n'.join(map(lambda x: ' '+x, dsc[k].split('\n')))).rstrip()
+                dsc[k] = ('\n' + '\n'.join(map(lambda x: ' ' + x, dsc[k].split('\n')))).rstrip()
         else:
             dsc[k] = escape_if_needed(dsc[k])
 
     keysinorder = filter(lambda x: not x.lower().startswith('checksums-'), keysinorder)
 
-    filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder))+'\n'
+    filecontents = '\n'.join(map(lambda x: format_field(x,dsc[x.lower()]), keysinorder)) + '\n'
     return filecontents
 
 
@@ -477,7 +477,7 @@ def output_deb_info(suite, filename, packagename, session=None):
                 field_value = escape_if_needed(desc)
         else:
             field_value = escape_if_needed(control.find(key))
-        to_print += " "+format_field(key,field_value)+'\n'
+        to_print += " " + format_field(key,field_value) + '\n'
     return to_print
 
 
@@ -534,7 +534,7 @@ def get_copyright(deb_filename):
                                (printed.copyrights[copyrightmd5]))
     else:
         printed.copyrights[copyrightmd5] = "%s (%s)" % (package, os.path.basename(deb_filename))
-    return res+formatted_text(cright)
+    return res + formatted_text(cright)
 
 
 def get_readme_source(dsc_filename):

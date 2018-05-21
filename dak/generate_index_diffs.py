@@ -219,10 +219,10 @@ class Updates:
 
         cnt = len(l)
         if cnt > self.max:
-            for h in l[:cnt-self.max]:
+            for h in l[:cnt - self.max]:
                 tryunlink("%s/%s.gz" % (self.readpath, h))
                 del hs[h]
-            l = l[cnt-self.max:]
+            l = l[cnt - self.max:]
             self.history_order = l[:]
 
         out.write("SHA1-History:\n")

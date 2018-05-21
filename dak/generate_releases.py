@@ -323,7 +323,7 @@ class ReleaseWriter(object):
 
         if suite.validtime:
             validtime = float(suite.validtime)
-            out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time()+validtime))))
+            out.write("Valid-Until: %s\n" % (time.strftime("%a, %d %b %Y %H:%M:%S UTC", time.gmtime(time.time() + validtime))))
 
         for key, dbfield in boolattrs:
             if getattr(suite, dbfield, False):

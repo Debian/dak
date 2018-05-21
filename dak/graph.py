@@ -60,10 +60,10 @@ def graph(*args):
 
 
 def deferred_colours():
-    colours = [0]*16
+    colours = [0] * 16
     for i in range(0,16):
-        colours[i] = colorsys.hsv_to_rgb(i/16.0, 1.0, 0.5+i/32.0)
-        colours[i] = ''.join(['%02X' % (c*255) for c in colours[i]])
+        colours[i] = colorsys.hsv_to_rgb(i / 16.0, 1.0, 0.5 + i / 32.0)
+        colours[i] = ''.join(['%02X' % (c * 255) for c in colours[i]])
     return colours
 
 colours = deferred_colours()
@@ -104,7 +104,7 @@ GPRINT:ld%i:cur\\: %%.0lf
 GPRINT:mind%i:min\\: %%.0lf
 GPRINT:maxd%i:max\\: %%.0lf
 GPRINT:avgd%i:avg\\: %%.0lf\\j
-""" % ((i, rrd_file, i, i, colours[i])+(i,)*13)).strip().split("\n")
+""" % ((i, rrd_file, i, i, colours[i]) + (i,) * 13)).strip().split("\n")
 
     rrd_args += extra_args
     try:
@@ -227,12 +227,12 @@ def main():
 
     for name in names:
         stdargs = [rrd_dir, image_dir, name, extra_rrdtool_args]
-        graph(*(stdargs+['day', 'day', 'now-1d']))
-        graph(*(stdargs+['week', 'week', 'now-1w']))
-        graph(*(stdargs+['month', 'month', 'now-1m']))
-        graph(*(stdargs+['year', 'year', 'now-1y']))
-        graph(*(stdargs+['5years', '5 years', 'now-5y', True]))
-        graph(*(stdargs+['10years', '10 years', 'now-10y', True]))
+        graph(*(stdargs + ['day', 'day', 'now-1d']))
+        graph(*(stdargs + ['week', 'week', 'now-1w']))
+        graph(*(stdargs + ['month', 'month', 'now-1m']))
+        graph(*(stdargs + ['year', 'year', 'now-1y']))
+        graph(*(stdargs + ['5years', '5 years', 'now-5y', True]))
+        graph(*(stdargs + ['10years', '10 years', 'now-10y', True]))
 
 ################################################################################
 

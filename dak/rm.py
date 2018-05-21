@@ -352,7 +352,7 @@ def main():
     print summary
     print "Maintainer: %s" % ", ".join(maintainer_list)
     if Options["Done"]:
-        print "Will also close bugs: "+Options["Done"]
+        print "Will also close bugs: " + Options["Done"]
     if carbon_copy:
         print "Will also send CCs to: " + ", ".join(carbon_copy)
     if Options["Do-Close"]:

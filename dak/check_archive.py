@@ -479,7 +479,7 @@ def chk_bd_process_dir(unused, dirname, filenames):
     for name in filenames:
         if not name.endswith(".dsc"):
             continue
-        filename = os.path.abspath(dirname+'/'+name)
+        filename = os.path.abspath(dirname + '/' + name)
         dsc = utils.parse_changes(filename, dsc_file=1)
         for field_name in ["build-depends", "build-depends-indep"]:
             field = dsc.get(field_name)

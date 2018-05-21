@@ -144,7 +144,7 @@ def send_email(commands, simulate=False):
              "__DAK_ADDRESS__": Cnf["Dinstall::MyAdminAddress"]}
 
     bts_mail_message = utils.TemplateSubst(
-        Subst,Cnf["Dir::Templates"]+"/bts-categorize")
+        Subst,Cnf["Dir::Templates"] + "/bts-categorize")
 
     if simulate:
         print bts_mail_message

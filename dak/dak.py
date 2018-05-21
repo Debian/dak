@@ -198,7 +198,7 @@ def main():
 
     # First see if we were invoked with/as the name of a module
     cmdname = sys.argv[0]
-    cmdname = cmdname[cmdname.rfind("/")+1:]
+    cmdname = cmdname[cmdname.rfind("/") + 1:]
     if cmdname in modules:
         pass
     # Otherwise the argument is the module

@@ -76,7 +76,7 @@ def init(cnf):
     now_date = datetime.now()
 
     # Used for working out times
-    delete_date = int(time.time())-(int(Options["Days"])*84600)
+    delete_date = int(time.time()) - (int(Options["Days"]) * 84600)
 
     morguedir = cnf.get("Dir::Morgue", os.path.join("Dir::Pool", 'morgue'))
     morguesubdir = cnf.get("Clean-Queues::MorgueSubDir", 'queue')

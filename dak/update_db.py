@@ -173,8 +173,8 @@ Updates dak's database schema to the lastest version. You should disable crontab
             print "\nUpdates to be applied:"
             for i in range(database_revision, required_database_schema):
                 i += 1
-                dakdb = __import__("dakdb", globals(), locals(), ['update'+str(i)])
-                update_module = getattr(dakdb, "update"+str(i))
+                dakdb = __import__("dakdb", globals(), locals(), ['update' + str(i)])
+                update_module = getattr(dakdb, "update" + str(i))
                 print "Update %d: %s" % (i, next(s for s in update_module.__doc__.split("\n") if s))
                 modules.append((update_module, i))
             if not Config().find_b("Update-DB::Options::Yes", False):

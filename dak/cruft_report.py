@@ -693,7 +693,7 @@ def main():
     ###
 
     if Options["Mode"] == "full":
-        print "="*75
+        print "=" * 75
         print
 
     if "nfu" in checks:

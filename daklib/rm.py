@@ -521,9 +521,9 @@ def remove(session, reason, suites, removals,
             for bug in done_bugs:
                 Subst_close_rm["__BUG_NUMBER__"] = bug
                 if close_related_bugs:
-                    mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close-with-related")
+                    mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"] + "/rm.bug-close-with-related")
                 else:
-                    mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"]+"/rm.bug-close")
+                    mail_message = utils.TemplateSubst(Subst_close_rm,cnf["Dir::Templates"] + "/rm.bug-close")
                 utils.send_mail(mail_message, whitelists=whitelists)
 
         # close associated bug reports
@@ -583,7 +583,7 @@ def remove(session, reason, suites, removals,
                 logfile.write("\n")
                 logfile822.write("\n")
 
-            mail_message = utils.TemplateSubst(Subst_close_other, cnf["Dir::Templates"]+"/rm.bug-close-related")
+            mail_message = utils.TemplateSubst(Subst_close_other, cnf["Dir::Templates"] + "/rm.bug-close-related")
             if Subst_close_other["__BUG_NUMBER_ALSO__"]:
                 utils.send_mail(mail_message)
 

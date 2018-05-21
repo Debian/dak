@@ -2571,7 +2571,7 @@ class DBConn(object):
         mapper(VersionCheck, self.tbl_version_check,
             properties=dict(
                 suite_id=self.tbl_version_check.c.suite,
-                suite =relation(Suite, primaryjoin=self.tbl_version_check.c.suite == self.tbl_suite.c.id),
+                suite=relation(Suite, primaryjoin=self.tbl_version_check.c.suite == self.tbl_suite.c.id),
                 reference_id=self.tbl_version_check.c.reference,
                 reference=relation(Suite, primaryjoin=self.tbl_version_check.c.reference == self.tbl_suite.c.id, lazy='joined')))
 

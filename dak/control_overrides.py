@@ -253,7 +253,7 @@ def process_file(file, suite, component, otype, mode, action, session):
         session.commit()
 
     if not cnf["Control-Overrides::Options::Quiet"]:
-        print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time()-start_time), c_updated, c_added, c_removed, c_skipped, c_error)
+        print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time() - start_time), c_updated, c_added, c_removed, c_skipped, c_error)
 
     Logger.log(["set complete", c_updated, c_added, c_removed, c_skipped, c_error])
 

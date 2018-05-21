@@ -82,7 +82,7 @@ def spawn(command):
 def sudo(arg, fn, exit):
     if Options["Sudo"]:
         os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
-                  "/usr/local/bin/dak", "new-security-install", "-"+arg)
+                  "/usr/local/bin/dak", "new-security-install", "-" + arg)
     else:
         fn()
     if exit:
@@ -181,7 +181,7 @@ def main():
         dbchange = get_dbchange(os.path.basename(change), session)
         # strip epoch from version
         version = dbchange.version
-        version = version[(version.find(':')+1):]
+        version = version[(version.find(':') + 1):]
         # strip possible version from source (binNMUs)
         source = dbchange.source.split(None, 1)[0]
         acceptfilename = "%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), source, version)

@@ -126,7 +126,7 @@ def main():
         if "Dinstall::MailWhiteList" in Cnf and Cnf["Dinstall::MailWhiteList"] != "":
             f = utils.open_file(Cnf["Dinstall::MailWhiteList"], "a")
             for mail in emails:
-                f.write(mail+'\n')
+                f.write(mail + '\n')
             f.close()
 
         print "Added:\nUid:\t %s (ID: %s)\nMaint:\t %s\nFP:\t %s" % (uid, uid_id, \
@@ -145,7 +145,7 @@ def main():
             Subst["__HOSTNAME__"] = Cnf["Dinstall::MyHost"]
             Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
             Subst["__SUMMARY__"] = summary
-            new_add_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"]+"/add-user.added")
+            new_add_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"] + "/add-user.added")
             utils.send_mail(new_add_message)
 
     else:
