@@ -522,7 +522,7 @@ def process_queue(queue, log, rrd_dir):
     if "Queue-Report::Options::Age" in Cnf:
         age = Cnf["Queue-Report::Options::Age"]
     if "Queue-Report::Options::New" in Cnf:
-    # If we produce html we always have oldest first.
+        # If we produce html we always have oldest first.
         direction.append([6,-1,"ao"])
     else:
         if "Queue-Report::Options::Sort" in Cnf:
@@ -602,7 +602,7 @@ def process_queue(queue, log, rrd_dir):
                 table_row(source, version_list, arch_list, last_modified, maint, distribution, closes, fingerprint, sponsor, changedby)
             table_footer(type.upper())
     elif "Queue-Report::Options::822" not in Cnf:
-    # The "normal" output without any formatting.
+        # The "normal" output without any formatting.
         msg = ""
         for entry in entries:
             (source, binary, version_list, arch_list, processed, note, last_modified, _, _, _, _, _, _, _) = entry
