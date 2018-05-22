@@ -730,9 +730,9 @@ def show_new_comments(uploads, session):
 def sort_uploads(new_queue, uploads, session, nobinaries=False):
     sources = {}
     sorteduploads = []
-    suitesrc = [s.source for s in session.query(DBSource.source). \
+    suitesrc = [s.source for s in session.query(DBSource.source).
       filter(DBSource.suites.any(Suite.suite_name.in_(['unstable', 'experimental'])))]
-    comments = [p.package for p in session.query(NewComment.package). \
+    comments = [p.package for p in session.query(NewComment.package).
       filter_by(trainee=False, policy_queue=new_queue).distinct()]
     for upload in uploads:
         source = upload.changes.source

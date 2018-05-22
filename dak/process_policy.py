@@ -314,9 +314,9 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, ma
     if upload.source is not None:
         poolfiles.extend([df.poolfile for df in upload.source.srcfiles])
     # Not beautiful...
-    files = [af.path for af in session.query(ArchiveFile) \
-                  .filter_by(archive=upload.policy_queue.suite.archive) \
-                  .join(ArchiveFile.file) \
+    files = [af.path for af in session.query(ArchiveFile)
+                  .filter_by(archive=upload.policy_queue.suite.archive)
+                  .join(ArchiveFile.file)
                   .filter(PoolFile.file_id.in_([f.file_id for f in poolfiles]))]
     for byhand in upload.byhand:
         path = os.path.join(queuedir, byhand.filename)

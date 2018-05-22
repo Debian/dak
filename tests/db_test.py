@@ -34,7 +34,7 @@ class DBDakTestCase(DakTestCase):
     def initialize(self):
         cnf = Config()
         if cnf["DB::Name"] in ('backports', 'obscurity', 'projectb'):
-            self.fail("You have configured an invalid database name: '%s'." % \
+            self.fail("You have configured an invalid database name: '%s'." %
                     cnf["DB::Name"])
         if cnf["DB::Host"]:
             # TCP/IP
@@ -118,31 +118,31 @@ class DBDakTestCase(DakTestCase):
         self.setup_archive()
         self.setup_components()
         self.file = {}
-        self.file['hello_2.2-3.dsc'] = PoolFile(filename='h/hello/hello_2.2-3.dsc', \
+        self.file['hello_2.2-3.dsc'] = PoolFile(filename='h/hello/hello_2.2-3.dsc',
             filesize=0, md5sum='')
-        self.file['hello_2.2-2.dsc'] = PoolFile(filename='h/hello/hello_2.2-2.dsc', \
+        self.file['hello_2.2-2.dsc'] = PoolFile(filename='h/hello/hello_2.2-2.dsc',
             filesize=0, md5sum='')
-        self.file['hello_2.2-1.dsc'] = PoolFile(filename='h/hello/hello_2.2-1.dsc', \
+        self.file['hello_2.2-1.dsc'] = PoolFile(filename='h/hello/hello_2.2-1.dsc',
             filesize=0, md5sum='')
-        self.file['gnome-hello_3.0-1.dsc'] = PoolFile( \
-            filename='g/gnome-hello/gnome-hello_3.0-1.dsc', \
+        self.file['gnome-hello_3.0-1.dsc'] = PoolFile(
+            filename='g/gnome-hello/gnome-hello_3.0-1.dsc',
             filesize=0, md5sum='')
-        self.file['hello_2.2-1_i386.deb'] = PoolFile( \
-            filename='h/hello/hello_2.2-1_i386.deb', \
+        self.file['hello_2.2-1_i386.deb'] = PoolFile(
+            filename='h/hello/hello_2.2-1_i386.deb',
             filesize=0, md5sum='')
-        self.file['gnome-hello_2.2-1_i386.deb'] = PoolFile( \
-            filename='h/hello/gnome-hello_2.2-1_i386.deb', \
+        self.file['gnome-hello_2.2-1_i386.deb'] = PoolFile(
+            filename='h/hello/gnome-hello_2.2-1_i386.deb',
             filesize=0, md5sum='')
-        self.file['python-hello_2.2-1_all.deb'] = PoolFile( \
-            filename='h/hello/python-hello_2.2-1_all.deb', \
+        self.file['python-hello_2.2-1_all.deb'] = PoolFile(
+            filename='h/hello/python-hello_2.2-1_all.deb',
             filesize=0, md5sum='')
-        self.file['gnome-hello_3.0-1_i386.deb'] = PoolFile( \
-            filename='g/gnome-hello/gnome-hello_3.0-1_i386.deb', \
+        self.file['gnome-hello_3.0-1_i386.deb'] = PoolFile(
+            filename='g/gnome-hello/gnome-hello_3.0-1_i386.deb',
             filesize=0, md5sum='')
-        self.file['sl_3.03-16.dsc'] = PoolFile(filename='s/sl/sl_3.03-16.dsc', \
+        self.file['sl_3.03-16.dsc'] = PoolFile(filename='s/sl/sl_3.03-16.dsc',
             filesize=0, md5sum='')
-        self.file['python2.6_2.6.6-8.dsc'] = PoolFile( \
-            filename='p/python2.6/python2.6_2.6.6-8.dsc', \
+        self.file['python2.6_2.6.6-8.dsc'] = PoolFile(
+            filename='p/python2.6/python2.6_2.6.6-8.dsc',
             filesize=0, md5sum='')
 
         archive_files = []
@@ -178,24 +178,24 @@ class DBDakTestCase(DakTestCase):
         self.setup_suites()
         self.setup_poolfiles()
         self.source = {}
-        self.source['hello_2.2-2'] = DBSource(source='hello', version='2.2-2', \
-            maintainer=self.maintainer['maintainer'], \
-            changedby=self.maintainer['uploader'], \
+        self.source['hello_2.2-2'] = DBSource(source='hello', version='2.2-2',
+            maintainer=self.maintainer['maintainer'],
+            changedby=self.maintainer['uploader'],
             poolfile=self.file['hello_2.2-2.dsc'], install_date=install_date)
         self.source['hello_2.2-2'].suites.append(self.suite['sid'])
-        self.source['hello_2.2-1'] = DBSource(source='hello', version='2.2-1', \
-            maintainer=self.maintainer['maintainer'], \
-            changedby=self.maintainer['uploader'], \
+        self.source['hello_2.2-1'] = DBSource(source='hello', version='2.2-1',
+            maintainer=self.maintainer['maintainer'],
+            changedby=self.maintainer['uploader'],
             poolfile=self.file['hello_2.2-1.dsc'], install_date=install_date)
         self.source['hello_2.2-1'].suites.append(self.suite['sid'])
-        self.source['gnome-hello_3.0-1'] = DBSource(source='gnome-hello', \
-            version='3.0-1', maintainer=self.maintainer['maintainer'], \
-            changedby=self.maintainer['uploader'], \
+        self.source['gnome-hello_3.0-1'] = DBSource(source='gnome-hello',
+            version='3.0-1', maintainer=self.maintainer['maintainer'],
+            changedby=self.maintainer['uploader'],
             poolfile=self.file['gnome-hello_3.0-1.dsc'], install_date=install_date)
         self.source['gnome-hello_3.0-1'].suites.append(self.suite['sid'])
-        self.source['sl_3.03-16'] = DBSource(source='sl', version='3.03-16', \
-            maintainer=self.maintainer['maintainer'], \
-            changedby=self.maintainer['uploader'], \
+        self.source['sl_3.03-16'] = DBSource(source='sl', version='3.03-16',
+            maintainer=self.maintainer['maintainer'],
+            changedby=self.maintainer['uploader'],
             poolfile=self.file['sl_3.03-16.dsc'], install_date=install_date)
         self.source['sl_3.03-16'].suites.append(self.suite['squeeze'])
         self.source['sl_3.03-16'].suites.append(self.suite['sid'])
@@ -209,30 +209,30 @@ class DBDakTestCase(DakTestCase):
         self.setup_sources()
         self.setup_architectures()
         self.binary = {}
-        self.binary['hello_2.2-1_i386'] = DBBinary(package='hello', \
-            source=self.source['hello_2.2-1'], version='2.2-1', \
-            maintainer=self.maintainer['maintainer'], \
-            architecture=self.arch['i386'], \
+        self.binary['hello_2.2-1_i386'] = DBBinary(package='hello',
+            source=self.source['hello_2.2-1'], version='2.2-1',
+            maintainer=self.maintainer['maintainer'],
+            architecture=self.arch['i386'],
             poolfile=self.file['hello_2.2-1_i386.deb'])
         self.binary['hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
         self.binary['hello_2.2-1_i386'].suites.append(self.suite['sid'])
-        self.binary['gnome-hello_2.2-1_i386'] = DBBinary(package='gnome-hello', \
-            source=self.source['hello_2.2-1'], version='2.2-1', \
-            maintainer=self.maintainer['maintainer'], \
-            architecture=self.arch['i386'], \
+        self.binary['gnome-hello_2.2-1_i386'] = DBBinary(package='gnome-hello',
+            source=self.source['hello_2.2-1'], version='2.2-1',
+            maintainer=self.maintainer['maintainer'],
+            architecture=self.arch['i386'],
             poolfile=self.file['gnome-hello_2.2-1_i386.deb'])
         self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
         self.binary['gnome-hello_2.2-1_i386'].suites.append(self.suite['sid'])
-        self.binary['gnome-hello_3.0-1_i386'] = DBBinary(package='gnome-hello', \
-            source=self.source['gnome-hello_3.0-1'], version='3.0-1', \
-            maintainer=self.maintainer['maintainer'], \
-            architecture=self.arch['i386'], \
+        self.binary['gnome-hello_3.0-1_i386'] = DBBinary(package='gnome-hello',
+            source=self.source['gnome-hello_3.0-1'], version='3.0-1',
+            maintainer=self.maintainer['maintainer'],
+            architecture=self.arch['i386'],
             poolfile=self.file['gnome-hello_3.0-1_i386.deb'])
         self.binary['gnome-hello_3.0-1_i386'].suites.append(self.suite['sid'])
-        self.binary['python-hello_2.2-1_i386'] = DBBinary(package='python-hello', \
-            source=self.source['hello_2.2-1'], version='2.2-1', \
-            maintainer=self.maintainer['maintainer'], \
-            architecture=self.arch['all'], \
+        self.binary['python-hello_2.2-1_i386'] = DBBinary(package='python-hello',
+            source=self.source['hello_2.2-1'], version='2.2-1',
+            maintainer=self.maintainer['maintainer'],
+            architecture=self.arch['all'],
             poolfile=self.file['python-hello_2.2-1_all.deb'])
         self.binary['python-hello_2.2-1_i386'].suites.append(self.suite['squeeze'])
         self.session.add_all(self.binary.values())
@@ -277,17 +277,17 @@ class DBDakTestCase(DakTestCase):
         self.setup_sections()
         self.setup_priorities()
         self.override = {}
-        self.override['hello_sid_main_udeb'] = Override(package='hello', \
-            suite=self.suite['sid'], component=self.comp['main'], \
-            overridetype=self.otype['udeb'], \
+        self.override['hello_sid_main_udeb'] = Override(package='hello',
+            suite=self.suite['sid'], component=self.comp['main'],
+            overridetype=self.otype['udeb'],
             section=self.section['python'], priority=self.prio['standard'])
-        self.override['hello_squeeze_main_deb'] = Override(package='hello', \
-            suite=self.suite['squeeze'], component=self.comp['main'], \
-            overridetype=self.otype['deb'], \
+        self.override['hello_squeeze_main_deb'] = Override(package='hello',
+            suite=self.suite['squeeze'], component=self.comp['main'],
+            overridetype=self.otype['deb'],
             section=self.section['python'], priority=self.prio['standard'])
-        self.override['hello_lenny_contrib_deb'] = Override(package='hello', \
-            suite=self.suite['lenny'], component=self.comp['contrib'], \
-            overridetype=self.otype['deb'], \
+        self.override['hello_lenny_contrib_deb'] = Override(package='hello',
+            suite=self.suite['lenny'], component=self.comp['contrib'],
+            overridetype=self.otype['deb'],
             section=self.section['python'], priority=self.prio['standard'])
         self.session.add_all(self.override.values())
         self.session.flush()

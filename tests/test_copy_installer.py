@@ -45,12 +45,12 @@ class ImportTestCase(DakTestCase):
         copier = InstallerCopier(version='20110106')
         self.assertEqual(['amd64'], copier.architectures)
         self.assertEqual(['i386'], copier.skip_architectures)
-        self.assertEqual( \
-            [('tests/fixtures/ftp/dists/unstable/main/installer-amd64/20110106', \
-              'tests/fixtures/ftp/dists/testing/main/installer-amd64/20110106'),], \
+        self.assertEqual(
+            [('tests/fixtures/ftp/dists/unstable/main/installer-amd64/20110106',
+              'tests/fixtures/ftp/dists/testing/main/installer-amd64/20110106'),],
             copier.trees_to_copy)
-        self.assertEqual([('20110106', \
-            'tests/fixtures/ftp/dists/testing/main/installer-amd64/current')], \
+        self.assertEqual([('20110106',
+            'tests/fixtures/ftp/dists/testing/main/installer-amd64/current')],
             copier.symlinks_to_create)
         self.assertEqual('''
 Will copy installer version 20110106 from suite unstable to

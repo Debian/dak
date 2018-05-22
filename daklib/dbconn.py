@@ -77,11 +77,11 @@ from dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
-warnings.filterwarnings('ignore', \
-    "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*", \
+warnings.filterwarnings('ignore',
+    "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*",
     SADeprecationWarning)
-warnings.filterwarnings('ignore', \
-    "Predicate of partial index .* ignored during reflection", \
+warnings.filterwarnings('ignore',
+    "Predicate of partial index .* ignored during reflection",
     SAWarning)
 
 
@@ -282,7 +282,7 @@ class ORMObject(object):
         """
 
         if self.session() is None:
-            raise RuntimeError( \
+            raise RuntimeError(
                 'Method clone() failed for detached object:\n%s' % self)
         self.session().flush()
         mapper = object_mapper(self)
@@ -291,12 +291,12 @@ class ORMObject(object):
         if session is None:
             session = DBConn().session()
         elif len(session.new) + len(session.dirty) + len(session.deleted) > 0:
-            raise RuntimeError( \
+            raise RuntimeError(
                 'Method clone() failed due to unflushed changes in session.')
         new_object = session.query(object_class).get(primary_key)
         session.rollback()
         if new_object is None:
-            raise RuntimeError( \
+            raise RuntimeError(
                 'Method clone() failed for non-persistent object:\n%s' % self)
         return new_object
 
@@ -441,8 +441,8 @@ __all__.append('BinContents')
 
 
 class DBBinary(ORMObject):
-    def __init__(self, package=None, source=None, version=None, \
-        maintainer=None, architecture=None, poolfile=None, \
+    def __init__(self, package=None, source=None, version=None,
+        maintainer=None, architecture=None, poolfile=None,
         binarytype='deb', fingerprint=None):
         self.package = package
         self.source = source
@@ -458,8 +458,8 @@ class DBBinary(ORMObject):
         return self.binary_id
 
     def properties(self):
-        return ['package', 'version', 'maintainer', 'source', 'architecture', \
-            'poolfile', 'binarytype', 'fingerprint', 'install_date', \
+        return ['package', 'version', 'maintainer', 'source', 'architecture',
+            'poolfile', 'binarytype', 'fingerprint', 'install_date',
             'suites_count', 'binary_id', 'contents_count', 'extra_sources']
 
     metadata = association_proxy('key', 'value')
@@ -602,7 +602,7 @@ class Component(ORMObject):
         return NotImplemented
 
     def properties(self):
-        return ['component_name', 'component_id', 'description', \
+        return ['component_name', 'component_id', 'description',
             'meets_dfsg', 'overrides_count']
 
 __all__.append('Component')
@@ -755,7 +755,7 @@ __all__.append('ExternalOverride')
 
 
 class PoolFile(ORMObject):
-    def __init__(self, filename=None, filesize=-1, \
+    def __init__(self, filename=None, filesize=-1,
         md5sum=None):
         self.filename = filename
         self.filesize = filesize
@@ -784,7 +784,7 @@ class PoolFile(ORMObject):
         return self.filesize == long(filesize) and self.md5sum == md5sum
 
     def properties(self):
-        return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum', \
+        return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum',
             'sha256sum', 'source', 'binary', 'last_used']
 
     def identical_to(self, filename):
@@ -815,7 +815,7 @@ class Fingerprint(ORMObject):
         self.fingerprint = fingerprint
 
     def properties(self):
-        return ['fingerprint', 'fingerprint_id', 'keyring', 'uid', \
+        return ['fingerprint', 'fingerprint_id', 'keyring', 'uid',
             'binary_reject']
 
 __all__.append('Fingerprint')
@@ -1255,7 +1255,7 @@ __all__.append('get_new_comments')
 
 
 class Override(ORMObject):
-    def __init__(self, package=None, suite=None, component=None, overridetype=None, \
+    def __init__(self, package=None, suite=None, component=None, overridetype=None,
         section=None, priority=None):
         self.package = package
         self.suite = suite
@@ -1265,7 +1265,7 @@ class Override(ORMObject):
         self.priority = priority
 
     def properties(self):
-        return ['package', 'suite', 'component', 'overridetype', 'section', \
+        return ['package', 'suite', 'component', 'overridetype', 'section',
             'priority']
 
 __all__.append('Override')
@@ -1667,7 +1667,7 @@ class Dak822(Deb822):
 
 
 class DBSource(ORMObject):
-    def __init__(self, source=None, version=None, maintainer=None, \
+    def __init__(self, source=None, version=None, maintainer=None,
         changedby=None, poolfile=None, install_date=None, fingerprint=None):
         self.source = source
         self.version = version
@@ -1682,8 +1682,8 @@ class DBSource(ORMObject):
         return self.source_id
 
     def properties(self):
-        return ['source', 'source_id', 'maintainer', 'changedby', \
-            'fingerprint', 'poolfile', 'version', 'suites_count', \
+        return ['source', 'source_id', 'maintainer', 'changedby',
+            'fingerprint', 'poolfile', 'version', 'suites_count',
             'install_date', 'binaries_count', 'uploaders_count']
 
     def read_control_fields(self):
@@ -1843,7 +1843,7 @@ class Suite(ORMObject):
         self.version = version
 
     def properties(self):
-        return ['suite_name', 'version', 'sources_count', 'binaries_count', \
+        return ['suite_name', 'version', 'sources_count', 'binaries_count',
             'overrides_count']
 
     def __eq__(self, val):
@@ -2307,7 +2307,7 @@ class DBConn(object):
         )
 
         for table_name in tables:
-            table = Table(table_name, self.db_meta, \
+            table = Table(table_name, self.db_meta,
                 autoload=True, useexisting=True)
             setattr(self, 'tbl_%s' % table_name, table)
 
@@ -2443,20 +2443,20 @@ class DBConn(object):
 
         mapper(Override, self.tbl_override,
                properties=dict(suite_id=self.tbl_override.c.suite,
-                                 suite=relation(Suite, \
+                                 suite=relation(Suite,
                                     backref=backref('overrides', lazy='dynamic')),
                                  package=self.tbl_override.c.package,
                                  component_id=self.tbl_override.c.component,
-                                 component=relation(Component, \
+                                 component=relation(Component,
                                     backref=backref('overrides', lazy='dynamic')),
                                  priority_id=self.tbl_override.c.priority,
-                                 priority=relation(Priority, \
+                                 priority=relation(Priority,
                                     backref=backref('overrides', lazy='dynamic')),
                                  section_id=self.tbl_override.c.section,
-                                 section=relation(Section, \
+                                 section=relation(Section,
                                     backref=backref('overrides', lazy='dynamic')),
                                  overridetype_id=self.tbl_override.c.type,
-                                 overridetype=relation(OverrideType, \
+                                 overridetype=relation(OverrideType,
                                     backref=backref('overrides', lazy='dynamic'))))
 
         mapper(OverrideType, self.tbl_override_type,

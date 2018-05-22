@@ -99,7 +99,7 @@ def britney_changelog(packages, suite, session):
     Cnf = utils.get_conf()
 
     try:
-        q = session.execute("SELECT changelog FROM suite WHERE id = :suiteid", \
+        q = session.execute("SELECT changelog FROM suite WHERE id = :suiteid",
                             {'suiteid': suite.suite_id})
         brit_file = q.fetchone()[0]
     except:
