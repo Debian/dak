@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Create the database that will be used by the fixtures, populating it with the
 # default data.  Also create a test dak directory.
 
