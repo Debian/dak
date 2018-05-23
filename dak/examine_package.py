@@ -44,8 +44,8 @@ to stdout. Those functions can be used in multithreaded parts of dak.
 
 # suppress some deprecation warnings in squeeze related to md5 module
 import warnings
-warnings.filterwarnings('ignore', \
-    "the md5 module is deprecated; use hashlib instead", \
+warnings.filterwarnings('ignore',
+    "the md5 module is deprecated; use hashlib instead",
     DeprecationWarning)
 
 import errno
@@ -392,7 +392,7 @@ def create_depends_string(suite, depends_tree, session=None):
                 result += " | "
             # doesn't do version lookup yet.
 
-            component = get_component_by_package_suite(d['name'], suite_list, \
+            component = get_component_by_package_suite(d['name'], suite_list,
                 session=session)
             if component is not None:
                 adepends = d['name']
@@ -530,7 +530,7 @@ def get_copyright(deb_filename):
 
     res = ""
     if copyrightmd5 in printed.copyrights and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, os.path.basename(deb_filename)):
-        res += formatted_text("NOTE: Copyright is the same as %s.\n\n" % \
+        res += formatted_text("NOTE: Copyright is the same as %s.\n\n" %
                                (printed.copyrights[copyrightmd5]))
     else:
         printed.copyrights[copyrightmd5] = "%s (%s)" % (package, os.path.basename(deb_filename))

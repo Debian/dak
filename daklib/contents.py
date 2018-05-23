@@ -239,7 +239,7 @@ def binary_helper(suite_id, arch_id, overridetype_id, component_id):
     architecture = Architecture.get(arch_id, session)
     overridetype = OverrideType.get(overridetype_id, session)
     component = Component.get(component_id, session)
-    log_message = [suite.suite_name, architecture.arch_string, \
+    log_message = [suite.suite_name, architecture.arch_string,
         overridetype.overridetype, component.component_name]
     contents_writer = BinaryContentsWriter(suite, architecture, overridetype, component)
     contents_writer.write_file()
@@ -311,10 +311,10 @@ class ContentsWriter(object):
                 for architecture in suite.get_architectures(skipsrc=True, skipall=True):
                     arch_id = architecture.arch_id
                     # handle 'deb' packages
-                    pool.apply_async(binary_helper, (suite_id, arch_id, deb_id, component_id), \
+                    pool.apply_async(binary_helper, (suite_id, arch_id, deb_id, component_id),
                         callback=class_.log_result)
                     # handle 'udeb' packages
-                    pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, component_id), \
+                    pool.apply_async(binary_helper, (suite_id, arch_id, udeb_id, component_id),
                         callback=class_.log_result)
         pool.close()
         pool.join()

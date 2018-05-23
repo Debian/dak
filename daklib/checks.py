@@ -893,9 +893,9 @@ class LintianCheck(Check):
             os.unlink(temp_filename)
 
         if result == 2:
-            utils.warn("lintian failed for %s [return code: %s]." % \
+            utils.warn("lintian failed for %s [return code: %s]." %
                 (changespath, result))
-            utils.warn(utils.prefix_multi_line_string(output, \
+            utils.warn(utils.prefix_multi_line_string(output,
                 " [possible output:] "))
 
         parsed_tags = lintian.parse_lintian_output(output)

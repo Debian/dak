@@ -106,7 +106,7 @@ class InstallerCopier:
 
     def check_architecture(self, arch_dir):
         architecture = re.sub('.*?/installer-(.*?)/.*', r'\1', arch_dir)
-        dest_basedir = os.path.join(self.dest_dir, \
+        dest_basedir = os.path.join(self.dest_dir,
             'installer-%s' % architecture)
         dest_dir = os.path.join(dest_basedir, self.version)
         if os.path.isdir(dest_dir):
