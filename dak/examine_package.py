@@ -42,17 +42,11 @@ to stdout. Those functions can be used in multithreaded parts of dak.
 
 ################################################################################
 
-# suppress some deprecation warnings in squeeze related to md5 module
-import warnings
-warnings.filterwarnings('ignore',
-    "the md5 module is deprecated; use hashlib instead",
-    DeprecationWarning)
-
 import errno
+import hashlib
 import os
 import re
 import sys
-import md5
 import apt_pkg
 import apt_inst
 import shutil
@@ -526,7 +520,7 @@ def get_copyright(deb_filename):
 
     o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s 2>/dev/null" % (deb_filename, cright))
     cright = o.read()
-    copyrightmd5 = md5.md5(cright).hexdigest()
+    copyrightmd5 = hashlib.md5(cright).hexdigest()
 
     res = ""
     if copyrightmd5 in printed.copyrights and printed.copyrights[copyrightmd5] != "%s (%s)" % (package, os.path.basename(deb_filename)):
