@@ -308,7 +308,7 @@ def main():
         rrd_dir = None
 
     filelist = []
-    for r,d,f  in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
+    for r,d,f in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
         filelist += map(lambda x: os.path.join(r,x),
                          filter(lambda x: x.endswith('.changes'), f))
     list_uploads(filelist, rrd_dir)
