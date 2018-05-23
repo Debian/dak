@@ -2,6 +2,7 @@ Source: dak
 Section: misc
 Priority: optional
 Build-Depends: debhelper (>= 9~),
+               fakeroot,
                jq,
                postgresql-10 | postgresql-9.6 | postgresql-9.4,
                postgresql-10-debversion | postgresql-9.6-debversion | postgresql-9.4-debversion,
