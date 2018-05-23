@@ -95,7 +95,7 @@ function make_buildd_dir () {
     dak generate-packages-sources2 -a build-queues
     dak generate-releases -a build-queues >/dev/null
 
-    if [[ $archive = securiy ]]; then
+    if [[ $archive = security ]]; then
         ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
         $configdir/cron.buildd
         sudo -u archvsync runmirrors -a security-buildd-pool
