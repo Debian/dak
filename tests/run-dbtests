@@ -12,9 +12,11 @@ export PGDATABASE=test_projectb
 
 if [[ ! -v DAK_INTEGRATION_TEST ]]; then
   SYS_CMD="sudo"
+  KEEP_ENV_OPT="-E"
   USER_CMD="sudo -u dak PGDATABASE=${PGDATABASE} DAKBASE=${DAKBASE}"
 else
   SYS_CMD=""
+  KEEP_ENV_OPT=""
   USER_CMD=""
 fi
 
@@ -26,7 +28,7 @@ test-setup() {
 
 test-cleanup() {
   echo Dropping DB ${PGDATABASE}
-  $USER_CMD  -E dropdb ${PGDATABASE}
+  $USER_CMD $KEEP_ENV_OPT dropdb ${PGDATABASE}
   echo Deleting temporary directory
   $SYS_CMD rm -rf -- ${DAKBASE}
 }
