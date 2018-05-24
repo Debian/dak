@@ -99,9 +99,9 @@ def main():
         if key not in cnf:
             cnf[key] = ""
 
-    Arguments = [('h',"help","Manage-Debug-Suites::Options::Help"),
-                 ('n',"no-action","Manage-Debug-Suites::Options::No-Action"),
-                 ('a',"all","Manage-Debug-Suites::Options::All")]
+    Arguments = [('h', "help", "Manage-Debug-Suites::Options::Help"),
+                 ('n', "no-action", "Manage-Debug-Suites::Options::No-Action"),
+                 ('a', "all", "Manage-Debug-Suites::Options::All")]
 
     debug_suite_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Manage-Debug-Suites::Options")

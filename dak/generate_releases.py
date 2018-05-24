@@ -459,12 +459,12 @@ def main():
         if key not in cnf:
             cnf[key] = ""
 
-    Arguments = [('h',"help","Generate-Releases::Options::Help"),
-                 ('a','archive','Generate-Releases::Options::Archive','HasArg'),
-                 ('s',"suite","Generate-Releases::Options::Suite"),
-                 ('f',"force","Generate-Releases::Options::Force"),
-                 ('q',"quiet","Generate-Releases::Options::Quiet"),
-                 ('o','option','','ArbItem')]
+    Arguments = [('h', "help", "Generate-Releases::Options::Help"),
+                 ('a', 'archive', 'Generate-Releases::Options::Archive', 'HasArg'),
+                 ('s', "suite", "Generate-Releases::Options::Suite"),
+                 ('f', "force", "Generate-Releases::Options::Force"),
+                 ('q', "quiet", "Generate-Releases::Options::Quiet"),
+                 ('o', 'option', '', 'ArbItem')]
 
     suite_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Generate-Releases::Options")

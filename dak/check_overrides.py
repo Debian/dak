@@ -324,8 +324,8 @@ def main():
 
     cnf = Config()
 
-    Arguments = [('h',"help","Check-Overrides::Options::Help"),
-                 ('n',"no-action", "Check-Overrides::Options::No-Action")]
+    Arguments = [('h', "help", "Check-Overrides::Options::Help"),
+                 ('n', "no-action", "Check-Overrides::Options::No-Action")]
     for i in ["help", "no-action"]:
         key = "Check-Overrides::Options::%s" % i
         if key not in cnf:

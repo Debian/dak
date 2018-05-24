@@ -417,14 +417,14 @@ def main():
     global Options
     cnf = Config()
 
-    Arguments = [('h',"help","Auto-Decruft::Options::Help"),
-                 ('n',"dry-run","Auto-Decruft::Options::Dry-Run"),
-                 ('d',"debug","Auto-Decruft::Options::Debug"),
-                 ('s',"suite","Auto-Decruft::Options::Suite","HasArg"),
+    Arguments = [('h', "help", "Auto-Decruft::Options::Help"),
+                 ('n', "dry-run", "Auto-Decruft::Options::Dry-Run"),
+                 ('d', "debug", "Auto-Decruft::Options::Debug"),
+                 ('s', "suite", "Auto-Decruft::Options::Suite", "HasArg"),
                  # The "\0" seems to be the only way to disable short options.
-                 ("\0",'if-newer-version-in',"Auto-Decruft::Options::OtherSuite", "HasArg"),
-                 ("\0",'if-newer-version-in-rm-msg',"Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg"),
-                 ("\0",'decruft-equal-versions',"Auto-Decruft::Options::OtherSuiteDecruftEqual")
+                 ("\0", 'if-newer-version-in', "Auto-Decruft::Options::OtherSuite", "HasArg"),
+                 ("\0", 'if-newer-version-in-rm-msg', "Auto-Decruft::Options::OtherSuiteRMMsg", "HasArg"),
+                 ("\0", 'decruft-equal-versions', "Auto-Decruft::Options::OtherSuiteDecruftEqual")
                 ]
     for i in ["help", "Dry-Run", "Debug", "OtherSuite", "OtherSuiteRMMsg", "OtherSuiteDecruftEqual"]:
         key = "Auto-Decruft::Options::%s" % i

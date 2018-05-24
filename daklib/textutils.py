@@ -41,7 +41,7 @@ def force_to_utf8(s):
         unicode(s, 'utf-8')
         return s
     except UnicodeError:
-        latin1_s = unicode(s,'iso8859-1')
+        latin1_s = unicode(s, 'iso8859-1')
         return latin1_s.encode('utf-8')
 
 

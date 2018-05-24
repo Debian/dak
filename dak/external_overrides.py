@@ -138,7 +138,7 @@ def external_overrides_import(suite_name, component_name, key, file, force=False
         session.rollback()
         return False
 
-    session.query(ExternalOverride).filter_by(suite=suite,component=component,key=key).delete()
+    session.query(ExternalOverride).filter_by(suite=suite, component=component, key=key).delete()
 
     for package, key, value in ExternalOverrideReader(file):
         eo = ExternalOverride()
@@ -157,8 +157,8 @@ def external_overrides_import(suite_name, component_name, key, file, force=False
 def main():
     cnf = Config()
 
-    Arguments = [('h',"help","External-Overrides::Options::Help"),
-                 ('f','force','External-Overrides::Options::Force')]
+    Arguments = [('h', "help", "External-Overrides::Options::Help"),
+                 ('f', 'force', 'External-Overrides::Options::Force')]
 
     args = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     try:

@@ -202,7 +202,7 @@ def edit_new(overrides, upload, session):
     print_new(upload, overrides, indexed=0, session=session, file=temp_file)
     temp_file.close()
     # Spawn an editor on that file
-    editor = os.environ.get("EDITOR","vi")
+    editor = os.environ.get("EDITOR", "vi")
     result = os.system("%s %s" % (editor, temp_filename))
     if result != 0:
         utils.fubar("%s invocation failed for %s." % (editor, temp_filename), result)
@@ -421,7 +421,7 @@ def do_bxa_notification(new, upload, session):
         '__BINARY_DESCRIPTIONS__': summary,
         }
 
-    bxa_mail = utils.TemplateSubst(subst,os.path.join(cnf["Dir::Templates"], "process-new.bxa_notification"))
+    bxa_mail = utils.TemplateSubst(subst, os.path.join(cnf["Dir::Templates"], "process-new.bxa_notification"))
     utils.send_mail(bxa_mail)
 
 ################################################################################
@@ -747,7 +747,7 @@ def sort_uploads(new_queue, uploads, session, nobinaries=False):
         if len(sources[src]) > 1:
             changes = sources[src]
             firstseen = sorted(changes, key=lambda k: (k['date']))[0]['date']
-            changes.sort(key=lambda item:item['date'])
+            changes.sort(key=lambda item: item['date'])
             for i in range(0, len(changes)):
                 changes[i]['date'] = firstseen
                 changes[i]['stack'] = i + 1
@@ -774,7 +774,7 @@ def end():
         if accept_count > 1:
             sets = "sets"
         sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
-        Logger.log(["total",accept_count,accept_bytes])
+        Logger.log(["total", accept_count, accept_bytes])
 
     if not Options["No-Action"] and not Options["Trainee"]:
         Logger.close()
@@ -788,16 +788,16 @@ def main():
     cnf = Config()
     session = DBConn().session()
 
-    Arguments = [('a',"automatic","Process-New::Options::Automatic"),
-                 ('b',"no-binaries","Process-New::Options::No-Binaries"),
-                 ('c',"comments","Process-New::Options::Comments"),
-                 ('h',"help","Process-New::Options::Help"),
-                 ('m',"manual-reject","Process-New::Options::Manual-Reject", "HasArg"),
-                 ('t',"trainee","Process-New::Options::Trainee"),
-                 ('q','queue','Process-New::Options::Queue', 'HasArg'),
-                 ('n',"no-action","Process-New::Options::No-Action")]
+    Arguments = [('a', "automatic", "Process-New::Options::Automatic"),
+                 ('b', "no-binaries", "Process-New::Options::No-Binaries"),
+                 ('c', "comments", "Process-New::Options::Comments"),
+                 ('h', "help", "Process-New::Options::Help"),
+                 ('m', "manual-reject", "Process-New::Options::Manual-Reject", "HasArg"),
+                 ('t', "trainee", "Process-New::Options::Trainee"),
+                 ('q', 'queue', 'Process-New::Options::Queue', 'HasArg'),
+                 ('n', "no-action", "Process-New::Options::No-Action")]
 
-    changes_files = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
+    changes_files = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
     for i in ["automatic", "no-binaries", "comments", "help", "manual-reject", "no-action", "version", "trainee"]:
         key = "Process-New::Options::%s" % i

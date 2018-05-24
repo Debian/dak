@@ -123,9 +123,9 @@ def main():
     cnf = Config()
     session = DBConn().session()
 
-    Arguments = [('h',"help","Archive-Dedup-Pool::Options::Help")]
+    Arguments = [('h', "help", "Archive-Dedup-Pool::Options::Help")]
 
-    apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
     for i in ["help"]:
         key = "Archive-Dedup-Pool::Options::%s" % i

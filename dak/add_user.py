@@ -51,9 +51,9 @@ def main():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('h',"help","Add-User::Options::Help"),
-                 ('k',"key","Add-User::Options::Key", "HasArg"),
-                 ('u',"user","Add-User::Options::User", "HasArg"),
+    Arguments = [('h', "help", "Add-User::Options::Help"),
+                 ('k', "key", "Add-User::Options::Key", "HasArg"),
+                 ('u', "user", "Add-User::Options::User", "HasArg"),
                  ]
 
     for i in ["help"]:
@@ -83,7 +83,7 @@ def main():
                                         % (Cnf["Add-User::Options::Key"], utils.prefix_multi_line_string(output,
                                                                                                                                                                 " [GPG output:] ")))
     primary_key = m.group(1)
-    primary_key = primary_key.replace(" ","")
+    primary_key = primary_key.replace(" ", "")
 
     uid = ""
     if "Add-User::Options::User" in Cnf and Cnf["Add-User::Options::User"]:
@@ -145,7 +145,7 @@ def main():
             Subst["__HOSTNAME__"] = Cnf["Dinstall::MyHost"]
             Subst["__DISTRO__"] = Cnf["Dinstall::MyDistribution"]
             Subst["__SUMMARY__"] = summary
-            new_add_message = utils.TemplateSubst(Subst,Cnf["Dir::Templates"] + "/add-user.added")
+            new_add_message = utils.TemplateSubst(Subst, Cnf["Dir::Templates"] + "/add-user.added")
             utils.send_mail(new_add_message)
 
     else:

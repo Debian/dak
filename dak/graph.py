@@ -61,7 +61,7 @@ def graph(*args):
 
 def deferred_colours():
     colours = [0] * 16
-    for i in range(0,16):
+    for i in range(0, 16):
         colours[i] = colorsys.hsv_to_rgb(i / 16.0, 1.0, 0.5 + i / 32.0)
         colours[i] = ''.join(['%02X' % (c * 255) for c in colours[i]])
     return colours
@@ -92,7 +92,7 @@ changes
     if year_lines:
         rrd_args += ["--x-grid", "MONTH:1:YEAR:1:YEAR:1:31536000:%Y"]
 
-    for i in range(0,16):
+    for i in range(0, 16):
         rrd_args += ("""
 DEF:d%i=%s:day%i:AVERAGE
 AREA:d%i#%s:%i-day changes count:STACK
@@ -172,11 +172,11 @@ def main():
     global Cnf
 
     Cnf = utils.get_conf()
-    Arguments = [('h',"help","Graph::Options::Help"),
-                 ('x',"extra-rrd","Graph::Options::Extra-Rrd", "HasArg"),
-                 ('r',"rrd","Graph::Options::Rrd", "HasArg"),
-                 ('i',"images","Graph::Options::Images", "HasArg"),
-                 ('n',"names","Graph::Options::Names", "HasArg")]
+    Arguments = [('h', "help", "Graph::Options::Help"),
+                 ('x', "extra-rrd", "Graph::Options::Extra-Rrd", "HasArg"),
+                 ('r', "rrd", "Graph::Options::Rrd", "HasArg"),
+                 ('i', "images", "Graph::Options::Images", "HasArg"),
+                 ('n', "names", "Graph::Options::Names", "HasArg")]
     for i in ["help"]:
         key = "Graph::Options::%s" % i
         if key not in Cnf:

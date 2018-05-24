@@ -66,13 +66,13 @@ def init():
 
     Cnf = utils.get_conf()
 
-    Arguments = [('a',"automatic","Edit-Transitions::Options::Automatic"),
-                 ('h',"help","Edit-Transitions::Options::Help"),
-                 ('e',"edit","Edit-Transitions::Options::Edit"),
-                 ('i',"import","Edit-Transitions::Options::Import", "HasArg"),
-                 ('c',"check","Edit-Transitions::Options::Check"),
-                 ('s',"sudo","Edit-Transitions::Options::Sudo"),
-                 ('n',"no-action","Edit-Transitions::Options::No-Action")]
+    Arguments = [('a', "automatic", "Edit-Transitions::Options::Automatic"),
+                 ('h', "help", "Edit-Transitions::Options::Help"),
+                 ('e', "edit", "Edit-Transitions::Options::Edit"),
+                 ('i', "import", "Edit-Transitions::Options::Import", "HasArg"),
+                 ('c', "check", "Edit-Transitions::Options::Check"),
+                 ('s', "sudo", "Edit-Transitions::Options::Sudo"),
+                 ('n', "no-action", "Edit-Transitions::Options::No-Action")]
 
     for i in ["automatic", "help", "no-action", "edit", "import", "check", "sudo"]:
         key = "Edit-Transitions::Options::%s" % i

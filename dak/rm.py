@@ -123,21 +123,21 @@ def main():
 
     cnf = Config()
 
-    Arguments = [('h',"help","Rm::Options::Help"),
-                 ('A','no-arch-all-rdeps','Rm::Options::NoArchAllRdeps'),
-                 ('a',"architecture","Rm::Options::Architecture", "HasArg"),
-                 ('b',"binary", "Rm::Options::Binary"),
-                 ('B',"binary-only", "Rm::Options::Binary-Only"),
-                 ('c',"component", "Rm::Options::Component", "HasArg"),
-                 ('C',"carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
-                 ('d',"done","Rm::Options::Done", "HasArg"), # Bugs fixed
-                 ('D',"do-close","Rm::Options::Do-Close"),
-                 ('R',"rdep-check", "Rm::Options::Rdep-Check"),
-                 ('m',"reason", "Rm::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
-                 ('n',"no-action","Rm::Options::No-Action"),
-                 ('p',"partial", "Rm::Options::Partial"),
-                 ('s',"suite","Rm::Options::Suite", "HasArg"),
-                 ('S',"source-only", "Rm::Options::Source-Only"),
+    Arguments = [('h', "help", "Rm::Options::Help"),
+                 ('A', 'no-arch-all-rdeps', 'Rm::Options::NoArchAllRdeps'),
+                 ('a', "architecture", "Rm::Options::Architecture", "HasArg"),
+                 ('b', "binary", "Rm::Options::Binary"),
+                 ('B', "binary-only", "Rm::Options::Binary-Only"),
+                 ('c', "component", "Rm::Options::Component", "HasArg"),
+                 ('C', "carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
+                 ('d', "done", "Rm::Options::Done", "HasArg"), # Bugs fixed
+                 ('D', "do-close", "Rm::Options::Do-Close"),
+                 ('R', "rdep-check", "Rm::Options::Rdep-Check"),
+                 ('m', "reason", "Rm::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
+                 ('n', "no-action", "Rm::Options::No-Action"),
+                 ('p', "partial", "Rm::Options::Partial"),
+                 ('s', "suite", "Rm::Options::Suite", "HasArg"),
+                 ('S', "source-only", "Rm::Options::Source-Only"),
                  ]
 
     for i in ['NoArchAllRdeps',
@@ -310,7 +310,7 @@ def main():
     # Write the rejection email out as the <foo>.reason file
     if not Options["Reason"] and not Options["No-Action"]:
         (fd, temp_filename) = utils.temp_filename()
-        editor = os.environ.get("EDITOR","vi")
+        editor = os.environ.get("EDITOR", "vi")
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
             utils.fubar("vi invocation failed for `%s'!" % (temp_filename), result)

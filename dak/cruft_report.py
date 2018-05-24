@@ -150,7 +150,7 @@ def do_nfu(nfu_packages):
 
     for architecture in nfu_packages:
         a2p[architecture] = []
-        for (package,bver,sver) in nfu_packages[architecture]:
+        for (package, bver, sver) in nfu_packages[architecture]:
             output += "  * [%s] does not want %s (binary %s, source %s)\n" % (architecture, package, bver, sver)
             a2p[architecture].append(package)
 
@@ -520,11 +520,11 @@ def main():
 
     cnf = Config()
 
-    Arguments = [('h',"help","Cruft-Report::Options::Help"),
-                 ('m',"mode","Cruft-Report::Options::Mode", "HasArg"),
-                 ('R',"rdep-check", "Cruft-Report::Options::Rdep-Check"),
-                 ('s',"suite","Cruft-Report::Options::Suite","HasArg"),
-                 ('w',"wanna-build-dump","Cruft-Report::Options::Wanna-Build-Dump","HasArg")]
+    Arguments = [('h', "help", "Cruft-Report::Options::Help"),
+                 ('m', "mode", "Cruft-Report::Options::Mode", "HasArg"),
+                 ('R', "rdep-check", "Cruft-Report::Options::Rdep-Check"),
+                 ('s', "suite", "Cruft-Report::Options::Suite", "HasArg"),
+                 ('w', "wanna-build-dump", "Cruft-Report::Options::Wanna-Build-Dump", "HasArg")]
     for i in ["help", "Rdep-Check"]:
         key = "Cruft-Report::Options::%s" % i
         if key not in cnf:
@@ -639,7 +639,7 @@ def main():
                 continue
 
             if "nfu" in checks:
-                nfu_packages.setdefault(architecture,[])
+                nfu_packages.setdefault(architecture, [])
                 nfu_entries = parse_nfu(architecture)
 
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (suite.archive.path, suite_name, component, architecture)
@@ -664,14 +664,14 @@ def main():
                         source = m.group(1)
                         version = m.group(2)
                     if package not in bin_pkgs:
-                        nbs.setdefault(source,{})
+                        nbs.setdefault(source, {})
                         nbs[source].setdefault(package, {})
                         nbs[source][package][version] = ""
                     else:
                         if "nfu" in checks:
                             if package in nfu_entries and \
                                    version != source_versions[source]: # only suggest to remove out-of-date packages
-                                nfu_packages[architecture].append((package,version,source_versions[source]))
+                                nfu_packages[architecture].append((package, version, source_versions[source]))
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
     dubious_nbs = {}
@@ -680,7 +680,7 @@ def main():
             versions = nbs[source][package].keys()
             versions.sort(apt_pkg.version_compare)
             latest_version = versions.pop()
-            source_version = source_versions.get(source,"0")
+            source_version = source_versions.get(source, "0")
             if apt_pkg.version_compare(latest_version, source_version) == 0:
                 add_nbs(dubious_nbs, source, latest_version, package, suite_id, session)
 

@@ -59,7 +59,7 @@ re_parse_maintainer = re.compile(r"^\s*(\S.*\S)\s*\<([^\>]+)\>")
 re_srchasver = re.compile(r"^(\S+)\s+\((\S+)\)$")
 re_verwithext = re.compile(r"^(\d+)(?:\.(\d+))(?:\s+\((\S+)\))?$")
 
-html_escaping = {'"':'&quot;', '&':'&amp;', '<':'&lt;', '>':'&gt;'}
+html_escaping = {'"': '&quot;', '&': '&amp;', '<': '&lt;', '>': '&gt;'}
 re_html_escaping = re.compile('|'.join(map(re.escape, html_escaping.keys())))
 
 # From clean_proposed_updates.py

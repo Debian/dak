@@ -119,7 +119,7 @@ def match_architecture(arch, wildcard):
     if tuple_wildcard is None or len(tuple_wildcard) != 4:
         raise InvalidArchitecture('{0} is not a valid architecture name or wildcard'.format(wildcard))
 
-    for i in range(0,4):
+    for i in range(0, 4):
         if tuple_arch[i] != tuple_wildcard[i] and tuple_wildcard[i] != 'any':
             return False
     return True

@@ -488,15 +488,15 @@ def main():
     cnf = Config()
     session = DBConn().session()
 
-    Arguments = [('h',"help","Process-Policy::Options::Help"),
-                 ('n',"no-action","Process-Policy::Options::No-Action")]
+    Arguments = [('h', "help", "Process-Policy::Options::Help"),
+                 ('n', "no-action", "Process-Policy::Options::No-Action")]
 
     for i in ["help", "no-action"]:
         key = "Process-Policy::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""
 
-    queue_name = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
+    queue_name = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
     if len(queue_name) != 1:
         print "E: Specify exactly one policy queue"

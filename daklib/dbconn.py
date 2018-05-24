@@ -912,8 +912,8 @@ class Keyring(object):
 
     def de_escape_gpg_str(self, txt):
         esclist = re.split(r'(\\x..)', txt)
-        for x in range(1,len(esclist),2):
-            esclist[x] = "%c" % (int(esclist[x][2:],16))
+        for x in range(1, len(esclist), 2):
+            esclist[x] = "%c" % (int(esclist[x][2:], 16))
         return "".join(esclist)
 
     def parse_address(self, uid):
@@ -977,7 +977,7 @@ class Keyring(object):
             l.set_option(ldap.OPT_X_TLS_NEWCTX, True)
             l.start_tls_s()
 
-        l.simple_bind_s("","")
+        l.simple_bind_s("", "")
         Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                "(&(keyfingerprint=*)(supplementaryGid=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                ["uid", "keyfingerprint", "cn", "mn", "sn"])

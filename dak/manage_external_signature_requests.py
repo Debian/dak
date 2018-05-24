@@ -61,7 +61,7 @@ def main():
         if key not in cnf:
             cnf[key] = ""
 
-    Arguments = [('h',"help","Manage-External-Signature-Requests::Options::Help")]
+    Arguments = [('h', "help", "Manage-External-Signature-Requests::Options::Help")]
 
     apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Manage-External-Signature-Requests::Options")

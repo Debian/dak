@@ -47,7 +47,7 @@ class ImportTestCase(DakTestCase):
         self.assertEqual(['i386'], copier.skip_architectures)
         self.assertEqual(
             [('tests/fixtures/ftp/dists/unstable/main/installer-amd64/20110106',
-              'tests/fixtures/ftp/dists/testing/main/installer-amd64/20110106'),],
+              'tests/fixtures/ftp/dists/testing/main/installer-amd64/20110106'), ],
             copier.trees_to_copy)
         self.assertEqual([('20110106',
             'tests/fixtures/ftp/dists/testing/main/installer-amd64/current')],
