@@ -18,3 +18,4 @@ NOSTAGE                state\ postlock            none                       fal
 mirrorpush             none                       mirrorpush                 false     true
 UNLOCK                 UNCHECKED                  none                       false     false
 UNLOCK                 DAILY                      none                       false     false
+NOSTAGE                state\ all\ done           none                       false     false
