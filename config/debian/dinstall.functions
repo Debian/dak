@@ -594,7 +594,7 @@ function state() {
     RIGHTNOW="$(date -u +"%a %b %d %T %Z %Y (%s)")"
     cat >"${DINSTALLSTATE}" <<EOF
 Dinstall start: ${DINSTALLBEGIN}
-Current action: ${1}
+Current action: $*
 Action start: ${RIGHTNOW}
 EOF
 }
