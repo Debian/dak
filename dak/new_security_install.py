@@ -89,7 +89,8 @@ def sudo(arg, fn, exit):
         quit()
 
 
-def do_Approve(): sudo("A", _do_Approve, True)
+def do_Approve():
+    sudo("A", _do_Approve, True)
 
 
 def _do_Approve():
