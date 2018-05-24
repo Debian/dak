@@ -1,20 +1,20 @@
 # FUNC                 ARGS                       TIME                       ERR       BG
 INCLUDE                lock                       none                       true      false
-STATE                  startup                    none                       false     false
+NOSTAGE                state\ startup             none                       false     false
 LOCK                   DAILY                      3600                       exclusive false
 RMSTAGE                none                       none                       false     false
 NOSTAGE                startup                    none                       false     false
-STATE                  indices                    none                       false     false
+NOSTAGE                state\ indices             none                       false     false
 LOCK                   UNCHECKED                  1200                       exclusive false
 dominate               none                       dominate                   true      false
 mpfm                   none                       pkg-file-mapping           false     false
-STATE                  packages/contents          none                       true      false
+NOSTAGE                state\ packages/contents   none                       false     false
 packages               none                       apt-ftparchive             true      false
-STATE                  dists/                     none                       false     false
+NOSTAGE                state\ dists/              none                       false     false
 release                none                       release\ files             true      false
-STATE                  scripts                    none                       false     false
+NOSTAGE                state\ scripts             none                       false     false
 mirror                 none                       mirror\ hardlinks          true      false
-STATE                  postlock                   none                       false     false
+NOSTAGE                state\ postlock            none                       false     false
 mirrorpush             none                       mirrorpush                 false     true
 UNLOCK                 UNCHECKED                  none                       false     false
 UNLOCK                 DAILY                      none                       false     false
