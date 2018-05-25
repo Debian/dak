@@ -15,7 +15,45 @@
 ################################################################################
 
 from sqlalchemy import Column, DateTime
+from sqlalchemy.event import listen
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.schema import DDL, Table
+from sqlalchemy.sql import func
 
 
 Base = declarative_base()
+
+
+class BaseTimestamp(Base):
+    __abstract__ = True
+
+    created = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    modified = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    modified_trigger_function = DDL("""
+CREATE OR REPLACE FUNCTION tfunc_set_modified() RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+    BEGIN NEW.modified = now(); return NEW; END;
+$$
+    """)
+
+    modified_trigger = DDL("""
+CREATE TRIGGER %(table)s_modified BEFORE UPDATE ON %(fullname)s
+FOR EACH ROW EXECUTE PROCEDURE tfunc_set_modified()
+    """)
+
+    @classmethod
+    def __table_cls__(cls, *arg, **kw):
+        table = Table(*arg, **kw)
+        listen(
+            table,
+            'after_create',
+            cls.modified_trigger_function.execute_if(dialect='postgresql'),
+        )
+        listen(
+            table,
+            'after_create',
+            cls.modified_trigger.execute_if(dialect='postgresql'),
+        )
+        return table

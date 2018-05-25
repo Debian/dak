@@ -276,25 +276,7 @@ __all__.append('ACLPerSource')
 ################################################################################
 
 
-class Architecture(ORMObject):
-    def __init__(self, arch_string=None, description=None):
-        self.arch_string = arch_string
-        self.description = description
-
-    def __eq__(self, val):
-        if isinstance(val, str):
-            return (self.arch_string == val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
-
-    def __ne__(self, val):
-        if isinstance(val, str):
-            return (self.arch_string != val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
-
-    def properties(self):
-        return ['arch_string', 'arch_id', 'suites_count']
+from .database.architecture import Architecture
 
 __all__.append('Architecture')
 
@@ -2176,6 +2158,8 @@ class DBConn(object):
     """
     __shared_state = {}
 
+    tbl_architecture = Architecture.__table__
+
     def __init__(self, *args, **kwargs):
         self.__dict__ = self.__shared_state
 
@@ -2190,7 +2174,6 @@ class DBConn(object):
             'acl_architecture_map',
             'acl_fingerprint_map',
             'acl_per_source',
-            'architecture',
             'archive',
             'bin_associations',
             'bin_contents',
@@ -2271,13 +2254,6 @@ class DBConn(object):
             setattr(self, 'view_%s' % view_name, view)
 
     def __setupmappers(self):
-        mapper(Architecture, self.tbl_architecture,
-            properties=dict(arch_id=self.tbl_architecture.c.id,
-               suites=relation(Suite, secondary=self.tbl_suite_architectures,
-                   order_by=self.tbl_suite.c.suite_name,
-                   backref=backref('architectures', order_by=self.tbl_architecture.c.arch_string))),
-            )
-
         mapper(ACL, self.tbl_acl,
                properties=dict(
                    architectures=relation(Architecture, secondary=self.tbl_acl_architecture_map, collection_class=set),
@@ -2482,7 +2458,9 @@ class DBConn(object):
                                  acls=relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
                                  components=relation(Component, secondary=self.tbl_component_suite,
                                                    order_by=self.tbl_component.c.ordering,
-                                                   backref=backref('suites'))),
+                                                   backref=backref('suites')),
+                                 architectures=relation(Architecture, secondary=self.tbl_suite_architectures,
+                                     backref=backref('suites'))),
         )
 
         mapper(Uid, self.tbl_uid,
