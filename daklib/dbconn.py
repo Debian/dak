@@ -77,6 +77,8 @@ warnings.filterwarnings('ignore',
     "Predicate of partial index .* ignored during reflection",
     SAWarning)
 
+from .database.base import Base
+
 
 ################################################################################
 
@@ -2570,7 +2572,7 @@ class DBConn(object):
 
         try:
             self.db_pg = create_engine(connstr, **engine_args)
-            self.db_meta = MetaData()
+            self.db_meta = Base.metadata
             self.db_meta.bind = self.db_pg
             self.db_smaker = sessionmaker(bind=self.db_pg,
                                           autoflush=True,
