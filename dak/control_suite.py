@@ -399,13 +399,13 @@ def main():
 
     cnf = Config()
 
-    Arguments = [('a',"add","Control-Suite::Options::Add", "HasArg"),
-                 ('b',"britney","Control-Suite::Options::Britney"),
-                 ('f','force','Control-Suite::Options::Force'),
-                 ('h',"help","Control-Suite::Options::Help"),
-                 ('l',"list","Control-Suite::Options::List","HasArg"),
-                 ('r',"remove", "Control-Suite::Options::Remove", "HasArg"),
-                 ('s',"set", "Control-Suite::Options::Set", "HasArg")]
+    Arguments = [('a', "add", "Control-Suite::Options::Add", "HasArg"),
+                 ('b', "britney", "Control-Suite::Options::Britney"),
+                 ('f', 'force', 'Control-Suite::Options::Force'),
+                 ('h', "help", "Control-Suite::Options::Help"),
+                 ('l', "list", "Control-Suite::Options::List", "HasArg"),
+                 ('r', "remove", "Control-Suite::Options::Remove", "HasArg"),
+                 ('s', "set", "Control-Suite::Options::Set", "HasArg")]
 
     for i in ["add", "britney", "help", "list", "remove", "set", "version"]:
         key = "Control-Suite::Options::%s" % i

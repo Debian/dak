@@ -99,7 +99,7 @@ def process_dir(unused, dirname, filenames):
     if dirname.find('proposed-updates') != -1:
         return
     for name in filenames:
-        filename = os.path.abspath(os.path.join(dirname,name))
+        filename = os.path.abspath(os.path.join(dirname, name))
         if os.path.isfile(filename) and not os.path.islink(filename) and filename not in db_files and filename not in excluded:
             waste += os.stat(filename)[stat.ST_SIZE]
             print "%s" % (filename)
@@ -313,12 +313,12 @@ def check_checksums():
 #
 
 
-def Ent(Kind,Name,Link,Mode,UID,GID,Size,MTime,Major,Minor):
+def Ent(Kind, Name, Link, Mode, UID, GID, Size, MTime, Major, Minor):
     global future_files
 
     if MTime > current_time:
         future_files[current_file] = MTime
-        print "%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind,Name,Link,Mode,UID,GID,Size, MTime, Major, Minor)
+        print "%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind, Name, Link, Mode, UID, GID, Size, MTime, Major, Minor)
 
 
 def check_timestamps():
@@ -547,7 +547,7 @@ def main():
 
     cnf = Config()
 
-    Arguments = [('h',"help","Check-Archive::Options::Help")]
+    Arguments = [('h', "help", "Check-Archive::Options::Help")]
     for i in ["help"]:
         key = "Check-Archive::Options::%s" % i
         if key not in cnf:

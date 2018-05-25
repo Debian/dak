@@ -584,7 +584,7 @@ def which_conf_file():
         homedir = os.getenv("HOME")
         confpath = os.path.join(homedir, "/etc/dak.conf")
         if os.path.exists(confpath):
-            apt_pkg.read_config_file_isc(Cnf,confpath)
+            apt_pkg.read_config_file_isc(Cnf, confpath)
 
     # We are still in here, so there is no local config file or we do
     # not allow local files. Do the normal stuff.
@@ -878,7 +878,7 @@ def get_logins_from_ldap(fingerprint='*'):
     LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
     LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
     l = ldap.open(LDAPServer)
-    l.simple_bind_s('','')
+    l.simple_bind_s('', '')
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(keyfingerprint=%s)' % fingerprint,
                        ['uid', 'keyfingerprint'])
@@ -896,7 +896,7 @@ def get_users_from_ldap():
     LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
     LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
     l = ldap.open(LDAPServer)
-    l.simple_bind_s('','')
+    l.simple_bind_s('', '')
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(uid=*)', ['uid', 'cn', 'mn', 'sn'])
     users = {}

@@ -487,10 +487,10 @@ def main():
         if key not in cnf:
             cnf[key] = ""
 
-    Arguments = [('h',"help","Clean-Suites::Options::Help"),
-                 ('a','archive','Clean-Suites::Options::Archive','HasArg'),
-                 ('n',"no-action","Clean-Suites::Options::No-Action"),
-                 ('m',"maximum","Clean-Suites::Options::Maximum", "HasArg")]
+    Arguments = [('h', "help", "Clean-Suites::Options::Help"),
+                 ('a', 'archive', 'Clean-Suites::Options::Archive', 'HasArg'),
+                 ('n', "no-action", "Clean-Suites::Options::No-Action"),
+                 ('m', "maximum", "Clean-Suites::Options::Maximum", "HasArg")]
 
     apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Clean-Suites::Options")

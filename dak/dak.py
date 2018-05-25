@@ -221,7 +221,7 @@ def main():
                 usage(functionality, 1)
 
     # Invoke the module
-    module = __import__(cmdname.replace("-","_"))
+    module = __import__(cmdname.replace("-", "_"))
 
     try:
         module.main()

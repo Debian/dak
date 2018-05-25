@@ -109,10 +109,10 @@ def table_row(changesname, delay, changed_by, closes, fingerprint):
     global row_number
 
     res = '<tr class="%s">' % ((row_number % 2) and 'odd' or 'even')
-    res += (2 * '<td valign="top">%s</td>') % tuple(map(html_escape,(changesname,delay)))
+    res += (2 * '<td valign="top">%s</td>') % tuple(map(html_escape, (changesname, delay)))
     res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html_escape(changed_by), fingerprint)
     res += ('<td valign="top">%s</td>' %
-             ''.join(map(lambda close:  '<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close),closes)))
+             ''.join(map(lambda close:  '<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close), closes)))
     res += '</tr>\n'
     row_number += 1
     return res
@@ -179,14 +179,14 @@ def get_upload_data(changesfn):
     m = re.match(r'([0-9]+)-day', delay)
     if m:
         delaydays = int(m.group(1))
-        remainingtime = (delaydays > 0) * max(0,24 * 60 * 60 + os.stat(changesfn).st_mtime - time.time())
-        delay = "%d days %02d:%02d" % (max(delaydays - 1,0), int(remainingtime / 3600),int(remainingtime / 60) % 60)
+        remainingtime = (delaydays > 0) * max(0, 24 * 60 * 60 + os.stat(changesfn).st_mtime - time.time())
+        delay = "%d days %02d:%02d" % (max(delaydays - 1, 0), int(remainingtime / 3600), int(remainingtime / 60) % 60)
     else:
         delaydays = 0
         remainingtime = 0
 
     uploader = achanges.get('changed-by')
-    uploader = re.sub(r'^\s*(\S.*)\s+<.*>',r'\1',uploader)
+    uploader = re.sub(r'^\s*(\S.*)\s+<.*>', r'\1', uploader)
     with utils.open_file(changesfn) as f:
         fingerprint = SignedFile(f.read(), keyrings=get_active_keyring_paths(), require_signature=False).fingerprint
     if "Show-Deferred::LinkPath" in Cnf:
@@ -203,15 +203,15 @@ def get_upload_data(changesfn):
         if not isnew:
             # we don't link .changes because we don't want other people to
             # upload it with the existing signature.
-            for afn in map(lambda x: x['name'],achanges['files']):
-                lfn = os.path.join(Cnf["Show-Deferred::LinkPath"],afn)
-                qfn = os.path.join(os.path.dirname(changesfn),afn)
+            for afn in map(lambda x: x['name'], achanges['files']):
+                lfn = os.path.join(Cnf["Show-Deferred::LinkPath"], afn)
+                qfn = os.path.join(os.path.dirname(changesfn), afn)
                 if os.path.islink(lfn):
                     os.unlink(lfn)
                 if os.path.exists(qfn):
-                    os.symlink(qfn,lfn)
+                    os.symlink(qfn, lfn)
                     os.chmod(qfn, 0o644)
-    return (max(delaydays - 1,0) * 24 * 60 * 60 + remainingtime, changesname, delay, uploader, achanges.get('closes','').split(), fingerprint, achanges, delaydays)
+    return (max(delaydays - 1, 0) * 24 * 60 * 60 + remainingtime, changesname, delay, uploader, achanges.get('closes', '').split(), fingerprint, achanges, delaydays)
 
 
 def list_uploads(filelist, rrd_dir):
@@ -228,8 +228,8 @@ def list_uploads(filelist, rrd_dir):
     print footer()
     # machine readable summary
     if "Show-Deferred::LinkPath" in Cnf:
-        fn = os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp')
-        f = open(fn,"w")
+        fn = os.path.join(Cnf["Show-Deferred::LinkPath"], '.status.tmp')
+        f = open(fn, "w")
         try:
             counts = [0] * 16
             for u in uploads:
@@ -238,15 +238,15 @@ def list_uploads(filelist, rrd_dir):
                 fields = """Location: DEFERRED
 Delayed-Until: %s
 Delay-Remaining: %s
-Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])),u[2], u[5])
+Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])), u[2], u[5])
                 print >> f, fields
                 encoded = unicode(u[6]).encode('utf-8')
                 print >> f, encoded.rstrip()
-                open(os.path.join(Cnf["Show-Deferred::LinkPath"],u[1]),"w").write(encoded + fields + '\n')
+                open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "w").write(encoded + fields + '\n')
                 print >> f
             f.close()
-            os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"],'.status.tmp'),
-                      os.path.join(Cnf["Show-Deferred::LinkPath"],'status'))
+            os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"], '.status.tmp'),
+                      os.path.join(Cnf["Show-Deferred::LinkPath"], 'status'))
             update_graph_database(rrd_dir, *counts)
         except:
             os.unlink(fn)
@@ -270,11 +270,11 @@ def usage(exit_code=0):
 def init():
     global Cnf, Options
     Cnf = utils.get_conf()
-    Arguments = [('h',"help","Show-Deferred::Options::Help"),
-                 ("p","link-path","Show-Deferred::LinkPath","HasArg"),
-                 ("d","deferred-queue","Show-Deferred::DeferredQueue","HasArg"),
-                 ('r',"rrd","Show-Deferred::Options::Rrd", "HasArg")]
-    args = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
+    Arguments = [('h', "help", "Show-Deferred::Options::Help"),
+                 ("p", "link-path", "Show-Deferred::LinkPath", "HasArg"),
+                 ("d", "deferred-queue", "Show-Deferred::DeferredQueue", "HasArg"),
+                 ('r', "rrd", "Show-Deferred::Options::Rrd", "HasArg")]
+    args = apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
     for i in ["help"]:
         key = "Show-Deferred::Options::%s" % i
         if key not in Cnf:
@@ -308,17 +308,17 @@ def main():
         rrd_dir = None
 
     filelist = []
-    for r,d,f in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
-        filelist += map(lambda x: os.path.join(r,x),
+    for r, d, f in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
+        filelist += map(lambda x: os.path.join(r, x),
                          filter(lambda x: x.endswith('.changes'), f))
     list_uploads(filelist, rrd_dir)
 
-    available_changes = set(map(os.path.basename,filelist))
+    available_changes = set(map(os.path.basename, filelist))
     if "Show-Deferred::LinkPath" in Cnf:
         # remove dead links
-        for r,d,f in os.walk(Cnf["Show-Deferred::LinkPath"]):
+        for r, d, f in os.walk(Cnf["Show-Deferred::LinkPath"]):
             for af in f:
-                afp = os.path.join(r,af)
+                afp = os.path.join(r, af)
                 if (not os.path.exists(afp) or
                     (af.endswith('.changes') and af not in available_changes)):
                     os.unlink(afp)

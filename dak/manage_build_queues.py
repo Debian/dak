@@ -135,9 +135,9 @@ def main():
         if key not in cnf:
             cnf[key] = ""
 
-    Arguments = [('h',"help","Manage-Build-Queues::Options::Help"),
-                 ('n',"no-action","Manage-Build-Queues::Options::No-Action"),
-                 ('a',"all","Manage-Build-Queues::Options::All")]
+    Arguments = [('h', "help", "Manage-Build-Queues::Options::Help"),
+                 ('n', "no-action", "Manage-Build-Queues::Options::No-Action"),
+                 ('a', "all", "Manage-Build-Queues::Options::All")]
 
     queue_names = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Manage-Build-Queues::Options")

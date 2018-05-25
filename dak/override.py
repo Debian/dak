@@ -62,11 +62,11 @@ Make microchanges or microqueries of the binary overrides
 def main():
     cnf = Config()
 
-    Arguments = [('h',"help","Override::Options::Help"),
-                 ('c',"check","Override::Options::Check"),
-                 ('d',"done","Override::Options::Done", "HasArg"),
-                 ('n',"no-action","Override::Options::No-Action"),
-                 ('s',"suite","Override::Options::Suite", "HasArg"),
+    Arguments = [('h', "help", "Override::Options::Help"),
+                 ('c', "check", "Override::Options::Check"),
+                 ('d', "done", "Override::Options::Done", "HasArg"),
+                 ('n', "no-action", "Override::Options::No-Action"),
+                 ('s', "suite", "Override::Options::Suite", "HasArg"),
                  ]
     for i in ["help", "check", "no-action"]:
         key = "Override::Options::%s" % i
@@ -131,7 +131,7 @@ def main():
         if q.rowcount == 0:
             continue
         if q.rowcount > 1:
-            utils.fubar("%s is ambiguous. Matches %d packages" % (package,q.rowcount))
+            utils.fubar("%s is ambiguous. Matches %d packages" % (package, q.rowcount))
 
         r = q.fetchone()
         if packagetype == 'binary':
@@ -187,19 +187,19 @@ def main():
     # If we're in no-action mode
     if Options["No-Action"]:
         if newpriority != oldpriority:
-            print "I: Would change priority from %s to %s" % (oldpriority,newpriority)
+            print "I: Would change priority from %s to %s" % (oldpriority, newpriority)
         if newsection != oldsection:
-            print "I: Would change section from %s to %s" % (oldsection,newsection)
+            print "I: Would change section from %s to %s" % (oldsection, newsection)
         if "Done" in Options:
             print "I: Would also close bug(s): %s" % (Options["Done"])
 
         sys.exit(0)
 
     if newpriority != oldpriority:
-        print "I: Will change priority from %s to %s" % (oldpriority,newpriority)
+        print "I: Will change priority from %s to %s" % (oldpriority, newpriority)
 
     if newsection != oldsection:
-        print "I: Will change section from %s to %s" % (oldsection,newsection)
+        print "I: Will change section from %s to %s" % (oldsection, newsection)
 
     if "Done" not in Options:
         pass
@@ -268,9 +268,9 @@ def main():
         summary = "Concerning package %s...\n" % (package)
         summary += "Operating on the %s suite\n" % (suite_name)
         if newpriority != oldpriority:
-            summary += "Changed priority from %s to %s\n" % (oldpriority,newpriority)
+            summary += "Changed priority from %s to %s\n" % (oldpriority, newpriority)
         if newsection != oldsection:
-            summary += "Changed section from %s to %s\n" % (oldsection,newsection)
+            summary += "Changed section from %s to %s\n" % (oldsection, newsection)
         Subst["__SUMMARY__"] = summary
 
         template = os.path.join(cnf["Dir::Templates"], "override.bug-close")

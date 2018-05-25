@@ -93,7 +93,7 @@ def prod_maintainer(notes, upload):
     temp_file = os.fdopen(fd, 'w')
     temp_file.write("\n\n=====\n\n".join([note.comment for note in notes]))
     temp_file.close()
-    editor = os.environ.get("EDITOR","vi")
+    editor = os.environ.get("EDITOR", "vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
@@ -101,7 +101,7 @@ def prod_maintainer(notes, upload):
         prod_message = "".join(temp_fh.readlines())
         temp_fh.close()
         print "Prod message:"
-        print utils.prefix_multi_line_string(prod_message,"  ",include_blank_lines=1)
+        print utils.prefix_multi_line_string(prod_message, "  ", include_blank_lines=1)
         prompt = "[P]rod, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
@@ -134,7 +134,7 @@ def prod_maintainer(notes, upload):
     Subst["__CC__"] = "Cc: " + cnf["Dinstall::MyEmailAddress"]
 
     prod_mail_message = utils.TemplateSubst(
-        Subst,cnf["Dir::Templates"] + "/process-new.prod")
+        Subst, cnf["Dir::Templates"] + "/process-new.prod")
 
     # Send the prod mail
     utils.send_mail(prod_mail_message, whitelists=whitelists)
@@ -147,7 +147,7 @@ def prod_maintainer(notes, upload):
 def edit_note(note, upload, session, trainee=False):
     # Write the current data to a temporary file
     (fd, temp_filename) = utils.temp_filename()
-    editor = os.environ.get("EDITOR","vi")
+    editor = os.environ.get("EDITOR", "vi")
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
@@ -155,7 +155,7 @@ def edit_note(note, upload, session, trainee=False):
         newnote = temp_file.read().rstrip()
         temp_file.close()
         print "New Note:"
-        print utils.prefix_multi_line_string(newnote,"  ")
+        print utils.prefix_multi_line_string(newnote, "  ")
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:

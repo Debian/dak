@@ -111,7 +111,7 @@ def html_header(name, missing):
       </span>
     </div>
 
-    """ % {"name":name}
+    """ % {"name": name}
 
     # we assume only one source (.dsc) per changes here
     result += """
@@ -131,7 +131,7 @@ def html_header(name, missing):
         <p><a href="#binary-%(pkg)s-copyright" onclick="show('binary-%(pkg)s-copyright-body')">copyright</a></p>
         <p><a href="#binary-%(pkg)s-file-listing" onclick="show('binary-%(pkg)s-file-listing-body')">file listing</a></p>
 
-""" % {"pkg":packagename}
+""" % {"pkg": packagename}
     result += "    </div>"
     return result
 
@@ -217,16 +217,16 @@ def init(session):
 
     cnf = Config()
 
-    Arguments = [('h',"help","Show-New::Options::Help"),
-                 ("p","html-path","Show-New::HTMLPath","HasArg"),
-                 ('q','queue','Show-New::Options::Queue','HasArg')]
+    Arguments = [('h', "help", "Show-New::Options::Help"),
+                 ("p", "html-path", "Show-New::HTMLPath", "HasArg"),
+                 ('q', 'queue', 'Show-New::Options::Queue', 'HasArg')]
 
     for i in ["help"]:
         key = "Show-New::Options::%s" % i
         if key not in cnf:
             cnf[key] = ""
 
-    changesnames = apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
+    changesnames = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Show-New::Options")
 
     if Options["help"]:
@@ -267,7 +267,7 @@ def main():
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
     for f in to_delete:
-        os.remove(os.path.join(cnf["Show-New::HTMLPath"],f))
+        os.remove(os.path.join(cnf["Show-New::HTMLPath"], f))
 
 ################################################################################
 

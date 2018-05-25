@@ -99,7 +99,7 @@ def main():
         postgres_unames[uname] = ""
 
     known_postgres_unames = {}
-    for i in cnf.get("Import-Users-From-Passwd::KnownPostgres","").split(","):
+    for i in cnf.get("Import-Users-From-Passwd::KnownPostgres", "").split(","):
         uname = i.strip()
         known_postgres_unames[uname] = ""
 

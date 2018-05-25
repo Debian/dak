@@ -88,11 +88,11 @@ def main():
     global Options
 
     cnf = Config()
-    Arguments = [('h',"help","Import-Keyring::Options::Help"),
-                 ('L',"import-ldap-users","Import-Keyring::Options::Import-Ldap-Users"),
-                 ('U',"generate-users","Import-Keyring::Options::Generate-Users", "HasArg"),
-                 ('l',"list-uids","Import-Keyring::Options::List-UIDs", "HasArg"),
-                 ('n',"no-action","Import-Keyring::Options::No-Action"),
+    Arguments = [('h', "help", "Import-Keyring::Options::Help"),
+                 ('L', "import-ldap-users", "Import-Keyring::Options::Import-Ldap-Users"),
+                 ('U', "generate-users", "Import-Keyring::Options::Generate-Users", "HasArg"),
+                 ('l', "list-uids", "Import-Keyring::Options::List-UIDs", "HasArg"),
+                 ('n', "no-action", "Import-Keyring::Options::No-Action"),
                 ]
 
     for i in ["help", "report-changes", "generate-users",
@@ -176,7 +176,7 @@ def main():
     # We don't change the uid, leaving that for historical info; if
     # the id should change, it'll be set when importing another keyring.
 
-    for f,(u,fid,kr) in db_fin_info.iteritems():
+    for f, (u, fid, kr) in db_fin_info.iteritems():
         if kr != keyring.keyring_id:
             continue
 
@@ -195,7 +195,7 @@ def main():
         newuid = fpr[f][0]
         newuiduid = db_uid_byid.get(newuid, [None])[0]
 
-        (olduid, oldfid, oldkid) = db_fin_info.get(f, [-1,-1,-1])
+        (olduid, oldfid, oldkid) = db_fin_info.get(f, [-1, -1, -1])
 
         if olduid is None:
             olduid = -1

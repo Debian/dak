@@ -396,7 +396,7 @@ def main():
     global users
 
     Cnf = utils.get_conf()
-    Arguments = [('h',"help","Stats::Options::Help")]
+    Arguments = [('h', "help", "Stats::Options::Help")]
     for i in ["help"]:
         key = "Stats::Options::%s" % i
         if key not in Cnf:

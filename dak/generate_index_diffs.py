@@ -85,7 +85,7 @@ def smartstat(file):
 
 def smartlink(f, t):
     if os.path.isfile(f):
-        os.link(f,t)
+        os.link(f, t)
     elif os.path.isfile("%s.gz" % (f)):
         os.system("gzip -d < %s.gz > %s" % (f, t))
     elif os.path.isfile("%s.bz2" % (f)):
@@ -145,7 +145,7 @@ class Updates:
                         if fname.endswith('.gz'):
                             fname = fname[:-3]
                         if fname not in self.history:
-                            self.history[fname] = [None,None,None]
+                            self.history[fname] = [None, None, None]
                             self.history_order.append(fname)
                         if not self.history[fname][ind]:
                             self.history[fname][ind] = (int(l[1]), None, None)
@@ -163,27 +163,27 @@ class Updates:
                         continue
 
                     if l[0] == "SHA1-History:":
-                        x = read_hashs(0,1,f,self)
+                        x = read_hashs(0, 1, f, self)
                         continue
 
                     if l[0] == "SHA256-History:":
-                        x = read_hashs(0,2,f,self)
+                        x = read_hashs(0, 2, f, self)
                         continue
 
                     if l[0] == "SHA1-Patches:":
-                        x = read_hashs(1,1,f,self)
+                        x = read_hashs(1, 1, f, self)
                         continue
 
                     if l[0] == "SHA256-Patches:":
-                        x = read_hashs(1,2,f,self)
+                        x = read_hashs(1, 2, f, self)
                         continue
 
                     if l[0] == "SHA1-Download:":
-                        x = read_hashs(2,1,f,self)
+                        x = read_hashs(2, 1, f, self)
                         continue
 
                     if l[0] == "SHA256-Download:":
-                        x = read_hashs(2,2,f,self)
+                        x = read_hashs(2, 2, f, self)
                         continue
 
                     if l[0] == "Canonical-Name:" or l[0] == "Canonical-Path:":
@@ -259,7 +259,7 @@ def create_temp_file(r):
             break
         f.write(x)
     r.close()
-    del x,r
+    del x, r
     f.flush()
     f.seek(0)
     return f
@@ -377,7 +377,7 @@ def main():
                   ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
                   ('v', "verbose", "Generate-Index-Diffs::Options::Verbose"),
                 ]
-    suites = apt_pkg.parse_commandline(Cnf,Arguments,sys.argv)
+    suites = apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
     Options = Cnf.subtree("Generate-Index-Diffs::Options")
     if "Help" in Options:
         usage()

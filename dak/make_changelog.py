@@ -299,13 +299,13 @@ def generate_export_filelist(clpool):
 
 def main():
     Cnf = utils.get_conf()
-    Arguments = [('h','help','Make-Changelog::Options::Help'),
-                 ('a','archive','Make-Changelog::Options::Archive','HasArg'),
-                 ('s','suite','Make-Changelog::Options::Suite','HasArg'),
-                 ('b','base-suite','Make-Changelog::Options::Base-Suite','HasArg'),
-                 ('n','binnmu','Make-Changelog::Options::binNMU'),
-                 ('e','export','Make-Changelog::Options::export'),
-                 ('p','progress','Make-Changelog::Options::progress')]
+    Arguments = [('h', 'help', 'Make-Changelog::Options::Help'),
+                 ('a', 'archive', 'Make-Changelog::Options::Archive', 'HasArg'),
+                 ('s', 'suite', 'Make-Changelog::Options::Suite', 'HasArg'),
+                 ('b', 'base-suite', 'Make-Changelog::Options::Base-Suite', 'HasArg'),
+                 ('n', 'binnmu', 'Make-Changelog::Options::binNMU'),
+                 ('e', 'export', 'Make-Changelog::Options::export'),
+                 ('p', 'progress', 'Make-Changelog::Options::progress')]
 
     for i in ['help', 'suite', 'base-suite', 'binnmu', 'export', 'progress']:
         key = 'Make-Changelog::Options::%s' % i

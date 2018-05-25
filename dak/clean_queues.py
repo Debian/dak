@@ -214,13 +214,13 @@ def main():
     if "Clean-Queues::Options::Days" not in cnf:
         cnf["Clean-Queues::Options::Days"] = "14"
 
-    Arguments = [('h',"help","Clean-Queues::Options::Help"),
-                 ('d',"days","Clean-Queues::Options::Days", "IntLevel"),
-                 ('i',"incoming","Clean-Queues::Options::Incoming", "HasArg"),
-                 ('n',"no-action","Clean-Queues::Options::No-Action"),
-                 ('v',"verbose","Clean-Queues::Options::Verbose")]
+    Arguments = [('h', "help", "Clean-Queues::Options::Help"),
+                 ('d', "days", "Clean-Queues::Options::Days", "IntLevel"),
+                 ('i', "incoming", "Clean-Queues::Options::Incoming", "HasArg"),
+                 ('n', "no-action", "Clean-Queues::Options::No-Action"),
+                 ('v', "verbose", "Clean-Queues::Options::Verbose")]
 
-    apt_pkg.parse_commandline(cnf.Cnf,Arguments,sys.argv)
+    apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     Options = cnf.subtree("Clean-Queues::Options")
 
     if Options["Help"]:

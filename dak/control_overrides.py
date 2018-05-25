@@ -234,7 +234,7 @@ def process_file(file, suite, component, otype, mode, action, session):
                                'maintainer': m_o})
 
         if not update_p:
-            Logger.log(["new override", suite, component, otype, package,priority,section,maintainer_override])
+            Logger.log(["new override", suite, component, otype, package, priority, section, maintainer_override])
 
     if mode == "set":
         # Delete any packages which were removed

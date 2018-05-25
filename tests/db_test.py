@@ -66,7 +66,7 @@ class DBDakTestCase(DakTestCase):
         # Default suites. Can be overridden by passing a parameter with a list
         # of suite names and codenames.
         if not suites:
-            suites = [('lenny',''),('squeeze',''),('sid','')]
+            suites = [('lenny', ''), ('squeeze', ''), ('sid', '')]
 
         self.setup_archive()
         self.suite = {}

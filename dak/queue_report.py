@@ -146,7 +146,7 @@ def sg_compare(a, b):
 ############################################################
 
 
-def sortfunc(a,b):
+def sortfunc(a, b):
     for sorting in direction:
         (sortkey, way, time) = sorting
         ret = 0
@@ -523,28 +523,28 @@ def process_queue(queue, log, rrd_dir):
         age = Cnf["Queue-Report::Options::Age"]
     if "Queue-Report::Options::New" in Cnf:
         # If we produce html we always have oldest first.
-        direction.append([6,-1,"ao"])
+        direction.append([6, -1, "ao"])
     else:
         if "Queue-Report::Options::Sort" in Cnf:
             for i in Cnf["Queue-Report::Options::Sort"].split(","):
                 if i == "ao":
                     # Age, oldest first.
-                    direction.append([6,-1,age])
+                    direction.append([6, -1, age])
                 elif i == "an":
                     # Age, newest first.
-                    direction.append([6,1,age])
+                    direction.append([6, 1, age])
                 elif i == "na":
                     # Name, Ascending.
-                    direction.append([0,1,0])
+                    direction.append([0, 1, 0])
                 elif i == "nd":
                     # Name, Descending.
-                    direction.append([0,-1,0])
+                    direction.append([0, -1, 0])
                 elif i == "nl":
                     # Notes last.
-                    direction.append([5,1,0])
+                    direction.append([5, 1, 0])
                 elif i == "nf":
                     # Notes first.
-                    direction.append([5,-1,0])
+                    direction.append([5, -1, 0])
     entries.sort(sortfunc)
     # Yes, in theory you can add several sort options at the commandline with. But my mind is to small
     # at the moment to come up with a real good sorting function that considers all the sidesteps you
@@ -591,7 +591,7 @@ def process_queue(queue, log, rrd_dir):
     source_count = len(per_source_items)
 
     if "Queue-Report::Options::New" in Cnf:
-        direction.append([6,1,"ao"])
+        direction.append([6, 1, "ao"])
         entries.sort(sortfunc)
         # Output for a html file. First table header. then table_footer.
         # Any line between them is then a <tr> printed from subroutine table_row.
@@ -631,13 +631,13 @@ def main():
     global Cnf
 
     Cnf = utils.get_conf()
-    Arguments = [('h',"help","Queue-Report::Options::Help"),
-                 ('n',"new","Queue-Report::Options::New"),
-                 ('8','822',"Queue-Report::Options::822"),
-                 ('s',"sort","Queue-Report::Options::Sort", "HasArg"),
-                 ('a',"age","Queue-Report::Options::Age", "HasArg"),
-                 ('r',"rrd","Queue-Report::Options::Rrd", "HasArg"),
-                 ('d',"directories","Queue-Report::Options::Directories", "HasArg")]
+    Arguments = [('h', "help", "Queue-Report::Options::Help"),
+                 ('n', "new", "Queue-Report::Options::New"),
+                 ('8', '822', "Queue-Report::Options::822"),
+                 ('s', "sort", "Queue-Report::Options::Sort", "HasArg"),
+                 ('a', "age", "Queue-Report::Options::Age", "HasArg"),
+                 ('r', "rrd", "Queue-Report::Options::Rrd", "HasArg"),
+                 ('d', "directories", "Queue-Report::Options::Directories", "HasArg")]
     for i in ["help"]:
         key = "Queue-Report::Options::%s" % i
         if key not in Cnf:
