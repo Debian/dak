@@ -42,13 +42,6 @@ import psycopg2
 import subprocess
 import traceback
 
-try:
-    # python >= 2.6
-    import json
-except:
-    # python <= 2.5
-    import simplejson as json
-
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
@@ -179,46 +172,6 @@ class ORMObject(object):
         '''
         return []
 
-    def json(self):
-        '''
-        Returns a JSON representation of the object based on the properties
-        returned from the properties() method.
-        '''
-        data = {}
-        # add created and modified
-        all_properties = self.properties() + ['created', 'modified']
-        for property in all_properties:
-            # check for list or query
-            if property[-6:] == '_count':
-                real_property = property[:-6]
-                if not hasattr(self, real_property):
-                    continue
-                value = getattr(self, real_property)
-                if hasattr(value, '__len__'):
-                    # list
-                    value = len(value)
-                elif hasattr(value, 'count'):
-                    value = value.count()
-                else:
-                    raise KeyError('Do not understand property %s.' % property)
-            else:
-                if not hasattr(self, property):
-                    continue
-                # plain object
-                value = getattr(self, property)
-                if value is None:
-                    # skip None
-                    continue
-                elif isinstance(value, ORMObject):
-                    # use repr() for ORMObject types
-                    value = repr(value)
-                else:
-                    # we want a string for all other types because json cannot
-                    # encode everything
-                    value = str(value)
-            data[property] = value
-        return json.dumps(data)
-
     def classname(self):
         '''
         Returns the name of the class.
@@ -239,7 +192,7 @@ class ORMObject(object):
         Returns a human readable form of the object using the properties()
         method.
         '''
-        return '<%s %s>' % (self.classname(), self.json())
+        return '<%s(...)>' % (self.classname())
 
     @classmethod
     @session_wrapper

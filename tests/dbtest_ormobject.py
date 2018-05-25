@@ -5,13 +5,6 @@ from db_test import DBDakTestCase
 from daklib.dbconn import Architecture, Suite
 from sqlalchemy.exc import IntegrityError
 
-try:
-    # python >= 2.6
-    import json
-except:
-    # python <= 2.5
-    import simplejson as json
-
 import re
 import unittest
 
@@ -23,11 +16,8 @@ class ORMObjectTestCase(DBDakTestCase):
     """
 
     def test_strings(self):
-        'tests json(), __repr__(), and __str__()'
+        'tests __repr__(), and __str__()'
         architecture = Architecture(arch_string='i386')
-        # test json()
-        data = json.loads(architecture.json())
-        self.assertEqual('i386', data['arch_string'])
         # test repr()
         self.assertEqual('<Architecture i386>', repr(architecture))
         # test str()
