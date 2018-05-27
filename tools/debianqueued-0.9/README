@@ -46,6 +46,11 @@ utilities installed:
  - gzip
 
  - ar (for analyzing .deb files)
+      (in package binutils)
+
+ - package libemail-sender-perl
+
+ - a package that provides /usr/bin/sendmail
 
 The daemon needs a directory of its own where the scripts reside and
 where it can put certain files. This directory is called $queued_dir
