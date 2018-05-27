@@ -1,0 +1,28 @@
+# m h  dom mon dow   command
+MAILTO=cron@ftp-master.debian.org
+PATH=/usr/local/bin:/usr/bin:/bin
+SHELL=/bin/bash
+configdir=/srv/security-master.debian.org/dak/config/debian-security
+
+
+0  *  * * *     $configdir/cronscript hourly
+*/10 * * * *    $configdir/cronscript unchecked
+12 12 * * 0     $configdir/cronscript weekly
+35 23 * * *     $configdir/cronscript daily
+
+@reboot         chmod 666 /srv/security-master.debian.org/lock/deploy
+
+# 0  *  * * *     /srv/security-master.debian.org/dak/config/debian-security/cron.hourly
+# */10 * * * *    /srv/security-master.debian.org/dak/config/debian-security/cron.unchecked
+# 12 12 * * 0     /srv/security-master.debian.org/dak/config/debian-security/cron.weekly
+# 35 23 * * *     /srv/security-master.debian.org/dak/config/debian-security/cron.daily
+
+0          0          *   *   *   crontab -l > ~/crontab.out
+
+# queued no longer used as of 2017-11-01
+#*/10 * * * *     sudo -u dak-unpriv /srv/queued/queued/disembargo/debianqueued 2>/dev/null
+#@reboot         sudo -u dak-unpriv /srv/queued/queued/disembargo/debianqueued
+#*/10 * * * *     sudo -u dak-unpriv /srv/queued/queued/embargoed/debianqueued 2>/dev/null
+#@reboot         sudo -u dak-unpriv /srv/queued/queued/embargoed/debianqueued
+##*/10 * * * *     sudo -u dak-unpriv /srv/queued/queued/ftpmaster/debianqueued 2>/dev/null
+##@reboot         sudo -u dak-unpriv /srv/queued/queued/ftpmaster/debianqueued
