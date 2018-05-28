@@ -86,7 +86,7 @@ NEW processing
 - ``cd /srv/security-master.debian.org/queue/reject``
 - ``dak admin forget-signature ${CHANGES}``
 - ``dcmd mv -n ${CHANGES} ../unchecked``
-- ``/srv/security-master.debian.org/dak/config/debian-security/cron.unchecked``
+- ``/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked``
 - ``cronon``
 
 Built-Using
