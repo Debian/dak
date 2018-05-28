@@ -39,7 +39,7 @@ utilities installed:
 
  - package libemail-sender-perl
 
- - a package that provides /usr/bin/sendmail
+ - a package that provides /usr/sbin/sendmail
 
 The daemon needs a directory of its own where the scripts reside and
 where it can put certain files. This directory is called $queued_dir
