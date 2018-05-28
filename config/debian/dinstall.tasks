@@ -1,6 +1,6 @@
 # FUNC                 ARGS                       TIME                       ERR       BG
 INCLUDE                lock                       none                       true      false
-STATE                  startup                    none                       false     false
+NOSTAGE                state\ startup             none                       false     false
 LOCK                   DAILY                      3600                       exclusive false
 NOSTAGE                startup                    none                       false     false
 savetimestamp          none                       none                       false     false
@@ -16,19 +16,19 @@ punew                  stable-new                 p-u-new                    fal
 opunew                 oldstable-new              o-p-u-new                  false     false
 backports_policy       none                       backports-policy           false     false
 cruft                  none                       cruft                      true      false
-STATE                  indices                    none                       false     false
+NOSTAGE                state\ indices             none                       false     false
 dominate               none                       dominate                   true      false
 autocruft              none                       autocruft                  true      false
 fingerprints           none                       import-keyring             false     true
 overrides              none                       overrides                  true      false
 mpfm                   none                       pkg-file-mapping           false     false
-STATE                  packages/contents          none                       true      false
+NOSTAGE                state\ packages/contents   none                       false     false
 packages               none                       apt-ftparchive             true      false
-STATE                  dists/                     none                       false     false
+NOSTAGE                state\ dists/              none                       false     false
 pdiff                  none                       pdiff                      true      false
 release                none                       release\ files             true      false
 dakcleanup             none                       cleanup                    true      false
-STATE                  scripts                    none                       false     false
+NOSTAGE                state\ scripts             none                       false     false
 mkmaintainers          none                       mkmaintainers              true      false
 copyoverrides          none                       copyoverrides              true      false
 mklslar                none                       mklslar                    true      false
@@ -39,7 +39,7 @@ signotherfiles         none                       signotherfiles             tru
 mirror                 none                       mirror\ hardlinks          true      false
 UNLOCK                 UNCHECKED                  none                       false     false
 UNLOCK                 DAILY                      none                       false     false
-STATE                  postlock                   none                       false     false
+NOSTAGE                state\ postlock            none                       false     false
 ddaccess               none                       ddaccessible\ sync         false     true
 LOCK                   CHANGELOG                  300                        exclusive false
 changelogs             none                       changelogs                 false     true
@@ -54,4 +54,4 @@ stats                  none                       stats                      fal
 testingsourcelist      none                       none                       false     true
 cleantransactions      none                       none                       false     false
 postcronscript         none                       none                       false     false
-STATE                  all\ done                  none                       false     false
+NOSTAGE                state\ all\ done           none                       false     false

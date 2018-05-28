@@ -126,8 +126,6 @@ function _runtasks() {
     # ATTENTION: Spaces in arguments or timestamp names need to be escaped by \
     #
     # NOTE 1: There are special values for the first column (FUNC).
-    #         STATE   - do not call stage function, call the state
-    #                   function to update the public statefile "where is dinstall"
     #         NOSTAGE - do not call stage function, call the command directly.
     #         RMSTAGE - clean out the stages directory, and as such
     #                   the recording what already ran in an earlier cronscript.
@@ -159,9 +157,6 @@ function _runtasks() {
             fi
         done
         case ${FUNC} in
-            STATE)
-                state ${ARGS}
-                ;;
             NOSTAGE)
                 ${ARGS}
                 ;;
