@@ -33,19 +33,13 @@ non-portabilities, tell me about them and we'll try to get them fixed!
 Before installing debianqueued, you should have the following
 utilities installed:
 
- - pgp (needed for checking signatures)
+ - gnupg (needed for checking signatures)
 
  - ssh & Co. (but not necessarily sshd, only client programs used)
 
- - md5sum (for checking file integrity)
+ - package libemail-sender-perl
 
- - mkfifo (for creating the status FIFO)
-
- - GNU tar
-
- - gzip
-
- - ar (for analyzing .deb files)
+ - a package that provides /usr/sbin/sendmail
 
 The daemon needs a directory of its own where the scripts reside and
 where it can put certain files. This directory is called $queued_dir
