@@ -33,20 +33,9 @@ non-portabilities, tell me about them and we'll try to get them fixed!
 Before installing debianqueued, you should have the following
 utilities installed:
 
- - pgp (needed for checking signatures)
+ - gnupg (needed for checking signatures)
 
  - ssh & Co. (but not necessarily sshd, only client programs used)
-
- - md5sum (for checking file integrity)
-
- - mkfifo (for creating the status FIFO)
-
- - GNU tar
-
- - gzip
-
- - ar (for analyzing .deb files)
-      (in package binutils)
 
  - package libemail-sender-perl
 
