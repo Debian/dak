@@ -193,7 +193,7 @@ function _runtasks() {
                     stage $GO
                 fi
                 ;;
-        esac
+        esac < /dev/null
     done < <(grep -v '^#' ${TASKLIST} )
 }
 
