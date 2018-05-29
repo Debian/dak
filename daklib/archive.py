@@ -1291,13 +1291,14 @@ class ArchiveUpload(object):
             versions.close()
 
         # binary -> source mapping
-        debinfo = fs.create("{0}.debinfo".format(base), mode=0o644)
-        for binary in self.changes.binaries:
-            control = binary.control
-            source_package, source_version = binary.source
-            line = " ".join([control['Package'], control['Version'], control['Architecture'], source_package, source_version])
-            print >>debinfo, line
-        debinfo.close()
+        if self.changes.binaries:
+            debinfo = fs.create("{0}.debinfo".format(base), mode=0o644)
+            for binary in self.changes.binaries:
+                control = binary.control
+                source_package, source_version = binary.source
+                line = " ".join([control['Package'], control['Version'], control['Architecture'], source_package, source_version])
+                print >>debinfo, line
+            debinfo.close()
 
     def _policy_queue(self, suite):
         if suite.policy_queue is not None:
