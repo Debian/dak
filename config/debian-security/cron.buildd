@@ -53,6 +53,6 @@ if [ ! -z "${dists}" ]; then
                 ;;
         esac
 
-        ssh wbadm@buildd trigger.security $send
+        ssh -n wbadm@buildd trigger.security $send
     done
 fi
