@@ -79,8 +79,8 @@ def file_in_archive(filepattern=None):
                         is % for zero, one or more characters, _ for a
                         single character match.
 
-    @rtype: Dictionary, empty if nothing matched.
-    @return: A dictionary of
+    @rtype: list of dictionaries
+    @return: Dictionaries made out of
              - filename
              - sha256sum
     """
@@ -101,6 +101,40 @@ def file_in_archive(filepattern=None):
     return json.dumps(ret)
 
 QueryRegister().register_path('/file_in_archive', file_in_archive)
+
+
+@bottle.route('/sha256sum_in_archive/<sha256sum>')
+def sha256sum_in_archive(sha256sum=None):
+    """
+    Check if files with matching sha256sums are known to the archive.
+
+    @since: June 2018
+
+    @type sha256sum: string
+    @param sha256sum: SHA256 sum of the file.
+
+    @rtype: list of dictionaries
+    @return: Dictionaries made out of
+             - filename
+             - sha256sum
+    """
+    if sha256sum is None:
+        return bottle.HTTPError(503, 'sha256sum not specified.')
+
+    s = DBConn().session()
+    q = s.query(PoolFile)
+    q = q.filter(PoolFile.sha256sum == sha256sum)
+    ret = []
+
+    for p in q:
+        ret.append({'filename':  p.filename,
+                    'sha256sum': p.sha256sum})
+
+    s.close()
+
+    return json.dumps(ret)
+
+QueryRegister().register_path('/sha256sum_in_archive', sha256sum_in_archive)
 
 
 @bottle.route('/sources_in_suite/<suite>')
