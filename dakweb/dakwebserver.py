@@ -26,7 +26,7 @@ QueryRegister().register_path('/', root_path)
 @bottle.route('/list_paths')
 def list_paths():
     """Returns a list of available paths"""
-    redirect("https://ftp-master.debian.org/epydoc/dakweb-module.html#__package__")
+    redirect("https://ftp-team.pages.debian.net/dak/epydoc/dakweb-module.html#__package__")
 QueryRegister().register_path('/list_paths', list_paths)
 
 
@@ -36,7 +36,7 @@ def path_help(path=None):
     if path is None:
         return bottle.HTTPError(503, 'Path not specified.')
 
-    redirect("https://ftp-master.debian.org/epydoc/%s-module.html#%s" %
+    redirect("https://ftp-team.pages.debian.net/dak/epydoc/%s-module.html#%s" %
              (QueryRegister().get_path_help(path), path))
 QueryRegister().register_path('/path_help', list_paths)
 
