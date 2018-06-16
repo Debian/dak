@@ -3,6 +3,7 @@ INCLUDE                lock                       none                       tru
 importusers            none                       none                       false     false
 queuereport            none                       none                       false     true
 removalstxt            none                       none                       false     true
+updateweb              none                       none                       false     true
 rss                    none                       none                       false     true
 ddaccess               none                       none                       false     true
 LOCK                   UNCHECKED                  600                        exclusive false

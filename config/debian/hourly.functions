@@ -79,3 +79,10 @@ function builddautosigning() {
 
     rm -f "${BUILDDFUN}"
 }
+
+function updateweb() {
+    cd ${webdir}
+    git clean -fd
+    git reset --hard
+    git pull
+}
