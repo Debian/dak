@@ -20,3 +20,16 @@ flake8:
     - apt-get update
     - apt-get install -y python-flake8
     - python -mflake8
+
+pages:
+  image: debian:9
+  script:
+    - apt-get update
+    - apt-get install -y python-epydoc
+    - mkdir -p public/epydoc
+    - epydoc -q --html --graph all --css blue -n DAK -o public/epydoc --include-log --show-imports dak dakweb
+  artifacts:
+    paths:
+      - public
+  only:
+    - master
