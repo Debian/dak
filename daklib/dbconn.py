@@ -1438,24 +1438,7 @@ __all__.append('get_priorities')
 ################################################################################
 
 
-class Section(ORMObject):
-    def __init__(self, section=None):
-        self.section = section
-
-    def properties(self):
-        return ['section', 'section_id', 'overrides_count']
-
-    def __eq__(self, val):
-        if isinstance(val, str):
-            return (self.section == val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
-
-    def __ne__(self, val):
-        if isinstance(val, str):
-            return (self.section != val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
+from .database.section import Section
 
 __all__.append('Section')
 
@@ -2204,7 +2187,6 @@ class DBConn(object):
             'policy_queue_upload_binaries_map',
             'policy_queue_byhand_file',
             'priority',
-            'section',
             'signature_history',
             'source',
             'source_metadata',
@@ -2415,10 +2397,6 @@ class DBConn(object):
 
         mapper(Priority, self.tbl_priority,
                properties=dict(priority_id=self.tbl_priority.c.id))
-
-        mapper(Section, self.tbl_section,
-               properties=dict(section_id=self.tbl_section.c.id,
-                                 section=self.tbl_section.c.section))
 
         mapper(SignatureHistory, self.tbl_signature_history)
 
