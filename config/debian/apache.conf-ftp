@@ -15,6 +15,7 @@ Use common-debian-service-https-redirect * ftp-master.debian.org
   Redirect permanent /oldstable-proposed-updates.html https://release.debian.org/proposed-updates/oldstable.html
   Redirect permanent /testing/hints/transitions.yaml https://ftp-master.debian.org/transitions.yaml
   Redirect permanent /git/archvsync.git https://salsa.debian.org/mirror-team/archvsync
+  Redirect permanent /epydoc https://ftp-team.pages.debian.net/dak/epydoc
   Alias /users/ /srv/ftp.debian.org/web-users/
   Alias /static/lintian.tags /srv/ftp-master.debian.org/dak/config/debian/lintian.tags
 
