@@ -42,13 +42,6 @@ import psycopg2
 import subprocess
 import traceback
 
-try:
-    # python >= 2.6
-    import json
-except:
-    # python <= 2.5
-    import simplejson as json
-
 from datetime import datetime, timedelta
 from errno import ENOENT
 from tempfile import mkstemp, mkdtemp
@@ -83,6 +76,8 @@ warnings.filterwarnings('ignore',
 warnings.filterwarnings('ignore',
     "Predicate of partial index .* ignored during reflection",
     SAWarning)
+
+from .database.base import Base
 
 
 ################################################################################
@@ -179,46 +174,6 @@ class ORMObject(object):
         '''
         return []
 
-    def json(self):
-        '''
-        Returns a JSON representation of the object based on the properties
-        returned from the properties() method.
-        '''
-        data = {}
-        # add created and modified
-        all_properties = self.properties() + ['created', 'modified']
-        for property in all_properties:
-            # check for list or query
-            if property[-6:] == '_count':
-                real_property = property[:-6]
-                if not hasattr(self, real_property):
-                    continue
-                value = getattr(self, real_property)
-                if hasattr(value, '__len__'):
-                    # list
-                    value = len(value)
-                elif hasattr(value, 'count'):
-                    value = value.count()
-                else:
-                    raise KeyError('Do not understand property %s.' % property)
-            else:
-                if not hasattr(self, property):
-                    continue
-                # plain object
-                value = getattr(self, property)
-                if value is None:
-                    # skip None
-                    continue
-                elif isinstance(value, ORMObject):
-                    # use repr() for ORMObject types
-                    value = repr(value)
-                else:
-                    # we want a string for all other types because json cannot
-                    # encode everything
-                    value = str(value)
-            data[property] = value
-        return json.dumps(data)
-
     def classname(self):
         '''
         Returns the name of the class.
@@ -239,7 +194,7 @@ class ORMObject(object):
         Returns a human readable form of the object using the properties()
         method.
         '''
-        return '<%s %s>' % (self.classname(), self.json())
+        return '<%s(...)>' % (self.classname())
 
     @classmethod
     @session_wrapper
@@ -321,25 +276,7 @@ __all__.append('ACLPerSource')
 ################################################################################
 
 
-class Architecture(ORMObject):
-    def __init__(self, arch_string=None, description=None):
-        self.arch_string = arch_string
-        self.description = description
-
-    def __eq__(self, val):
-        if isinstance(val, str):
-            return (self.arch_string == val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
-
-    def __ne__(self, val):
-        if isinstance(val, str):
-            return (self.arch_string != val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
-
-    def properties(self):
-        return ['arch_string', 'arch_id', 'suites_count']
+from .database.architecture import Architecture
 
 __all__.append('Architecture')
 
@@ -1501,24 +1438,7 @@ __all__.append('get_priorities')
 ################################################################################
 
 
-class Section(ORMObject):
-    def __init__(self, section=None):
-        self.section = section
-
-    def properties(self):
-        return ['section', 'section_id', 'overrides_count']
-
-    def __eq__(self, val):
-        if isinstance(val, str):
-            return (self.section == val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
-
-    def __ne__(self, val):
-        if isinstance(val, str):
-            return (self.section != val)
-        # This signals to use the normal comparison operator
-        return NotImplemented
+from .database.section import Section
 
 __all__.append('Section')
 
@@ -2221,6 +2141,8 @@ class DBConn(object):
     """
     __shared_state = {}
 
+    tbl_architecture = Architecture.__table__
+
     def __init__(self, *args, **kwargs):
         self.__dict__ = self.__shared_state
 
@@ -2235,7 +2157,6 @@ class DBConn(object):
             'acl_architecture_map',
             'acl_fingerprint_map',
             'acl_per_source',
-            'architecture',
             'archive',
             'bin_associations',
             'bin_contents',
@@ -2266,7 +2187,6 @@ class DBConn(object):
             'policy_queue_upload_binaries_map',
             'policy_queue_byhand_file',
             'priority',
-            'section',
             'signature_history',
             'source',
             'source_metadata',
@@ -2316,13 +2236,6 @@ class DBConn(object):
             setattr(self, 'view_%s' % view_name, view)
 
     def __setupmappers(self):
-        mapper(Architecture, self.tbl_architecture,
-            properties=dict(arch_id=self.tbl_architecture.c.id,
-               suites=relation(Suite, secondary=self.tbl_suite_architectures,
-                   order_by=self.tbl_suite.c.suite_name,
-                   backref=backref('architectures', order_by=self.tbl_architecture.c.arch_string))),
-            )
-
         mapper(ACL, self.tbl_acl,
                properties=dict(
                    architectures=relation(Architecture, secondary=self.tbl_acl_architecture_map, collection_class=set),
@@ -2485,10 +2398,6 @@ class DBConn(object):
         mapper(Priority, self.tbl_priority,
                properties=dict(priority_id=self.tbl_priority.c.id))
 
-        mapper(Section, self.tbl_section,
-               properties=dict(section_id=self.tbl_section.c.id,
-                                 section=self.tbl_section.c.section))
-
         mapper(SignatureHistory, self.tbl_signature_history)
 
         mapper(DBSource, self.tbl_source,
@@ -2527,7 +2436,9 @@ class DBConn(object):
                                  acls=relation(ACL, secondary=self.tbl_suite_acl_map, collection_class=set),
                                  components=relation(Component, secondary=self.tbl_component_suite,
                                                    order_by=self.tbl_component.c.ordering,
-                                                   backref=backref('suites'))),
+                                                   backref=backref('suites')),
+                                 architectures=relation(Architecture, secondary=self.tbl_suite_architectures,
+                                     backref=backref('suites'))),
         )
 
         mapper(Uid, self.tbl_uid,
@@ -2617,7 +2528,7 @@ class DBConn(object):
 
         try:
             self.db_pg = create_engine(connstr, **engine_args)
-            self.db_meta = MetaData()
+            self.db_meta = Base.metadata
             self.db_meta.bind = self.db_pg
             self.db_smaker = sessionmaker(bind=self.db_pg,
                                           autoflush=True,
