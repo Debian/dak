@@ -2198,26 +2198,13 @@ class DBConn(object):
     )
 
     views = (
-        'almost_obsolete_all_associations',
-        'almost_obsolete_src_associations',
-        'any_associations_source',
         'bin_associations_binaries',
-        'binaries_suite_arch',
         'changelogs',
-        'file_arch_suite',
-        'newest_all_associations',
-        'newest_any_associations',
         'newest_source',
         'newest_src_association',
-        'obsolete_all_associations',
-        'obsolete_any_associations',
-        'obsolete_any_by_all_associations',
-        'obsolete_src_associations',
         'package_list',
         'source_suite',
-        'src_associations_bin',
         'src_associations_src',
-        'suite_arch_by_name',
     )
 
     def __init__(self, *args, **kwargs):
