@@ -226,7 +226,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         try:
             if os.path.isdir(cnf["Dir::Lock"]):
-                lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'daily.lock'), os.O_RDWR | os.O_CREAT)
+                lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'daily.lock'), os.O_RDONLY | os.O_CREAT)
                 fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             else:
                 utils.warn("Lock directory doesn't exist yet - not locking")
