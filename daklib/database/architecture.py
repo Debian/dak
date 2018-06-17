@@ -15,6 +15,7 @@
 ################################################################################
 
 from sqlalchemy import Column, Integer, Text
+from sqlalchemy.schema import Index
 
 from .base import BaseTimestamp
 
@@ -23,8 +24,11 @@ class Architecture(BaseTimestamp):
     __tablename__ = 'architecture'
 
     arch_id = Column('id', Integer, primary_key=True)
-    arch_string = Column(Text, nullable=False, unique=True)
+    arch_string = Column(Text, nullable=False)
     description = Column(Text)
+
+    # indexes where not created as constraints, need to do as well
+    __table_args__ = (Index('architecture_arch_string_key', 'arch_string', unique=True), )
 
     def __init__(self, arch_string=None):
         self.arch_string = arch_string

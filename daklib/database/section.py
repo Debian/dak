@@ -15,6 +15,7 @@
 ################################################################################
 
 from sqlalchemy import Column, Integer, Text
+from sqlalchemy.schema import Index
 
 from .base import BaseTimestamp
 
@@ -23,7 +24,10 @@ class Section(BaseTimestamp):
     __tablename__ = 'section'
 
     section_id = Column('id', Integer, primary_key=True)
-    section = Column(Text, nullable=False, unique=True)
+    section = Column(Text, nullable=False)
+
+    # indexes where not created as constraints, need to do as well
+    __table_args__ = (Index('section_section_key', 'section', unique=True), )
 
     def __init__(self, section=None):
         self.section = section

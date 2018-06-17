@@ -64,9 +64,9 @@ from sqlalchemy.orm.exc import NoResultFound
 
 # Only import Config until Queue stuff is changed to store its config
 # in the database
-from config import Config
-from textutils import fix_maintainer
-from dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
+from .config import Config
+from .textutils import fix_maintainer
+from .dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -148,7 +148,7 @@ def session_wrapper(fn):
                 session.close()
 
     wrapped.__doc__ = fn.__doc__
-    wrapped.func_name = fn.func_name
+    wrapped.__name__ = fn.__name__
 
     return wrapped
 
@@ -2143,6 +2143,83 @@ class DBConn(object):
 
     tbl_architecture = Architecture.__table__
 
+    tables = (
+        'acl',
+        'acl_architecture_map',
+        'acl_fingerprint_map',
+        'acl_per_source',
+        'archive',
+        'bin_associations',
+        'bin_contents',
+        'binaries',
+        'binaries_metadata',
+        'build_queue',
+        'changelogs_text',
+        'changes',
+        'component',
+        'component_suite',
+        'config',
+        'dsc_files',
+        'external_files',
+        'external_overrides',
+        'external_signature_requests',
+        'extra_src_references',
+        'files',
+        'files_archive_map',
+        'fingerprint',
+        'hashfile',
+        'keyrings',
+        'maintainer',
+        'metadata_keys',
+        'new_comments',
+        # TODO: the maintainer column in table override should be removed.
+        'override',
+        'override_type',
+        'policy_queue',
+        'policy_queue_upload',
+        'policy_queue_upload_binaries_map',
+        'policy_queue_byhand_file',
+        'priority',
+        'signature_history',
+        'source',
+        'source_metadata',
+        'src_associations',
+        'src_contents',
+        'src_format',
+        'src_uploaders',
+        'suite',
+        'suite_acl_map',
+        'suite_architectures',
+        'suite_build_queue_copy',
+        'suite_permission',
+        'suite_src_formats',
+        'uid',
+        'version_check',
+    )
+
+    views = (
+        'almost_obsolete_all_associations',
+        'almost_obsolete_src_associations',
+        'any_associations_source',
+        'bin_associations_binaries',
+        'binaries_suite_arch',
+        'changelogs',
+        'file_arch_suite',
+        'newest_all_associations',
+        'newest_any_associations',
+        'newest_source',
+        'newest_src_association',
+        'obsolete_all_associations',
+        'obsolete_any_associations',
+        'obsolete_any_by_all_associations',
+        'obsolete_src_associations',
+        'package_list',
+        'source_suite',
+        'src_associations_bin',
+        'src_associations_src',
+        'suite_arch_by_name',
+    )
+
     def __init__(self, *args, **kwargs):
         self.__dict__ = self.__shared_state
 
@@ -2152,86 +2229,12 @@ class DBConn(object):
             self.__createconn()
 
     def __setuptables(self):
-        tables = (
-            'acl',
-            'acl_architecture_map',
-            'acl_fingerprint_map',
-            'acl_per_source',
-            'archive',
-            'bin_associations',
-            'bin_contents',
-            'binaries',
-            'binaries_metadata',
-            'build_queue',
-            'changelogs_text',
-            'changes',
-            'component',
-            'component_suite',
-            'config',
-            'dsc_files',
-            'external_overrides',
-            'external_signature_requests',
-            'extra_src_references',
-            'files',
-            'files_archive_map',
-            'fingerprint',
-            'keyrings',
-            'maintainer',
-            'metadata_keys',
-            'new_comments',
-            # TODO: the maintainer column in table override should be removed.
-            'override',
-            'override_type',
-            'policy_queue',
-            'policy_queue_upload',
-            'policy_queue_upload_binaries_map',
-            'policy_queue_byhand_file',
-            'priority',
-            'signature_history',
-            'source',
-            'source_metadata',
-            'src_associations',
-            'src_contents',
-            'src_format',
-            'src_uploaders',
-            'suite',
-            'suite_acl_map',
-            'suite_architectures',
-            'suite_build_queue_copy',
-            'suite_src_formats',
-            'uid',
-            'version_check',
-        )
-
-        views = (
-            'almost_obsolete_all_associations',
-            'almost_obsolete_src_associations',
-            'any_associations_source',
-            'bin_associations_binaries',
-            'binaries_suite_arch',
-            'changelogs',
-            'file_arch_suite',
-            'newest_all_associations',
-            'newest_any_associations',
-            'newest_source',
-            'newest_src_association',
-            'obsolete_all_associations',
-            'obsolete_any_associations',
-            'obsolete_any_by_all_associations',
-            'obsolete_src_associations',
-            'package_list',
-            'source_suite',
-            'src_associations_bin',
-            'src_associations_src',
-            'suite_arch_by_name',
-        )
-
-        for table_name in tables:
+        for table_name in self.tables:
             table = Table(table_name, self.db_meta,
                 autoload=True, useexisting=True)
             setattr(self, 'tbl_%s' % table_name, table)
 
-        for view_name in views:
+        for view_name in self.views:
             view = Table(view_name, self.db_meta, autoload=True)
             setattr(self, 'view_%s' % view_name, view)
 
@@ -2488,7 +2491,7 @@ class DBConn(object):
 
     ## Connection functions
     def __createconn(self):
-        from config import Config
+        from .config import Config
         cnf = Config()
         if "DB::Service" in cnf:
             connstr = "postgresql://service=%s" % cnf["DB::Service"]
