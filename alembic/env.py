@@ -16,8 +16,8 @@ fileConfig(config.config_file_name)
 import os
 import sys
 sys.path.append(os.getcwd())
-from daklib.database.all import Base
-target_metadata = Base.metadata
+from daklib.dbconn import DBConn
+target_metadata = DBConn().db_meta
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
