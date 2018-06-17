@@ -64,9 +64,9 @@ from sqlalchemy.orm.exc import NoResultFound
 
 # Only import Config until Queue stuff is changed to store its config
 # in the database
-from config import Config
-from textutils import fix_maintainer
-from dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
+from .config import Config
+from .textutils import fix_maintainer
+from .dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -148,7 +148,7 @@ def session_wrapper(fn):
                 session.close()
 
     wrapped.__doc__ = fn.__doc__
-    wrapped.func_name = fn.func_name
+    wrapped.__name__ = fn.__name__
 
     return wrapped
 
@@ -2488,7 +2488,7 @@ class DBConn(object):
 
     ## Connection functions
     def __createconn(self):
-        from config import Config
+        from .config import Config
         cnf = Config()
         if "DB::Service" in cnf:
             connstr = "postgresql://service=%s" % cnf["DB::Service"]

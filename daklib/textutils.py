@@ -22,10 +22,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import email.Header
+import email.header
 
-from dak_exceptions import *
-from regexes import re_parse_maintainer
+from .dak_exceptions import *
+from .regexes import re_parse_maintainer
 
 ################################################################################
 
@@ -52,7 +52,7 @@ def rfc2047_encode(s):
     """
     for enc in ['ascii', 'utf-8', 'iso-8859-1']:
         try:
-            h = email.Header.Header(s, enc, 998)
+            h = email.header.Header(s, enc, 998)
             return str(h)
         except UnicodeError:
             pass
