@@ -220,11 +220,17 @@ if [[ ${suitename} != jessie ]]; then
 fi
 
 log "RM time"
-# FIXME: Nicer ways please
-dak rm -h
-echo "Check with RMs if there are any removals to do, if so, please just enter full dak rm line here."
+if ${wget} -O "removallist" "${release_base}/removals.${target_suite}"; then
+    echo "Please check removallist file, I am going to run it as shell script when you confirm"
+    confirm
+    $EDITOR removallist
+    bash removallist
+fi
+
+echo "Any more removals to be done?"
 echo "If nothing - or done, just end with an empty line"
 hadrms=0
+
 # Blindly ignore errors in dak rm
 set +e
 while :; do
