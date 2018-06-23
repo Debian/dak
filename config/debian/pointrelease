@@ -225,6 +225,8 @@ dak rm -h
 echo "Check with RMs if there are any removals to do, if so, please just enter full dak rm line here."
 echo "If nothing - or done, just end with an empty line"
 hadrms=0
+# Blindly ignore errors in dak rm
+set +e
 while :; do
     read -e -p "RM command: " -i "dak rm -s ${suite} -R -p -d ### -m '###' ###" dakrmcmd
     if [[ -n ${dakrmcmd} ]]; then
@@ -235,6 +237,7 @@ while :; do
         break
     fi
 done
+set -e
 
 if [[ ${hadrms} -ne 0 ]]; then
     echo "You did some removals, please copy their entries into the changelog"
