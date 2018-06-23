@@ -167,12 +167,16 @@ if [[ -n ${skiplist} ]]; then
 fi
 
 log "Merging ${pusuite} into ${suite}"
-if dak control-suite --add ${suite} < ${pusuite}.list; then
-    log "Done"
-else
-    log "Please check problem and hit enter when i can continue"
-    read
-fi
+while :; do
+    if dak control-suite --add ${suite} < ${pusuite}.list; then
+        log "Done"
+        break
+    else
+        log "Please check problem and hit enter when i can retry"
+        read
+    fi
+done
+
 if [[ ${suitename} != jessie ]]; then
     dak control-suite --add ${suite}-debug < ${pusuite}-debug.list
 fi
