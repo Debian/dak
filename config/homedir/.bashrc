@@ -43,13 +43,13 @@ if [[ -n ${SCRIPTVARS} ]]; then
     . $SCRIPTVARS
 fi
 
-function em() {
-    export EDITOR=$(which emacs)
+function evim() {
+    export EDITOR=$(which vim)
 }
 
 export PAGER=less
 export LESS="-X"
-export EDITOR=$(which vim)
+export EDITOR=$(which emacs)
 export HISTFILESIZE=6000
 export CDPATH=".:~:${base}:${public}:${queuedir}"
 export PATH="~/bin/:${PATH}"
