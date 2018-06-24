@@ -5,54 +5,54 @@ set -u
 
 echo "Setting up metadata key ordering"
 
-values="
-    ('Package', -2600),
-    ('Source', -2500),
-    ('Binary', -2400),
-    ('Version', -2300),
-    ('Essential', -2250),
-    ('Installed-Size', -2200),
-    ('Maintainer', -2100),
-    ('Uploaders', -2090),
-    ('Original-Maintainer', -2080),
-    ('Build-Depends', -2000),
-    ('Build-Depends-Indep', -1990),
-    ('Build-Conflicts', -1980),
-    ('Build-Conflicts-Indep', -1970),
-    ('Architecture', -1800),
-    ('Standards-Version', -1700),
-    ('Format', -1600),
-    ('Files', -1500),
-    ('Dm-Upload-Allowed', -1400),
-    ('Vcs-Browse', -1300),
-    ('Vcs-Hg', -1300),
-    ('Vcs-Darcs', -1300),
-    ('Vcs-Svn', -1300),
-    ('Vcs-Git', -1300),
-    ('Vcs-Browser', -1300),
-    ('Vcs-Arch', -1300),
-    ('Vcs-Bzr', -1300),
-    ('Vcs-Mtn', -1300),
-    ('Vcs-Cvs', -1300),
-    ('Checksums-Sha256', -1200),
-    ('Checksums-Sha1', -1200),
-    ('Replaces', -1100),
-    ('Provides', -1000),
-    ('Depends', -900),
-    ('Pre-Depends', -850),
-    ('Recommends', -800),
-    ('Suggests', -700),
-    ('Enhances', -650),
-    ('Conflicts', -600),
-    ('Breaks', -500),
-    ('Description', -400),
-    ('Origin', -300),
-    ('Bugs', -200),
-    ('Multi-Arch', -150),
-    ('Homepage', -100),
-    ('Tag', 300),
-    ('Package-Type', 400),
-    ('Installer-Menu-Item', 500)
-"
-
-psql -c "INSERT INTO metadata_keys (key, ordering) VALUES ${values}" >/dev/null
+psql << EOF
+COPY metadata_keys (key, ordering) FROM stdin;
+Package	-2600
+Source	-2500
+Binary	-2400
+Version	-2300
+Essential	-2250
+Installed-Size	-2200
+Maintainer	-2100
+Uploaders	-2090
+Original-Maintainer	-2080
+Build-Depends	-2000
+Build-Depends-Indep	-1990
+Build-Conflicts	-1980
+Build-Conflicts-Indep	-1970
+Architecture	-1800
+Standards-Version	-1700
+Format	-1600
+Files	-1500
+Dm-Upload-Allowed	-1400
+Vcs-Browse	-1300
+Vcs-Hg	-1300
+Vcs-Darcs	-1300
+Vcs-Svn	-1300
+Vcs-Git	-1300
+Vcs-Browser	-1300
+Vcs-Arch	-1300
+Vcs-Bzr	-1300
+Vcs-Mtn	-1300
+Vcs-Cvs	-1300
+Checksums-Sha256	-1200
+Checksums-Sha1	-1200
+Replaces	-1100
+Provides	-1000
+Depends	-900
+Pre-Depends	-850
+Recommends	-800
+Suggests	-700
+Enhances	-650
+Conflicts	-600
+Breaks	-500
+Description	-400
+Origin	-300
+Bugs	-200
+Multi-Arch	-150
+Homepage	-100
+Tag	300
+Package-Type	400
+Installer-Menu-Item	500
+\.
+EOF

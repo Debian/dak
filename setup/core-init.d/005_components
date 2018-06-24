@@ -5,7 +5,10 @@ set -u
 
 echo "Creating components"
 
-psql -c "INSERT INTO component (name, description, meets_dfsg)
-                        VALUES ('main', 'Main', TRUE),
-                               ('contrib', 'Contrib', TRUE),
-                               ('non-free', 'Software that fails to meet the DFSG', FALSE)" >/dev/null
+psql << EOF
+COPY component (name, description, meets_dfsg) FROM stdin;
+main	Main	t
+contrib	Contrib	t
+non-free	Software that fails to meet the DFSG	f
+\.
+EOF
