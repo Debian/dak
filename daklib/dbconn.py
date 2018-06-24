@@ -53,7 +53,7 @@ import sqlalchemy
 from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc, \
     Text, ForeignKey
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
-    backref, MapperExtension, EXT_CONTINUE, object_mapper, clear_mappers
+    backref, MapperExtension, EXT_CONTINUE, object_mapper
 import sqlalchemy.types
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -2141,6 +2141,8 @@ class DBConn(object):
     """
     __shared_state = {}
 
+    db_meta = None
+
     tbl_architecture = Architecture.__table__
 
     tables = (
@@ -2518,14 +2520,15 @@ class DBConn(object):
 
         try:
             self.db_pg = create_engine(connstr, **engine_args)
-            self.db_meta = Base.metadata
-            self.db_meta.bind = self.db_pg
             self.db_smaker = sessionmaker(bind=self.db_pg,
                                           autoflush=True,
                                           autocommit=False)
 
-            self.__setuptables()
-            self.__setupmappers()
+            if self.db_meta is None:
+                self.__class__.db_meta = Base.metadata
+                self.__class__.db_meta.bind = self.db_pg
+                self.__setuptables()
+                self.__setupmappers()
 
         except OperationalError as e:
             import utils
@@ -2542,7 +2545,6 @@ class DBConn(object):
         '''
         # reinitialize DBConn in new processes
         if self.pid != os.getpid():
-            clear_mappers()
             self.__createconn()
         session = self.db_smaker()
         if work_mem > 0:
