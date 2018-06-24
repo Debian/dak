@@ -24,7 +24,25 @@ from sqlalchemy.sql import func
 Base = declarative_base()
 
 
-class BaseTimestamp(Base):
+class BaseMethods(Base):
+    __abstract__ = True
+
+    @classmethod
+    def get(cls, primary_key, session):
+        '''
+        This is a support function that allows getting an object by its primary
+        key.
+
+        Architecture.get(3[, session])
+
+        instead of the more verbose
+
+        session.query(Architecture).get(3)
+        '''
+        return session.query(cls).get(primary_key)
+
+
+class BaseTimestamp(BaseMethods):
     __abstract__ = True
 
     created = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
