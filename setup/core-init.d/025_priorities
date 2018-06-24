@@ -5,10 +5,13 @@ echo "Creating default priorities"
 set -e
 set -u
 
-psql -c "INSERT INTO priority (priority, level)
-                       VALUES ('required', 1),
-                              ('important', 2),
-                              ('standard', 3),
-                              ('optional', 4),
-                              ('extra', 5),
-                              ('source', 0)" >/dev/null
+psql << EOF
+COPY priority (priority, level) FROM stdin;
+required	1
+important	2
+standard	3
+optional	4
+extra	5
+source	0
+\.
+EOF

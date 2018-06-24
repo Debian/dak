@@ -5,5 +5,10 @@ set -u
 
 echo "Setting up source formats"
 
-psql -c "INSERT INTO src_format (format_name)
-                         VALUES ('1.0'), ('3.0 (quilt)'), ('3.0 (native)')" >/dev/null
+psql << EOF
+COPY src_format (format_name) FROM stdin;
+1.0
+3.0 (quilt)
+3.0 (native)
+\.
+EOF
