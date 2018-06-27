@@ -20,26 +20,36 @@ import apt_pkg
 import unittest
 from base_test import DakTestCase
 
-from daklib.utils import (arch_compare_sw, is_in_debug_section,
+from daklib.utils import (is_in_debug_section,
                           parse_built_using,
-                          extract_component_from_section)
+                          extract_component_from_section,
+                          ArchKey)
 
 apt_pkg.init()
 
 
 class UtilsTest(DakTestCase):
 
-    def test_utils_arch_compare_sw(self):
-        data = [
-            ('source', 'source', 0),
-            ('source', 'amd64', -1),
-            ('amd64', 'amd64', 0),
-            ('amd64', 'source', 1),
-            ('amd64', 'i386', -1),
-            ('i386', 'amd64', 1),
-        ]
-        for a, b, r in data:
-            self.assertEqual(arch_compare_sw(a, b), r)
+    def test_utils_ArchKey(self):
+        source = ArchKey('source')
+        arch1 = ArchKey('amd64')
+        arch2 = ArchKey('i386')
+
+        assert source.__eq__(source)
+        assert not source.__lt__(source)
+
+        assert arch1.__eq__(arch1)
+        assert not arch1.__lt__(arch1)
+
+        assert not source.__eq__(arch1)
+        assert not arch1.__eq__(source)
+        assert source.__lt__(arch1)
+        assert not arch1.__lt__(source)
+
+        assert not arch1.__eq__(arch2)
+        assert not arch2.__eq__(arch1)
+        assert arch1.__lt__(arch2)
+        assert not arch2.__lt__(arch1)
 
     def test_is_in_debug_section(self):
         data = [

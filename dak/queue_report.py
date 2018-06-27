@@ -41,6 +41,7 @@ import sys
 import time
 import apt_pkg
 import datetime
+import functools
 
 try:
     import rrdtool
@@ -143,7 +144,7 @@ def sg_compare(a, b):
         return 1
 
     # Sort by time of oldest upload
-    return cmp(a["oldest"], b["oldest"])
+    return a["oldest"] - b["oldest"]
 
 ############################################################
 
@@ -405,7 +406,7 @@ def process_queue(queue, log, rrd_dir):
                 per_source[source]["processed"] = "PENDING %s" % handler.get_action()
                 total_pending += 1
         per_source[source]["list"].append(upload)
-        per_source[source]["list"].sort(lambda x, y: cmp(x.changes.created, y.changes.created), reverse=True)
+        per_source[source]["list"].sort(key=lambda x: x.changes.created, reverse=True)
     # Determine oldest time and have note status for each source group
     for source in per_source.keys():
         source_list = per_source[source]["list"]
@@ -429,7 +430,7 @@ def process_queue(queue, log, rrd_dir):
         else:
             per_source[source]["note_state"] = 2 # all
     per_source_items = per_source.items()
-    per_source_items.sort(sg_compare)
+    per_source_items.sort(key=functools.cmp_to_key(sg_compare))
 
     update_graph_database(rrd_dir, type, len(per_source_items), len(queue.uploads))
 
@@ -503,7 +504,7 @@ def process_queue(queue, log, rrd_dir):
                 arches.add(arch)
             versions.add(dbc.version)
         arches_list = list(arches)
-        arches_list.sort(utils.arch_compare_sw)
+        arches_list.sort(key=utils.ArchKey)
         arch_list = " ".join(arches_list)
         version_list = " ".join(sorted(versions, reverse=True))
         if len(version_list) > max_version_len:
@@ -547,7 +548,7 @@ def process_queue(queue, log, rrd_dir):
                 elif i == "nf":
                     # Notes first.
                     direction.append([5, -1, 0])
-    entries.sort(sortfunc)
+    entries.sort(key=functools.cmp_to_key(sortfunc))
     # Yes, in theory you can add several sort options at the commandline with. But my mind is to small
     # at the moment to come up with a real good sorting function that considers all the sidesteps you
     # have with it. (If you combine options it will simply take the last one at the moment).
@@ -594,7 +595,7 @@ def process_queue(queue, log, rrd_dir):
 
     if "Queue-Report::Options::New" in Cnf:
         direction.append([6, 1, "ao"])
-        entries.sort(sortfunc)
+        entries.sort(key=functools.cmp_to_key(sortfunc))
         # Output for a html file. First table header. then table_footer.
         # Any line between them is then a <tr> printed from subroutine table_row.
         if len(entries) > 0:

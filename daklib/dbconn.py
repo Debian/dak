@@ -37,6 +37,7 @@ from __future__ import absolute_import, print_function
 
 import apt_pkg
 import daklib.daksubprocess
+import functools
 import os
 from os.path import normpath
 import re
@@ -1339,19 +1340,32 @@ __all__.append('get_policy_queue')
 ################################################################################
 
 
+@functools.total_ordering
 class PolicyQueueUpload(object):
-    def __cmp__(self, other):
-        ret = cmp(self.changes.source, other.changes.source)
-        if ret == 0:
-            ret = apt_pkg.version_compare(self.changes.version, other.changes.version)
-        if ret == 0:
-            if self.source is not None and other.source is None:
-                ret = -1
-            elif self.source is None and other.source is not None:
-                ret = 1
-        if ret == 0:
-            ret = cmp(self.changes.changesname, other.changes.changesname)
-        return ret
+    def __eq__(self, other):
+        if self.changes.source == other.changes.source:
+            return True
+        if apt_pkg.version_compare(self.changes.version, other.changes.version) == 0:
+            return True
+        if self.source == other.source:
+            return True
+        if self.changes.changesname == other.changes.changesname:
+            return True
+        return False
+
+    def __lt__(self, other):
+        if self.changes.source < other.changes.source:
+            return True
+        if apt_pkg.version_compare(self.changes.version, other.changes.version) < 0:
+            return True
+        if self.source is not None and other.source is None:
+            return True
+        if self.source is None and other.source is not None:
+            return False
+        if self.changes.changesname < other.changes.changesname:
+            return True
+        return False
+
 
 __all__.append('PolicyQueueUpload')
 
