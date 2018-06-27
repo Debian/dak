@@ -46,6 +46,7 @@ import email as modemail
 import subprocess
 import ldap
 import errno
+import functools
 
 import daklib.config as config
 import daklib.daksubprocess
@@ -795,6 +796,32 @@ def arch_compare_sw(a, b):
         return 1
 
     return cmp(a, b)
+
+
+@functools.total_ordering
+class ArchKey(object):
+    """
+    Key object for use in sorting lists of architectures.
+
+    Sorts normally except that 'source' dominates all others.
+    """
+
+    __slots__ = ['arch', 'issource']
+
+    def __init__(self, arch, *args):
+        self.arch = arch
+        self.issource = arch == 'source'
+
+    def __lt__(self, other):
+        if self.issource:
+            return not other.issource
+        if other.issource:
+            return False
+        return self.arch < other.arch
+
+    def __eq__(self, other):
+        return self.arch == other.arch
+
 
 ################################################################################
 
