@@ -25,6 +25,8 @@
 ## That Alisha Rules The World
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import apt_pkg
@@ -42,12 +44,12 @@ from daklib import utils
 def game_over():
     answer = utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
-        print "Aborted."
+        print("Aborted.")
         sys.exit(1)
 
 
 def usage(exit_code=0):
-    print """Usage: dak override [OPTIONS] package [section] [priority]
+    print("""Usage: dak override [OPTIONS] package [section] [priority]
 Make microchanges or microqueries of the binary overrides
 
   -h, --help                 show this help and exit
@@ -55,7 +57,7 @@ Make microchanges or microqueries of the binary overrides
   -d, --done=BUG#            send priority/section change as closure to bug#
   -n, --no-action            don't do anything
   -s, --suite                specify the suite to use
-"""
+""")
     sys.exit(exit_code)
 
 
@@ -152,8 +154,8 @@ def main():
         oldsection = oldsourcesection
 
     if not arguments:
-        print "%s is in section '%s' at priority '%s'" % (
-            package, oldsection, oldpriority)
+        print("%s is in section '%s' at priority '%s'" % (
+            package, oldsection, oldpriority))
         sys.exit(0)
 
     # At this point, we have a new section and priority... check they're valid...
@@ -175,37 +177,37 @@ def main():
     newprioid = p.priority_id
 
     if newpriority == oldpriority and newsection == oldsection:
-        print "I: Doing nothing"
+        print("I: Doing nothing")
         sys.exit(0)
 
     if oldpriority == 'source' and newpriority != 'source':
         utils.fubar("Trying to change priority of a source-only package")
 
     if Options["Check"]:
-        print "WARNING: Check option is deprecated by Debian Policy 4.0.1"
+        print("WARNING: Check option is deprecated by Debian Policy 4.0.1")
 
     # If we're in no-action mode
     if Options["No-Action"]:
         if newpriority != oldpriority:
-            print "I: Would change priority from %s to %s" % (oldpriority, newpriority)
+            print("I: Would change priority from %s to %s" % (oldpriority, newpriority))
         if newsection != oldsection:
-            print "I: Would change section from %s to %s" % (oldsection, newsection)
+            print("I: Would change section from %s to %s" % (oldsection, newsection))
         if "Done" in Options:
-            print "I: Would also close bug(s): %s" % (Options["Done"])
+            print("I: Would also close bug(s): %s" % (Options["Done"]))
 
         sys.exit(0)
 
     if newpriority != oldpriority:
-        print "I: Will change priority from %s to %s" % (oldpriority, newpriority)
+        print("I: Will change priority from %s to %s" % (oldpriority, newpriority))
 
     if newsection != oldsection:
-        print "I: Will change section from %s to %s" % (oldsection, newsection)
+        print("I: Will change section from %s to %s" % (oldsection, newsection))
 
     if "Done" not in Options:
         pass
         #utils.warn("No bugs to close have been specified. Noone will know you have done this.")
     else:
-        print "I: Will close bug(s): %s" % (Options["Done"])
+        print("I: Will close bug(s): %s" % (Options["Done"]))
 
     game_over()
 

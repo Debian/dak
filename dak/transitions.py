@@ -28,6 +28,8 @@ Display, edit and check the release manager's transition file.
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -88,7 +90,7 @@ def init():
 
     username = utils.getusername()
     if username != "dak":
-        print "Non-dak user: %s" % username
+        print("Non-dak user: %s" % username)
         Options["sudo"] = "y"
 
     # Initialise DB connection
@@ -98,7 +100,7 @@ def init():
 
 
 def usage(exit_code=0):
-    print """Usage: transitions [OPTION]...
+    print("""Usage: transitions [OPTION]...
 Update and check the release managers transition file.
 
 Options:
@@ -109,7 +111,7 @@ Options:
   -c, --check               check the transitions file, remove outdated entries
   -S, --sudo                use sudo to update transitions file
   -a, --automatic           don't prompt (only affects check).
-  -n, --no-action           don't do anything (only affects check)"""
+  -n, --no-action           don't do anything (only affects check)""")
 
     sys.exit(exit_code)
 
@@ -143,7 +145,7 @@ def load_transitions(trans_file):
         trans = yaml.safe_load(sourcecontent)
     except yaml.YAMLError as exc:
         # Someone fucked it up
-        print "ERROR: %s" % (exc)
+        print("ERROR: %s" % (exc))
         return None
 
     # lets do further validation here
@@ -167,26 +169,26 @@ def load_transitions(trans_file):
             # included, ie. not a list in list, but only str in the list)
             for key in t:
                 if key not in checkkeys:
-                    print "ERROR: Unknown key %s in transition %s" % (key, test)
+                    print("ERROR: Unknown key %s in transition %s" % (key, test))
                     failure = True
 
                 if key == "packages":
                     if type(t[key]) != list:
-                        print "ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test)
+                        print("ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test))
                         failure = True
                     try:
                         for package in t["packages"]:
                             if type(package) != str:
-                                print "ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test)
+                                print("ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test))
                                 failure = True
                             if re_broken_package.match(package):
                                 # Someone had a space too much (or not enough), we have something looking like
                                 # "package1 - package2" now.
-                                print "ERROR: Invalid indentation of package list in transition %s, around package(s): %s" % (test, package)
+                                print("ERROR: Invalid indentation of package list in transition %s, around package(s): %s" % (test, package))
                                 failure = True
                     except TypeError:
                         # In case someone has an empty packages list
-                        print "ERROR: No packages defined in transition %s" % (test)
+                        print("ERROR: No packages defined in transition %s" % (test))
                         failure = True
                         continue
 
@@ -195,17 +197,17 @@ def load_transitions(trans_file):
                         # Ok, debian native version
                         continue
                     else:
-                        print "ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test)
+                        print("ERROR: Unknown type %s for key %s in transition %s" % (type(t[key]), key, test))
                         failure = True
 
             # And now the other way round - are all our keys defined?
             for key in checkkeys:
                 if key not in t:
-                    print "ERROR: Missing key %s in transition %s" % (key, test)
+                    print("ERROR: Missing key %s in transition %s" % (key, test))
                     failure = True
     except TypeError:
         # In case someone defined very broken things
-        print "ERROR: Unable to parse the file"
+        print("ERROR: Unable to parse the file")
         failure = True
 
     if failure:
@@ -234,8 +236,8 @@ def lock_file(f):
             return lock_fd
         except OSError as e:
             if e.errno in (errno.EACCES, errno.EEXIST):
-                print "Unable to get lock for %s (try %d of 10)" % \
-                        (file, retry + 1)
+                print("Unable to get lock for %s (try %d of 10)" %
+                        (file, retry + 1))
                 time.sleep(60)
             else:
                 raise
@@ -299,7 +301,7 @@ def write_transitions_from_file(from_file):
 
     # Lets check if from_file is in the directory we expect it to be in
     if not os.path.abspath(from_file).startswith(Cnf["Dir::TempPath"]):
-        print "Will not accept transitions file outside of %s" % (Cnf["Dir::TempPath"])
+        print("Will not accept transitions file outside of %s" % (Cnf["Dir::TempPath"]))
         sys.exit(3)
 
     if Options["sudo"]:
@@ -357,13 +359,13 @@ def edit_transitions():
 
         if test is None:
             # Edit is broken
-            print "Edit was unparsable."
+            print("Edit was unparsable.")
             prompt = "[E]dit again, Drop changes?"
             default = "E"
         else:
-            print "Edit looks okay.\n"
-            print "The following transitions are defined:"
-            print "------------------------------------------------------------------------"
+            print("Edit looks okay.\n")
+            print("The following transitions are defined:")
+            print("------------------------------------------------------------------------")
             transition_info(test)
 
             prompt = "[S]ave, Edit again, Drop changes?"
@@ -380,20 +382,20 @@ def edit_transitions():
             continue
         elif answer == 'D':
             os.unlink(edit_file)
-            print "OK, discarding changes"
+            print("OK, discarding changes")
             sys.exit(0)
         elif answer == 'S':
             # Ready to save
             break
         else:
-            print "You pressed something you shouldn't have :("
+            print("You pressed something you shouldn't have :(")
             sys.exit(1)
 
     # We seem to be done and also have a working file. Copy over.
     write_transitions_from_file(edit_file)
     os.unlink(edit_file)
 
-    print "Transitions file updated."
+    print("Transitions file updated.")
 
 ################################################################################
 
@@ -422,24 +424,24 @@ def check_transitions(transitions):
         sourceobj = get_source_in_suite(source, "testing", session)
 
         info[trans] = get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
-        print info[trans]
+        print(info[trans])
 
         if sourceobj is None:
             # No package in testing
-            print "Transition source %s not in testing, transition still ongoing." % (source)
+            print("Transition source %s not in testing, transition still ongoing." % (source))
         else:
             current = sourceobj.version
             compare = apt_pkg.version_compare(current, expected)
             if compare < 0:
                 # This is still valid, the current version in database is older than
                 # the new version we wait for
-                print "This transition is still ongoing, we currently have version %s" % (current)
+                print("This transition is still ongoing, we currently have version %s" % (current))
             else:
-                print "REMOVE: This transition is over, the target package reached testing. REMOVE"
-                print "%s wanted version: %s, has %s" % (source, expected, current)
+                print("REMOVE: This transition is over, the target package reached testing. REMOVE")
+                print("%s wanted version: %s, has %s" % (source, expected, current))
                 to_remove.append(trans)
                 to_dump = 1
-        print "-------------------------------------------------------------------------"
+        print("-------------------------------------------------------------------------")
 
     if to_dump:
         prompt = "Removing: "
@@ -461,10 +463,10 @@ def check_transitions(transitions):
             answer = "n"
 
         if answer == 'n':
-            print "Not committing changes"
+            print("Not committing changes")
             sys.exit(0)
         elif answer == 'y':
-            print "Committing"
+            print("Committing")
             subst = {}
             subst['__SUBJECT__'] = "Transitions completed: " + ", ".join(sorted(to_remove))
             subst['__TRANSITION_MESSAGE__'] = "The following transitions were removed:\n"
@@ -476,7 +478,7 @@ def check_transitions(transitions):
             # send a notification
             subst['__TRANSITION_EMAIL__'] = Cnf.get("Transitions::Notifications", "")
             if subst['__TRANSITION_EMAIL__'] != "":
-                print "Sending notification to %s" % subst['__TRANSITION_EMAIL__']
+                print("Sending notification to %s" % subst['__TRANSITION_EMAIL__'])
                 subst['__DAK_ADDRESS__'] = Cnf["Dinstall::MyEmailAddress"]
                 subst['__BCC__'] = 'X-DAK: dak transitions'
                 if "Dinstall::Bcc" in Cnf:
@@ -488,9 +490,9 @@ def check_transitions(transitions):
             edit_file = temp_transitions_file(transitions)
             write_transitions_from_file(edit_file)
 
-            print "Done"
+            print("Done")
         else:
-            print "WTF are you typing?"
+            print("WTF are you typing?")
             sys.exit(0)
 
 ################################################################################
@@ -550,22 +552,22 @@ def transition_info(transitions):
         # Will be None if nothing is in testing.
         sourceobj = get_source_in_suite(source, "testing", session)
 
-        print get_info(trans, source, expected, t["rm"], t["reason"], t["packages"])
+        print(get_info(trans, source, expected, t["rm"], t["reason"], t["packages"]))
 
         if sourceobj is None:
             # No package in testing
-            print "Transition source %s not in testing, transition still ongoing." % (source)
+            print("Transition source %s not in testing, transition still ongoing." % (source))
         else:
             compare = apt_pkg.version_compare(sourceobj.version, expected)
-            print "Apt compare says: %s" % (compare)
+            print("Apt compare says: %s" % (compare))
             if compare < 0:
                 # This is still valid, the current version in database is older than
                 # the new version we wait for
-                print "This transition is still ongoing, we currently have version %s" % (sourceobj.version)
+                print("This transition is still ongoing, we currently have version %s" % (sourceobj.version))
             else:
-                print "This transition is over, the target package reached testing, should be removed"
-                print "%s wanted version: %s, has %s" % (source, expected, sourceobj.version)
-        print "-------------------------------------------------------------------------"
+                print("This transition is over, the target package reached testing, should be removed")
+                print("%s wanted version: %s, has %s" % (source, expected, sourceobj.version))
+        print("-------------------------------------------------------------------------")
 
 ################################################################################
 
@@ -607,7 +609,7 @@ def main():
         try:
             write_transitions_from_file(Options["import"])
         except TransitionsError as m:
-            print m
+            print(m)
             sys.exit(2)
         sys.exit(0)
     ##############################################
@@ -629,7 +631,7 @@ def main():
         check_transitions(transitions)
     else:
         # Output information about the currently defined transitions.
-        print "Currently defined transitions:"
+        print("Currently defined transitions:")
         transition_info(transitions)
 
     sys.exit(0)

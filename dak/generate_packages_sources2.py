@@ -28,12 +28,14 @@ Generate Packages/Sources files
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 import apt_pkg
 import sys
 
 
 def usage():
-    print """Usage: dak generate-packages-sources2 [OPTIONS]
+    print("""Usage: dak generate-packages-sources2 [OPTIONS]
 Generate the Packages/Sources files
 
   -a, --archive=ARCHIVE        process suites in ARCHIVE
@@ -45,7 +47,7 @@ Generate the Packages/Sources files
 
 SUITE can be a space separated list, e.g.
    --suite=unstable testing
-"""
+""")
     sys.exit()
 
 #############################################################################
@@ -132,8 +134,8 @@ def generate_sources(suite_id, component_id):
     # run query and write Sources
     r = session.execute(_sources_query, {"suite": suite_id, "component": component_id, "component_name": component.component_name, "dsc_type": dsc_type, "overridesuite": overridesuite_id})
     for (stanza,) in r:
-        print >>output, stanza
-        print >>output, ""
+        print(stanza, file=output)
+        print("", file=output)
 
     writer.close()
 
@@ -278,8 +280,8 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
         "overridesuite": overridesuite_id, "metadata_skip": metadata_skip,
         "include_long_description": 'true' if include_long_description else 'false'})
     for (stanza,) in r:
-        print >>output, stanza
-        print >>output, ""
+        print(stanza, file=output)
+        print("", file=output)
 
     writer.close()
 
@@ -344,7 +346,7 @@ def generate_translations(suite_id, component_id):
 
     r = session.execute(_translations_query, {"suite": suite_id, "component": component_id})
     for (stanza,) in r:
-        print >>output, stanza
+        print(stanza, file=output)
 
     writer.close()
 
@@ -396,7 +398,7 @@ def main():
             if suite:
                 suites.append(suite)
             else:
-                print "I: Cannot find suite %s" % s
+                print("I: Cannot find suite %s" % s)
                 logger.log(['Cannot find suite %s' % s])
     else:
         query = session.query(Suite).filter(Suite.untouchable == False)  # noqa:E712

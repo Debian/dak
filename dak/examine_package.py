@@ -42,6 +42,8 @@ to stdout. Those functions can be used in multithreaded parts of dak.
 
 ################################################################################
 
+from __future__ import print_function
+
 import errno
 import hashlib
 import os
@@ -79,14 +81,14 @@ use_html = False
 
 
 def usage(exit_code=0):
-    print """Usage: dak examine-package [PACKAGE]...
+    print("""Usage: dak examine-package [PACKAGE]...
 Check NEW package(s).
 
   -h, --help                 show this help and exit
   -H, --html-output          output html page with inspection result
   -f, --file-name            filename for the html page
 
-PACKAGE can be a .changes, .dsc, .deb or .udeb filename."""
+PACKAGE can be a .changes, .dsc, .deb or .udeb filename.""")
 
     sys.exit(exit_code)
 
@@ -252,7 +254,7 @@ def read_control(filename):
         extracts = utils.deb_extract_control(deb_file)
         control = apt_pkg.TagSection(extracts)
     except:
-        print formatted_text("can't parse control info")
+        print(formatted_text("can't parse control info"))
         deb_file.close()
         raise
 
@@ -627,14 +629,14 @@ def check_changes(changes_filename):
         changes = utils.parse_changes(changes_filename)
     except ChangesUnicodeError:
         utils.warn("Encoding problem with changes file %s" % (changes_filename))
-    print display_changes(changes['distribution'], changes_filename)
+    print(display_changes(changes['distribution'], changes_filename))
 
     files = utils.build_file_list(changes)
     for f in files.keys():
         if f.endswith(".deb") or f.endswith(".udeb"):
-            print check_deb(changes['distribution'], f)
+            print(check_deb(changes['distribution'], f))
         if f.endswith(".dsc"):
-            print check_dsc(changes['distribution'], f)
+            print(check_dsc(changes['distribution'], f))
         # else: => byhand
 
 
@@ -678,13 +680,13 @@ def main():
                 elif f.endswith(".deb") or f.endswith(".udeb"):
                     # default to unstable when we don't have a .changes file
                     # perhaps this should be a command line option?
-                    print check_deb('unstable', f)
+                    print(check_deb('unstable', f))
                 elif f.endswith(".dsc"):
-                    print check_dsc('unstable', f)
+                    print(check_dsc('unstable', f))
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:
-                print output_package_relations()
+                print(output_package_relations())
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()

@@ -54,6 +54,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import apt_pkg
@@ -75,11 +77,11 @@ blacklist = {}
 
 
 def usage(exit_code=0):
-    print """Usage: dak check-overrides
+    print("""Usage: dak check-overrides
 Check for cruft in overrides.
 
   -n, --no-action            don't do anything
-  -h, --help                 show this help and exit"""
+  -h, --help                 show this help and exit""")
 
     sys.exit(exit_code)
 
@@ -365,7 +367,7 @@ def main():
             originosuite = originosuite.suite_name
             originremark = " taking missing from %s" % originosuite
 
-        print "Processing %s%s..." % (suite.suite_name, originremark)
+        print("Processing %s%s..." % (suite.suite_name, originremark))
 
         # Get a list of all suites that use the override file of 'suite.suite_name' as
         # well as the suite
@@ -388,8 +390,8 @@ def main():
                 otypes.append(ot.overridetype)
 
             for otype in otypes:
-                print "Processing %s [%s - %s]" \
-                    % (suite.suite_name, component_name, otype)
+                print("Processing %s [%s - %s]"
+                    % (suite.suite_name, component_name, otype))
                 sys.stdout.flush()
                 process(suite.suite_name, suiteids, originosuite, component_name, otype, session)
 

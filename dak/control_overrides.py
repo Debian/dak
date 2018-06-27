@@ -49,6 +49,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import time
 import apt_pkg
@@ -67,7 +69,7 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak control-overrides [OPTIONS]
+    print("""Usage: dak control-overrides [OPTIONS]
   -h, --help               print this help and exit
 
   -c, --component=CMPT     list/set overrides by component
@@ -85,7 +87,7 @@ def usage(exit_code=0):
   -q, --quiet              be less verbose
   -n, --no-action          only list the action that would have been done
 
- starred (*) values are default"""
+ starred (*) values are default""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -253,7 +255,7 @@ def process_file(file, suite, component, otype, mode, action, session):
         session.commit()
 
     if not cnf["Control-Overrides::Options::Quiet"]:
-        print "Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time() - start_time), c_updated, c_added, c_removed, c_skipped, c_error)
+        print("Done in %d seconds. [Updated = %d, Added = %d, Removed = %d, Skipped = %d, Errors = %d]" % (int(time.time() - start_time), c_updated, c_added, c_removed, c_skipped, c_error))
 
     Logger.log(["set complete", c_updated, c_added, c_removed, c_skipped, c_error])
 
@@ -286,7 +288,7 @@ def list_overrides(suite, component, otype, session):
                                   AND o.type = :typeid AND o.section = s.id
                              ORDER BY s.section, o.package""", dat)
         for i in q.fetchall():
-            print utils.result_join(i)
+            print(utils.result_join(i))
     else:
         q = session.execute("""SELECT o.package, p.priority, s.section, o.maintainer, p.level
                                  FROM override o, priority p, section s
@@ -294,7 +296,7 @@ def list_overrides(suite, component, otype, session):
                                   AND o.type = :typeid AND o.priority = p.id AND o.section = s.id
                              ORDER BY s.section, p.level, o.package""", dat)
         for i in q.fetchall():
-            print utils.result_join(i[:-1])
+            print(utils.result_join(i[:-1]))
 
 ################################################################################
 

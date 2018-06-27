@@ -25,6 +25,8 @@ Add last_changed to suite
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -44,7 +46,7 @@ COMMENT ON COLUMN suite.last_changed
 
 
 def do_update(self):
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
 

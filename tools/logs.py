@@ -3,6 +3,8 @@
 # Free software licensed under the GPL version 2 or later
 
 
+from __future__ import print_function
+
 import os
 import re
 import datetime
@@ -69,15 +71,15 @@ if args:
             kl.append(k)
 
 if (wantkeys - ks):
-    print >> sys.stderr, "warning, requested keys not found in any log: " + ' '.join(wantkeys - ks)
+    print("warning, requested keys not found in any log: " + ' '.join(wantkeys - ks), file=sys.stderr)
 
 datakeys = d.keys()
 datakeys.sort()
 
 f = open(CACHE_FILE + ".tmp", "w")
 for dk in datakeys:
-    print >> f, dk + '\t' + '\t'.join(
-        ["%s:%s" % (k, str(d[dk][k])) for k in kl if k in d[dk]])
+    print(dk + '\t' + '\t'.join(
+        ["%s:%s" % (k, str(d[dk][k])) for k in kl if k in d[dk]]), file=f)
 f.close()
 os.rename(CACHE_FILE + ".tmp", CACHE_FILE)
 datakeys = datakeys[-ITEMS_TO_KEEP:]
@@ -88,11 +90,11 @@ def dump_file(outfn, keystolist, showothers):
     # careful, outfn is NOT ESCAPED
     f = tempfile.NamedTemporaryFile()
     otherkeys = ks - set(keystolist)
-    print >>f, '\t'.join(keystolist + showothers * ['other'])
+    print('\t'.join(keystolist + showothers * ['other']), file=f)
     for k in datakeys:
         v = d[k]
         others = sum(map(lambda x: v.get(x, 0), otherkeys))
-        print >>f, k + '\t' + '\t'.join(map(lambda x: str(v.get(x, 0)), keystolist) + showothers * [str(others)])
+        print(k + '\t' + '\t'.join(map(lambda x: str(v.get(x, 0)), keystolist) + showothers * [str(others)]), file=f)
     f.flush()
     n = f.name
 

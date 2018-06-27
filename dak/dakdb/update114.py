@@ -25,6 +25,8 @@ Add column to store checksums we want per suite (Packages/Release files)
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -36,7 +38,7 @@ def do_update(self):
     """
     Add column to store list of checksums per suite
     """
-    print __doc__
+    print(__doc__)
     try:
         c = self.db.cursor()
 

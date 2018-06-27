@@ -30,6 +30,8 @@ Create all the Release files
 
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import os
 import os.path
@@ -61,7 +63,7 @@ Logger = None                  #: Our logging object
 def usage(exit_code=0):
     """ Usage information"""
 
-    print """Usage: dak generate-releases [OPTIONS]
+    print("""Usage: dak generate-releases [OPTIONS]
 Generate the Release files
 
   -a, --archive=ARCHIVE      process suites in ARCHIVE
@@ -74,7 +76,7 @@ Generate the Release files
 
 SUITE can be a space separated list, e.g.
    --suite=unstable testing
-  """
+  """)
     sys.exit(exit_code)
 
 ########################################################################
@@ -484,7 +486,7 @@ def main():
             if suite:
                 suites.append(suite)
             else:
-                print "cannot find suite %s" % s
+                print("cannot find suite %s" % s)
                 Logger.log(['cannot find suite %s' % s])
     else:
         query = session.query(Suite).filter(Suite.untouchable == False)  # noqa:E712
@@ -498,11 +500,11 @@ def main():
     for s in suites:
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
         if s.untouchable and not Options["Force"]:
-            print "Skipping %s (untouchable)" % s.suite_name
+            print("Skipping %s (untouchable)" % s.suite_name)
             continue
 
         if not Options["Quiet"]:
-            print "Processing %s" % s.suite_name
+            print("Processing %s" % s.suite_name)
         Logger.log(['Processing release file for Suite: %s' % (s.suite_name)])
         pool.apply_async(generate_helper, (s.suite_id, ))
 

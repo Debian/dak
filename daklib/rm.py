@@ -39,6 +39,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import commands
 import apt_pkg
 import fcntl
@@ -134,7 +136,7 @@ class ReverseDependencyChecker(object):
                             parsed_dep.append(frozenset(d[0] for d in dep))
                         deps[package].update(parsed_dep)
                     except ValueError as e:
-                        print "Error for package %s: %s" % (package, e)
+                        print("Error for package %s: %s" % (package, e))
                 # Maintain a counter for each virtual package.  If a
                 # Provides: exists, set the counter to 0 and count all
                 # provides by a package not in the list for removal.
@@ -177,7 +179,7 @@ class ReverseDependencyChecker(object):
                         parsed_dep.append(frozenset(d[0] for d in dep))
                     source_deps[source].update(parsed_dep)
                 except ValueError as e:
-                    print "Error for package %s: %s" % (source, e)
+                    print("Error for package %s: %s" % (source, e))
 
         return package_dependencies, arch_providers_of, arch_provided_by
 

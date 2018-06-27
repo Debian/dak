@@ -21,6 +21,8 @@ helper functions for cruft-report
 
 ################################################################################
 
+from __future__ import print_function
+
 from daklib.dbconn import *
 
 from sqlalchemy import func
@@ -123,14 +125,14 @@ def report_multiple_source(suite):
     names.
     '''
 
-    print "Built from multiple source packages"
-    print "-----------------------------------"
-    print
+    print("Built from multiple source packages")
+    print("-----------------------------------")
+    print()
     for package, in get_package_names(suite):
         binary = DejavuBinary(suite, package)
         if binary.has_multiple_sources():
-            print binary
-    print
+            print(binary)
+    print()
 
 
 def query_without_source(suite_id, session):

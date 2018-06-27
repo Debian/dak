@@ -35,6 +35,8 @@ Check for obsolete binary packages
 
 ################################################################################
 
+from __future__ import print_function
+
 import commands
 import os
 import sys
@@ -58,14 +60,14 @@ source_versions = {}
 
 
 def usage(exit_code=0):
-    print """Usage: dak cruft-report
+    print("""Usage: dak cruft-report
 Check for obsolete or duplicated packages.
 
   -h, --help                show this help and exit.
   -m, --mode=MODE           chose the MODE to run in (full, daily, bdo).
   -s, --suite=SUITE         check suite SUITE.
   -R, --rdep-check          check reverse dependencies
-  -w, --wanna-build-dump    where to find the copies of https://buildd.debian.org/stats/*.txt"""
+  -w, --wanna-build-dump    where to find the copies of https://buildd.debian.org/stats/*.txt""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -155,17 +157,17 @@ def do_nfu(nfu_packages):
             a2p[architecture].append(package)
 
     if output:
-        print "Obsolete by Not-For-Us"
-        print "----------------------"
-        print
-        print output
+        print("Obsolete by Not-For-Us")
+        print("----------------------")
+        print()
+        print(output)
 
-        print "Suggested commands:"
+        print("Suggested commands:")
         for architecture in a2p:
             if a2p[architecture]:
-                print (" dak rm -m \"[auto-cruft] NFU\" -s %s -a %s -b %s" % 
-                    (suite.suite_name, architecture, " ".join(a2p[architecture])))
-        print
+                print((" dak rm -m \"[auto-cruft] NFU\" -s %s -a %s -b %s" % 
+                    (suite.suite_name, architecture, " ".join(a2p[architecture]))))
+        print()
 
 
 def parse_nfu(architecture):
@@ -202,18 +204,18 @@ def do_newer_version(lowersuite_name, highersuite_name, code, session):
     if len(list) > 0:
         nv_to_remove = []
         title = "Newer version in %s" % lowersuite_name
-        print title
-        print "-" * len(title)
-        print
+        print(title)
+        print("-" * len(title))
+        print()
         for i in list:
             (source, higher_version, lower_version) = i
-            print " o %s (%s, %s)" % (source, higher_version, lower_version)
+            print(" o %s (%s, %s)" % (source, higher_version, lower_version))
             nv_to_remove.append(source)
-        print
-        print "Suggested command:"
-        print " dak rm -m \"[auto-cruft] %s\" -s %s %s" % (code, highersuite_name,
-                                                           " ".join(nv_to_remove))
-        print
+        print()
+        print("Suggested command:")
+        print(" dak rm -m \"[auto-cruft] %s\" -s %s %s" % (code, highersuite_name,
+                                                           " ".join(nv_to_remove)))
+        print()
 
 ################################################################################
 
@@ -222,22 +224,22 @@ def reportWithoutSource(suite_name, suite_id, session, rdeps=False):
     rows = query_without_source(suite_id, session)
     title = 'packages without source in suite %s' % suite_name
     if rows.rowcount > 0:
-        print '%s\n%s\n' % (title, '-' * len(title))
+        print('%s\n%s\n' % (title, '-' * len(title)))
     message = '"[auto-cruft] no longer built from source"'
     for row in rows:
         (package, version) = row
-        print "* package %s in version %s is no longer built from source" % \
-            (package, version)
-        print "  - suggested command:"
-        print "    dak rm -m %s -s %s -a all -p -R -b %s" % \
-            (message, suite_name, package)
+        print("* package %s in version %s is no longer built from source" %
+            (package, version))
+        print("  - suggested command:")
+        print("    dak rm -m %s -s %s -a all -p -R -b %s" %
+            (message, suite_name, package))
         if rdeps:
             if utils.check_reverse_depends([package], suite_name, [], session, True):
-                print
+                print()
             else:
-                print "  - No dependency problem found\n"
+                print("  - No dependency problem found\n")
         else:
-            print
+            print()
 
 
 def queryNewerAll(suite_name, session):
@@ -264,15 +266,15 @@ def reportNewerAll(suite_name, session):
     rows = queryNewerAll(suite_name, session)
     title = 'obsolete arch any packages in suite %s' % suite_name
     if rows.rowcount > 0:
-        print '%s\n%s\n' % (title, '-' * len(title))
+        print('%s\n%s\n' % (title, '-' * len(title)))
     message = '"[auto-cruft] obsolete arch any package"'
     for row in rows:
         (package, oldver, oldarch, newver) = row
-        print "* package %s is arch any in version %s but arch all in version %s" % \
-            (package, oldver, newver)
-        print "  - suggested command:"
-        print "    dak rm -m %s -s %s -a %s -p -b %s\n" % \
-            (message, suite_name, oldarch, package)
+        print("* package %s is arch any in version %s but arch all in version %s" %
+            (package, oldver, newver))
+        print("  - suggested command:")
+        print("    dak rm -m %s -s %s -a %s -p -b %s\n" %
+            (message, suite_name, oldarch, package))
 
 
 def reportNBS(suite_name, suite_id, rdeps=False):
@@ -280,26 +282,26 @@ def reportNBS(suite_name, suite_id, rdeps=False):
     nbsRows = queryNBS(suite_id, session)
     title = 'NBS packages in suite %s' % suite_name
     if nbsRows.rowcount > 0:
-        print '%s\n%s\n' % (title, '-' * len(title))
+        print('%s\n%s\n' % (title, '-' * len(title)))
     for row in nbsRows:
         (pkg_list, arch_list, source, version) = row
         pkg_string = ' '.join(pkg_list)
         arch_string = ','.join(arch_list)
-        print "* source package %s version %s no longer builds" % \
-            (source, version)
-        print "  binary package(s): %s" % pkg_string
-        print "  on %s" % arch_string
-        print "  - suggested command:"
+        print("* source package %s version %s no longer builds" %
+            (source, version))
+        print("  binary package(s): %s" % pkg_string)
+        print("  on %s" % arch_string)
+        print("  - suggested command:")
         message = '"[auto-cruft] NBS (no longer built by %s)"' % source
-        print "    dak rm -m %s -s %s -a %s -p -R -b %s" % \
-            (message, suite_name, arch_string, pkg_string)
+        print("    dak rm -m %s -s %s -a %s -p -R -b %s" %
+            (message, suite_name, arch_string, pkg_string))
         if rdeps:
             if utils.check_reverse_depends(pkg_list, suite_name, arch_list, session, True):
-                print
+                print()
             else:
-                print "  - No dependency problem found\n"
+                print("  - No dependency problem found\n")
         else:
-            print
+            print()
     session.close()
 
 
@@ -312,25 +314,25 @@ def reportAllNBS(suite_name, suite_id, session, rdeps=False):
 
 
 def do_dubious_nbs(dubious_nbs):
-    print "Dubious NBS"
-    print "-----------"
-    print
+    print("Dubious NBS")
+    print("-----------")
+    print()
 
     dubious_nbs_keys = dubious_nbs.keys()
     dubious_nbs_keys.sort()
     for source in dubious_nbs_keys:
-        print " * %s_%s builds: %s" % (source,
+        print(" * %s_%s builds: %s" % (source,
                                        source_versions.get(source, "??"),
-                                       source_binaries.get(source, "(source does not exist)"))
-        print "      won't admit to building:"
+                                       source_binaries.get(source, "(source does not exist)")))
+        print("      won't admit to building:")
         versions = dubious_nbs[source].keys()
         versions.sort(apt_pkg.version_compare)
         for version in versions:
             packages = dubious_nbs[source][version].keys()
             packages.sort()
-            print "        o %s: %s" % (version, ", ".join(packages))
+            print("        o %s: %s" % (version, ", ".join(packages)))
 
-        print
+        print()
 
 ################################################################################
 
@@ -399,31 +401,30 @@ def report_obsolete_source(suite_name, session):
     rows = obsolete_source(suite_name, session)
     if rows.rowcount == 0:
         return
-    print \
-"""Obsolete source packages in suite %s
-----------------------------------%s\n""" % \
-        (suite_name, '-' * len(suite_name))
+    print("""Obsolete source packages in suite %s
+----------------------------------%s\n""" %
+        (suite_name, '-' * len(suite_name)))
     for os_row in rows.fetchall():
         (src, old_source, version, install_date) = os_row
-        print " * obsolete source %s version %s installed at %s" % \
-            (old_source, version, install_date)
+        print(" * obsolete source %s version %s installed at %s" %
+            (old_source, version, install_date))
         for sb_row in source_bin(old_source, session):
             (package, ) = sb_row
-            print "   - has built binary %s" % package
+            print("   - has built binary %s" % package)
             for nsb_row in newest_source_bab(suite_name, package, session):
                 (new_source, srcver) = nsb_row
-                print "     currently built by source %s version %s" % \
-                    (new_source, srcver)
-        print "   - suggested command:"
+                print("     currently built by source %s version %s" %
+                    (new_source, srcver))
+        print("   - suggested command:")
         rm_opts = "-S -p -m \"[auto-cruft] obsolete source package\""
-        print "     dak rm -s %s %s %s\n" % (suite_name, rm_opts, old_source)
+        print("     dak rm -s %s %s %s\n" % (suite_name, rm_opts, old_source))
 
 
 def get_suite_binaries(suite, session):
     # Initalize a large hash table of all binary packages
     binaries = {}
 
-    print "Getting a list of binary packages in %s..." % suite.suite_name
+    print("Getting a list of binary packages in %s..." % suite.suite_name)
     q = session.execute("""SELECT distinct b.package
                              FROM binaries b, bin_associations ba
                             WHERE ba.suite = :suiteid AND ba.bin = b.id""",
@@ -493,24 +494,24 @@ def report_outdated_nonfree(suite, session, rdeps=False):
     if packages:
         title = 'Outdated non-free binaries in suite %s' % suite
         message = '"[auto-cruft] outdated non-free binaries"'
-        print '%s\n%s\n' % (title, '-' * len(title))
+        print('%s\n%s\n' % (title, '-' * len(title)))
         for source in sorted(packages):
             archs = set()
             binaries = set()
-            print '* package %s has outdated non-free binaries' % source
-            print '  - suggested command:'
+            print('* package %s has outdated non-free binaries' % source)
+            print('  - suggested command:')
             for binary in sorted(packages[source]):
                 binaries.add(binary)
                 archs = archs.union(packages[source][binary])
-            print '    dak rm -m %s -s %s -a %s -p -R -b %s' % \
-                   (message, suite, ','.join(archs), ' '.join(binaries))
+            print('    dak rm -m %s -s %s -a %s -p -R -b %s' %
+                   (message, suite, ','.join(archs), ' '.join(binaries)))
             if rdeps:
                 if utils.check_reverse_depends(list(binaries), suite, archs, session, True):
-                    print
+                    print()
                 else:
-                    print "  - No dependency problem found\n"
+                    print("  - No dependency problem found\n")
             else:
-                print
+                print()
 
 ################################################################################
 
@@ -693,32 +694,32 @@ def main():
     ###
 
     if Options["Mode"] == "full":
-        print "=" * 75
-        print
+        print("=" * 75)
+        print()
 
     if "nfu" in checks:
         do_nfu(nfu_packages)
 
     if "bnb" in checks:
-        print "Unbuilt binary packages"
-        print "-----------------------"
-        print
+        print("Unbuilt binary packages")
+        print("-----------------------")
+        print()
         keys = bin_not_built.keys()
         keys.sort()
         for source in keys:
             binaries = bin_not_built[source].keys()
             binaries.sort()
-            print " o %s: %s" % (source, ", ".join(binaries))
-        print
+            print(" o %s: %s" % (source, ", ".join(binaries)))
+        print()
 
     if "bms" in checks:
         report_multiple_source(suite)
 
     if "anais" in checks:
-        print "Architecture Not Allowed In Source"
-        print "----------------------------------"
-        print anais_output
-        print
+        print("Architecture Not Allowed In Source")
+        print("----------------------------------")
+        print(anais_output)
+        print()
 
     if "dubious nbs" in checks:
         do_dubious_nbs(dubious_nbs)

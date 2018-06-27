@@ -33,6 +33,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import os.path
 import stat
@@ -55,14 +57,14 @@ delete_date = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak clean-queues [OPTIONS]
+    print("""Usage: dak clean-queues [OPTIONS]
 Clean out incoming directories.
 
   -d, --days=DAYS            remove anything older than DAYS old
   -i, --incoming=INCOMING    the incoming directory to clean
   -n, --no-action            don't do anything
   -v, --verbose              explain what is being done
-  -h, --help                 show this help and exit"""
+  -h, --help                 show this help and exit""")
 
     sys.exit(exit_code)
 
@@ -115,7 +117,7 @@ def remove(from_dir, f):
     if os.access(f, os.R_OK):
         Logger.log(["move file to morgue", from_dir, fname, del_dir])
         if Options["Verbose"]:
-            print "Removing '%s' (to '%s')." % (fname, del_dir)
+            print("Removing '%s' (to '%s')." % (fname, del_dir))
         if Options["No-Action"]:
             return
 
@@ -142,7 +144,7 @@ def flush_old():
                 remove('Incoming/REJECT', f)
             else:
                 if Options["Verbose"]:
-                    print "Skipping, too new, '%s'." % (os.path.basename(f))
+                    print("Skipping, too new, '%s'." % (os.path.basename(f)))
 
 # Removes any files which are old orphans (not associated with a valid .changes file).
 # [Used for Incoming]
@@ -187,7 +189,7 @@ def flush_orphans():
         for key in keys:
             if key in all_files:
                 if Options["Verbose"]:
-                    print "Skipping, has parents, '%s'." % (key)
+                    print("Skipping, has parents, '%s'." % (key))
                 del all_files[key]
 
     # Anthing left at this stage is not referenced by a .changes (or
@@ -197,7 +199,7 @@ def flush_orphans():
             remove('Incoming', f)
         else:
             if Options["Verbose"]:
-                print "Skipping, too new, '%s'." % (os.path.basename(f))
+                print("Skipping, too new, '%s'." % (os.path.basename(f)))
 
 ################################################################################
 
@@ -231,13 +233,13 @@ def main():
     init(cnf)
 
     if Options["Verbose"]:
-        print "Processing incoming..."
+        print("Processing incoming...")
     flush_orphans()
 
     reject = cnf["Dir::Reject"]
     if os.path.exists(reject) and os.path.isdir(reject):
         if Options["Verbose"]:
-            print "Processing reject directory..."
+            print("Processing reject directory...")
         os.chdir(reject)
         flush_old()
 

@@ -25,6 +25,8 @@ Add a debug suite field to the suite table
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -42,7 +44,7 @@ COMMENT ON COLUMN suite.debugsuite_id IS 'Suite to redirect debug packages (Sect
 
 
 def do_update(self):
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
 

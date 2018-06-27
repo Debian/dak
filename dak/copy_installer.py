@@ -19,6 +19,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 from daklib.config import Config
 import daklib.daksubprocess
 
@@ -30,13 +32,13 @@ import sys
 
 
 def usage(exit_code=0):
-    print """Usage: dak copy-installer [OPTION]... VERSION
+    print("""Usage: dak copy-installer [OPTION]... VERSION
   -h, --help         show this help and exit
   -s, --source       source suite      (defaults to unstable)
   -d, --destination  destination suite (defaults to testing)
   -n, --no-action    don't change anything
 
-Exactly 1 version must be specified."""
+Exactly 1 version must be specified.""")
     sys.exit(exit_code)
 
 
@@ -67,12 +69,12 @@ def main():
         initializer["dest"] = Options["Destination"]
 
     copier = InstallerCopier(**initializer)
-    print copier.get_message()
+    print(copier.get_message())
     if Options["No-Action"]:
-        print 'Do nothing because --no-action has been set.'
+        print('Do nothing because --no-action has been set.')
     else:
         copier.do_copy()
-        print 'Installer has been copied successfully.'
+        print('Installer has been copied successfully.')
 
 root_dir = Config()['Dir::Root']
 

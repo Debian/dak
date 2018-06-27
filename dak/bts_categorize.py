@@ -27,6 +27,8 @@ bts -- manage bugs filed against ftp.debian.org
 ################################################################################
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import re
 import logging
@@ -38,7 +40,7 @@ import debianbts as bts
 
 
 def usage():
-    print """
+    print("""
 SYNOPSIS
     dak bts-categorize [options]
 
@@ -59,7 +61,7 @@ OPTIONS
     -h
     --help
         Print this documentation.
-"""
+""")
 
 arguments = [('s', 'simulate', 'BtsCategorize::Options::Simulate'),
              ('v', 'verbose', 'BtsCategorize::Options::Verbose'),
@@ -147,7 +149,7 @@ def send_email(commands, simulate=False):
         Subst, Cnf["Dir::Templates"] + "/bts-categorize")
 
     if simulate:
-        print bts_mail_message
+        print(bts_mail_message)
     else:
         utils.send_mail(bts_mail_message)
 

@@ -19,6 +19,8 @@
 This module provides classes to manipulate the archive.
 """
 
+from __future__ import print_function
+
 from daklib.dbconn import *
 import daklib.checks as checks
 from daklib.config import Config
@@ -1208,7 +1210,7 @@ class ArchiveUpload(object):
             if '_' in f.filename:
                 parts = f.filename.split('_', 2)
                 if len(parts) != 3:
-                    print "W: unexpected byhand filename {0}. No automatic processing.".format(f.filename)
+                    print("W: unexpected byhand filename {0}. No automatic processing.".format(f.filename))
                     remaining.append(f)
                     continue
 
@@ -1217,7 +1219,7 @@ class ArchiveUpload(object):
             else:
                 parts = f.filename.split('.')
                 if len(parts) < 2:
-                    print "W: unexpected byhand filename {0}. No automatic processing.".format(f.filename)
+                    print("W: unexpected byhand filename {0}. No automatic processing.".format(f.filename))
                     remaining.append(f)
                     continue
 
@@ -1241,7 +1243,7 @@ class ArchiveUpload(object):
             script = rule['Script']
             retcode = daklib.daksubprocess.call([script, os.path.join(self.directory, f.filename), control['Version'], arch, os.path.join(self.directory, self.changes.filename), suite.suite_name], shell=False)
             if retcode != 0:
-                print "W: error processing {0}.".format(f.filename)
+                print("W: error processing {0}.".format(f.filename))
                 remaining.append(f)
 
         return len(remaining) == 0
@@ -1297,7 +1299,7 @@ class ArchiveUpload(object):
                 control = binary.control
                 source_package, source_version = binary.source
                 line = " ".join([control['Package'], control['Version'], control['Architecture'], source_package, source_version])
-                print >>debinfo, line
+                print(line, file=debinfo)
             debinfo.close()
 
     def _policy_queue(self, suite):

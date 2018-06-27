@@ -42,6 +42,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import copy
 import errno
 import os
@@ -169,17 +171,17 @@ def print_new(upload, missing, indexed, session, file=sys.stdout):
         line = line.strip()
         if not m['valid']:
             line = line + ' [!]'
-        print >>file, line
+        print(line, file=file)
     takenover = takenover_binaries(upload, missing, session)
     if takenover:
-        print '\n\nBINARIES TAKEN OVER\n'
+        print('\n\nBINARIES TAKEN OVER\n')
         for t in takenover:
-            print '%s: %s' % (t[0], t[1])
+            print('%s: %s' % (t[0], t[1]))
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
-        print "\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s" \
-              % (note.author, note.version, note.notedate, note.comment)
-        print "-" * 72
+        print("\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s"
+              % (note.author, note.version, note.notedate, note.comment))
+        print("-" * 72)
     return len(notes) > 0
 
 ################################################################################
@@ -255,7 +257,7 @@ def edit_index(new, upload, index):
     ftype = new[index]["type"]
     done = 0
     while not done:
-        print "\t".join([package, priority, section])
+        print("\t".join([package, priority, section]))
 
         answer = "XXX"
         if ftype != "dsc":
@@ -287,7 +289,7 @@ def edit_index(new, upload, index):
             while not got_priority:
                 new_priority = utils.our_raw_input("New priority: ").strip()
                 if new_priority not in Priorities.priorities:
-                    print "E: '%s' is not a valid priority, try again." % (new_priority)
+                    print("E: '%s' is not a valid priority, try again." % (new_priority))
                 else:
                     got_priority = 1
                     priority = new_priority
@@ -299,7 +301,7 @@ def edit_index(new, upload, index):
             while not got_section:
                 new_section = utils.our_raw_input("New section: ").strip()
                 if new_section not in Sections.sections:
-                    print "E: '%s' is not a valid section, try again." % (new_section)
+                    print("E: '%s' is not a valid section, try again." % (new_section))
                 else:
                     got_section = 1
                     section = new_section
@@ -321,7 +323,7 @@ def edit_index(new, upload, index):
 
 
 def edit_overrides(new, upload, session):
-    print
+    print()
     done = 0
     while not done:
         print_new(upload, new, indexed=1, session=session)
@@ -337,7 +339,7 @@ def edit_overrides(new, upload, session):
             elif re_isanum.match(answer):
                 answer = int(answer)
                 if answer < 1 or answer > len(new):
-                    print "{0} is not a valid index.  Please retry.".format(answer)
+                    print("{0} is not a valid index.  Please retry.".format(answer))
                 else:
                     got_answer = 1
 
@@ -365,12 +367,12 @@ def check_pkg(upload, upload_copy, session):
     less_process = daklib.daksubprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
     try:
         sys.stdout = less_process.stdin
-        print examine_package.display_changes(suite_name, changes)
+        print(examine_package.display_changes(suite_name, changes))
 
         source = upload.source
         if source is not None:
             source_file = os.path.join(upload_copy.directory, os.path.basename(source.poolfile.filename))
-            print examine_package.check_dsc(suite_name, source_file)
+            print(examine_package.check_dsc(suite_name, source_file))
 
         for binary in upload.binaries:
             binary_file = os.path.join(upload_copy.directory, os.path.basename(binary.poolfile.filename))
@@ -378,9 +380,9 @@ def check_pkg(upload, upload_copy, session):
             # We always need to call check_deb to display package relations for every binary,
             # but we print its output only if new overrides are being added.
             if ("deb", binary.package) in missing:
-                print examined
+                print(examined)
 
-        print examine_package.output_package_relations()
+        print(examine_package.output_package_relations())
         less_process.stdin.close()
     except IOError as e:
         if e.errno == errno.EPIPE:
@@ -463,8 +465,8 @@ def get_reject_reason(reason=''):
 
     while answer == 'E':
         reason = utils.call_editor(reason)
-        print "Reject message:"
-        print utils.prefix_multi_line_string(reason, "  ", include_blank_lines=1)
+        print("Reject message:")
+        print(utils.prefix_multi_line_string(reason, "  ", include_blank_lines=1))
         prompt = "[R]eject, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
@@ -501,20 +503,20 @@ def do_new(upload, upload_copy, handler, session):
 
         changesname = os.path.basename(upload.changes.changesname)
 
-        print
-        print changesname
-        print "-" * len(changesname)
-        print
-        print "   Target:     {0}".format(upload.target_suite.suite_name)
-        print "   Changed-By: {0}".format(upload.changes.changedby)
-        print "   Date:       {0}".format(upload.changes.date)
-        print
+        print()
+        print(changesname)
+        print("-" * len(changesname))
+        print()
+        print("   Target:     {0}".format(upload.target_suite.suite_name))
+        print("   Changed-By: {0}".format(upload.changes.changedby))
+        print("   Date:       {0}".format(upload.changes.date))
+        print()
 
         #if len(byhand) == 0 and len(missing) == 0:
         #    break
 
         if missing:
-            print "NEW\n"
+            print("NEW\n")
 
         for package in missing:
             if package["type"] == "deb" and package["priority"] == "extra":
@@ -531,7 +533,7 @@ def do_new(upload, upload_copy, handler, session):
         for f in byhand:
             path = os.path.join(queuedir, f.filename)
             if not f.processed and os.path.exists(path):
-                print "W: {0} still present; please process byhand components and try again".format(f.filename)
+                print("W: {0} still present; please process byhand components and try again".format(f.filename))
                 has_unprocessed_byhand = True
 
         if not has_unprocessed_byhand and not broken and not note:
@@ -541,9 +543,9 @@ def do_new(upload, upload_copy, handler, session):
             else:
                 prompt = "Add overrides, "
         if broken:
-            print "W: [!] marked entries must be fixed before package can be processed."
+            print("W: [!] marked entries must be fixed before package can be processed.")
         if note:
-            print "W: note must be removed before package can be processed."
+            print("W: note must be removed before package can be processed.")
             prompt += "RemOve all notes, Remove note, "
 
         prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?"
@@ -609,7 +611,7 @@ def do_new(upload, upload_copy, handler, session):
             sys.exit(0)
 
         if handler.get_action():
-            print "PENDING %s\n" % handler.get_action()
+            print("PENDING %s\n" % handler.get_action())
 
 ################################################################################
 ################################################################################
@@ -617,7 +619,7 @@ def do_new(upload, upload_copy, handler, session):
 
 
 def usage(exit_code=0):
-    print """Usage: dak process-new [OPTION]... [CHANGES]...
+    print("""Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -b, --no-binaries         do not sort binary-NEW packages first
   -c, --comments            show NEW comments
@@ -649,7 +651,7 @@ ENVIRONMENT VARIABLES
       tmux attach -t process-new
 
       in a separate terminal session.
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -699,12 +701,12 @@ def do_pkg(upload, session):
                 UploadCopy(upload, group=group) as upload_copy:
             handler = PolicyQueueUploadHandler(upload, session)
             if handler.get_action() is not None:
-                print "PENDING %s\n" % handler.get_action()
+                print("PENDING %s\n" % handler.get_action())
                 return
 
             do_new(upload, upload_copy, handler, session)
     except AlreadyLockedError as e:
-        print "Seems to be locked by %s already, skipping..." % (e)
+        print("Seems to be locked by %s already, skipping..." % (e))
 
 
 def show_new_comments(uploads, session):
@@ -720,7 +722,7 @@ def show_new_comments(uploads, session):
     r = session.execute(query, params=dict(sources=tuple(sources)))
 
     for i in r:
-        print "%s_%s\n%s\n(%s)\n\n\n" % (i[0], i[1], i[2], i[3])
+        print("%s_%s\n%s\n(%s)\n\n\n" % (i[0], i[1], i[2], i[3]))
 
     session.rollback()
 

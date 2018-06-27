@@ -159,6 +159,8 @@ Checks Debian packages from Incoming
 
 ## Queue builds
 
+from __future__ import print_function
+
 import datetime
 import errno
 import fcntl
@@ -191,14 +193,14 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak process-upload [OPTION]... [CHANGES]...
+    print("""Usage: dak process-upload [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -d, --directory <DIR>     process uploads in <DIR>
   -h, --help                show this help and exit.
   -n, --no-action           don't do anything
   -p, --no-lock             don't check lockfile !! for cron.daily only !!
   -s, --no-mail             don't send any mail
-  -V, --version             display the version number and exit"""
+  -V, --version             display the version number and exit""")
     sys.exit(exit_code)
 
 ###############################################################################
@@ -263,7 +265,7 @@ def accept(directory, upload):
     cnf = Config()
 
     Logger.log(['ACCEPT', upload.changes.filename])
-    print "ACCEPT"
+    print("ACCEPT")
 
     upload.install()
     process_buildinfos(upload)
@@ -305,7 +307,7 @@ def accept(directory, upload):
 def accept_to_new(directory, upload):
 
     Logger.log(['ACCEPT-TO-NEW', upload.changes.filename])
-    print "ACCEPT-TO-NEW"
+    print("ACCEPT-TO-NEW")
 
     upload.install_to_new()
     # TODO: tag bugs pending
@@ -327,7 +329,7 @@ def real_reject(directory, upload, reason=None, notify=True):
     cnf = Config()
 
     Logger.log(['REJECT', upload.changes.filename])
-    print "REJECT"
+    print("REJECT")
 
     fs = upload.transaction.fs
     rejectdir = cnf['Dir::Reject']
@@ -387,18 +389,18 @@ def action(directory, upload):
     if Options["No-Action"] or Options["Automatic"]:
         answer = 'S'
 
-    print summary
-    print
-    print "\n".join(package_info)
-    print
+    print(summary)
+    print()
+    print("\n".join(package_info))
+    print()
     if len(upload.warnings) > 0:
-        print "\n".join(upload.warnings)
-        print
+        print("\n".join(upload.warnings))
+        print()
 
     if len(upload.reject_reasons) > 0:
-        print "Reason:"
-        print "\n".join(upload.reject_reasons)
-        print
+        print("Reason:")
+        print("\n".join(upload.reject_reasons))
+        print()
 
         path = os.path.join(directory, changes.filename)
         created = os.stat(path).st_mtime
@@ -406,7 +408,7 @@ def action(directory, upload):
         too_new = (now - created < int(cnf['Dinstall::SkipTime']))
 
         if too_new:
-            print "SKIP (too new)"
+            print("SKIP (too new)")
             prompt = "[S]kip, Quit ?"
         else:
             prompt = "[R]eject, Skip, Quit ?"
@@ -437,7 +439,7 @@ def action(directory, upload):
         elif upload.try_autobyhand():
             accept(directory, upload)
         else:
-            print "W: redirecting to BYHAND as automatic processing failed."
+            print("W: redirecting to BYHAND as automatic processing failed.")
             accept_to_new(directory, upload)
     elif answer == 'N':
         accept_to_new(directory, upload)
@@ -465,7 +467,7 @@ def unlink_if_exists(path):
 def process_it(directory, changes, keyrings):
     global Logger
 
-    print "\n{0}\n".format(changes.filename)
+    print("\n{0}\n".format(changes.filename))
     Logger.log(["Processing changes file", changes.filename])
 
     with daklib.archive.ArchiveUpload(directory, changes, keyrings) as upload:
@@ -593,15 +595,15 @@ def main():
         sets = "set"
         if summarystats.accept_count > 1:
             sets = "sets"
-        print "Installed %d package %s, %s." % (summarystats.accept_count, sets,
-                                                utils.size_type(int(summarystats.accept_bytes)))
+        print("Installed %d package %s, %s." % (summarystats.accept_count, sets,
+                                                utils.size_type(int(summarystats.accept_bytes))))
         Logger.log(["total", summarystats.accept_count, summarystats.accept_bytes])
 
     if summarystats.reject_count:
         sets = "set"
         if summarystats.reject_count > 1:
             sets = "sets"
-        print "Rejected %d package %s." % (summarystats.reject_count, sets)
+        print("Rejected %d package %s." % (summarystats.reject_count, sets))
         Logger.log(["rejected", summarystats.reject_count])
 
     if not Options["No-Action"]:

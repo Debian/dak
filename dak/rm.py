@@ -40,6 +40,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import commands
 import os
 import sys
@@ -63,7 +65,7 @@ Options = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak rm [OPTIONS] PACKAGE[...]
+    print("""Usage: dak rm [OPTIONS] PACKAGE[...]
 Remove PACKAGE(s) from suite(s).
 
   -A, --no-arch-all-rdeps    Do not report breaking arch:all packages
@@ -84,7 +86,7 @@ Remove PACKAGE(s) from suite(s).
   -S, --source-only          remove source only
 
 ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
-    --architecture=amd64,i386"""
+    --architecture=amd64,i386""")
 
     sys.exit(exit_code)
 
@@ -99,21 +101,21 @@ ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
 def game_over():
     answer = utils.our_raw_input("Continue (y/N)? ").lower()
     if answer != "y":
-        print "Aborted."
+        print("Aborted.")
         sys.exit(1)
 
 ################################################################################
 
 
 def reverse_depends_check(removals, suite, arches=None, session=None, include_arch_all=True):
-    print "Checking reverse dependencies..."
+    print("Checking reverse dependencies...")
     if utils.check_reverse_depends(removals, suite, arches, session, include_arch_all=include_arch_all):
-        print "Dependency problem found."
+        print("Dependency problem found.")
         if not Options["No-Action"]:
             game_over()
     else:
-        print "No dependency problem found."
-    print
+        print("No dependency problem found.")
+    print()
 
 ################################################################################
 
@@ -206,14 +208,14 @@ def main():
                 suite_ids_list.append(s.suite_id)
                 whitelists.append(s.mail_whitelist)
             if suite in ("oldstable", "stable"):
-                print "**WARNING** About to remove from the (old)stable suite!"
-                print "This should only be done just prior to a (point) release and not at"
-                print "any other time."
+                print("**WARNING** About to remove from the (old)stable suite!")
+                print("This should only be done just prior to a (point) release and not at")
+                print("any other time.")
                 game_over()
             elif suite == "testing":
-                print "**WARNING About to remove from the testing suite!"
-                print "There's no need to do this normally as removals from unstable will"
-                print "propogate to testing automagically."
+                print("**WARNING About to remove from the testing suite!")
+                print("There's no need to do this normally as removals from unstable will")
+                print("propogate to testing automagically.")
                 game_over()
 
     # Additional architecture checks
@@ -280,7 +282,7 @@ def main():
             to_remove.extend(q)
 
     if not to_remove:
-        print "Nothing to do."
+        print("Nothing to do.")
         sys.exit(0)
 
     # Process -C/--carbon-copy
@@ -347,21 +349,21 @@ def main():
         for version in versions:
             d[package][version].sort(utils.arch_compare_sw)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
-    print "Will remove the following packages from %s:" % (suites_list)
-    print
-    print summary
-    print "Maintainer: %s" % ", ".join(maintainer_list)
+    print("Will remove the following packages from %s:" % (suites_list))
+    print()
+    print(summary)
+    print("Maintainer: %s" % ", ".join(maintainer_list))
     if Options["Done"]:
-        print "Will also close bugs: " + Options["Done"]
+        print("Will also close bugs: " + Options["Done"])
     if carbon_copy:
-        print "Will also send CCs to: " + ", ".join(carbon_copy)
+        print("Will also send CCs to: " + ", ".join(carbon_copy))
     if Options["Do-Close"]:
-        print "Will also close associated bug reports."
-    print
-    print "------------------- Reason -------------------"
-    print Options["Reason"]
-    print "----------------------------------------------"
-    print
+        print("Will also close associated bug reports.")
+    print()
+    print("------------------- Reason -------------------")
+    print(Options["Reason"])
+    print("----------------------------------------------")
+    print()
 
     if Options["Rdep-Check"]:
         arches = utils.split_args(Options["Architecture"])
@@ -372,11 +374,11 @@ def main():
     if Options["No-Action"]:
         sys.exit(0)
 
-    print "Going to remove the packages now."
+    print("Going to remove the packages now.")
     game_over()
 
     # Do the actual deletion
-    print "Deleting...",
+    print("Deleting...", end=' ')
     sys.stdout.flush()
 
     try:
@@ -388,7 +390,7 @@ def main():
     except ValueError as ex:
         utils.fubar(ex.message)
     else:
-        print "done."
+        print("done.")
 
 #######################################################################################
 

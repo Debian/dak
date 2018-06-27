@@ -30,6 +30,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import commands
 import os
 import stat
@@ -56,7 +58,7 @@ current_time = time.time()     #: now()
 
 
 def usage(exit_code=0):
-    print """Usage: dak check-archive MODE
+    print("""Usage: dak check-archive MODE
 Run various sanity checks of the archive and/or database.
 
   -h, --help                show this help and exit.
@@ -74,7 +76,7 @@ The following MODEs are available:
   files-not-symlinks - check files in the database aren't symlinks
   validate-builddeps - validate build-dependencies of .dsc files in the archive
   add-missing-source-checksums - add missing checksums for source packages
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -102,7 +104,7 @@ def process_dir(unused, dirname, filenames):
         filename = os.path.abspath(os.path.join(dirname, name))
         if os.path.isfile(filename) and not os.path.islink(filename) and filename not in db_files and filename not in excluded:
             waste += os.stat(filename)[stat.ST_SIZE]
-            print "%s" % (filename)
+            print("%s" % (filename))
 
 ################################################################################
 
@@ -128,7 +130,7 @@ def check_files():
          ORDER BY archive.name, suite.suite_name, f.filename
         """
     for row in session.execute(query):
-        print "MISSING-ARCHIVE-FILE {0} {1} {2}".vformat(row)
+        print("MISSING-ARCHIVE-FILE {0} {1} {2}".vformat(row))
 
     query = """
         SELECT archive.name, suite.suite_name, f.filename
@@ -144,7 +146,7 @@ def check_files():
          ORDER BY archive.name, suite.suite_name, f.filename
         """
     for row in session.execute(query):
-        print "MISSING-ARCHIVE-FILE {0} {1} {2}".vformat(row)
+        print("MISSING-ARCHIVE-FILE {0} {1} {2}".vformat(row))
 
     archive_files = session.query(ArchiveFile) \
         .join(ArchiveFile.archive).join(ArchiveFile.file) \
@@ -155,7 +157,7 @@ def check_files():
         path = af.path
         expected_files.add(af.path)
         if not os.path.exists(path):
-            print "MISSING-FILE {0} {1} {2}".format(af.archive.archive_name, af.file.filename, path)
+            print("MISSING-FILE {0} {1} {2}".format(af.archive.archive_name, af.file.filename, path))
 
     archives = session.query(Archive).order_by(Archive.archive_name)
 
@@ -166,7 +168,7 @@ def check_files():
                 path = os.path.join(dirpath, fn)
                 if path in expected_files:
                     continue
-                print "UNEXPECTED-FILE {0} {1}".format(a.archive_name, path)
+                print("UNEXPECTED-FILE {0} {1}".format(a.archive_name, path))
 
 ################################################################################
 
@@ -208,9 +210,9 @@ def check_override():
     session = DBConn().session()
 
     for suite_name in ["stable", "unstable"]:
-        print suite_name
-        print "-" * len(suite_name)
-        print
+        print(suite_name)
+        print("-" * len(suite_name))
+        print()
         suite = get_suite(suite_name)
         q = session.execute("""
 SELECT DISTINCT b.package FROM binaries b, bin_associations ba
@@ -219,7 +221,7 @@ SELECT DISTINCT b.package FROM binaries b, bin_associations ba
                           % {'suiteid': suite.suite_id})
 
         for j in q.fetchall():
-            print j[0]
+            print(j[0])
 
         q = session.execute("""
 SELECT DISTINCT s.source FROM source s, src_associations sa
@@ -227,7 +229,7 @@ SELECT DISTINCT s.source FROM source s, src_associations sa
        (SELECT 1 FROM override o WHERE o.suite = :suiteid and o.package = s.source)"""
                           % {'suiteid': suite.suite_id})
         for j in q.fetchall():
-            print j[0]
+            print(j[0])
 
 ################################################################################
 
@@ -263,11 +265,11 @@ def check_source_in_one_dir():
                 symlink = path + '/' + os.path.basename(first_filename)
                 if not os.path.exists(symlink):
                     broken = True
-                    print "WOAH, we got a live one here... %s [%s] {%s}" % (filename, s.source_id, symlink)
+                    print("WOAH, we got a live one here... %s [%s] {%s}" % (filename, s.source_id, symlink))
         if broken:
             broken_count += 1
 
-    print "Found %d source packages where the source is not all in one directory." % (broken_count)
+    print("Found %d source packages where the source is not all in one directory." % (broken_count))
 
 ################################################################################
 
@@ -276,10 +278,10 @@ def check_checksums():
     """
     Validate all files
     """
-    print "Getting file information from database..."
+    print("Getting file information from database...")
     q = DBConn().session().query(PoolFile)
 
-    print "Checking file checksums & sizes..."
+    print("Checking file checksums & sizes...")
     for f in q:
         filename = f.fullpath
 
@@ -307,7 +309,7 @@ def check_checksums():
         if sha256sum != f.sha256sum:
             utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, f.sha256sum))
 
-    print "Done."
+    print("Done.")
 
 ################################################################################
 #
@@ -318,7 +320,7 @@ def Ent(Kind, Name, Link, Mode, UID, GID, Size, MTime, Major, Minor):
 
     if MTime > current_time:
         future_files[current_file] = MTime
-        print "%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind, Name, Link, Mode, UID, GID, Size, MTime, Major, Minor)
+        print("%s: %s '%s','%s',%u,%u,%u,%u,%u,%u,%u" % (current_file, Kind, Name, Link, Mode, UID, GID, Size, MTime, Major, Minor))
 
 
 def check_timestamps():
@@ -345,7 +347,7 @@ def check_timestamps():
             apt_inst.debExtract(f, Ent, "data.tar.gz")
             count += 1
 
-    print "Checked %d files (out of %d)." % (count, len(db_files.keys()))
+    print("Checked %d files (out of %d)." % (count, len(db_files.keys())))
 
 ################################################################################
 
@@ -357,13 +359,13 @@ def check_files_in_dsc():
     """
     count = 0
 
-    print "Building list of database files..."
+    print("Building list of database files...")
     q = DBConn().session().query(PoolFile).filter(PoolFile.filename.like('.dsc$'))
 
     if q.count() > 0:
-        print "Checking %d files..." % len(ql)
+        print("Checking %d files..." % len(ql))
     else:
-        print "No files to check."
+        print("No files to check.")
 
     for pf in q.all():
         filename = os.path.abspath(os.path.join(pf.location.path + pf.filename))
@@ -393,7 +395,7 @@ def validate_sources(suite, component):
     """
     filename = "%s/dists/%s/%s/source/Sources" % (Cnf["Dir::Root"], suite, component)
     filename = utils.find_possibly_compressed_file(filename)
-    print "Processing %s..." % (filename)
+    print("Processing %s..." % (filename))
     with apt_pkg.TagFile(filename) as Sources:
         while Sources.step():
             source = Sources.section.find('Package')
@@ -404,18 +406,18 @@ def validate_sources(suite, component):
                 filename = "%s/%s/%s" % (Cnf["Dir::Root"], directory, name)
                 if not os.path.exists(filename):
                     if directory.find("potato") == -1:
-                        print "W: %s missing." % (filename)
+                        print("W: %s missing." % (filename))
                     else:
                         pool_location = utils.poolify(source)
                         pool_filename = "%s/%s/%s" % (Cnf["Dir::Pool"], pool_location, name)
                         if not os.path.exists(pool_filename):
-                            print "E: %s missing (%s)." % (filename, pool_filename)
+                            print("E: %s missing (%s)." % (filename, pool_filename))
                         else:
                             # Create symlink
                             pool_filename = os.path.normpath(pool_filename)
                             filename = os.path.normpath(filename)
                             src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
-                            print "Symlinking: %s -> %s" % (filename, src)
+                            print("Symlinking: %s -> %s" % (filename, src))
                             #os.symlink(src, filename)
 
 ########################################
@@ -428,12 +430,12 @@ def validate_packages(suite, component, architecture):
     filename = "%s/dists/%s/%s/binary-%s/Packages" \
                % (Cnf["Dir::Root"], suite, component, architecture)
     filename = utils.find_possibly_compressed_file(filename)
-    print "Processing %s..." % (filename)
+    print("Processing %s..." % (filename))
     with apt_pkg.TagFile(filename) as Packages:
         while Packages.step():
             filename = "%s/%s" % (Cnf["Dir::Root"], Packages.section.find('Filename'))
             if not os.path.exists(filename):
-                print "W: %s missing." % (filename)
+                print("W: %s missing." % (filename))
 
 ########################################
 
@@ -460,7 +462,7 @@ def check_files_not_symlinks():
     """
     Check files in the database aren't symlinks
     """
-    print "Building list of database files... ",
+    print("Building list of database files... ", end=' ')
     before = time.time()
     q = DBConn().session().query(PoolFile).filter(PoolFile.filename.like('.dsc$'))
 
@@ -487,7 +489,7 @@ def chk_bd_process_dir(unused, dirname, filenames):
                 try:
                     apt_pkg.parse_src_depends(field)
                 except:
-                    print "E: [%s] %s: %s" % (filename, field_name, field)
+                    print("E: [%s] %s: %s" % (filename, field_name, field))
                     pass
 
 ################################################################################
@@ -536,7 +538,7 @@ def add_missing_source_checksums():
         rows = session.execute(_add_missing_source_checksums_query,
             {'checksum_key': checksum_key, 'checksum_type': checksum}).rowcount
         if rows > 0:
-            print "Added {0} missing entries for {1}".format(rows, checksum)
+            print("Added {0} missing entries for {1}".format(rows, checksum))
     session.commit()
 
 ################################################################################

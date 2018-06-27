@@ -30,6 +30,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 import sys
 import fcntl
@@ -54,11 +56,11 @@ Cnf = None
 
 class UpdateDB:
     def usage(self, exit_code=0):
-        print """Usage: dak update-db
+        print("""Usage: dak update-db
 Updates dak's database schema to the lastest version. You should disable crontabs while this is running
 
   -h, --help                show this help and exit.
-  -y, --yes                 do not ask for confirmation"""
+  -y, --yes                 do not ask for confirmation""")
         sys.exit(exit_code)
 
 
@@ -69,7 +71,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         # First, do the sure thing, and create the configuration table
         try:
-            print "Creating configuration table ..."
+            print("Creating configuration table ...")
             c = self.db.cursor()
             c.execute("""CREATE TABLE config (
                                   id SERIAL PRIMARY KEY NOT NULL,
@@ -81,10 +83,10 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
         except psycopg2.ProgrammingError:
             self.db.rollback()
-            print "Failed to create configuration table."
-            print "Can the projectB user CREATE TABLE?"
-            print ""
-            print "Aborting update."
+            print("Failed to create configuration table.")
+            print("Can the projectB user CREATE TABLE?")
+            print("")
+            print("Aborting update.")
             sys.exit(-255)
 
 ################################################################################
@@ -101,7 +103,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
         except psycopg2.ProgrammingError:
             # Whoops .. no config table ...
             self.db.rollback()
-            print "No configuration table found, assuming dak database revision to be pre-zero"
+            print("No configuration table found, assuming dak database revision to be pre-zero")
             return -1
 
 ################################################################################
@@ -120,7 +122,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
 
     def update_db(self):
         # Ok, try and find the configuration table
-        print "Determining dak database revision ..."
+        print("Determining dak database revision ...")
         cnf = Config()
         logger = Logger('update-db')
         modules = []
@@ -143,22 +145,22 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 self.db.cursor().execute('SET ROLE "{}"'.format(db_role))
 
         except Exception as e:
-            print "FATAL: Failed connect to database (%s)" % str(e)
+            print("FATAL: Failed connect to database (%s)" % str(e))
             sys.exit(1)
 
         database_revision = int(self.get_db_rev())
         logger.log(['transaction id before update: %s' % self.get_transaction_id()])
 
         if database_revision == -1:
-            print "dak database schema predates update-db."
-            print ""
-            print "This script will attempt to upgrade it to the lastest, but may fail."
-            print "Please make sure you have a database backup handy. If you don't, press Ctrl-C now!"
-            print ""
-            print "Continuing in five seconds ..."
+            print("dak database schema predates update-db.")
+            print("")
+            print("This script will attempt to upgrade it to the lastest, but may fail.")
+            print("Please make sure you have a database backup handy. If you don't, press Ctrl-C now!")
+            print("")
+            print("Continuing in five seconds ...")
             time.sleep(5)
-            print ""
-            print "Attempting to upgrade pre-zero database to zero"
+            print("")
+            print("Attempting to upgrade pre-zero database to zero")
 
             self.update_db_to_zero()
             database_revision = 0
@@ -166,16 +168,16 @@ Updates dak's database schema to the lastest version. You should disable crontab
         dbfiles = glob(os.path.join(os.path.dirname(__file__), 'dakdb/update*.py'))
         required_database_schema = max(map(int, findall('update(\d+).py', " ".join(dbfiles))))
 
-        print "dak database schema at %d" % database_revision
-        print "dak version requires schema %d" % required_database_schema
+        print("dak database schema at %d" % database_revision)
+        print("dak version requires schema %d" % required_database_schema)
 
         if database_revision < required_database_schema:
-            print "\nUpdates to be applied:"
+            print("\nUpdates to be applied:")
             for i in range(database_revision, required_database_schema):
                 i += 1
                 dakdb = __import__("dakdb", globals(), locals(), ['update' + str(i)])
                 update_module = getattr(dakdb, "update" + str(i))
-                print "Update %d: %s" % (i, next(s for s in update_module.__doc__.split("\n") if s))
+                print("Update %d: %s" % (i, next(s for s in update_module.__doc__.split("\n") if s)))
                 modules.append((update_module, i))
             if not Config().find_b("Update-DB::Options::Yes", False):
                 prompt = "\nUpdate database? (y/N) "
@@ -183,7 +185,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 if answer.upper() != 'Y':
                     sys.exit(0)
         else:
-            print "no updates required"
+            print("no updates required")
             logger.log(["no updates required"])
             sys.exit(0)
 
@@ -192,12 +194,12 @@ Updates dak's database schema to the lastest version. You should disable crontab
             try:
                 update_module.do_update(self)
                 message = "updated database schema from %d to %d" % (database_revision, i)
-                print message
+                print(message)
                 logger.log([message])
             except DBUpdateError as e:
                 # Seems the update did not work.
-                print "Was unable to update database schema from %d to %d." % (database_revision, i)
-                print "The error message received was %s" % (e)
+                print("Was unable to update database schema from %d to %d." % (database_revision, i))
+                print("The error message received was %s" % (e))
                 logger.log(["DB Schema upgrade failed"])
                 logger.close()
                 utils.fubar("DB Schema upgrade failed")

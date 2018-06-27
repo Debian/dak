@@ -31,6 +31,8 @@ Generate Maintainers file used by e.g. the Debian Bug Tracking System
 
 ################################################################################
 
+from __future__ import print_function
+
 from daklib import daklog
 from daklib import utils
 from daklib.config import Config
@@ -46,14 +48,14 @@ from sqlalchemy.sql import text
 
 
 def usage(exit_code=0):
-    print """Usage: dak make-maintainers [OPTION] -a ARCHIVE EXTRA_FILE[...]
+    print("""Usage: dak make-maintainers [OPTION] -a ARCHIVE EXTRA_FILE[...]
 Generate an index of packages <=> Maintainers / Uploaders.
 
   -a, --archive=ARCHIVE      archive to take packages from
   -s, --source               output source packages only
   -p, --print                print package list to stdout instead of writing it to files
   -h, --help                 show this help and exit
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################

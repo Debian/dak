@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+
 import apt_pkg
 import sys
 
@@ -25,7 +27,7 @@ from daklib.policy import UploadCopy
 
 
 def usage():
-    print """Usage: dak export -q <queue> [options] -a|--all|<source...>
+    print("""Usage: dak export -q <queue> [options] -a|--all|<source...>
 
 Export uploads from policy queues, that is the changes files for the given
 source package and all other files associated with that.
@@ -36,7 +38,7 @@ source package and all other files associated with that.
                    default: current directory
  -q <queue>        queue to grab uploads from
  <source>          source package name to export
-"""
+""")
 
 
 def main(argv=None):
@@ -61,7 +63,7 @@ def main(argv=None):
 
     queue = session.query(PolicyQueue).filter_by(queue_name=options['Queue']).first()
     if queue is None:
-        print "Unknown queue '{0}'".format(options['Queue'])
+        print("Unknown queue '{0}'".format(options['Queue']))
         sys.exit(1)
     uploads = session.query(PolicyQueueUpload).filter_by(policy_queue=queue)
     if 'All' not in options:

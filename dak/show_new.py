@@ -25,6 +25,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 from copy import copy
 import os
 import sys
@@ -155,7 +157,7 @@ def do_pkg(upload_id):
     changes = upload.changes
 
     origchanges = os.path.join(queue.path, changes.changesname)
-    print origchanges
+    print(origchanges)
 
     htmlname = "{0}_{1}.html".format(changes.source, changes.version)
     htmlfile = os.path.join(cnf['Show-New::HTMLPath'], htmlname)
@@ -181,19 +183,19 @@ def do_pkg(upload_id):
         missing = [(o['type'], o['package']) for o in handler.missing_overrides()]
         distribution = changes.distribution
 
-        print >>outfile, html_header(changes.source, missing)
-        print >>outfile, examine_package.display_changes(distribution, origchanges)
+        print(html_header(changes.source, missing), file=outfile)
+        print(examine_package.display_changes(distribution, origchanges), file=outfile)
 
         if upload.source is not None and ('dsc', upload.source.source) in missing:
             fn = os.path.join(upload_copy.directory, upload.source.poolfile.basename)
-            print >>outfile, examine_package.check_dsc(distribution, fn, session)
+            print(examine_package.check_dsc(distribution, fn, session), file=outfile)
         for binary in upload.binaries:
             if (binary.binarytype, binary.package) not in missing:
                 continue
             fn = os.path.join(upload_copy.directory, binary.poolfile.basename)
-            print >>outfile, examine_package.check_deb(distribution, fn, session)
+            print(examine_package.check_deb(distribution, fn, session), file=outfile)
 
-        print >>outfile, html_footer()
+        print(html_footer(), file=outfile)
 
     session.close()
     htmlfiles_to_process.remove(htmlfile)
@@ -203,10 +205,10 @@ def do_pkg(upload_id):
 
 
 def usage(exit_code=0):
-    print """Usage: dak show-new [OPTION]... [CHANGES]...
+    print("""Usage: dak show-new [OPTION]... [CHANGES]...
   -h, --help                show this help and exit.
   -p, --html-path [path]    override output directory.
-  """
+  """)
     sys.exit(exit_code)
 
 ################################################################################

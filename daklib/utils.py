@@ -22,6 +22,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 import commands
 import codecs
 import datetime
@@ -430,7 +432,7 @@ def send_mail(message, filename="", whitelists=None):
         path = os.path.join(maildir, datetime.datetime.now().isoformat())
         path = find_next_free(path)
         with open(path, 'w') as fh:
-            print >>fh, message,
+            print(message, end=' ', file=fh)
 
     # Check whether we're supposed to be sending mail
     if "Dinstall::Options::No-Mail" in Cnf and Cnf["Dinstall::Options::No-Mail"]:
@@ -475,7 +477,7 @@ def send_mail(message, filename="", whitelists=None):
                             mail_whitelisted = 1
                             break
                     if not mail_whitelisted:
-                        print "Skipping {0} since it's not whitelisted".format(item)
+                        print("Skipping {0} since it's not whitelisted".format(item))
                         continue
                     match.append(item)
 
@@ -1052,7 +1054,7 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
         f = open(file)
         lines = f.readlines()
     except IOError as e:
-        print "Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file
+        print("Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file)
         lines = []
     wnpp = {}
 
@@ -1158,7 +1160,7 @@ def call_editor(text="", suffix=".txt"):
     editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
     tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     try:
-        print >>tmp, text,
+        print(text, end=' ', file=tmp)
         tmp.close()
         daklib.daksubprocess.check_call([editor, tmp.name])
         return open(tmp.name, 'r').read()
@@ -1246,7 +1248,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             try:
                 parsed_dep = apt_pkg.parse_depends(deps[package])
             except ValueError as e:
-                print "Error for package %s: %s" % (package, e)
+                print("Error for package %s: %s" % (package, e))
                 parsed_dep = []
             for dep in parsed_dep:
                 # Check for partial breakage.  If a package has a ORed
@@ -1266,9 +1268,9 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 
     if all_broken and not quiet:
         if cruft:
-            print "  - broken Depends:"
+            print("  - broken Depends:")
         else:
-            print "# Broken Depends:"
+            print("# Broken Depends:")
         for source, bindict in sorted(all_broken.items()):
             lines = []
             for binary, arches in sorted(bindict.items()):
@@ -1277,16 +1279,16 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 else:
                     lines.append('%s [%s]' % (binary, ' '.join(sorted(arches))))
             if cruft:
-                print '    %s: %s' % (source, lines[0])
+                print('    %s: %s' % (source, lines[0]))
             else:
-                print '%s: %s' % (source, lines[0])
+                print('%s: %s' % (source, lines[0]))
             for line in lines[1:]:
                 if cruft:
-                    print '    ' + ' ' * (len(source) + 2) + line
+                    print('    ' + ' ' * (len(source) + 2) + line)
                 else:
-                    print ' ' * (len(source) + 2) + line
+                    print(' ' * (len(source) + 2) + line)
         if not cruft:
-            print
+            print()
 
     # Check source dependencies (Build-Depends and Build-Depends-Indep)
     all_broken = defaultdict(set)
@@ -1322,7 +1324,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
             try:
                 parsed_dep = apt_pkg.parse_src_depends(build_dep)
             except ValueError as e:
-                print "Error for source %s: %s" % (source, e)
+                print("Error for source %s: %s" % (source, e))
         for dep in parsed_dep:
             unsat = 0
             for dep_package, _, _ in dep:
@@ -1343,22 +1345,22 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 
     if all_broken and not quiet:
         if cruft:
-            print "  - broken Build-Depends:"
+            print("  - broken Build-Depends:")
         else:
-            print "# Broken Build-Depends:"
+            print("# Broken Build-Depends:")
         for source, bdeps in sorted(all_broken.items()):
             bdeps = sorted(bdeps)
             if cruft:
-                print '    %s: %s' % (source, bdeps[0])
+                print('    %s: %s' % (source, bdeps[0]))
             else:
-                print '%s: %s' % (source, bdeps[0])
+                print('%s: %s' % (source, bdeps[0]))
             for bdep in bdeps[1:]:
                 if cruft:
-                    print '    ' + ' ' * (len(source) + 2) + bdep
+                    print('    ' + ' ' * (len(source) + 2) + bdep)
                 else:
-                    print ' ' * (len(source) + 2) + bdep
+                    print(' ' * (len(source) + 2) + bdep)
         if not cruft:
-            print
+            print()
 
     return dep_problem
 

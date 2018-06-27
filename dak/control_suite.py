@@ -41,6 +41,8 @@
 
 #######################################################################################
 
+from __future__ import print_function
+
 import sys
 import apt_pkg
 import os
@@ -60,7 +62,7 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak control-suite [OPTIONS] [FILE]
+    print("""Usage: dak control-suite [OPTIONS] [FILE]
 Display or alter the contents of a suite using FILE(s), or stdin.
 
   -a, --add=SUITE            add to SUITE
@@ -68,7 +70,7 @@ Display or alter the contents of a suite using FILE(s), or stdin.
   -l, --list=SUITE           list the contents of SUITE
   -r, --remove=SUITE         remove from SUITE
   -s, --set=SUITE            set SUITE
-  -b, --britney              generate changelog entry for britney runs"""
+  -b, --britney              generate changelog entry for britney runs""")
 
     sys.exit(exit_code)
 
@@ -381,7 +383,7 @@ def get_list(suite, session):
                             WHERE ba.suite = :suiteid
                               AND ba.bin = b.id AND b.architecture = a.id""", {'suiteid': suite_id})
     for i in q.fetchall():
-        print " ".join(i)
+        print(" ".join(i))
 
     # List source
     q = session.execute("""SELECT s.source, s.version
@@ -389,7 +391,7 @@ def get_list(suite, session):
                             WHERE sa.suite = :suiteid
                               AND sa.source = s.id""", {'suiteid': suite_id})
     for i in q.fetchall():
-        print " ".join(i) + " source"
+        print(" ".join(i) + " source")
 
 #######################################################################################
 
@@ -415,7 +417,7 @@ def main():
     try:
         file_list = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
     except SystemError as e:
-        print "%s\n" % e
+        print("%s\n" % e)
         usage(1)
     Options = cnf.subtree("Control-Suite::Options")
 

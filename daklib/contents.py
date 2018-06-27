@@ -25,6 +25,8 @@ Helper code for contents generation.
 
 ################################################################################
 
+from __future__ import print_function
+
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.filewriter import BinaryContentsFileWriter, SourceContentsFileWriter
@@ -501,4 +503,4 @@ def source_scan_helper(source_id):
         scanner = SourceContentsScanner(source_id)
         scanner.scan()
     except Exception as e:
-        print e
+        print(e)

@@ -20,6 +20,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 import os
 import sys
 import colorsys
@@ -37,7 +39,7 @@ default_names = ["byhand", "new", "deferred"]
 
 
 def usage(exit_code=0):
-    print """Usage: dak graph
+    print("""Usage: dak graph
 Graphs the number of packages in queue directories (usually new and byhand).
 
   -h, --help                show this help and exit.
@@ -46,7 +48,7 @@ Graphs the number of packages in queue directories (usually new and byhand).
   -i, --images=key          Directory where image graphs to be updated are stored
   -n, --names=key           A comma separated list of rrd files to be scanned
 
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -110,7 +112,7 @@ GPRINT:avgd%i:avg\\: %%.0lf\\j
     try:
         ret = rrdtool.graph(*rrd_args)
     except rrdtool.error as e:
-        print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
+        print(('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e)))
 
 
 def graph_normal(rrd_dir, image_dir, name, extra_args, graph, title, start, year_lines=False):
@@ -163,7 +165,7 @@ GPRINT:avgds0:avg\\: %%.0lf\\j
     try:
         ret = rrdtool.graph(*rrd_args)
     except rrdtool.error as e:
-        print('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e))
+        print(('warning: graph: rrdtool error, skipping %s-%s.png: %s' % (name, graph, e)))
 
 ################################################################################
 
@@ -216,13 +218,13 @@ def main():
     elif "Dir::Rrd" in Cnf:
         rrd_dir = Cnf["Dir::Rrd"]
     else:
-        print >> sys.stderr, "No directory to read RRD files from\n"
+        print("No directory to read RRD files from\n", file=sys.stderr)
         sys.exit(1)
 
     if "Graph::Options::Images" in Cnf:
         image_dir = Cnf["Graph::Options::Images"]
     else:
-        print >> sys.stderr, "No directory to write graph images to\n"
+        print("No directory to write graph images to\n", file=sys.stderr)
         sys.exit(1)
 
     for name in names:

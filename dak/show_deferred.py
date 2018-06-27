@@ -20,6 +20,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import os
 import re
@@ -167,7 +169,7 @@ RRA:MAX:0.5:288:795
             rc = rrdtool.create(*create)
             ru = rrdtool.update(*update)
         except rrdtool.error as e:
-            print('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e))
+            print(('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e)))
     except NameError:
         pass
 
@@ -218,14 +220,14 @@ def list_uploads(filelist, rrd_dir):
     uploads = map(get_upload_data, filelist)
     uploads.sort()
     # print the summary page
-    print header()
+    print(header())
     if uploads:
-        print table_header()
-        print ''.join(map(lambda x: table_row(*x[1:6]), uploads)).encode('utf-8')
-        print table_footer()
+        print(table_header())
+        print(''.join(map(lambda x: table_row(*x[1:6]), uploads)).encode('utf-8'))
+        print(table_footer())
     else:
-        print '<h1>Currently no deferred uploads to Debian</h1>'
-    print footer()
+        print('<h1>Currently no deferred uploads to Debian</h1>')
+    print(footer())
     # machine readable summary
     if "Show-Deferred::LinkPath" in Cnf:
         fn = os.path.join(Cnf["Show-Deferred::LinkPath"], '.status.tmp')
@@ -234,16 +236,16 @@ def list_uploads(filelist, rrd_dir):
             counts = [0] * 16
             for u in uploads:
                 counts[u[7]] += 1
-                print >> f, "Changes-file: %s" % u[1]
+                print("Changes-file: %s" % u[1], file=f)
                 fields = """Location: DEFERRED
 Delayed-Until: %s
 Delay-Remaining: %s
 Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])), u[2], u[5])
-                print >> f, fields
+                print(fields, file=f)
                 encoded = unicode(u[6]).encode('utf-8')
-                print >> f, encoded.rstrip()
+                print(encoded.rstrip(), file=f)
                 open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "w").write(encoded + fields + '\n')
-                print >> f
+                print(file=f)
             f.close()
             os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"], '.status.tmp'),
                       os.path.join(Cnf["Show-Deferred::LinkPath"], 'status'))
@@ -258,12 +260,12 @@ def usage(exit_code=0):
         f = sys.stderr
     else:
         f = sys.stdout
-    print >> f, """Usage: dak show-deferred
+    print("""Usage: dak show-deferred
   -h, --help                    show this help and exit.
   -p, --link-path [path]        override output directory.
   -d, --deferred-queue [path]   path to the deferred queue
   -r, --rrd=key                 Directory where rrd files to be updated are stored
-  """
+  """, file=f)
     sys.exit(exit_code)
 
 
@@ -282,8 +284,8 @@ def init():
     for i, j in [("DeferredQueue", "--deferred-queue")]:
         key = "Show-Deferred::%s" % i
         if key not in Cnf:
-            print >>sys.stderr, """%s is mandatory.
-  set via config file or command-line option %s""" % (key, j)
+            print("""%s is mandatory.
+  set via config file or command-line option %s""" % (key, j), file=sys.stderr)
 
     Options = Cnf.subtree("Show-Deferred::Options")
     if Options["help"]:

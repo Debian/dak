@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+
 import apt_pkg
 import datetime
 import os
@@ -31,10 +33,10 @@ from daklib.utils import find_next_free
 
 
 def usage():
-    print """Usage: dak process-commands [-d <directory>] [<command-file>...]
+    print("""Usage: dak process-commands [-d <directory>] [<command-file>...]
 
 process command files
-"""
+""")
 
 
 def main(argv=None):
