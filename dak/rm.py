@@ -347,7 +347,7 @@ def main():
         versions = d[package].keys()
         versions.sort(apt_pkg.version_compare)
         for version in versions:
-            d[package][version].sort(utils.arch_compare_sw)
+            d[package][version].sort(key=utils.ArchKey)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
     print("Will remove the following packages from %s:" % (suites_list))
     print()

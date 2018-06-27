@@ -503,7 +503,7 @@ def process_queue(queue, log, rrd_dir):
                 arches.add(arch)
             versions.add(dbc.version)
         arches_list = list(arches)
-        arches_list.sort(utils.arch_compare_sw)
+        arches_list.sort(key=utils.ArchKey)
         arch_list = " ".join(arches_list)
         version_list = " ".join(sorted(versions, reverse=True))
         if len(version_list) > max_version_len:

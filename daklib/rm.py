@@ -402,7 +402,7 @@ def remove(session, reason, suites, removals,
     for package in sorted(d):
         versions = sorted(d[package], cmp=apt_pkg.version_compare)
         for version in versions:
-            d[package][version].sort(utils.arch_compare_sw)
+            d[package][version].sort(key=utils.ArchKey)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
             if apt_pkg.version_compare(version, newest_source) > 0:
                 newest_source = version
