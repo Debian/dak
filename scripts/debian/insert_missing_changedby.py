@@ -32,6 +32,8 @@
 
 ###############################################################################
 
+from __future__ import print_function
+
 import errno
 import fcntl
 import os
@@ -69,7 +71,7 @@ def get_or_set_maintainer_id(maintainer):
                 maintainer = unicode(maintainer, 'iso8859-15')
     maintainer = maintainer.encode('utf-8')
 
-    print "%s" % maintainer
+    print("%s" % maintainer)
     cursor = projectBdb.cursor()
     cursor.execute("SELECT id FROM maintainer WHERE name=%s", (maintainer, ))
     row = cursor.fetchone()
@@ -93,14 +95,14 @@ def __get_changedby__(package, version):
 
 
 def insert():
-    print "Adding missing changedby fields."
+    print("Adding missing changedby fields.")
 
     listcursor = projectBdb.cursor()
     listcursor.execute("SELECT id, source, version FROM source WHERE changedby IS NULL")
     row = listcursor.fetchone()
 
     while row:
-        print repr(row)
+        print(repr(row))
         try:
             res = __get_changedby__(row[1], row[2])
         except:
@@ -108,7 +110,7 @@ def insert():
             try:
                 res = __get_changedby__(row[1], row[2])
             except:
-                print 'FAILED SQLITE'
+                print('FAILED SQLITE')
                 res = None
             sqliteConn.text_factory = unicode
         if res:
@@ -117,10 +119,10 @@ def insert():
             cur = projectBdb.cursor()
             cur.execute("UPDATE source SET changedby=%s WHERE id=%s" % (changedby_id, row[0]))
             cur.close()
-            print changedby_id, "(%d)" % row[0]
+            print(changedby_id, "(%d)" % row[0])
 
         else:
-            print "nothing found"
+            print("nothing found")
 
         row = listcursor.fetchone()
     listcursor.close()

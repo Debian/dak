@@ -39,13 +39,15 @@
 
 ################################################################################
 
+from __future__ import absolute_import, print_function
+
 import commands
 import apt_pkg
 import fcntl
 import sqlalchemy.sql as sql
 from re import sub
 from collections import defaultdict
-from regexes import re_build_dep_arch
+from .regexes import re_build_dep_arch
 
 from daklib.dbconn import *
 from daklib import utils
@@ -134,7 +136,7 @@ class ReverseDependencyChecker(object):
                             parsed_dep.append(frozenset(d[0] for d in dep))
                         deps[package].update(parsed_dep)
                     except ValueError as e:
-                        print "Error for package %s: %s" % (package, e)
+                        print("Error for package %s: %s" % (package, e))
                 # Maintain a counter for each virtual package.  If a
                 # Provides: exists, set the counter to 0 and count all
                 # provides by a package not in the list for removal.
@@ -177,7 +179,7 @@ class ReverseDependencyChecker(object):
                         parsed_dep.append(frozenset(d[0] for d in dep))
                     source_deps[source].update(parsed_dep)
                 except ValueError as e:
-                    print "Error for package %s: %s" % (source, e)
+                    print("Error for package %s: %s" % (source, e))
 
         return package_dependencies, arch_providers_of, arch_provided_by
 

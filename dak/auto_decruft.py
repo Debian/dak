@@ -33,6 +33,8 @@ Check for obsolete binary packages
 
 ################################################################################
 
+from __future__ import print_function
+
 import sqlalchemy.sql as sql
 import sys
 import apt_pkg
@@ -49,7 +51,7 @@ from daklib.rm import remove, ReverseDependencyChecker
 
 
 def usage(exit_code=0):
-    print """Usage: dak auto-decruft
+    print("""Usage: dak auto-decruft
 Automatic removal of common kinds of cruft
 
   -h, --help                show this help and exit.
@@ -62,7 +64,7 @@ Automatic removal of common kinds of cruft
                             use RMMSG in the removal message (e.g. "NVIU")
   --decruft-equal-versions  use with --if-newer-version-in to also decruft versions
                             that are identical in both suites.
-  """
+  """)
     sys.exit(exit_code)
 
 ################################################################################
@@ -236,7 +238,7 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
         else:
             # This case usually happens when versions differ between architectures...
             if debug:
-                print "N: Merging group %s" % (group_name)
+                print("N: Merging group %s" % (group_name))
             groups[group_name] = merge_group(groups[group_name], group)
 
     for group_name in group_order:
@@ -245,34 +247,34 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
 
     if not groups:
         if debug:
-            print "N: Found no candidates"
+            print("N: Found no candidates")
         return
 
     if debug:
-        print "N: Considering to remove the following packages:"
+        print("N: Considering to remove the following packages:")
         for group_name in sorted(groups):
             group_info = groups[group_name]
             pkgs = group_info["packages"]
             archs = group_info["architectures"]
-            print "N: * %s: %s [%s]" % (group_name, ", ".join(pkgs), " ".join(archs))
+            print("N: * %s: %s [%s]" % (group_name, ", ".join(pkgs), " ".join(archs)))
 
     if debug:
-        print "N: Compiling ReverseDependencyChecker (RDC) - please hold ..."
+        print("N: Compiling ReverseDependencyChecker (RDC) - please hold ...")
     rdc = ReverseDependencyChecker(session, suite_name)
     if debug:
-        print "N: Computing initial breakage..."
+        print("N: Computing initial breakage...")
 
     breakage = rdc.check_reverse_depends(full_removal_request)
     while breakage:
         by_breakers = [(len(breakage[x]), x, breakage[x]) for x in breakage]
         by_breakers.sort(reverse=True)
         if debug:
-            print "N: - Removal would break %s (package, architecture)-pairs" % (len(breakage))
-            print "N: - full breakage:"
+            print("N: - Removal would break %s (package, architecture)-pairs" % (len(breakage)))
+            print("N: - full breakage:")
             for _, breaker, broken in by_breakers:
                 bname = "%s/%s" % breaker
                 broken_str = ", ".join("%s/%s" % b for b in sorted(broken))
-                print "N:    * %s => %s" % (bname, broken_str)
+                print("N:    * %s => %s" % (bname, broken_str))
 
         averted_breakage = set()
 
@@ -295,7 +297,7 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
 
                 if not already_discard:
                     avoided = sorted(breakage - averted_breakage)
-                    print "N: - skipping removal of %s (breakage: %s)" % (", ".join(sorted(guilty_groups)), str(avoided))
+                    print("N: - skipping removal of %s (breakage: %s)" % (", ".join(sorted(guilty_groups)), str(avoided)))
 
             averted_breakage |= breakage
             for group_name in guilty_groups:
@@ -304,11 +306,11 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
 
         if not groups:
             if debug:
-                print "N: Nothing left to remove"
+                print("N: Nothing left to remove")
             return
 
         if debug:
-            print "N: Now considering to remove: %s" % str(", ".join(sorted(groups.iterkeys())))
+            print("N: Now considering to remove: %s" % str(", ".join(sorted(groups.iterkeys()))))
 
         # Rebuild the removal request with the remaining groups and off
         # we go to (not) break the world once more time
@@ -318,10 +320,10 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
         breakage = rdc.check_reverse_depends(full_removal_request)
 
     if debug:
-        print "N: Removal looks good"
+        print("N: Removal looks good")
 
     if dryrun:
-        print "Would remove the equivalent of:"
+        print("Would remove the equivalent of:")
         for group_name in group_order:
             if group_name not in groups:
                 continue
@@ -331,14 +333,14 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
             message = group_info["message"]
 
             # Embed the -R just in case someone wants to run it manually later
-            print '    dak rm -m "{message}" -s {suite} -a {architectures} -p -R -b {packages}'.format(
+            print('    dak rm -m "{message}" -s {suite} -a {architectures} -p -R -b {packages}'.format(
                 message=message, suite=suite_name,
                 architectures=",".join(archs), packages=" ".join(pkgs),
-            )
+            ))
 
-        print
-        print "Note: The removals may be interdependent.  A non-breaking result may require the execution of all"
-        print "of the removals"
+        print()
+        print("Note: The removals may be interdependent.  A non-breaking result may require the execution of all")
+        print("of the removals")
     else:
         remove_groups(groups.itervalues(), suite_id, suite_name, session)
 
@@ -405,7 +407,7 @@ def decruft_newer_version_in(othersuite, suite_name, suite_id, rm_msg, session, 
     if nvi_list:
         message = "[auto-cruft] %s" % rm_msg
         if dryrun:
-            print "    dak rm -m \"%s\" -s %s %s" % (message, suite_name, " ".join(nvi_list))
+            print("    dak rm -m \"%s\" -s %s %s" % (message, suite_name, " ".join(nvi_list)))
         else:
             removals = sources2removals(nvi_list, suite_id, session)
             remove(session, message, [suite_name], removals, whoami="DAK's auto-decrufter")

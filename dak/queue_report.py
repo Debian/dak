@@ -34,6 +34,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -60,7 +62,7 @@ row_number = 0
 
 
 def usage(exit_code=0):
-    print """Usage: dak queue-report
+    print("""Usage: dak queue-report
 Prints a report of packages in queues (usually new and byhand).
 
   -h, --help                show this help and exit.
@@ -78,7 +80,7 @@ Prints a report of packages in queues (usually new and byhand).
 
      Age Keys: m=minutes, h=hours, d=days, w=weeks, o=months, y=years
 
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -185,7 +187,7 @@ def sortfunc(a, b):
 
 
 def header():
-    print """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    print("""<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
   <head>
@@ -238,33 +240,33 @@ def header():
         Debian NEW and BYHAND Packages
       </span>
     </div>
-    """
+    """)
 
 
 def footer():
-    print "<p class=\"timestamp\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
-    print "<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>"
+    print("<p class=\"timestamp\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime())))
+    print("<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>")
 
-    print """
+    print("""
     <div class="footer">
     <p>Hint: Age is the youngest upload of the package, if there is more than
     one version.<br />
     You may want to look at <a href="https://ftp-master.debian.org/REJECT-FAQ.html">the REJECT-FAQ</a>
       for possible reasons why one of the above packages may get rejected.</p>
     </div> </body> </html>
-    """
+    """)
 
 
 def table_header(type, source_count, total_count):
-    print "<h1 class='sourceNEW'>Summary for: %s</h1>" % (type)
-    print "<h1 class='sourceNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type)
-    print """
+    print("<h1 class='sourceNEW'>Summary for: %s</h1>" % (type))
+    print("<h1 class='sourceNEW' style='display: none'>Summary for: binary-%s only</h1>" % (type))
+    print("""
     <p class="togglepkg" onclick="togglePkg()">Click to toggle all/binary-NEW packages</p>
     <table class="NEW">
       <caption class="sourceNEW">
-    """
-    print "Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count)
-    print """
+    """)
+    print("Package count in <strong>%s</strong>: <em>%s</em>&nbsp;|&nbsp; Total Package count: <em>%s</em>" % (type, source_count, total_count))
+    print("""
       </caption>
       <thead>
         <tr>
@@ -278,11 +280,11 @@ def table_header(type, source_count, total_count):
         </tr>
       </thead>
       <tbody>
-    """
+    """)
 
 
 def table_footer(type):
-    print "</tbody></table>"
+    print("</tbody></table>")
 
 
 def table_row(source, version, arch, last_mod, maint, distribution, closes, fingerprint, sponsor, changedby):
@@ -304,44 +306,44 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     session.commit()
 
     if row_number % 2 != 0:
-        print "<tr class=\"%s even\">" % (trclass)
+        print("<tr class=\"%s even\">" % (trclass))
     else:
-        print "<tr class=\"%s odd\">" % (trclass)
+        print("<tr class=\"%s odd\">" % (trclass))
 
     if "sourceNEW" in trclass:
-        print "<td class=\"package\">%s</td>" % (source)
+        print("<td class=\"package\">%s</td>" % (source))
     else:
-        print "<td class=\"package\"><a href=\"https://tracker.debian.org/pkg/%(source)s\">%(source)s</a></td>" % {'source': source}
-    print "<td class=\"version\">"
+        print("<td class=\"package\"><a href=\"https://tracker.debian.org/pkg/%(source)s\">%(source)s</a></td>" % {'source': source})
+    print("<td class=\"version\">")
     for vers in version.split():
-        print "<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers))
-    print "</td>"
-    print "<td class=\"arch\">%s</td>" % (arch)
-    print "<td class=\"distribution\">"
+        print("<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers)))
+    print("</td>")
+    print("<td class=\"arch\">%s</td>" % (arch))
+    print("<td class=\"distribution\">")
     for dist in distribution:
-        print "%s<br/>" % (dist)
-    print "</td>"
-    print "<td class=\"age\"><abbr title=\"%s\">%s</abbr></td>" % (
+        print("%s<br/>" % (dist))
+    print("</td>")
+    print("<td class=\"age\"><abbr title=\"%s\">%s</abbr></td>" % (
         datetime.datetime.utcfromtimestamp(int(time.time()) - last_mod).strftime('%a, %d %b %Y %T UTC'),
         time_pp(last_mod),
-    )
+    ))
     (name, mail) = maint.split(":", 1)
 
-    print "<td class=\"upload-data\">"
-    print "<span class=\"maintainer\">Maintainer: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
+    print("<td class=\"upload-data\">")
+    print("<span class=\"maintainer\">Maintainer: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name)))
     (name, mail) = changedby.split(":", 1)
-    print "<span class=\"changed-by\">Changed-By: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name))
+    print("<span class=\"changed-by\">Changed-By: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name)))
 
     if sponsor:
-        print "<span class=\"sponsor\">Sponsor: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(sponsor), utils.html_escape(sponsor))
+        print("<span class=\"sponsor\">Sponsor: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(sponsor), utils.html_escape(sponsor)))
 
-    print "<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint)
-    print "</td>"
+    print("<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint))
+    print("</td>")
 
-    print "<td class=\"closes\">"
+    print("<td class=\"closes\">")
     for close in closes:
-        print "<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close))
-    print "</td></tr>"
+        print("<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close)))
+    print("</td></tr>")
     row_number += 1
 
 ############################################################
@@ -377,7 +379,7 @@ RRA:MAX:0.5:288:795
             rrdtool.create(*create)
             rrdtool.update(*update)
         except rrdtool.error as e:
-            print('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e))
+            print(('warning: queue_report: rrdtool error, skipping %s.rrd: %s' % (type, e)))
     except NameError:
         pass
 
@@ -467,7 +469,7 @@ def process_queue(queue, log, rrd_dir):
                     maintainer["maintainername"], maintainer["maintaineremail"]) = \
                     fix_maintainer(dbc.maintainer)
                 except ParseMaintError as msg:
-                    print "Problems while parsing maintainer address\n"
+                    print("Problems while parsing maintainer address\n")
                     maintainer["maintainername"] = "Unknown"
                     maintainer["maintaineremail"] = "Unknown"
                 maint = "%s:%s" % (maintainer["maintainername"], maintainer["maintaineremail"])
@@ -614,15 +616,15 @@ def process_queue(queue, log, rrd_dir):
                 msg += format % (source, version_list, arch_list, note, time_pp(last_modified))
 
         if msg:
-            print type.upper()
-            print "-" * len(type)
-            print
-            print msg
-            print ("%s %s source package%s / %s %s package%s in total / %s %s package%s to be processed." %
+            print(type.upper())
+            print("-" * len(type))
+            print()
+            print(msg)
+            print(("%s %s source package%s / %s %s package%s in total / %s %s package%s to be processed." %
                    (source_count, type, plural(source_count),
                     total_count, type, plural(total_count),
-                    total_pending, type, plural(total_pending)))
-            print
+                    total_pending, type, plural(total_pending))))
+            print()
 
 ################################################################################
 

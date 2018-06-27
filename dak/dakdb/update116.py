@@ -6,6 +6,8 @@ Add support for by-hash with a new table and per-suite boolean
 @license: GNU General Public License version 2 or later
 """
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -15,7 +17,7 @@ def do_update(self):
     """Add column to store whether to generate by-hash things per suite,
     add table to store when by-hash files stopped being referenced
     """
-    print __doc__
+    print(__doc__)
     try:
         c = self.db.cursor()
 

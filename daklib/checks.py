@@ -23,6 +23,8 @@
 Please read the documentation for the L{Check} class for the interface.
 """
 
+from __future__ import print_function
+
 from daklib.config import Config
 import daklib.daksubprocess
 from daklib.dbconn import *
@@ -872,7 +874,7 @@ class LintianCheck(Check):
         temptagfile = os.fdopen(fd, 'w')
         for tags in lintiantags.itervalues():
             for tag in tags:
-                print >>temptagfile, tag
+                print(tag, file=temptagfile)
         temptagfile.close()
 
         changespath = os.path.join(upload.directory, changes.filename)

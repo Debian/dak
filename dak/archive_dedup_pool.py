@@ -23,6 +23,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import apt_pkg
 import errno
 import os
@@ -42,10 +44,10 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak archive-dedup-pool [OPTION]...
+    print("""Usage: dak archive-dedup-pool [OPTION]...
   -h, --help                show this help and exit.
   -V, --version             display the version number and exit
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################

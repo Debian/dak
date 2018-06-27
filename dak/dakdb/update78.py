@@ -25,6 +25,8 @@ Alter permissions for new tables and set default permissions
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -33,7 +35,7 @@ from daklib.config import Config
 
 
 def do_update(self):
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
 

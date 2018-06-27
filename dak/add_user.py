@@ -16,6 +16,7 @@ add his key to the GPGKeyring
 
 # You don't want to read this script if you know python.
 # I know what I say. I dont know python and I wrote it. So go and read some other stuff.
+from __future__ import print_function
 
 import commands
 import sys
@@ -34,12 +35,12 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: add-user [OPTION]...
+    print("""Usage: add-user [OPTION]...
 Adds a new user to the dak databases and keyrings
 
     -k, --key                keyid of the User
     -u, --user               userid of the User
-    -h, --help               show this help and exit."""
+    -h, --help               show this help and exit.""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -78,7 +79,7 @@ def main():
     (result, output) = commands.getstatusoutput(cmd)
     m = re_gpg_fingerprint_colon.search(output)
     if not m:
-        print output
+        print(output)
         utils.fubar("0x%s: (1) No fingerprint found in gpg output but it returned 0?\n%s"
                                         % (Cnf["Add-User::Options::Key"], utils.prefix_multi_line_string(output,
                                                                                                                                                                 " [GPG output:] ")))
@@ -92,7 +93,7 @@ def main():
     else:
         u = re_user_address.search(output)
         if not u:
-            print output
+            print(output)
             utils.fubar("0x%s: (2) No userid found in gpg output but it returned 0?\n%s"
                         % (Cnf["Add-User::Options::Key"], utils.prefix_multi_line_string(output, " [GPG output:] ")))
         uid = u.group(1)
@@ -107,7 +108,7 @@ def main():
             continue
         emails.append(e.group(2))
 
-    print "0x%s -> %s <%s> -> %s -> %s" % (Cnf["Add-User::Options::Key"], name, emails[0], uid, primary_key)
+    print("0x%s -> %s <%s> -> %s -> %s" % (Cnf["Add-User::Options::Key"], name, emails[0], uid, primary_key))
 
     prompt = "Add user %s with above data (y/N) ? " % (uid)
     yn = utils.our_raw_input(prompt).lower()
@@ -129,8 +130,8 @@ def main():
                 f.write(mail + '\n')
             f.close()
 
-        print "Added:\nUid:\t %s (ID: %s)\nMaint:\t %s\nFP:\t %s" % (uid, uid_id,
-                     name, primary_key)
+        print("Added:\nUid:\t %s (ID: %s)\nMaint:\t %s\nFP:\t %s" % (uid, uid_id,
+                     name, primary_key))
 
         # Should we send mail to the newly added user?
         if Cnf.find_b("Add-User::SendEmail"):

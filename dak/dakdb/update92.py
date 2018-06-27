@@ -25,6 +25,8 @@ remove per-fingerprint ACLs that are identical to keyring ACL
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -43,7 +45,7 @@ UPDATE fingerprint f
 
 
 def do_update(self):
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
 

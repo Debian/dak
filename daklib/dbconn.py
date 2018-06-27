@@ -33,6 +33,8 @@
 
 ################################################################################
 
+from __future__ import absolute_import, print_function
+
 import apt_pkg
 import daklib.daksubprocess
 import os
@@ -432,7 +434,7 @@ class DBBinary(ORMObject):
         @rtype: text
         @return: stanza text of the control section.
         '''
-        import utils
+        from . import utils
         fullpath = self.poolfile.fullpath
         with open(fullpath, 'r') as deb_file:
             return utils.deb_extract_control(deb_file)
@@ -2531,7 +2533,7 @@ class DBConn(object):
                 self.__setupmappers()
 
         except OperationalError as e:
-            import utils
+            from . import utils
             utils.fubar("Cannot connect to database (%s)" % str(e))
 
         self.pid = os.getpid()

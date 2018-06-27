@@ -25,6 +25,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import apt_pkg
 from datetime import datetime, timedelta
 import sys
@@ -44,12 +46,12 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak manage-build-queues [OPTIONS] buildqueue1 buildqueue2
+    print("""Usage: dak manage-build-queues [OPTIONS] buildqueue1 buildqueue2
 Manage the contents of one or more build queues
 
   -a, --all                  run on all known build queues
   -n, --no-action            don't do anything
-  -h, --help                 show this help and exit"""
+  -h, --help                 show this help and exit""")
 
     sys.exit(exit_code)
 
@@ -153,7 +155,7 @@ def main():
         session = transaction.session
         if Options['All']:
             if len(queue_names) != 0:
-                print "E: Cannot use both -a and a queue name"
+                print("E: Cannot use both -a and a queue name")
                 sys.exit(1)
             queues = session.query(BuildQueue)
         else:

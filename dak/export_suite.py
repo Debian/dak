@@ -16,6 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from __future__ import print_function
+
 import apt_pkg
 import os
 import sys
@@ -26,7 +28,7 @@ from daklib.fstransactions import FilesystemTransaction
 
 
 def usage():
-    print """Usage: dak export-suite -s <suite> [options]
+    print("""Usage: dak export-suite -s <suite> [options]
 
 Export binaries and sources from a suite to a flat directory structure.
 
@@ -35,7 +37,7 @@ Export binaries and sources from a suite to a flat directory structure.
                    default: current directory
  -r --relative     use symlinks relative to target directory
  -s <suite>        suite to grab uploads from
-"""
+""")
 
 
 def main(argv=None):
@@ -60,19 +62,19 @@ def main(argv=None):
 
     suite = session.query(Suite).filter_by(suite_name=options['Suite']).first()
     if suite is None:
-        print "Unknown suite '{0}'".format(options['Suite'])
+        print("Unknown suite '{0}'".format(options['Suite']))
         sys.exit(1)
 
     directory = options.get('Directory')
     if not directory:
-        print "No target directory."
+        print("No target directory.")
         sys.exit(1)
 
     symlink = 'Copy' not in options
     relative = 'Relative' in options
 
     if relative and not symlink:
-        print "E: --relative and --copy cannot be used together."
+        print("E: --relative and --copy cannot be used together.")
         sys.exit(1)
 
     binaries = suite.binaries

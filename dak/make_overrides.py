@@ -29,6 +29,8 @@ Output override files for apt-ftparchive and indices/
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import apt_pkg
@@ -41,10 +43,10 @@ from daklib import utils
 
 
 def usage(exit_code=0):
-    print """Usage: dak make-overrides
+    print("""Usage: dak make-overrides
 Outputs the override tables to text files.
 
-  -h, --help                show this help and exit."""
+  -h, --help                show this help and exit.""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -118,7 +120,7 @@ def main():
 
     for suite in session.query(Suite).filter(Suite.overrideprocess == True):  # noqa:E712
         if suite.untouchable:
-            print "Skipping %s as it is marked as untouchable" % suite.suite_name
+            print("Skipping %s as it is marked as untouchable" % suite.suite_name)
             continue
 
         sys.stderr.write("Processing %s...\n" % (suite.suite_name))

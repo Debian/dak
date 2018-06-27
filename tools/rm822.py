@@ -2,11 +2,13 @@
 # (c) 2010 Luca Falavigna <dktrkranz@debian.org>
 # Free software licensed under the GPL version 2 or later
 
+from __future__ import print_function
+
 import re
 from sys import argv
 
 if len(argv) < 2:
-    print 'Usage:\t./%s removal-file' % argv[0]
+    print('Usage:\t./%s removal-file' % argv[0])
     exit()
 fd = open(argv[1], 'r')
 data = fd.read()
@@ -20,9 +22,9 @@ for removal in removals:
     packages = re.split('from [\S\s]+:\n', removal)[1].split('\n---')[0]
     reason = re.split('---\n', removal)[1].split('\n---')[0]
     bug = re.search('Closed bugs: (\d+)', removal)
-    print 'Date: %s' % date
-    print 'Ftpmaster: %s' % ftpmaster
-    print 'Suite: %s' % suite
+    print('Date: %s' % date)
+    print('Ftpmaster: %s' % ftpmaster)
+    print('Suite: %s' % suite)
     sources = []
     binaries = []
     for package in packages.split('\n'):
@@ -35,14 +37,14 @@ for removal in removals:
                 if element[2]:
                     binaries.append(' %s_%s [%s]' % tuple(elem.strip(' ') for elem in element))
     if sources:
-        print 'Sources:'
+        print('Sources:')
         for source in sources:
-            print source
+            print(source)
     if binaries:
-        print 'Binaries:'
+        print('Binaries:')
         for binary in binaries:
-            print binary
-    print 'Reason: %s' % reason.replace('\n', '\n ')
+            print(binary)
+    print('Reason: %s' % reason.replace('\n', '\n '))
     if bug:
-        print 'Bug: %s' % bug.group(1)
-    print
+        print('Bug: %s' % bug.group(1))
+    print()

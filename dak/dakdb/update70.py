@@ -25,6 +25,8 @@ Add suite options for overrides and control-suite to DB
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -36,7 +38,7 @@ def do_update(self):
     """
     Add suite options for overrides and control-suite to DB
     """
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
 
@@ -51,12 +53,12 @@ def do_update(self):
         if "Check-Overrides::OverrideSuites" in cnf:
             for suitename in cnf.subtree("Check-Overrides::OverrideSuites").list():
                 if cnf.get("Check-Overrides::OverrideSuites::%s::Process" % suitename, "0") == "1":
-                    print "Marking %s to have overrides processed automatically" % suitename.lower()
+                    print("Marking %s to have overrides processed automatically" % suitename.lower())
                     c.execute("UPDATE suite SET overrideprocess = TRUE WHERE suite_name = %s", [suitename.lower()])
 
                 originsuite = cnf.get("Check-Overrides::OverrideSuites::%s::OriginSuite" % suitename, '')
                 if originsuite != '':
-                    print "Setting %s to use %s as origin for overrides" % (suitename.lower(), originsuite.lower())
+                    print("Setting %s to use %s as origin for overrides" % (suitename.lower(), originsuite.lower()))
                     c.execute("UPDATE suite SET overrideorigin = %s WHERE suite_name = %s", [originsuite.lower(), suitename.lower()])
 
         c.execute("ALTER TABLE suite ADD COLUMN allowcsset BOOLEAN NOT NULL DEFAULT FALSE")

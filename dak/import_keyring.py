@@ -20,6 +20,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import os
 import re
@@ -58,27 +60,27 @@ def list_uids(session, pattern):
     sql_pattern = "%%%s%%" % pattern
     message = "List UIDs matching pattern %s" % sql_pattern
     message += "\n" + ("=" * len(message))
-    print message
+    print(message)
     uid_query = session.query(Uid).filter(Uid.uid.ilike(sql_pattern))
     for uid in uid_query.all():
-        print "\nuid %s" % uid.uid
+        print("\nuid %s" % uid.uid)
         for fp in uid.fingerprint:
-            print "    fingerprint %s" % fp.fingerprint
+            print("    fingerprint %s" % fp.fingerprint)
             keyring = "unknown"
             if fp.keyring:
                 keyring = fp.keyring.keyring_name
-            print "        keyring %s" % keyring
+            print("        keyring %s" % keyring)
 
 ################################################################################
 
 
 def usage(exit_code=0):
-    print """Usage: dak import-keyring [OPTION]... [KEYRING]
+    print("""Usage: dak import-keyring [OPTION]... [KEYRING]
   -h, --help                  show this help and exit.
   -L, --import-ldap-users     generate uid entries for keyring from LDAP
   -U, --generate-users FMT    generate uid entries from keyring as FMT
   -l, --list-uids STRING      list all uids matching *STRING*
-  -n, --no-action             don't change database"""
+  -n, --no-action             don't change database""")
     sys.exit(exit_code)
 
 
@@ -131,7 +133,7 @@ def main():
     keyringname = keyring_names[0]
     keyring = get_keyring(keyringname, session)
     if not keyring:
-        print "E: Can't load keyring %s from database" % keyringname
+        print("E: Can't load keyring %s from database" % keyringname)
         sys.exit(1)
 
     keyring.load_keys(keyringname)
@@ -230,7 +232,7 @@ def main():
                     try:
                         oldkeyring = session.query(Keyring).filter_by(keyring_id=oldkid).one()
                     except NotFoundError:
-                        print "ERROR: Cannot find old keyring with id %s" % oldkid
+                        print("ERROR: Cannot find old keyring with id %s" % oldkid)
                         sys.exit(1)
 
                     if oldkeyring.priority < keyring.priority:
@@ -247,9 +249,9 @@ def main():
                     session.flush()
 
                 else:
-                    print "Key %s exists in both %s and %s keyrings. Not demoting." % (f,
+                    print("Key %s exists in both %s and %s keyrings. Not demoting." % (f,
                                                                                        oldkeyring.keyring_name,
-                                                                                       keyring.keyring_name)
+                                                                                       keyring.keyring_name))
 
     # All done!
     if Options["No-Action"]:
@@ -267,7 +269,7 @@ def main():
     keys = changesd.keys()
     keys.sort()
     for k in keys:
-        print "%s\n%s\n" % (k, changesd[k])
+        print("%s\n%s\n" % (k, changesd[k]))
 
 ################################################################################
 

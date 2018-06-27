@@ -29,6 +29,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import pwd
 import grp
 import sys
@@ -43,13 +45,13 @@ from daklib import utils
 
 
 def usage(exit_code=0):
-    print """Usage: dak import-users-from-passwd [OPTION]...
+    print("""Usage: dak import-users-from-passwd [OPTION]...
 Sync PostgreSQL's users with system users.
 
   -h, --help                 show this help and exit
   -n, --no-action            don't do anything
   -q, --quiet                be quiet about what is being done
-  -v, --verbose              explain what is being done"""
+  -v, --verbose              explain what is being done""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -88,7 +90,7 @@ def main():
         uname = entry[0]
         if uname not in debiangrp:
             if Options["Verbose"]:
-                print "Skipping %s (Not in group %s)." % (uname, valid_gid)
+                print("Skipping %s (Not in group %s)." % (uname, valid_gid))
             continue
         passwd_unames[uname] = ""
 
@@ -107,7 +109,7 @@ def main():
     keys.sort()
     for uname in keys:
         if uname not in passwd_unames and uname not in known_postgres_unames:
-            print "I: Deleting %s from Postgres, no longer in passwd or list of known Postgres users" % (uname)
+            print("I: Deleting %s from Postgres, no longer in passwd or list of known Postgres users" % (uname))
             q = session.execute('DROP USER "%s"' % (uname))
 
     keys = passwd_unames.keys()
@@ -116,7 +118,7 @@ def main():
     for uname in keys:
         if uname not in postgres_unames:
             if not Options["Quiet"]:
-                print "Creating %s user in Postgres." % (uname)
+                print("Creating %s user in Postgres." % (uname))
             if not Options["No-Action"]:
                 if safe_name.match(uname):
                     # NB: I never figured out how to use a bind parameter for this query
@@ -129,7 +131,7 @@ def main():
                         utils.warn("Could not create user %s (%s)" % (uname, str(e)))
                         session.rollback()
                 else:
-                    print "NOT CREATING USER %s.  Doesn't match safety regex" % uname
+                    print("NOT CREATING USER %s.  Doesn't match safety regex" % uname)
 
     session.commit()
 

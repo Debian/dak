@@ -34,6 +34,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import errno
 import os
 import sqlalchemy.sql as sql
@@ -57,12 +59,12 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak clean-suites [OPTIONS]
+    print("""Usage: dak clean-suites [OPTIONS]
 Clean old packages from suites.
 
   -n, --no-action            don't do anything
   -h, --help                 show this help and exit
-  -m, --maximum              maximum number of files to remove"""
+  -m, --maximum              maximum number of files to remove""")
     sys.exit(exit_code)
 
 ################################################################################

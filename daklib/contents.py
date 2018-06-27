@@ -25,11 +25,13 @@ Helper code for contents generation.
 
 ################################################################################
 
+from __future__ import absolute_import, print_function
+
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.filewriter import BinaryContentsFileWriter, SourceContentsFileWriter
 
-from dakmultiprocessing import DakProcessPool
+from .dakmultiprocessing import DakProcessPool
 from shutil import rmtree
 from tempfile import mkdtemp
 
@@ -501,4 +503,4 @@ def source_scan_helper(source_id):
         scanner = SourceContentsScanner(source_id)
         scanner.scan()
     except Exception as e:
-        print e
+        print(e)

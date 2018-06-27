@@ -25,6 +25,8 @@ Multi-archive support; convert policy and build queues to regular suites
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -212,11 +214,11 @@ def _convert_build_queues(cnf, c):
 
 
 def do_update(self):
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
         if 'Dir::Base' not in cnf:
-            print """
+            print("""
 MANUAL UPGRADE INSTRUCTIONS
 ===========================
 
@@ -230,7 +232,7 @@ For these archives will be created under Dir::Base:
 Please add Dir::Base to dak.conf and try the update again.  Once the database
 upgrade is finished, you will have to reprocess all uploads currently in
 policy queues: just move them back to unchecked manually.
-"""
+""")
             raise DBUpdateError("Please update dak.conf and try again.")
 
         c = self.db.cursor()

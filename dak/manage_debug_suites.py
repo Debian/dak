@@ -23,6 +23,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import apt_pkg
 import sys
 
@@ -40,12 +42,12 @@ Logger = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak manage-debug-suites [-a|--all|<suite>...]
+    print("""Usage: dak manage-debug-suites [-a|--all|<suite>...]
 Manage the contents of one or more debug suites
 
   -a, --all                  run on all known debug suites
   -n, --no-action            don't do anything
-  -h, --help                 show this help and exit"""
+  -h, --help                 show this help and exit""")
 
     sys.exit(exit_code)
 
@@ -115,7 +117,7 @@ def main():
         session = transaction.session
         if Options['All']:
             if len(debug_suite_names) != 0:
-                print "E: Cannot use both -a and a queue name"
+                print("E: Cannot use both -a and a queue name")
                 sys.exit(1)
             raise Exception("Not yet implemented.")
         else:

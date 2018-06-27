@@ -31,6 +31,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import datetime
 import re
@@ -95,7 +97,7 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
     actions.sort()
 
     for u, reason in actions:
-        print("Processing changes file: {0}".format(u.changes.changesname))
+        print(("Processing changes file: {0}".format(u.changes.changesname)))
         fn(u, srcqueue, reason, transaction)
 
 ################################################################################
@@ -271,7 +273,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
             urgency = cnf['Urgency::Default']
         UrgencyLog().log(upload.source.source, upload.source.version, urgency)
 
-    print "  ACCEPT"
+    print("  ACCEPT")
     if not Options['No-Action']:
         Logger.log(["Policy Queue ACCEPT", srcqueue.queue_name, changesname])
 
@@ -356,7 +358,7 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, ma
         pu = get_processed_upload(upload)
         daklib.announce.announce_reject(pu, reason, rejected_by)
 
-    print "  REJECT"
+    print("  REJECT")
     if not Options["No-Action"]:
         Logger.log(["Policy Queue REJECT", srcqueue.queue_name, upload.changes.changesname])
 
@@ -499,7 +501,7 @@ def main():
     queue_name = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
     if len(queue_name) != 1:
-        print "E: Specify exactly one policy queue"
+        print("E: Specify exactly one policy queue")
         sys.exit(1)
 
     queue_name = queue_name[0]
@@ -518,7 +520,7 @@ def main():
         try:
             pq = session.query(PolicyQueue).filter_by(queue_name=queue_name).one()
         except NoResultFound:
-            print "E: Cannot find policy queue %s" % queue_name
+            print("E: Cannot find policy queue %s" % queue_name)
             sys.exit(1)
 
         commentsdir = os.path.join(pq.path, 'COMMENTS')

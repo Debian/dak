@@ -31,6 +31,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import apt_pkg
 
@@ -67,7 +69,7 @@ old_ACTION = '^(\d{14})\|(?:lisa|process-new)\|(Accepting changes|rejected)\|'
 
 
 def usage(exit_code=0):
-    print """Usage: dak stats MODE
+    print("""Usage: dak stats MODE
 Print various stats.
 
   -h, --help                show this help and exit.
@@ -78,7 +80,7 @@ The following MODEs are available:
   pkg-nums      - displays the number of packages by suite/architecture
   daily-install - displays daily install stats suitable for graphing
   new           - stores stats about the NEW queue
-"""
+""")
     sys.exit(exit_code)
 
 ################################################################################
@@ -92,10 +94,10 @@ SELECT a.arch_string as Architecture, sum(f.size) AS sum
   WHERE a.id=b.architecture AND f.id=b.file
   GROUP BY a.arch_string ORDER BY sum""").fetchall()
     for j in q:
-        print "%-15.15s %s" % (j[0], j[1])
-    print
+        print("%-15.15s %s" % (j[0], j[1]))
+    print()
     q = session.execute("SELECT sum(size) FROM files WHERE filename ~ '.(diff.gz|tar.gz|dsc)$'").fetchall()
-    print "%-15.15s %s" % ("Source", q[0][0])
+    print("%-15.15s %s" % ("Source", q[0][0]))
 
 ################################################################################
 
@@ -126,7 +128,7 @@ def daily_install_stats():
     for date in dates:
         packages = stats[date]["packages"]
         size = int(stats[date]["size"] / 1024.0 / 1024.0)
-        print "%s %s %s" % (date, packages, size)
+        print("%s %s %s" % (date, packages, size))
 
 ################################################################################
 
@@ -215,7 +217,7 @@ def number_of_packages():
                 count = "-"
             output = output + count.rjust(longest_suite) + " |"
         output = output + "\n"
-    print output
+    print(output)
 
 ################################################################################
 

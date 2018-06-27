@@ -22,6 +22,8 @@ Remove obsolete source and binary associations from suites.
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import daklog, utils
@@ -240,7 +242,7 @@ def delete_associations(assocs, session):
 
 
 def usage():
-    print """Usage: dak dominate [OPTIONS]
+    print("""Usage: dak dominate [OPTIONS]
 Remove obsolete source and binary associations from suites.
 
     -s, --suite=SUITE          act on this suite
@@ -249,7 +251,7 @@ Remove obsolete source and binary associations from suites.
     -f, --force                also clean up untouchable suites
 
 SUITE can be comma (or space) separated list, e.g.
-    --suite=testing,unstable"""
+    --suite=testing,unstable""")
     sys.exit()
 
 
@@ -286,7 +288,7 @@ def main():
 
     if Options['No-Action']:
         headers = ('source package', 'source version', 'package', 'version', 'arch', 'suite', 'id')
-        print(tabulate(assocs, headers, tablefmt="orgtbl"))
+        print((tabulate(assocs, headers, tablefmt="orgtbl")))
         session.rollback()
 
     else:

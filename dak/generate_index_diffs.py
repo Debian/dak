@@ -31,6 +31,8 @@
 
 ################################################################################
 
+from __future__ import print_function
+
 import sys
 import os
 import tempfile
@@ -54,7 +56,7 @@ Options = None
 
 
 def usage(exit_code=0):
-    print """Usage: dak generate-index-diffs [OPTIONS] [suites]
+    print("""Usage: dak generate-index-diffs [OPTIONS] [suites]
 Write out ed-style diffs to Packages/Source lists
 
   -h, --help            show this help and exit
@@ -65,7 +67,7 @@ Write out ed-style diffs to Packages/Source lists
   -m                    how many diffs to generate
   -n                    take no action
   -v                    be verbose and list each file as we work on it
-    """
+    """)
     sys.exit(exit_code)
 
 
@@ -73,7 +75,7 @@ def tryunlink(file):
     try:
         os.unlink(file)
     except OSError:
-        print "warning: removing of %s denied" % (file)
+        print("warning: removing of %s denied" % (file))
 
 
 def smartstat(file):
@@ -93,7 +95,7 @@ def smartlink(f, t):
     elif os.path.isfile("%s.xz" % (f)):
         os.system("xz -d < %s.xz > %s" % (f, t))
     else:
-        print "missing: %s" % (f)
+        print("missing: %s" % (f))
         raise IOError(f)
 
 
@@ -276,7 +278,7 @@ def sizehashes(f):
 
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if "NoAct" in Options:
-        print "Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs)
+        print("Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs))
         return
 
     patchname = Options["PatchName"]
@@ -296,10 +298,10 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     (oldext, oldstat) = smartstat(oldfile)
     (origext, origstat) = smartstat(origfile)
     if not origstat:
-        print "%s: doesn't exist" % (origfile)
+        print("%s: doesn't exist" % (origfile))
         return
     if not oldstat:
-        print "%s: initial run" % (origfile)
+        print("%s: initial run" % (origfile))
         os.link(origfile + origext, oldfile + origext)
         return
 
@@ -401,7 +403,7 @@ def main():
         suites = [s.suite_name for s in query]
 
     for suitename in suites:
-        print "Processing: " + suitename
+        print("Processing: " + suitename)
 
         suiteobj = get_suite(suitename.lower(), session=session)
 
@@ -409,7 +411,7 @@ def main():
         suite = suiteobj.suite_name
 
         if suiteobj.untouchable:
-            print "Skipping: " + suite + " (untouchable)"
+            print("Skipping: " + suite + " (untouchable)")
             continue
 
         architectures = get_suite_architectures(suite, skipall=True, session=session)

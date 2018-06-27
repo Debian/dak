@@ -33,6 +33,8 @@ G{importgraph}
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import traceback
@@ -167,12 +169,12 @@ def init():
 def usage(functionality, exit_code=0):
     """Print a usage message and exit with 'exit_code'."""
 
-    print """Usage: dak COMMAND [...]
+    print("""Usage: dak COMMAND [...]
 Run DAK commands.  (Will also work if invoked as COMMAND.)
 
-Available commands:"""
+Available commands:""")
     for (command, description) in functionality:
-        print "  %-23s %s" % (command, description)
+        print("  %-23s %s" % (command, description))
     sys.exit(exit_code)
 
 ################################################################################
@@ -227,7 +229,7 @@ def main():
         module.main()
     except KeyboardInterrupt:
         msg = 'KeyboardInterrupt caught; exiting'
-        print msg
+        print(msg)
         if logger:
             logger.log([msg])
         sys.exit(1)

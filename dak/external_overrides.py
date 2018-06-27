@@ -22,6 +22,8 @@ Modify external overrides.
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import utils, daklog
@@ -31,7 +33,7 @@ import sys
 
 
 def usage():
-    print """Usage: dak external-overrides COMMAND
+    print("""Usage: dak external-overrides COMMAND
 Modify external overrides.
 
   -h, --help                    show this help and exit.
@@ -47,7 +49,7 @@ Commands can use a long or abbreviated form:
 
 For the 'import' command, external overrides are read from standard input and
 should be given as lines of the form 'PACKAGE KEY VALUE'.
-"""
+""")
     sys.exit()
 
 #############################################################################
@@ -105,16 +107,16 @@ def external_overrides_copy(from_suite_name, to_suite_name, force=False):
     to_suite = get_suite(to_suite_name, session)
 
     if from_suite is None:
-        print "E: source %s not found." % from_suite_name
+        print("E: source %s not found." % from_suite_name)
         session.rollback()
         return False
     if to_suite is None:
-        print "E: target %s not found." % to_suite_name
+        print("E: target %s not found." % to_suite_name)
         session.rollback()
         return False
 
     if not force and to_suite.untouchable:
-        print "E: refusing to touch untouchable suite %s (not forced)." % to_suite_name
+        print("E: refusing to touch untouchable suite %s (not forced)." % to_suite_name)
         session.rollback()
         return False
 
@@ -134,7 +136,7 @@ def external_overrides_import(suite_name, component_name, key, file, force=False
     component = get_component(component_name, session)
 
     if not force and suite.untouchable:
-        print "E: refusing to touch untouchable suite %s (not forced)." % suite_name
+        print("E: refusing to touch untouchable suite %s (not forced)." % suite_name)
         session.rollback()
         return False
 
@@ -181,7 +183,7 @@ def main():
     elif command in ('copy', 'c'):
         external_overrides_copy(args[1], args[2], force)
     else:
-        print "E: Unknown commands."
+        print("E: Unknown commands.")
 
 if __name__ == '__main__':
     main()

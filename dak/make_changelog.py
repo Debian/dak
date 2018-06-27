@@ -49,6 +49,8 @@ Generate changelog entry between two suites
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import apt_pkg
@@ -66,7 +68,7 @@ filelist = 'filelist.yaml'
 
 
 def usage(exit_code=0):
-    print """Generate changelog between two suites
+    print("""Generate changelog between two suites
 
        Usage:
        make-changelog -s <suite> -b <base_suite> [OPTION]...
@@ -81,7 +83,7 @@ Options:
 
   -e, --export              export interesting files from source packages
   -a, --archive             archive to fetch data from
-  -p, --progress            display progress status"""
+  -p, --progress            display progress status""")
 
     sys.exit(exit_code)
 
@@ -164,8 +166,8 @@ def display_changes(uploads, index):
     prev_upload = None
     for upload in uploads:
         if prev_upload and prev_upload != upload[0]:
-            print
-        print upload[index]
+            print()
+        print(upload[index])
         prev_upload = upload[0]
 
 
@@ -244,7 +246,7 @@ def export_files(session, archive, clpool, progress=False):
                         stats['created'] += 1
             unpacked.cleanup()
         except Exception as e:
-            print 'make-changelog: unable to unpack %s\n%s' % (p, e)
+            print('make-changelog: unable to unpack %s\n%s' % (p, e))
             stats['errors'] += 1
 
     for root, dirs, files in os.walk(clpool, topdown=False):
@@ -268,12 +270,12 @@ def export_files(session, archive, clpool, progress=False):
         stats['files'] += len(files)
     stats['files'] -= stats['removed']
 
-    print 'make-changelog: file exporting finished'
-    print '  * New packages unpacked: %d' % stats['unpack']
-    print '  * New files created: %d' % stats['created']
-    print '  * New files removed: %d' % stats['removed']
-    print '  * Unpack errors: %d' % stats['errors']
-    print '  * Files available into changelog pool: %d' % stats['files']
+    print('make-changelog: file exporting finished')
+    print('  * New packages unpacked: %d' % stats['unpack'])
+    print('  * New files created: %d' % stats['created'])
+    print('  * New files removed: %d' % stats['removed'])
+    print('  * Unpack errors: %d' % stats['errors'])
+    print('  * Files available into changelog pool: %d' % stats['files'])
 
 
 def generate_export_filelist(clpool):

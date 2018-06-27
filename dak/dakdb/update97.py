@@ -25,6 +25,8 @@ Create path entries for changelog exporting
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 
@@ -35,7 +37,7 @@ def do_update(self):
     """
     Move changelogs related config values into projectb
     """
-    print __doc__
+    print(__doc__)
     try:
         c = self.db.cursor()
         c.execute("ALTER TABLE archive ADD COLUMN changelog text NULL")

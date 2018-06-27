@@ -26,15 +26,17 @@ Queue utility functions for dak
 
 ###############################################################################
 
+from __future__ import absolute_import, print_function
+
 import os
-import utils
+from . import utils
 from types import *
 
-from dak_exceptions import *
-from changes import *
-from regexes import *
-from config import Config
-from dbconn import *
+from .dak_exceptions import *
+from .changes import *
+from .regexes import *
+from .config import Config
+from .dbconn import *
 
 ################################################################################
 
@@ -100,8 +102,8 @@ def prod_maintainer(notes, upload):
         temp_fh = utils.open_file(temp_filename)
         prod_message = "".join(temp_fh.readlines())
         temp_fh.close()
-        print "Prod message:"
-        print utils.prefix_multi_line_string(prod_message, "  ", include_blank_lines=1)
+        print("Prod message:")
+        print(utils.prefix_multi_line_string(prod_message, "  ", include_blank_lines=1))
         prompt = "[P]rod, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
@@ -139,7 +141,7 @@ def prod_maintainer(notes, upload):
     # Send the prod mail
     utils.send_mail(prod_mail_message, whitelists=whitelists)
 
-    print "Sent prodding message"
+    print("Sent prodding message")
 
 ################################################################################
 
@@ -154,8 +156,8 @@ def edit_note(note, upload, session, trainee=False):
         temp_file = utils.open_file(temp_filename)
         newnote = temp_file.read().rstrip()
         temp_file.close()
-        print "New Note:"
-        print utils.prefix_multi_line_string(newnote, "  ")
+        print("New Note:")
+        print(utils.prefix_multi_line_string(newnote, "  "))
         prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:

@@ -25,6 +25,8 @@ switch to new ACL implementation and add pre-suite NEW
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
@@ -136,7 +138,7 @@ def get_acl_id(c, acl_dd, acl_dm, keyring_id, source_acl_id, binary_acl_id):
 
 
 def do_update(self):
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
 

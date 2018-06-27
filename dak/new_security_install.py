@@ -27,6 +27,8 @@ Do whatever is needed to get a security upload released
 
 ################################################################################
 
+from __future__ import print_function
+
 import os
 import sys
 import time
@@ -49,14 +51,14 @@ changes = []
 
 
 def usage():
-    print """Usage: dak security-install [OPTIONS] changesfiles
+    print("""Usage: dak security-install [OPTIONS] changesfiles
 Do whatever there is to do for a security release
 
     -h, --help                 show this help and exit
     -n, --no-action            don't commit changes
     -s, --sudo                 dont bother, used internally
 
-"""
+""")
     sys.exit()
 
 
@@ -65,7 +67,7 @@ def spawn(command):
         utils.fubar("Invalid character in \"%s\"." % (command))
 
     if Options["No-Action"]:
-        print "[%s]" % (command)
+        print("[%s]" % (command))
     else:
         (result, output) = commands.getstatusoutput(command)
         if (result != 0):
@@ -94,7 +96,7 @@ def do_Approve():
 
 
 def _do_Approve():
-    print "Locking unchecked"
+    print("Locking unchecked")
     with os.fdopen(os.open('/srv/security-master.debian.org/lock/unchecked.lock', os.O_CREAT | os.O_RDWR), 'r') as lock_fd:
         while True:
             try:
@@ -102,22 +104,22 @@ def _do_Approve():
                 break
             except IOError as e:
                 if e.errno in (errno.EACCES, errno.EAGAIN):
-                    print "Another process keeping the unchecked lock, waiting."
+                    print("Another process keeping the unchecked lock, waiting.")
                     time.sleep(10)
                 else:
                     raise
 
         # 1. Install accepted packages
-        print "Installing accepted packages into security archive"
+        print("Installing accepted packages into security archive")
         for queue_name in ("embargoed",):
             spawn("dak process-policy {0}".format(queue_name))
 
     # 2. Run all the steps that are needed to publish the changed archive
-    print "Doing loadsa stuff in the archive, will take time, please be patient"
+    print("Doing loadsa stuff in the archive, will take time, please be patient")
     os.environ['configdir'] = '/srv/security-master.debian.org/dak/config/debian-security'
     spawn("/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked-dinstall")
 
-    print "Triggering metadata export for packages.d.o and other consumers"
+    print("Triggering metadata export for packages.d.o and other consumers")
     spawn("/srv/security-master.debian.org/dak/config/debian-security/export.sh")
 
 ########################################################################
@@ -155,7 +157,7 @@ def main():
 
     username = utils.getusername()
     if username != "dak":
-        print "Non-dak user: %s" % username
+        print("Non-dak user: %s" % username)
         Options["Sudo"] = "y"
 
     if Options["No-Action"]:
@@ -188,7 +190,7 @@ def main():
         acceptfilename = "%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), source, version)
         acceptfiles[acceptfilename] = 1
 
-    print "Would create %s now and then go on to accept this package, if you allow me to." % (acceptfiles.keys())
+    print("Would create %s now and then go on to accept this package, if you allow me to." % (acceptfiles.keys()))
     if Options["No-Action"]:
         sys.exit(0)
     else:

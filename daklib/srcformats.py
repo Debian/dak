@@ -31,9 +31,12 @@
 # <sgran> sorry, I take it back, I've had a better look now
 
 ################################################################################
+
+from __future__ import absolute_import, print_function
+
 import re
 
-from dak_exceptions import UnknownFormatError
+from .dak_exceptions import UnknownFormatError
 
 srcformats = []
 

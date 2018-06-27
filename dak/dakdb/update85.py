@@ -25,13 +25,15 @@ add per-suite close_bugs option
 
 ################################################################################
 
+from __future__ import print_function
+
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config
 
 
 def do_update(self):
-    print __doc__
+    print(__doc__)
     try:
         cnf = Config()
 
