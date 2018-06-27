@@ -44,6 +44,7 @@ from __future__ import absolute_import, print_function
 import commands
 import apt_pkg
 import fcntl
+import functools
 import sqlalchemy.sql as sql
 from re import sub
 from collections import defaultdict
@@ -400,7 +401,7 @@ def remove(session, reason, suites, removals,
             d[package][version].append(architecture)
 
     for package in sorted(d):
-        versions = sorted(d[package], cmp=apt_pkg.version_compare)
+        versions = sorted(d[package], key=functools.cmp_to_key(apt_pkg.version_compare))
         for version in versions:
             d[package][version].sort(key=utils.ArchKey)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))
