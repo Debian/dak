@@ -781,23 +781,6 @@ def parse_args(Options):
 ################################################################################
 
 
-def arch_compare_sw(a, b):
-    """
-    Function for use in sorting lists of architectures.
-
-    Sorts normally except that 'source' dominates all others.
-    """
-
-    if a == "source" and b == "source":
-        return 0
-    elif a == "source":
-        return -1
-    elif b == "source":
-        return 1
-
-    return cmp(a, b)
-
-
 @functools.total_ordering
 class ArchKey(object):
     """

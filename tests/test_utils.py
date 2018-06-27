@@ -20,7 +20,7 @@ import apt_pkg
 import unittest
 from base_test import DakTestCase
 
-from daklib.utils import (arch_compare_sw, is_in_debug_section,
+from daklib.utils import (is_in_debug_section,
                           parse_built_using,
                           extract_component_from_section,
                           ArchKey)
@@ -29,18 +29,6 @@ apt_pkg.init()
 
 
 class UtilsTest(DakTestCase):
-
-    def test_utils_arch_compare_sw(self):
-        data = [
-            ('source', 'source', 0),
-            ('source', 'amd64', -1),
-            ('amd64', 'amd64', 0),
-            ('amd64', 'source', 1),
-            ('amd64', 'i386', -1),
-            ('i386', 'amd64', 1),
-        ]
-        for a, b, r in data:
-            self.assertEqual(arch_compare_sw(a, b), r)
 
     def test_utils_ArchKey(self):
         source = ArchKey('source')
