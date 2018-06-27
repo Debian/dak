@@ -121,7 +121,7 @@ def compute_nbs_groups(suite_id, suite_name, session):
         group_info = {
             "name": "NBS:%s" % source,
             "packages": tuple(sorted(pkg_list)),
-            "architectures": sorted(arch_list, cmp=utils.arch_compare_sw),
+            "architectures": sorted(arch_list),
             "architecture_ids": tuple(arch2ids[arch] for arch in arch_list),
             "message": message,
             "removal_request": removal_request,
@@ -173,7 +173,7 @@ def merge_group(groupA, groupB):
     @returns: A merged group
     """
     pkg_list = sorted(dedup(groupA["packages"], groupB["packages"]))
-    arch_list = sorted(dedup(groupA["architectures"], groupB["architectures"]), cmp=utils.arch_compare_sw)
+    arch_list = sorted(dedup(groupA["architectures"], groupB["architectures"]))
     arch_list_id = dedup(groupA["architecture_ids"], groupB["architecture_ids"])
     removalA = groupA["removal_request"]
     removalB = groupB["removal_request"]
@@ -181,7 +181,7 @@ def merge_group(groupA, groupB):
     for pkg in dedup(removalA, removalB):
         listA = removalA[pkg] if pkg in removalA else []
         listB = removalB[pkg] if pkg in removalB else []
-        new_removal[pkg] = sorted(dedup(listA, listB), cmp=utils.arch_compare_sw)
+        new_removal[pkg] = sorted(dedup(listA, listB))
 
     merged_group = {
         "name": groupA["name"],
