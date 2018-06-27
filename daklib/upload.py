@@ -24,6 +24,7 @@ It provides methods to access the included binary and source packages.
 import apt_inst
 import apt_pkg
 import errno
+import functools
 import os
 
 from daklib.gpg import SignedFile
@@ -263,6 +264,7 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
     return files
 
 
+@functools.total_ordering
 class Changes(object):
     """Representation of a .changes file
     """
@@ -451,7 +453,7 @@ class Changes(object):
             count += f.size
         return count
 
-    def __cmp__(self, other):
+    def __eq__(self, other):
         """compare two changes files
 
         We sort by source name and version first.  If these are identical,
@@ -459,29 +461,53 @@ class Changes(object):
         that sourceful uploads get processed first), and finally fall back
         to the filename (this should really never happen).
 
-        @rtype:  number
-        @return: n where n < 0 if self < other, n = 0 if self == other, n > 0 if self > other
+        @rtype:  boolean
+        @return: self == other
         """
-        ret = cmp(self.changes.get('Source'), other.changes.get('Source'))
+        if self.changes.get('Source') == other.changes.get('Source'):
+            return True
 
-        if ret == 0:
-            # compare version
-            ret = apt_pkg.version_compare(self.changes.get('Version', ''), other.changes.get('Version', ''))
+        if apt_pkg.version_compare(self.changes.get('Version', ''), other.changes.get('Version', '')) == 0:
+            return True
 
-        if ret == 0:
-            # sort changes with source before changes without source
-            if 'source' in self.architectures and 'source' not in other.architectures:
-                ret = -1
-            elif 'source' not in self.architectures and 'source' in other.architectures:
-                ret = 1
-            else:
-                ret = 0
+        # sort changes with source before changes without source
+        if 'source' in self.architectures and 'source' in other.architectures:
+            return True
+        if 'source' not in self.architectures and 'source' not in other.architectures:
+            return True
 
-        if ret == 0:
-            # fall back to filename
-            ret = cmp(self.filename, other.filename)
+        if self.filename == other.filename:
+            return True
 
-        return ret
+        return False
+
+    def __lt__(self, other):
+        """compare two changes files
+
+        We sort by source name and version first.  If these are identical,
+        we sort changes that include source before those without source (so
+        that sourceful uploads get processed first), and finally fall back
+        to the filename (this should really never happen).
+
+        @rtype:  boolean
+        @return: self < other
+        """
+        if self.changes.get('Source') < other.changes.get('Source'):
+            return True
+
+        if apt_pkg.version_compare(self.changes.get('Version', ''), other.changes.get('Version', '')) < 0:
+            return True
+
+        # sort changes with source before changes without source
+        if 'source' in self.architectures and 'source' not in other.architectures:
+            return True
+        if 'source' not in self.architectures and 'source' in other.architectures:
+            return False
+
+        if self.filename < other.filename:
+            return True
+
+        return False
 
 
 class Binary(object):
