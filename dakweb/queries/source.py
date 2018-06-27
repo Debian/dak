@@ -83,6 +83,7 @@ def file_in_archive(filepattern=None):
     @return: Dictionaries made out of
              - filename
              - sha256sum
+             - component
     """
     if filepattern is None:
         return bottle.HTTPError(503, 'Filepattern not specified.')
@@ -94,6 +95,7 @@ def file_in_archive(filepattern=None):
 
     for p in q:
         ret.append({'filename':  p.filename,
+                    'component': p.component.component_name,
                     'sha256sum': p.sha256sum})
 
     s.close()
@@ -117,6 +119,7 @@ def sha256sum_in_archive(sha256sum=None):
     @return: Dictionaries made out of
              - filename
              - sha256sum
+             - component
     """
     if sha256sum is None:
         return bottle.HTTPError(503, 'sha256sum not specified.')
@@ -128,6 +131,7 @@ def sha256sum_in_archive(sha256sum=None):
 
     for p in q:
         ret.append({'filename':  p.filename,
+                    'component': p.component.component_name,
                     'sha256sum': p.sha256sum})
 
     s.close()
