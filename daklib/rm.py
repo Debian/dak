@@ -39,7 +39,7 @@
 
 ################################################################################
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import commands
 import apt_pkg
@@ -47,7 +47,7 @@ import fcntl
 import sqlalchemy.sql as sql
 from re import sub
 from collections import defaultdict
-from regexes import re_build_dep_arch
+from .regexes import re_build_dep_arch
 
 from daklib.dbconn import *
 from daklib import utils

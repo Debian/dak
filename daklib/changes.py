@@ -27,14 +27,16 @@ Changes class for dak
 
 ###############################################################################
 
+from __future__ import absolute_import, print_function
+
 import os
 import datetime
 
 from apt_pkg import TagSection
 
-from utils import open_file,  poolify, deb_extract_control
-from config import *
-from dbconn import *
+from .utils import open_file,  poolify, deb_extract_control
+from .config import *
+from .dbconn import *
 
 ###############################################################################
 

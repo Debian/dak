@@ -46,7 +46,9 @@
 
 ################################################################################
 
-from regexes import re_parse_lintian
+from __future__ import absolute_import, print_function
+
+from .regexes import re_parse_lintian
 
 
 def parse_lintian_output(output):

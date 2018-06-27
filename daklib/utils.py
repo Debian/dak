@@ -22,7 +22,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import commands
 import codecs
@@ -49,22 +49,22 @@ import errno
 
 import daklib.config as config
 import daklib.daksubprocess
-from dbconn import DBConn, get_architecture, get_component, get_suite, \
+from .dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_override_type, Keyring, session_wrapper, \
                    get_active_keyring_paths, \
                    get_suite_architectures, get_or_set_metadatakey, DBSource, \
                    Component, Override, OverrideType
 from sqlalchemy import desc
-from dak_exceptions import *
-from gpg import SignedFile
-from textutils import fix_maintainer
-from regexes import re_html_escaping, html_escaping, re_single_line_field, \
+from .dak_exceptions import *
+from .gpg import SignedFile
+from .textutils import fix_maintainer
+from .regexes import re_html_escaping, html_escaping, re_single_line_field, \
                     re_multi_line_field, re_srchasver, re_taint_free, \
                     re_re_mark, re_whitespace_comment, re_issource, \
                     re_build_dep_arch, re_parse_maintainer
 
-from formats import parse_format, validate_changes_format
-from srcformats import get_format_from_string
+from .formats import parse_format, validate_changes_format
+from .srcformats import get_format_from_string
 from collections import defaultdict
 
 ################################################################################

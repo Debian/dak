@@ -24,11 +24,13 @@ Logging functions
 
 ################################################################################
 
+from __future__ import absolute_import, print_function
+
 import fcntl
 import os
 import time
 import sys
-import utils
+from . import utils
 
 ################################################################################
 
