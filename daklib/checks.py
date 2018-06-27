@@ -137,6 +137,8 @@ class SignatureAndHashesCheck(Check):
     """
 
     def check(self, upload):
+        allow_source_untrusted_sig_keys = Config().value_list('Dinstall::AllowSourceUntrustedSigKeys')
+
         changes = upload.changes
         if not changes.valid_signature:
             raise Reject("Signature for .changes not valid.")
@@ -149,10 +151,11 @@ class SignatureAndHashesCheck(Check):
         except Exception as e:
             raise Reject("Invalid dsc file: {0}".format(e))
         if source is not None:
-            if not source.valid_signature:
-                raise Reject("Signature for .dsc not valid.")
-            if source.primary_fingerprint != changes.primary_fingerprint:
-                raise Reject(".changes and .dsc not signed by the same key.")
+            if changes.primary_fingerprint not in allow_source_untrusted_sig_keys:
+                if not source.valid_signature:
+                    raise Reject("Signature for .dsc not valid.")
+                if source.primary_fingerprint != changes.primary_fingerprint:
+                    raise Reject(".changes and .dsc not signed by the same key.")
             self._check_hashes(upload, source.filename, source.files.itervalues())
 
         if upload.fingerprint is None or upload.fingerprint.uid is None:
@@ -829,6 +832,22 @@ class NoSourceOnlyCheck(Check):
                           'wheezy-backports', 'wheezy-backports-sloppy'):
                 if suite in changes.distributions:
                     raise Reject('Suite {} is not configured to build arch:all packages. Please include them in your upload'.format(suite))
+
+        return True
+
+
+class NewOverrideCheck(Check):
+    """Override NEW requirement
+    """
+    def check(self, upload):
+        if not upload.new:
+            return True
+
+        new_override_keys = Config().value_list('Dinstall::NewOverrideKeys')
+        changes = upload.changes
+
+        if changes.primary_fingerprint in new_override_keys:
+            upload.new = False
 
         return True
 
