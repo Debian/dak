@@ -57,3 +57,15 @@ dak admin suite-component add unstable main contrib non-free
 
   dak process-upload -d ${DAKBASE}/tmp --automatic
 )
+
+(
+  dak contents scan-binary
+  dak contents scan-source
+)
+
+(
+  dak generate-packages-sources2 -s unstable
+  dak contents generate -a dak-master -s unstable
+  # TODO: make this work in the CI; needs GnuPG key
+  #dak generate-release -s unstable
+)
