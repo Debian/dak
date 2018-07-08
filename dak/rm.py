@@ -43,6 +43,7 @@
 from __future__ import print_function
 
 import commands
+import functools
 import os
 import sys
 import apt_pkg
