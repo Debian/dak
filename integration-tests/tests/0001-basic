@@ -50,6 +50,15 @@ dak admin suite-component add unstable main contrib non-free
 )
 
 (
+  dak control-overrides -s unstable -t deb -a << EOF
+package required admin
+EOF
+  dak control-overrides -s unstable -t dsc -a << EOF
+package admin
+EOF
+)
+
+(
   packages=${DAK_ROOT:?}/tests/fixtures/packages
   ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
   dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
