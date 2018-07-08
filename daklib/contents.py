@@ -283,6 +283,7 @@ class ContentsWriter(object):
         to all 'touchable' suites if not specified explicitely. Untouchable
         suites will be included if the force argument is set to True.
         '''
+        pool = DakProcessPool()
         class_.logger = logger
         session = DBConn().session()
         suite_query = session.query(Suite)
@@ -297,7 +298,6 @@ class ContentsWriter(object):
             suite_query = suite_query.filter(Suite.untouchable == False)  # noqa:E712
         deb_id = get_override_type('deb', session).overridetype_id
         udeb_id = get_override_type('udeb', session).overridetype_id
-        pool = DakProcessPool()
 
         # Lock tables so that nobody can change things underneath us
         session.execute("LOCK TABLE bin_contents IN SHARE MODE")
@@ -360,13 +360,13 @@ class BinaryContentsScanner(object):
         argument. Returns the number of processed and remaining packages as a
         dict.
         '''
+        pool = DakProcessPool()
         session = DBConn().session()
         query = session.query(DBBinary).filter(DBBinary.contents == None) # noqa:E711
         remaining = query.count
         if limit is not None:
             query = query.limit(limit)
         processed = query.count()
-        pool = DakProcessPool()
         for binary in query.yield_per(100):
             pool.apply_async(binary_scan_helper, (binary.binary_id, ))
         pool.close()
@@ -479,13 +479,13 @@ class SourceContentsScanner(object):
         argument. Returns the number of processed and remaining packages as a
         dict.
         '''
+        pool = DakProcessPool()
         session = DBConn().session()
         query = session.query(DBSource).filter(DBSource.contents == None) # noqa:E711
         remaining = query.count
         if limit is not None:
             query = query.limit(limit)
         processed = query.count()
-        pool = DakProcessPool()
         for source in query.yield_per(100):
             pool.apply_async(source_scan_helper, (source.source_id, ))
         pool.close()
