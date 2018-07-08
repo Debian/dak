@@ -64,7 +64,7 @@ def do_update(self):
             c.execute("DROP VIEW {0}".format(i))
 
         for i in sequences:
-            c.execute("DROP SEQUENCE {0}".format(i))
+            c.execute("DROP SEQUENCE IF EXISTS {0}".format(i))
 
         c.execute("UPDATE config SET value = '119' WHERE name = 'db_revision'")
         self.db.commit()
