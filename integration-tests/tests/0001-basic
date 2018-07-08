@@ -78,3 +78,7 @@ EOF
   # TODO: make this work in the CI; needs GnuPG key
   #dak generate-release -s unstable
 )
+
+(
+  dak rm -n -s unstable package
+)
