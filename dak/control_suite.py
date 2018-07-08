@@ -247,7 +247,7 @@ def set_suite(file, suite, transaction, britney=False, force=False):
         desired.add(tuple(split_line))
 
     # Check to see which packages need added and add them
-    for key in sorted(desired, cmp=functools.cmp_to_key(cmp_package_version)):
+    for key in sorted(desired, key=functools.cmp_to_key(cmp_package_version)):
         if key not in current:
             (package, version, architecture) = key
             version_checks(package, architecture, suite.suite_name, version, session, force)
