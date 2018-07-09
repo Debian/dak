@@ -65,6 +65,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.exc import *
 from sqlalchemy.orm.exc import NoResultFound
 
+from .aptversion import AptVersion
 # Only import Config until Queue stuff is changed to store its config
 # in the database
 from .config import Config
@@ -1342,30 +1343,19 @@ __all__.append('get_policy_queue')
 
 @functools.total_ordering
 class PolicyQueueUpload(object):
+    def _key(self):
+        return (
+            self.changes.source,
+            AptVersion(self.changes.version),
+            self.source is None,
+            self.changes.changesname
+        )
+
     def __eq__(self, other):
-        if self.changes.source == other.changes.source:
-            return True
-        if apt_pkg.version_compare(self.changes.version, other.changes.version) == 0:
-            return True
-        if self.source == other.source:
-            return True
-        if self.changes.changesname == other.changes.changesname:
-            return True
-        return False
+        return self._key() == other._key()
 
     def __lt__(self, other):
-        if self.changes.source < other.changes.source:
-            return True
-        if apt_pkg.version_compare(self.changes.version, other.changes.version) < 0:
-            return True
-        if self.source is not None and other.source is None:
-            return True
-        if self.source is None and other.source is not None:
-            return False
-        if self.changes.changesname < other.changes.changesname:
-            return True
-        return False
-
+        return self._key() < other._key()
 
 __all__.append('PolicyQueueUpload')
 

@@ -27,6 +27,7 @@ import errno
 import functools
 import os
 
+from daklib.aptversion import AptVersion
 from daklib.gpg import SignedFile
 from daklib.regexes import *
 import daklib.packagelist
@@ -453,61 +454,28 @@ class Changes(object):
             count += f.size
         return count
 
-    def __eq__(self, other):
-        """compare two changes files
+    def _key(self):
+        """tuple used to compare two changes files
 
         We sort by source name and version first.  If these are identical,
         we sort changes that include source before those without source (so
         that sourceful uploads get processed first), and finally fall back
         to the filename (this should really never happen).
 
-        @rtype:  boolean
-        @return: self == other
+        @rtype:  tuple
         """
-        if self.changes.get('Source') == other.changes.get('Source'):
-            return True
+        return (
+            self.changes.get('Source'),
+            AptVersion(self.changes.get('Version', '')),
+            'source' not in self.architectures,
+            self.filename
+        )
 
-        if apt_pkg.version_compare(self.changes.get('Version', ''), other.changes.get('Version', '')) == 0:
-            return True
-
-        # sort changes with source before changes without source
-        if 'source' in self.architectures and 'source' in other.architectures:
-            return True
-        if 'source' not in self.architectures and 'source' not in other.architectures:
-            return True
-
-        if self.filename == other.filename:
-            return True
-
-        return False
+    def __eq__(self, other):
+        return self._key() == other._key()
 
     def __lt__(self, other):
-        """compare two changes files
-
-        We sort by source name and version first.  If these are identical,
-        we sort changes that include source before those without source (so
-        that sourceful uploads get processed first), and finally fall back
-        to the filename (this should really never happen).
-
-        @rtype:  boolean
-        @return: self < other
-        """
-        if self.changes.get('Source') < other.changes.get('Source'):
-            return True
-
-        if apt_pkg.version_compare(self.changes.get('Version', ''), other.changes.get('Version', '')) < 0:
-            return True
-
-        # sort changes with source before changes without source
-        if 'source' in self.architectures and 'source' not in other.architectures:
-            return True
-        if 'source' not in self.architectures and 'source' in other.architectures:
-            return False
-
-        if self.filename < other.filename:
-            return True
-
-        return False
+        return self._key() < other._key()
 
 
 class Binary(object):
