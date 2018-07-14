@@ -220,7 +220,7 @@ if [[ ${suitename} != jessie ]]; then
 fi
 
 log "RM time"
-if ${wget} -O "removallist" "${release_base}/removals.${target_suite}"; then
+if ${wget} -O "removallist" "${release_base}/removals.${suitename}"; then
     echo "Please check removallist file, I am going to run it as shell script when you confirm"
     confirm
     $EDITOR removallist
