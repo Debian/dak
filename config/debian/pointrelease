@@ -225,6 +225,9 @@ if ${wget} -O "removallist" "${release_base}/removals.${suitename}"; then
     confirm
     $EDITOR removallist
     bash removallist
+    if [ -s removallist ]; then
+        hadrms=1
+    fi
 fi
 
 echo "Any more removals to be done?"
