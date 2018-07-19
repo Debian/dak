@@ -16,7 +16,7 @@ Host buildd
   ControlPersist 60
 
 Host morgue-sync
-  Hostname stabile.debian.org
+  Hostname lw03.debian.org
   User dak
   IdentityFile /srv/security-master.debian.org/s3kr1t/push_morgue
 
