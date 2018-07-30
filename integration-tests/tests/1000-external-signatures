@@ -55,6 +55,7 @@ expected='
   "packages": [
     {
       "suite": "unstable",
+      "codename": "sid",
       "version": "42.0-1",
       "architecture": "all",
       "package": "linux-image-all-signed-template"
