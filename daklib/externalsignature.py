@@ -37,9 +37,9 @@ def export_external_signature_requests(session, path):
     tbl_esr = DBConn().tbl_external_signature_requests
     tbl_suite = DBConn().tbl_suite
 
-    query = sql.select([tbl_bin.c.package, tbl_suite.c.suite_name, tbl_arch.c.arch_string, sql.func.max(tbl_bin.c.version)]) \
+    query = sql.select([tbl_bin.c.package, tbl_suite.c.suite_name, tbl_suite.c.codename, tbl_arch.c.arch_string, sql.func.max(tbl_bin.c.version)]) \
             .select_from(tbl_esr.join(tbl_suite).join(tbl_ba, tbl_ba.c.id == tbl_esr.c.association_id).join(tbl_bin).join(tbl_arch)) \
-            .group_by(tbl_bin.c.package, tbl_suite.c.suite_name, tbl_arch.c.arch_string)
+            .group_by(tbl_bin.c.package, tbl_suite.c.suite_name, tbl_suite.c.codename, tbl_arch.c.arch_string)
     requests = session.execute(query)
 
     data = {
@@ -47,8 +47,9 @@ def export_external_signature_requests(session, path):
             {
                 'package':      row[0],
                 'suite':        row[1],
-                'architecture': row[2],
-                'version':      row[3],
+                'codename':     row[2],
+                'architecture': row[3],
+                'version':      row[4],
             }
             for row in requests],
     }
