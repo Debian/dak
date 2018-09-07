@@ -573,7 +573,8 @@ def check_dsc(suite, dsc_filename, session=None):
     dsc_basename = os.path.basename(dsc_filename)
     return foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
            "\n" + \
-           foldable_output("lintian check for %s" % dsc_basename,
+           foldable_output("lintian {} check for {}".format(
+                get_lintian_version(), dsc_basename),
                "source-lintian", do_lintian(dsc_filename)) + \
            "\n" + \
            foldable_output("README.source for %s" % dsc_basename,
@@ -596,7 +597,8 @@ def check_deb(suite, deb_filename, session=None):
         result += foldable_output("skipping lintian check for udeb",
             "binary-%s-lintian" % packagename, "") + "\n"
     else:
-        result += foldable_output("lintian check for %s" % (filename),
+        result += foldable_output("lintian {} check for {}".format(
+                                  get_lintian_version(), filename),
             "binary-%s-lintian" % packagename, do_lintian(deb_filename)) + "\n"
 
     result += foldable_output("contents of %s" % (filename), "binary-%s-contents" % packagename,
@@ -706,6 +708,16 @@ def main():
         except KeyboardInterrupt:
             utils.warn("[examine-package] Caught C-c; skipping.")
             pass
+
+
+def get_lintian_version():
+    if not hasattr(get_lintian_version, '_version'):
+        # eg. "Lintian v2.5.100"
+        val = do_command(['lintian', '--version'])
+        get_lintian_version._version = val.split(' v')[-1].strip()
+
+    return get_lintian_version._version
+
 
 #######################################################################################
 
