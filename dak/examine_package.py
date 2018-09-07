@@ -444,7 +444,12 @@ def output_deb_info(suite, filename, packagename, session=None):
     if packagename not in package_relations:
         package_relations[packagename] = {}
     for key in control_keys:
-        if key == 'Pre-Depends':
+        if key == 'Source':
+            field_value = escape_if_needed(control.find(key))
+            if use_html:
+                field_value = '<a href="http://tracker.debian.org/pkg/{0}" rel="nofollow">{0}</a>'.format(
+                              field_value)
+        elif key == 'Pre-Depends':
             field_value = create_depends_string(suite, predepends, session)
             package_relations[packagename][key] = field_value
         elif key == 'Depends':
