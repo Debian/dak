@@ -35,7 +35,6 @@ lintian:
     - license-problem-non-free-RFC
     - source-contains-prebuilt-ms-help-file
     - source-contains-prebuilt-silverlight-object
-    - copyright-contains-dh_make-todo-boilerplate
     - pkg-config-multi-arch-wrong-dir
     - file-name-is-not-valid-UTF-8
     - pkg-config-bad-directive
