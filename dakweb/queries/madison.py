@@ -66,6 +66,7 @@ def madison():
             yield row
             yield "\n"
     else:
+        bottle.response.content_type = 'application/json; charset=UTF-8'
         yield json.dumps(list(result))
 
 

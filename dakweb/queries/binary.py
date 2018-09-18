@@ -28,6 +28,7 @@ def binary_metadata_keys():
 
     s.close()
 
+    bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
 QueryRegister().register_path('/metadata_keys', binary_metadata_keys)
@@ -67,6 +68,7 @@ def binary_by_metadata(key=None):
                     'metadata_value': p.value})
     s.close()
 
+    bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
 QueryRegister().register_path('/binary/by_metadata', binary_by_metadata)

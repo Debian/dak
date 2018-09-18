@@ -33,6 +33,7 @@ def archives():
 
     s.close()
 
+    bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
 QueryRegister().register_path('/archives', archives)
