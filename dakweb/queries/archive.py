@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """ Archive related queries
 
 @contact: Debian FTPMaster <ftpmaster@debian.org>
