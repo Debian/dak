@@ -61,11 +61,12 @@ def madison():
     result = list_packages(packages, **kwargs)
 
     if format is None:
-        bottle.response.content_type = 'text/plain'
+        bottle.response.content_type = 'text/plain; charset=UTF-8'
         for row in result:
             yield row
             yield "\n"
     else:
+        bottle.response.content_type = 'application/json; charset=UTF-8'
         yield json.dumps(list(result))
 
 
