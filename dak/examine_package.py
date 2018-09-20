@@ -713,7 +713,7 @@ def main():
 def get_lintian_version():
     if not hasattr(get_lintian_version, '_version'):
         # eg. "Lintian v2.5.100"
-        val = do_command(['lintian', '--version'])
+        val = daklib.daksubprocess.check_output(('lintian', '--version'))
         get_lintian_version._version = val.split(' v')[-1].strip()
 
     return get_lintian_version._version
