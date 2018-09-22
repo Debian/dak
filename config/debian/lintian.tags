@@ -39,6 +39,7 @@ lintian:
     - file-name-is-not-valid-UTF-8
     - pkg-config-bad-directive
     - quilt-series-without-trailing-newline
+    - distribution-and-changes-mismatch
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
