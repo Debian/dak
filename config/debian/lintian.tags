@@ -41,6 +41,7 @@ lintian:
     - quilt-series-without-trailing-newline
     - distribution-and-changes-mismatch
     - distribution-and-experimental-mismatch
+    - source-only-upload-to-non-free-without-autobuild
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
