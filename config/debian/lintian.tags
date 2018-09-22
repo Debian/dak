@@ -44,6 +44,7 @@ lintian:
     - source-only-upload-to-non-free-without-autobuild
     - latest-debian-changelog-entry-reuses-existing-version
     - debhelper-compat-file-contains-multiple-levels
+    - invalid-date-in-debian-changelog
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
