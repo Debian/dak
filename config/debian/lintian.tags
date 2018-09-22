@@ -40,6 +40,7 @@ lintian:
     - pkg-config-bad-directive
     - quilt-series-without-trailing-newline
     - distribution-and-changes-mismatch
+    - distribution-and-experimental-mismatch
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
