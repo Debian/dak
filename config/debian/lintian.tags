@@ -42,6 +42,7 @@ lintian:
     - distribution-and-changes-mismatch
     - distribution-and-experimental-mismatch
     - source-only-upload-to-non-free-without-autobuild
+    - latest-debian-changelog-entry-reuses-existing-version
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
