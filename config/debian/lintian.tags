@@ -39,6 +39,15 @@ lintian:
     - file-name-is-not-valid-UTF-8
     - pkg-config-bad-directive
     - quilt-series-without-trailing-newline
+    - distribution-and-changes-mismatch
+    - distribution-and-experimental-mismatch
+    - source-only-upload-to-non-free-without-autobuild
+    - latest-debian-changelog-entry-reuses-existing-version
+    - debhelper-compat-file-contains-multiple-levels
+    - invalid-date-in-debian-changelog
+    - header-has-overly-generic-name
+    - manpage-has-overly-generic-name
+    - python-module-has-overly-generic-name
   fatal:
     - debian-control-file-uses-obsolete-national-encoding
     - malformed-deb-archive
