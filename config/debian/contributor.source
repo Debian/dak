@@ -8,7 +8,7 @@ query:
           FROM changes
          WHERE architecture LIKE '%source%'
          ORDER BY seen DESC
-url: https://qa.debian.org/developer.php?login={key_id}&comaint=yes
+url: https://qa.debian.org/developer.php?gpg_key={key_id}&comaint=yes
 
 contribution: maint
 method: postgres
