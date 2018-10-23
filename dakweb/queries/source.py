@@ -10,7 +10,7 @@ from sqlalchemy import or_
 import bottle
 import json
 
-from daklib.dbconn import DBConn, DBSource, Suite, DSCFile, PoolFile
+from daklib.dbconn import DBConn, DBSource, Suite, DSCFile, PoolFile, SourceMetadata, MetadataKey
 from dakweb.webregister import QueryRegister
 
 
@@ -203,3 +203,39 @@ def all_sources():
     return json.dumps(ret)
 
 QueryRegister().register_path('/all_sources', all_sources)
+
+
+@bottle.route('/source/by_metadata/<key>')
+def source_by_metadata(key=None):
+    """
+
+    Finds all Debian source packages which have the specified metadata set.
+
+    E.g., to find out the Maintainer of all source packages, query
+    /source/by_metadata/Maintainer.
+
+    @type key: string
+    @param key: Metadata key to search for.
+
+    @rtype: dictionary
+    @return: A list of dictionaries of
+             - source
+             - metadata value
+    """
+
+    if not key:
+        return bottle.HTTPError(503, 'Metadata key not specified.')
+
+    s = DBConn().session()
+    q = s.query(DBSource.source, SourceMetadata.value)
+    q = q.join(SourceMetadata).join(MetadataKey)
+    q = q.filter(MetadataKey.key == key)
+    ret = []
+    for p in q:
+        ret.append({'source': p.source,
+                    'metadata_value': p.value})
+    s.close()
+
+    return json.dumps(ret)
+
+QueryRegister().register_path('/source/by_metadata', source_by_metadata)
