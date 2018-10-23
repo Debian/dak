@@ -30,8 +30,9 @@ class Architecture(BaseTimestamp):
     # indexes where not created as constraints, need to do as well
     __table_args__ = (Index('architecture_arch_string_key', 'arch_string', unique=True), )
 
-    def __init__(self, arch_string=None):
+    def __init__(self, arch_string=None, description=None):
         self.arch_string = arch_string
+        self.description = description
 
     def __str__(self):
         return self.arch_string

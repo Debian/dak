@@ -14,7 +14,7 @@ ifneq ($(JENKINS_EXPORTS_DIR),)
 endif
 	mkdir -p debian/test-gnupghome
 	make -C tests/fixtures/packages
-	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v tests $(PYBUILD_EXTRA_ARGS)
+	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v daklib tests $(PYBUILD_EXTRA_ARGS)
 	./integration-tests/run-tests
 endif
 
