@@ -117,3 +117,6 @@ lintian:
     - latest-debian-changelog-entry-without-new-date
     - debian-changelog-file-uses-obsolete-national-encoding
     - debian-copyright-file-uses-obsolete-national-encoding
+    - package-installs-apt-sources
+    - package-installs-apt-keyring
+    - package-installs-apt-preferences
