@@ -66,7 +66,7 @@ because a human has to type in the pass phrase for the ssh key. So you
 have to start the daemon manually.
 
 The daemon can be stopped by simply killing it (with SIGTERM
-preferrably). SIGTERM and SIGINT are blocked during some operations,
+preferably). SIGTERM and SIGINT are blocked during some operations,
 where it could leave files in a inconsistent state. So it make take
 some time until the daemon really dies. If you have the urgent need
 that it goes away immediately, use SIGQUIT. Please don't use SIGKILL
@@ -444,7 +444,7 @@ uses a separate file. Its name is the .changes' filename with
 ".failures" appended. It contains simply two integers, the retry count
 and the last upload time (in Unix time format).
 
-After a successfull upload, the daemon also checks for files that look
+After a successful upload, the daemon also checks for files that look
 like they belonged to the same job, but weren't listed in the
 .changes. Due to experience, this happens rather often with
 .orig.tar.gz files, which people upload though they're aren't needed
@@ -498,7 +498,7 @@ everybody wants to do that or can do that (but I did it for
 ftp.uni-erlangen.de). (BTW, there could still be problems (races) if
 more than one process try to read the status file at the same time...)
 
-The alternative is using a plain file, which is updated regularily by
+The alternative is using a plain file, which is updated regularly by
 the daemon. This works on every system, but causes more overhead (the
 daemon has to wake up each $statusdelay seconds and write a file), and
 the time figures in the file can't be exact. $statusdelay should be a
