@@ -426,7 +426,7 @@ class Changes(object):
         """names of included binary packages
         @type: list of str
         """
-        return self.changes['Binary'].split()
+        return self.changes.get('Binary', '').split()
 
     @property
     def closed_bugs(self):
