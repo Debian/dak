@@ -252,6 +252,7 @@ if [[ ${hadrms} -ne 0 ]]; then
     echo "You did some removals, please copy their entries into the changelog"
     confirm
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
+    rm -f ${ftpdir}/dists/${suite}/ChangeLog~
 fi
 
 log "Checking for d-i updates"
