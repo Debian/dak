@@ -476,11 +476,6 @@ class BinaryCheck(Check):
                 except:
                     raise Reject('{0}: APT could not parse {1} field'.format(fn, field))
 
-        # "Multi-Arch: no" breaks wanna-build, #768353
-        multi_arch = control.get("Multi-Arch")
-        if multi_arch == 'no':
-            raise Reject('{0}: Multi-Arch: no support in Debian is broken (#768353)'.format(fn))
-
 
 class BinaryTimestampCheck(Check):
     """check timestamps of files in binary packages
