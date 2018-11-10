@@ -237,7 +237,7 @@ class ChangesCheck(Check):
         if len(changes.binaries) > 0:
             for field in ('Binary', 'Description'):
                 if field not in control:
-                    raise Reject('{0}: binary upload requires {1} field'.format(fn, 'Binary'))
+                    raise Reject('{0}: binary upload requires {1} field'.format(fn, field))
 
         check_fields_for_valid_utf8(fn, control)
 
