@@ -25,7 +25,7 @@ set -u
 #   returns: version, e.g. "9.6"
 find-postgresql-version() {
   local status
-  for v in 10 9.6 9.4; do
+  for v in 11 10 9.6 9.4; do
     status=$(dpkg-query \
              -f'${db:Status-Status} ' \
              -W postgresql-${v} postgresql-${v}-debversion 2>/dev/null || :)
