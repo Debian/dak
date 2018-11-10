@@ -230,9 +230,14 @@ class ChangesCheck(Check):
         control = changes.changes
         fn = changes.filename
 
-        for field in ('Distribution', 'Source', 'Binary', 'Architecture', 'Version', 'Maintainer', 'Files', 'Changes', 'Description'):
+        for field in ('Distribution', 'Source', 'Architecture', 'Version', 'Maintainer', 'Files', 'Changes'):
             if field not in control:
                 raise Reject('{0}: misses mandatory field {1}'.format(fn, field))
+
+        if len(changes.binaries) > 0:
+            for field in ('Binary', 'Description'):
+                if field not in control:
+                    raise Reject('{0}: binary upload requires {1} field'.format(fn, 'Binary'))
 
         check_fields_for_valid_utf8(fn, control)
 
