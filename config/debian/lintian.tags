@@ -68,6 +68,7 @@ lintian:
     - file-in-usr-marked-as-conffile
     - build-info-in-binary-control-file-section
     - not-allowed-control-file
+    - changelog-distribution-does-not-match-changes-file
     - control-file-has-bad-permissions
     - control-file-has-bad-owner
     - control-file-is-not-a-file
