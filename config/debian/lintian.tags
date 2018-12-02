@@ -1,4 +1,6 @@
 lintian:
+
+  # Overriding these tags is allowed
   nonfatal:
     - arch-dependent-file-in-usr-share
     - arch-independent-package-contains-binary-or-object
@@ -48,6 +50,8 @@ lintian:
     - statically-linked-binary
     - usr-share-doc-symlink-without-dependency
     - wrong-file-owner-uid-or-gid
+
+  # Overriding these tags is NOT allowed
   fatal:
     - FSSTND-dir-in-usr
     - FSSTND-dir-in-var
