@@ -1,122 +1,126 @@
 lintian:
+
+  # Overriding these tags is allowed
   nonfatal:
-    - statically-linked-binary
-    - arch-independent-package-contains-binary-or-object
     - arch-dependent-file-in-usr-share
+    - arch-independent-package-contains-binary-or-object
+    - bad-perm-for-file-in-etc-sudoers.d
+    - binary-or-shlib-defines-rpath
+    - binary-with-bad-dynamic-table
+    - control-interpreter-without-depends
+    - copyright-contains-dh_make-todo-boilerplate
+    - debhelper-compat-file-contains-multiple-levels
+    - dir-or-file-in-etc-opt
+    - dir-or-file-in-var-www
+    - distribution-and-changes-mismatch
+    - distribution-and-experimental-mismatch
+    - embedded-library
+    - empty-binary-package
+    - file-name-is-not-valid-UTF-8
+    - gzip-file-is-not-multi-arch-same-safe
+    - header-has-overly-generic-name
+    - install-info-used-in-maintainer-script
+    - invalid-date-in-debian-changelog
+    - latest-debian-changelog-entry-reuses-existing-version
+    - license-problem-gfdl-invariants
+    - license-problem-json-evil
+    - license-problem-non-free-RFC
+    - license-problem-nvidia-intellectual
+    - manpage-has-overly-generic-name
+    - md5sum-mismatch
     - missing-build-dependency
     - missing-dependency-on-libc
-    - usr-share-doc-symlink-without-dependency
-    - binary-with-bad-dynamic-table
     - mknod-in-maintainer-script
-    - package-contains-info-dir-file
-    - binary-or-shlib-defines-rpath
-    - non-etc-file-marked-as-conffile
-    - embedded-library
     - no-shlibs-control-file
-    - copyright-contains-dh_make-todo-boilerplate
-    - preinst-interpreter-without-predepends
-    - control-interpreter-without-depends
-    - dir-or-file-in-var-www
-    - wrong-file-owner-uid-or-gid
-    - install-info-used-in-maintainer-script
-    - bad-perm-for-file-in-etc-sudoers.d
-    - source-contains-waf-binary
-    - md5sum-mismatch
+    - non-etc-file-marked-as-conffile
     - non-standard-toplevel-dir
     - not-binnmuable-all-depends-any
     - not-binnmuable-any-depends-all
     - not-binnmuable-any-depends-any
-    - license-problem-json-evil
-    - gzip-file-is-not-multi-arch-same-safe
-    - empty-binary-package
-    - dir-or-file-in-etc-opt
-    - license-problem-nvidia-intellectual
-    - license-problem-gfdl-invariants
-    - license-problem-non-free-RFC
+    - package-contains-info-dir-file
+    - pkg-config-bad-directive
+    - pkg-config-multi-arch-wrong-dir
+    - preinst-interpreter-without-predepends
+    - python-module-has-overly-generic-name
+    - quilt-series-without-trailing-newline
     - source-contains-prebuilt-ms-help-file
     - source-contains-prebuilt-silverlight-object
-    - pkg-config-multi-arch-wrong-dir
-    - file-name-is-not-valid-UTF-8
-    - pkg-config-bad-directive
-    - quilt-series-without-trailing-newline
-    - distribution-and-changes-mismatch
-    - distribution-and-experimental-mismatch
+    - source-contains-waf-binary
     - source-only-upload-to-non-free-without-autobuild
-    - latest-debian-changelog-entry-reuses-existing-version
-    - debhelper-compat-file-contains-multiple-levels
-    - invalid-date-in-debian-changelog
-    - header-has-overly-generic-name
-    - manpage-has-overly-generic-name
-    - python-module-has-overly-generic-name
+    - statically-linked-binary
+    - usr-share-doc-symlink-without-dependency
+    - wrong-file-owner-uid-or-gid
+
+  # Overriding these tags is NOT allowed
   fatal:
-    - debian-control-file-uses-obsolete-national-encoding
-    - malformed-deb-archive
-    - bad-package-name
-    - no-architecture-field
-    - package-contains-ancient-file
-    - forbidden-postrm-interpreter
-    - control-interpreter-in-usr-local
-    - package-uses-local-diversion
-    - bad-relation
     - FSSTND-dir-in-usr
     - FSSTND-dir-in-var
+    - bad-package-name
+    - bad-relation
+    - bad-version-number
     - binary-in-etc
-    - missing-dependency-on-perlapi
-    - section-is-dh_make-template
-    - package-installs-python-bytecode
-    - library-in-debug-or-profile-should-not-be-stripped
-    - file-in-usr-marked-as-conffile
     - build-info-in-binary-control-file-section
-    - not-allowed-control-file
-    - control-file-has-bad-permissions
+    - conflicting-negation-in-source-relation
     - control-file-has-bad-owner
+    - control-file-has-bad-permissions
     - control-file-is-not-a-file
-    - no-copyright-file
-    - copyright-refers-to-old-directory
+    - control-interpreter-in-usr-local
     - copyright-file-compressed
     - copyright-file-is-symlink
-    - usr-share-doc-symlink-to-foreign-package
     - copyright-refers-to-incorrect-directory
-    - package-has-no-description
-    - description-synopsis-is-empty
-    - extended-description-is-empty
-    - description-is-dh_make-template
-    - file-in-etc-not-marked-as-conffile
-    - no-package-name
-    - package-not-lowercase
-    - no-version-field
-    - bad-version-number
-    - magic-arch-in-arch-list
-    - too-many-architectures
-    - no-maintainer-field
-    - maintainer-name-missing
-    - maintainer-address-missing
-    - maintainer-address-malformed
-    - maintainer-address-is-on-localhost
-    - maintainer-address-causes-mail-loops-or-bounces
-    - uploader-name-missing
-    - uploader-address-malformed
-    - uploader-address-is-on-localhost
-    - source-field-does-not-match-pkg-name
-    - symlink-has-too-many-up-segments
-    - debian-rules-not-a-makefile
+    - copyright-refers-to-old-directory
+    - debian-changelog-file-uses-obsolete-national-encoding
+    - debian-control-file-uses-obsolete-national-encoding
+    - debian-copyright-file-uses-obsolete-national-encoding
     - debian-rules-missing-required-target
-    - maintainer-script-removes-device-files
-    - dir-or-file-in-tmp
+    - debian-rules-not-a-makefile
+    - description-is-dh_make-template
+    - description-synopsis-is-empty
+    - dir-or-file-in-build-tree
+    - dir-or-file-in-home
     - dir-or-file-in-mnt
     - dir-or-file-in-opt
     - dir-or-file-in-run
     - dir-or-file-in-srv
+    - dir-or-file-in-tmp
     - dir-or-file-in-var-lock
     - dir-or-file-in-var-run
-    - dir-or-file-in-build-tree
-    - dir-or-file-in-home
-    - conflicting-negation-in-source-relation
+    - extended-description-is-empty
+    - file-in-etc-not-marked-as-conffile
+    - file-in-usr-marked-as-conffile
+    - forbidden-postrm-interpreter
+    - latest-debian-changelog-entry-without-new-date
+    - library-in-debug-or-profile-should-not-be-stripped
     - license-problem-md5sum-non-distributable-file
     - license-problem-md5sum-non-free-file
-    - latest-debian-changelog-entry-without-new-date
-    - debian-changelog-file-uses-obsolete-national-encoding
-    - debian-copyright-file-uses-obsolete-national-encoding
-    - package-installs-apt-sources
+    - magic-arch-in-arch-list
+    - maintainer-address-causes-mail-loops-or-bounces
+    - maintainer-address-is-on-localhost
+    - maintainer-address-malformed
+    - maintainer-address-missing
+    - maintainer-name-missing
+    - maintainer-script-removes-device-files
+    - malformed-deb-archive
+    - missing-dependency-on-perlapi
+    - no-architecture-field
+    - no-copyright-file
+    - no-maintainer-field
+    - no-package-name
+    - no-version-field
+    - not-allowed-control-file
+    - package-contains-ancient-file
+    - package-has-no-description
     - package-installs-apt-keyring
     - package-installs-apt-preferences
+    - package-installs-apt-sources
+    - package-installs-python-bytecode
+    - package-not-lowercase
+    - package-uses-local-diversion
+    - section-is-dh_make-template
+    - source-field-does-not-match-pkg-name
+    - symlink-has-too-many-up-segments
+    - too-many-architectures
+    - uploader-address-is-on-localhost
+    - uploader-address-malformed
+    - uploader-name-missing
+    - usr-share-doc-symlink-to-foreign-package
