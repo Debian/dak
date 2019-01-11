@@ -132,8 +132,11 @@ for file in ${KEYS}; do
     exec 5> "${GPGLOGS}"
 
     # So lets run gpg, status/logger into the two files, to "decrypt" the keyfile
-    if ! gpg ${DEFGPGOPT} --keyring "${ADMINS}" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
-        ret=$?
+    set +e
+    gpg ${DEFGPGOPT} --keyring "${ADMINS}" --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"
+    ret=$?
+    set -e
+    if [[ ${ret} -ne 0 ]]; then
         log "gpg returned with ${ret}, not removing key using ${file}"
         DATE=$(date -Is)
         mv "${INCOMING}/${file}" "${ERRORS}/gpgerror.${file}.${DATE}"

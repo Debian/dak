@@ -135,9 +135,12 @@ for file in ${KEYS}; do
     if [ -f "${ARCHADMINS}/${ARCH}.gpg" ]; then
         KEYRINGS="${KEYRINGS} --keyring ${ARCHADMINS}/${ARCH}.gpg"
     fi
+    set +e
+    gpg ${DEFGPGOPT} ${KEYRINGS} --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"
+    ret=$?
+    set -e
     # So lets run gpg, status/logger into the two files, to "decrypt" the keyfile
-    if ! gpg ${DEFGPGOPT} ${KEYRINGS} --status-fd 4 --logger-fd 5 --decrypt "${INCOMING}/${file}" > "${GPGOUTF}"; then
-        ret=$?
+    if [[ ${ret} -ne 0 ]]; then
         log "gpg returned with ${ret}, not adding key from file ${file}"
         DATE=$(date -Is)
         mv "${INCOMING}/${file}" "${ERRORS}/gpgerror.${file}.${DATE}"
