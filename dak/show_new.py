@@ -58,10 +58,10 @@ timeout_str = "Timed out while processing"
 def html_header(name, missing):
     if name.endswith('.changes'):
         name = ' '.join(name.split('_')[:2])
-    result = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    result = """<!DOCTYPE html>
+<html lang="en">
   <head>
-    <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8"
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"
     />
     <title>%(name)s - Debian NEW package overview</title>
     <link type="text/css" rel="stylesheet" href="/style.css" />
