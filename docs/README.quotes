@@ -62,27 +62,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-<drow> Hmm, that was a nice short bug report.
-<drow> to submit@: "strdup(NULL) segfaults" to -done@: "Yes, go away"
-[...]
-<Kamion> how did he pass T&S? sheer bloody-mindedness?
-[...]
-<drow> Good attention to detail?
-<drow> Masking of psychopathic tendencies?
-* drow shrugs
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<DanielS> the people love me
-<Joy> like pneumonia
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 test.c:5: `long long long' is too long for GCC
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-http://yro.slashdot.org/comments.pl?sid=91696&cid=7890274
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -90,49 +70,7 @@ http://yro.slashdot.org/comments.pl?sid=91696&cid=7890274
 <Joy> i accidentally banned all mails to the bts that had 'ossi' in them
 <Joy> "possible" etc
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<http://www.livejournal.com/users/mjg59/2003/12/24/>
-
-Wednesday, December 24th, 2003
-3:34 pm 	
-Dear PC World,
-
-1) The most common chipset used in Pentium-II machines is the Intel 440BX. It is also relatively common in slower P-IIIs, and is approximately identical to the 440MX (a one-chip version aimed at laptops).
-
-2) The 440BX has the interesting feature of only being able to address up to 128MBit density RAM. This is a relatively widely known issue.
-
-3) Simple maths suggests that if you have a 128MB DIMM with 4 chips on it, they are likely to be 256MBit parts.
-
-4) Marking said DIMMs as being suitable for Pentium-IIs is therefore really indescribably stupid, you wankwits. Please fuck off and die in a great big chemical fire before I get back there to beat you.
-
-Love,
-
-Matthew.
-
-PS,
-
-Die. No, really. 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<http://www.livejournal.com/users/mjg59/2003/11/12/>
-
-Wednesday, November 12th, 2003
-2:43 am 	
-It's true that you learn something new every day. Yesterday I discovered that playdough is electrically conductive. I also discovered that RAM becomes unhappy if all of its pins are joined together with electrically conductive material.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<http://www.livejournal.com/users/mjg59/2003/11/03/>
-
-Monday, November 3rd, 2003
-3:13 pm 	
-Hint to people attempting to sell things online:
-
-DON'T PUT http://172.16.100.107/ IN YOUR URLS, YOU INCOMPETENT FUCKMONKEYS 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 <elmo_h> you could just r00t klecker through [...] and do it yourself
 <mdz> heh
@@ -152,11 +90,6 @@ The cops arrest YOU for not showing papers. Wait, I didn't have to
 reverse it this time, what's going on?
 
 http://slashdot.org/comments.pl?sid=97501&cid=8334726
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<infinity> <shrug>... Messaging IRCops isn't the end of the world,
-           unless its "/msg ircop I fucked your wife."
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -311,16 +244,6 @@ Canadians: This is a lighthouse. Your call.
 <neuro> *snork*
 <helix> well, nothing bad happened; but my clothes also don't smell like 
         cinnamon buns, like I'd hoped
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<bdale> I thought Jeroen's comment was interesting...
-<aj> What was that?
-<bdale> Well I didn't let him speak....
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-<helix> elmo: I can't believe people pay you to fix computers
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
