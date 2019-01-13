@@ -59,7 +59,7 @@ def html_header(name, missing):
     if name.endswith('.changes'):
         name = ' '.join(name.split('_')[:2])
     result = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="de" lang="de">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="content-type" content="text/xhtml+xml; charset=utf-8"
     />
