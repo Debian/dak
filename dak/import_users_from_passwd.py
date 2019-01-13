@@ -19,16 +19,6 @@
 
 ################################################################################
 
-# <aj> ARRRGGGHHH
-# <aj> what's wrong with me!?!?!?
-# <aj> i was just nice to some mormon doorknockers!!!
-# <Omnic> AJ?!?!
-# <aj> i know!!!!!
-# <Omnic> I'm gonna have to kick your ass when you come over
-# <Culus> aj: GET THE HELL OUT OF THE CABAL! :P
-
-################################################################################
-
 from __future__ import print_function
 
 import pwd
