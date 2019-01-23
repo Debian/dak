@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+set -u
+set -E
+set -o pipefail
+
+crontab -l | awk '/#BETWEEN#/ {flag=1;print;next} /#HERE#/{flag=0} flag {print "# " $0 } !flag {print}' | crontab -
+
+echo "### Turned off on $(date -Is)" > ~/crontab.out
+crontab -l >> ~/crontab.out

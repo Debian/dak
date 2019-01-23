@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -e
+set -u
+set -o pipefail
+
+crontab -l | awk '/#BETWEEN#/ {flag=1;print;next} /#HERE#/ {flag=0} flag {if ($0 ~ /^#/) print substr($0, 3); else print $0 } !flag {print}' | crontab -
+crontab -l > ~/crontab.out
