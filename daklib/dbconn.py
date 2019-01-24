@@ -1537,6 +1537,7 @@ __all__.append('SrcContents')
 
 ################################################################################
 
+
 class DBSource(ORMObject):
     def __init__(self, source=None, version=None, maintainer=None,
         changedby=None, poolfile=None, install_date=None, fingerprint=None):
