@@ -48,11 +48,11 @@ def html_escape(s):
 
 
 def header():
-    return """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-        <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    return """<!DOCTYPE html>
+        <html lang="en"><head><meta charset="utf-8" />
         <title>Deferred uploads to Debian</title>
-        <link type="text/css" rel="stylesheet" href="style.css">
-        <link rel="shortcut icon" href="https://www.debian.org/favicon.ico">
+        <link type="text/css" rel="stylesheet" href="style.css" />
+        <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />
         </head>
         <body>
         <div align="center">

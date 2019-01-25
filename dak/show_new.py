@@ -61,8 +61,7 @@ def html_header(name, missing):
     result = """<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8"
-    />
+    <meta charset="utf-8" />
     <title>%(name)s - Debian NEW package overview</title>
     <link type="text/css" rel="stylesheet" href="/style.css" />
     <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />

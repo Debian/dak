@@ -191,7 +191,7 @@ def header():
     print("""<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <link type="text/css" rel="stylesheet" href="style.css" />
     <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />
     <title>
