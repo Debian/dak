@@ -25,16 +25,16 @@ from optparse import OptionParser
 import multiprocessing as mp
 
 schema_header = Schema({
-    Required('File'): All(str, 'DEP-11', msg="Must be \"DEP-11\""),
+    Required('File'): All(str, 'DEP-11', msg='Must be "DEP-11"'),
     Required('Origin'): All(str, Length(min=1)),
-    Required('Version'): All(str, Match(r'(\d+\.?)+$'), msg="Must be a valid version number"),
+    Required('Version'): All(str, Match(r'(\d+\.?)+$'), msg='Must be a valid version number'),
     Required('MediaBaseUrl'): All(str, Url()),
     'Time': All(str),
     'Priority': All(int),
 })
 
 schema_translated = Schema({
-    Required('C'): All(str, Length(min=1), msg="Must have an unlocalized 'C' key"),
+    Required('C'): All(str, Length(min=1), msg='Must have an unlocalized \'C\' key'),
     dict: All(str, Length(min=1)),
 }, extra=True)
 
@@ -53,8 +53,8 @@ def add_issue(msg):
 def test_custom_objects(lines):
     ret = True
     for i in range(0, len(lines)):
-        if "!!python/" in lines[i]:
-            add_issue("Python object encoded in line %i." % (i))
+        if '!!python/' in lines[i]:
+            add_issue('Python object encoded in line %i.' % (i))
             ret = False
     return ret
 
@@ -63,13 +63,13 @@ def test_localized_dict(doc, ldict, id_string):
     ret = True
     for lang, value in ldict.items():
         if lang == 'x-test':
-            add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "Found cruft locale: x-test"))
+            add_issue('[%s][%s]: %s' % (doc['ID'], id_string, 'Found cruft locale: x-test'))
         if lang == 'xx':
-            add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "Found cruft locale: xx"))
+            add_issue('[%s][%s]: %s' % (doc['ID'], id_string, 'Found cruft locale: xx'))
         if lang.endswith('.UTF-8'):
-            add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "AppStream locale names should not specify encoding (ends with .UTF-8)"))
-        if " " in lang:
-            add_issue("[%s][%s]: %s" % (doc['ID'], id_string, "Locale name contains space: '%s'" % (lang)))
+            add_issue('[%s][%s]: %s' % (doc['ID'], id_string, 'AppStream locale names should not specify encoding (ends with .UTF-8)'))
+        if ' ' in lang:
+            add_issue('[%s][%s]: %s' % (doc['ID'], id_string, 'Locale name contains space: "%s"' % (lang)))
             # this - as opposed to the other issues - is an error
             ret = False
     return ret
@@ -85,7 +85,7 @@ def test_localized(doc, key):
 
 def validate_data(data):
     ret = True
-    lines = data.split("\n")
+    lines = data.split('\n')
 
     # see if there are any Python-specific objects encoded
     ret = test_custom_objects(lines)
@@ -94,13 +94,13 @@ def validate_data(data):
         docs = yaml.safe_load_all(data)
         header = next(docs)
     except Exception as e:
-        add_issue("Could not parse file: %s" % (str(e)))
+        add_issue('Could not parse file: %s' % (str(e)))
         return False
 
     try:
         schema_header(header)
     except Exception as e:
-        add_issue("Invalid DEP-11 header: %s" % (str(e)))
+        add_issue('Invalid DEP-11 header: %s' % (str(e)))
         ret = False
 
     for doc in docs:
@@ -108,35 +108,35 @@ def validate_data(data):
         pkgname = doc.get('Package')
         cpttype = doc.get('Type')
         if not doc:
-            add_issue("FATAL: Empty document found.")
+            add_issue('FATAL: Empty document found.')
             ret = False
             continue
         if not cptid:
-            add_issue("FATAL: Component without ID found.")
+            add_issue('FATAL: Component without ID found.')
             ret = False
             continue
         if not pkgname:
-            if cpttype not in ["web-application", "operating-system", "repository"]:
-                add_issue("[%s]: %s" % (cptid, "Component is missing a 'Package' key."))
+            if cpttype not in ['web-application', 'operating-system', 'repository']:
+                add_issue('[%s]: %s' % (cptid, 'Component is missing a \'Package\' key.'))
                 ret = False
                 continue
 
         try:
             schema_component(doc)
         except Exception as e:
-            add_issue("[%s]: %s" % (cptid, str(e)))
+            add_issue('[%s]: %s' % (cptid, str(e)))
             ret = False
             continue
 
         # more tests for the icon key
         icon = doc.get('Icon')
-        if cpttype in ["desktop-application", "web-application"]:
+        if cpttype in ['desktop-application', 'web-application']:
             if not doc.get('Icon'):
-                add_issue("[%s]: %s" % (cptid, "Components containing an application must have an 'Icon' key."))
+                add_issue('[%s]: %s' % (cptid, 'Components containing an application must have an \'Icon\' key.'))
                 ret = False
         if icon:
             if (not icon.get('stock')) and (not icon.get('cached')) and (not icon.get('local')):
-                add_issue("[%s]: %s" % (cptid, "A 'stock', 'cached' or 'local' icon must at least be provided. @ data['Icon']"))
+                add_issue('[%s]: %s' % (cptid, 'A \'stock\', \'cached\' or \'local\' icon must at least be provided. @ data[\'Icon\']'))
                 ret = False
 
         if not test_localized(doc, 'Name'):
@@ -151,7 +151,7 @@ def validate_data(data):
         for shot in doc.get('Screenshots', list()):
             caption = shot.get('caption')
             if caption:
-                if not test_localized_dict(doc, caption, "Screenshots.x.caption"):
+                if not test_localized_dict(doc, caption, 'Screenshots.x.caption'):
                     ret = False
 
     return ret
@@ -159,9 +159,9 @@ def validate_data(data):
 
 def validate_file(fname):
     f = None
-    if fname.endswith(".gz"):
+    if fname.endswith('.gz'):
         f = gzip.open(fname, 'r')
-    elif fname.endswith(".xz"):
+    elif fname.endswith('.xz'):
         f = lzma.open(fname, 'r')
     else:
         f = open(fname, 'r')
@@ -181,9 +181,9 @@ def validate_dir(dirname):
         for fname in files:
             fpath = os.path.join(root, fname)
             if os.path.islink(fpath):
-                add_issue("FATAL: Symlinks are not allowed")
+                add_issue('FATAL: Symlinks are not allowed')
                 return False
-            if fname.endswith(".yml.gz") or fname.endswith(".yml.xz"):
+            if fname.endswith('.yml.gz') or fname.endswith('.yml.xz'):
                 asfiles.append(fpath)
 
     # validate the files, use multiprocessing to speed up the validation
@@ -202,25 +202,25 @@ def main():
     (options, args) = parser.parse_args()
 
     if len(args) < 1:
-        print("You need to specify a file to validate!")
+        print('You need to specify a file to validate!')
         sys.exit(4)
     fname = args[0]
 
     if os.path.isdir(fname):
         ret = validate_dir(fname)
     elif os.path.islink(fname):
-        add_issue("FATAL: Symlinks are not allowed")
+        add_issue('FATAL: Symlinks are not allowed')
         ret = False
     else:
         ret = validate_file(fname)
     if ret:
-        msg = "DEP-11 basic validation successful."
+        msg = 'DEP-11 basic validation successful.'
     else:
-        msg = "DEP-11 validation failed!"
+        msg = 'DEP-11 validation failed!'
     print(msg)
 
     if not ret:
         sys.exit(1)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
