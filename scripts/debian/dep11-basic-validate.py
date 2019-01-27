@@ -116,7 +116,7 @@ def validate_data(data):
             ret = False
             continue
         if not pkgname:
-            if cpttype != "web-application":
+            if cpttype not in ["web-application", "operating-system", "repository"]:
                 add_issue("[%s]: %s" % (cptid, "Component is missing a 'Package' key."))
                 ret = False
                 continue
@@ -130,7 +130,7 @@ def validate_data(data):
 
         # more tests for the icon key
         icon = doc.get('Icon')
-        if (cpttype == "desktop-application") or (cpttype == "web-application"):
+        if cpttype in ["desktop-application", "web-application"]:
             if not doc.get('Icon'):
                 add_issue("[%s]: %s" % (cptid, "Components containing an application must have an 'Icon' key."))
                 ret = False
