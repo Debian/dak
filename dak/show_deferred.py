@@ -192,10 +192,10 @@ def get_upload_data(changesfn):
     with utils.open_file(changesfn) as f:
         fingerprint = SignedFile(f.read(), keyrings=get_active_keyring_paths(), require_signature=False).fingerprint
     if "Show-Deferred::LinkPath" in Cnf:
-        isnew = 0
+        isnew = False
         suites = get_suites_source_in(achanges['source'])
         if 'unstable' not in suites and 'experimental' not in suites:
-            isnew = 1
+            isnew = True
 
         if not isnew:
             # we don't link .changes because we don't want other people to
