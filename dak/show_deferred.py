@@ -197,11 +197,6 @@ def get_upload_data(changesfn):
         if 'unstable' not in suites and 'experimental' not in suites:
             isnew = 1
 
-        for b in achanges['binary'].split():
-            suites = get_suites_binary_in(b)
-            if 'unstable' not in suites and 'experimental' not in suites:
-                isnew = 1
-
         if not isnew:
             # we don't link .changes because we don't want other people to
             # upload it with the existing signature.
