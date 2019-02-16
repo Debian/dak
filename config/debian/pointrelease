@@ -220,6 +220,8 @@ if [[ ${suitename} != jessie ]]; then
 fi
 
 log "RM time"
+hadrms=0
+
 if ${wget} -O "removallist" "${release_base}/removals.${suitename}"; then
     echo "Please check removallist file, I am going to run it as shell script when you confirm"
     confirm
@@ -232,7 +234,6 @@ fi
 
 echo "Any more removals to be done?"
 echo "If nothing - or done, just end with an empty line"
-hadrms=0
 
 # Blindly ignore errors in dak rm
 set +e
