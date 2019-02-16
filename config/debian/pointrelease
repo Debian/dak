@@ -56,10 +56,12 @@ cleanup() {
 }
 trap cleanup EXIT TERM HUP INT QUIT
 
+suitename_default=$(psql -qAtc "SELECT codename FROM suite WHERE suite_name='stable'")
+
 function usage() {
     echo "Fun with a pointrelease"
     echo "Takes two args, suite and version"
-    echo "Default for suite is jessie, version defaults to last plus one"
+    echo "Default for suite is ${suitename_default}, version defaults to last plus one"
 }
 
 confirm() {
@@ -90,7 +92,7 @@ while getopts ":hs:v:" OPTION; do
 done
 
 # Set some variables
-suitename=${suitename:-"jessie"}
+suitename=${suitename:-${suitename_default}}
 suite=$(psql -qAtc "SELECT suite_name FROM suite WHERE codename='${suitename}'")
 oldrev=$(psql -qAtc "SELECT version FROM suite WHERE codename='${suitename}'")
 newrev=${newrev:-${oldrev%.*}.$(( ${oldrev##*.} + 1 ))}
