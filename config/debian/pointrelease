@@ -136,21 +136,16 @@ fi
 if [[ ! -f ${suite}.list ]]; then
     dak control-suite -l ${suite} > ${suite}.list &
 fi
-if [[ ${suitename} != jessie ]]; then
-    if [[ ! -f ${suite}-debug.list ]]; then
-        dak control-suite -l ${suite}-debug > ${suite}-debug.list &
-    fi
-    if [[ ! -f ${pusuite}-debug.list ]]; then
-        dak control-suite -l ${pusuite}-debug > ${pusuite}-debug.list &
-    fi
+if [[ ! -f ${suite}-debug.list ]]; then
+    dak control-suite -l ${suite}-debug > ${suite}-debug.list &
+fi
+if [[ ! -f ${pusuite}-debug.list ]]; then
+    dak control-suite -l ${pusuite}-debug > ${pusuite}-debug.list &
 fi
 wait
 
 if [[ -n ${skiplist} ]]; then
   for s in ${pusuite} ${pusuite}-debug; do
-    if [[ ${s} = ${pusuite}-debug && ${suitename} = jessie ]]; then
-      continue
-    fi
     mv ${s}.list ${s}.list.ori
     grep -vFf <(dak ls -f heidi -S -s ${s} ${skiplist}) ${s}.list.ori > ${s}.list
   done
@@ -179,13 +174,9 @@ while :; do
     fi
 done
 
-if [[ ${suitename} != jessie ]]; then
-    dak control-suite --add ${suite}-debug < ${pusuite}-debug.list
-fi
+dak control-suite --add ${suite}-debug < ${pusuite}-debug.list
 dak control-suite --remove ${pusuite} < ${pusuite}.list
-if [[ ${suitename} != jessie ]]; then
-    dak control-suite --remove ${pusuite}-debug < ${pusuite}-debug.list
-fi
+dak control-suite --remove ${pusuite}-debug < ${pusuite}-debug.list
 
 log "Cleaning changelogs from proposed-updates"
 pumorguedir="${base}/morgue/queues/$(date +%Y/%m)"
@@ -213,13 +204,9 @@ propups() {
 
 propups ${suitename}-r0 ${suitename}-r0-additions.cs
 propups unstable
-if [[ ${suitename} != jessie ]]; then
-    propups unstable-debug
-fi
+propups unstable-debug
 propups testing
-if [[ ${suitename} != jessie ]]; then
-    propups testing-debug
-fi
+propups testing-debug
 
 log "RM time"
 hadrms=0
@@ -368,37 +355,26 @@ if [[ ${hadremove} -ne 0 ]]; then
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
 fi
 
-if [[ ${suitename} != jessie ]]; then
-    log "Cleaning up debug suite"
-    dak manage-debug-suites ${suite}-debug ${pusuite}-debug
-fi
+log "Cleaning up debug suite"
+dak manage-debug-suites ${suite}-debug ${pusuite}-debug
 
 log "Time to run gps/contents, RMs can check if all looks ok"
-gps_suites=${suite},${pusuite}
-if [[ ${suitename} != jessie ]]; then
-    gps_suites=${gps_suites},${suite}-debug,${pusuite}-debug
-fi
+gps_suites=${suite},${pusuite},${suite}-debug,${pusuite}-debug
+
 dak generate-packages-sources2 --force -s ${gps_suites}
 ${scriptsdir}/sync-release ${suite} &
 log "Contents"
 dak contents generate -f -s ${suite} -a ftp-master
 wait
 ${scriptsdir}/sync-release ${suite}
-if [[ ${suitename} != jessie ]]; then
-    ${scriptsdir}/sync-release ${suite}-debug
-fi
+${scriptsdir}/sync-release ${suite}-debug
 
 echo "Generate release files?"
 confirm
-release_suites="${suite} ${pusuite}"
-if [[ ${suitename} != jessie ]]; then
-    release_suites="${release_suites} ${suite}-debug ${pusuite}-debug"
-fi
+release_suites="${suite} ${pusuite} ${suite}-debug ${pusuite}-debug"
 dak generate-releases -f -s ${release_suites}
 ${scriptsdir}/sync-release ${suite}
-if [[ ${suitename} != jessie ]]; then
-    ${scriptsdir}/sync-release ${suite}-debug
-fi
+${scriptsdir}/sync-release ${suite}-debug
 
 log "Release file generated, waiting for RMs checking and (hopefully) signing"
 
@@ -418,9 +394,7 @@ merge-release-signatures() {
 }
 
 merge-release-signatures $(get_archiveroot ftp-master) ${suite} Release-${newrev}.gpg
-if [[ ${suitename} != jessie ]]; then
-    merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug Release-${newrev}-debug.gpg
-fi
+merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug Release-${newrev}-debug.gpg
 
 echo "Done. Is a mirrorpush needed? Or just one to the cd-builder?"
 read -e -p "Mirrorpush? no/cd/yes " -i "cd" mirrorpush
