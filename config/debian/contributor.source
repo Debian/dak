@@ -19,10 +19,3 @@ query:
           FROM changes
          WHERE architecture LIKE '%source%'
 url: https://qa.debian.org/developer.php?login={id}&comaint=yes
-
-contribution: patch_contributor
-method: gitlogs
-dirs:
-   /srv/ftp.debian.org/git/dak.git
-   /srv/ftp.debian.org/git/dakbot.git
-   /srv/ftp.debian.org/git/website.git
