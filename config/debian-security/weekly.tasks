@@ -3,4 +3,5 @@ INCLUDE                lock                       none                       tru
 LOCK                   UNCHECKED                  1200                       exclusive false
 update_releases        none                       none                       true      false
 INCLUDE                mirror                     none                       true      true
+UNLOCK                 UNCHECKED                  none                       false     false
 linkmorgue             none                       none                       false     true
