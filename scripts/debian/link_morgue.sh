@@ -112,7 +112,7 @@ while read mfile; do
         fi
     else
         # If we run wherever, use curl and the http interface
-        if out=$(curl --fail --show-error --silent --max-time 120 --head ${FARMURL}/${mshasum}); then
+        if out=$(curl --fail --show-error --silent --max-time 120 --head ${FARMURL}/${mshasum} 2>&1); then
             # Yes, lets symlink it
             # Yay for tons of dangling symlinks, but when this is done a rsync
             # will run and transfer the whole shitload of links over to the morgue host.
