@@ -112,13 +112,13 @@ while read mfile; do
         fi
     else
         # If we run wherever, use curl and the http interface
-        if curl --fail --silent --max-time 120 --head ${FARMURL}/${mshasum} >/dev/null; then
+        if out=$(curl --fail --silent --max-time 120 --head ${FARMURL}/${mshasum}); then
             # Yes, lets symlink it
             # Yay for tons of dangling symlinks, but when this is done a rsync
             # will run and transfer the whole shitload of links over to the morgue host.
             ln -sf "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" "${mfile}"
         else
-            touch "${mfile}.nosnapshot" || true
+            echo $out > "${mfile}.nosnapshot" || true
         fi
     fi
 done # for mfile in...
