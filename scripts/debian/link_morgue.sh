@@ -138,7 +138,7 @@ while read mfile; do
         # *shouldnt* list multiple. Also, even if it does, we don*t
         # care. It shows us snapshot has it, which is all we care
         # about.
-        if grep --max-count=1 ${mshasum} ${HASHFILE}; then
+        if grep -q --max-count=1 ${mshasum} ${HASHFILE}; then
             # Yes, lets symlink it
             # Yay for tons of dangling symlinks, but when this is done a rsync
             # will run and transfer the whole shitload of links over to the morgue host.
