@@ -55,6 +55,10 @@ Host external-security
   User dak
   IdentityFile /srv/ftp-master.debian.org/scripts/s3kr1t/ssh/push_external_files
 
+Host lw08.debian.org
+  User dak
+  IdentityFile /srv/ftp-master.debian.org/s3kr1t/fetch_snapshot_hashes
+
 Host upload-master
   Hostname usper.debian.org
   User dak

@@ -80,6 +80,29 @@ PROCESSDIR="${base}/morgue"
 FARMBASE="/srv/snapshot.debian.org/farm"
 FARMURL="http://snapshot.debian.org/file/"
 PROGRAM="link_morgue"
+DBHOST="lw08.debian.org"
+HASHFILE="${dbdir}/hashes"
+NOW=$(date -Is)
+
+# We have to prepare our file with list of hashes. We get it directly
+# from the snapshot db. Thats a costly operation taking some 15 or so
+# minutes, but still better than the rate limiting we run into when
+# using the web api.
+#
+# The preparehashes is an otion the ssh forced command on the remote
+# host uses to generate a nice file with hashes, one per line. It does
+# so by running something like "psql service=snapshot-guest -c "select
+# hash from file" > somefile", then packs the file. To not stress the
+# db host too much with that query, it only refreshes the file if its
+# older than 24 hours.
+ssh ${DBHOST} preparehashes
+
+# And now we get us the file here, so we can easily lookup hashes.
+# (the rsync uses the same ssh key and runs into the forced command.
+# That just knows to send the file for rsync instead of preparing it.)
+cd "${dbdir}"
+rsync ${DBHOST}:/srv/ftp-master.debian.org/home/hashes.gz ${HASHFILE}.gz
+gunzip --keep ${HASHFILE}.gz
 
 cd "${PROCESSDIR}"
 log "Processing ${PROCESSDIR}"
@@ -111,14 +134,17 @@ while read mfile; do
             ln -sf "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" "${mfile}"
         fi
     else
-        # If we run wherever, use curl and the http interface
-        if out=$(curl --fail --show-error --silent --max-time 120 --head ${FARMURL}/${mshasum} 2>&1); then
+        # Now lookup the hash. stop after first hit, its shasums, it
+        # *shouldnt* list multiple. Also, even if it does, we don*t
+        # care. It shows us snapshot has it, which is all we care
+        # about.
+        if grep --max-count=1 ${mshasum} ${HASHFILE}; then
             # Yes, lets symlink it
             # Yay for tons of dangling symlinks, but when this is done a rsync
             # will run and transfer the whole shitload of links over to the morgue host.
             ln -sf "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" "${mfile}"
         else
-            echo $out > "${mfile}.nosnapshot" || true
+            echo "No shasum found for ${mfile} at ${NOW}" > "${mfile}.nosnapshot" || true
         fi
     fi
 done # for mfile in...
