@@ -102,7 +102,7 @@ ssh ${DBHOST} preparehashes
 # That just knows to send the file for rsync instead of preparing it.)
 cd "${dbdir}"
 rsync ${DBHOST}:/srv/ftp-master.debian.org/home/hashes.gz ${HASHFILE}.gz
-gunzip --keep ${HASHFILE}.gz
+gunzip --keep --force ${HASHFILE}.gz
 
 cd "${PROCESSDIR}"
 log "Processing ${PROCESSDIR}"
