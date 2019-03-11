@@ -95,14 +95,17 @@ NOW=$(date -Is)
 # hash from file" > somefile", then packs the file. To not stress the
 # db host too much with that query, it only refreshes the file if its
 # older than 24 hours.
-ssh ${DBHOST} preparehashes
+out=""
+out=$(ssh ${DBHOST} preparehashes)
 
 # And now we get us the file here, so we can easily lookup hashes.
 # (the rsync uses the same ssh key and runs into the forced command.
 # That just knows to send the file for rsync instead of preparing it.)
-cd "${dbdir}"
-rsync ${DBHOST}:/srv/ftp-master.debian.org/home/hashes.gz ${HASHFILE}.gz
-gunzip --keep --force ${HASHFILE}.gz
+if [[ ${out} == UPDATED ]]; then
+    cd "${dbdir}"
+    rsync ${DBHOST}:/srv/ftp-master.debian.org/home/hashes.gz ${HASHFILE}.gz
+    gunzip --keep --force ${HASHFILE}.gz
+fi
 
 cd "${PROCESSDIR}"
 log "Processing ${PROCESSDIR}"
