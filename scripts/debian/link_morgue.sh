@@ -104,53 +104,14 @@ out=$(ssh ${DBHOST} preparehashes)
 if [[ ${out} == UPDATED ]]; then
     cd "${dbdir}"
     rsync ${DBHOST}:/srv/ftp-master.debian.org/home/hashes.gz ${HASHFILE}.gz
-    gunzip --keep --force ${HASHFILE}.gz
 fi
 
 cd "${PROCESSDIR}"
 log "Processing ${PROCESSDIR}"
-find ${PROCESSDIR} -name "*.nosnapshot" -prune -o -type f -print |
-while read mfile; do
-    if [[ -e ${mfile}.nosnapshot ]]; then
-        # We know this file does not exist on snapshot, don't check again
-        # Also ignore .nobackup files
-        continue
-    fi
-
-    # Get the files sha1sum
-    mshasum=$(sha1sum ${mfile})
-    mshasum=${mshasum%% *}
-
-    # And now get the "levels" of the farm
-    if [[ ${mshasum} =~ ([0-9a-z][0-9a-z])([0-9a-z][0-9a-z]).* ]]; then
-        LVL1=${BASH_REMATCH[1]}
-        LVL2=${BASH_REMATCH[2]}
-    else
-        log "Ups, unknown error in regex for ${mfile} (${mshasum})"
-        continue
-    fi
-
-    # See if we have a target
-    if [ "$(hostname -s)" = "stabile" ]; then
-        # If we run on the snapshot host directly just look locally
-        if [ -f "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" ]; then
-            ln -sf "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" "${mfile}"
-        fi
-    else
-        # Now lookup the hash. stop after first hit, its shasums, it
-        # *shouldnt* list multiple. Also, even if it does, we don*t
-        # care. It shows us snapshot has it, which is all we care
-        # about.
-        if grep -q --max-count=1 ${mshasum} ${HASHFILE}; then
-            # Yes, lets symlink it
-            # Yay for tons of dangling symlinks, but when this is done a rsync
-            # will run and transfer the whole shitload of links over to the morgue host.
-            ln -sf "${FARMBASE}/${LVL1}/${LVL2}/${mshasum}" "${mfile}"
-        else
-            echo "No shasum found for ${mfile} at ${NOW}" > "${mfile}.nosnapshot" || true
-        fi
-    fi
-done # for mfile in...
+${scriptsdir}/link_morgue \
+             --known-hashes ${HASHFILE}.gz \
+             --farmdir "${FARMBASE}" \
+             --morguedir "${PROCESSDIR}"
 
 # And now, maybe, transfer stuff over to stabile...
 if [ "$(hostname -s)" != "stabile" ]; then
