@@ -22,7 +22,6 @@ lintian:
     - install-info-used-in-maintainer-script
     - invalid-date-in-debian-changelog
     - latest-debian-changelog-entry-reuses-existing-version
-    - license-problem-gfdl-invariants
     - license-problem-json-evil
     - license-problem-non-free-RFC
     - license-problem-nvidia-intellectual
