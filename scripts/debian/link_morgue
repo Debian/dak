@@ -112,7 +112,7 @@ def scan_directory(path: bytes):
 
 def process_directory(path: bytes, known_hashes: Hashes, base: bytes) -> None:
     os.chdir(path)
-    for fn in scan_directory("."):
+    for fn in scan_directory(b"."):
         process_file(fn, known_hashes, base)
 
 
