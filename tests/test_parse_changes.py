@@ -63,7 +63,7 @@ class ParseDscTestCase(ParseChangesTestCase):
     def test_9(self):
         changes = self.assertParse('dsc/9.dsc', -1, 1)
         self.assert_(changes['question'] == 'Is this a bug?')
-        self.failIf(changes.get('this'))
+        self.assertFalse(changes.get('this'))
 
     def test_10(self):
         changes = self.assertParse('dsc/10.dsc', -1, 1)
@@ -92,7 +92,7 @@ class ParseChangesTestCase(ParseChangesTestCase):
                     'changes/%s.changes' % filename,
                     strict_whitespace,
                 )
-                self.failIf(changes.get('you'))
+                self.assertFalse(changes.get('you'))
 
 if __name__ == '__main__':
     unittest.main()
