@@ -105,6 +105,7 @@ Perform administrative work on the dak database.
                             add suite SUITE, version VERSION.
                             label, description, origin, codename
                             and signingkey are optional.
+     s rm SUITE             remove a suite (will only work if empty)
 
      s add-all-arches SUITE VERSION... as "s add" but adds suite-architecture
                             relationships for all architectures
