@@ -4,7 +4,7 @@ LOCK                   DAILY                      600                        sha
 LOCK                   UNCHECKED                  600                        exclusive false
 pg_timestamp           preunchecked               none                       true      false
 punew                  stable-new                 p-u-new                    false     false
-opunew                 oldstable-new              o-p-u-new                  false     false
+# opunew                 oldstable-new              o-p-u-new                  false     false
 backports_policy       none                       backports-policy           false     false
 cleanpolicy            none                       cleanpolicy                false     false
 fetchqueuedpackages    upload-master              fetchqueuedpackages        false     false

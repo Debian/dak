@@ -22,7 +22,8 @@ function do_report() {
 
 function queuereport() {
     log "Creating queue reports, new/backports-new, 822 format"
-    local queues="new,byhand,stable-new,oldstable-new"
+    #local queues="new,byhand,stable-new,oldstable-new"
+    local queues="new,byhand,stable-new"
     local bpqueues="backports-new,backports-policy"
     local gqueues="${queues},${bpqueues},deferred"
     do_report
