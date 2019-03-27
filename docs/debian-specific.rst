@@ -76,18 +76,21 @@ security archive
 
 NEW processing
 ========================================================================
-- ``cronoff``
-- ``CHANGES=FILENAME.changes``
-- ``dak process-new``, ACCEPT
-- ``cd /srv/security-master.debian.org/queue/new/COMMENTS``
-- Change first line to **NOTOK**, add comment "Moving back to unchecked."
-- Rename ACCEPT.* to REJECT.*
-- ``dak process-policy new; dak clean-suites``
-- ``cd /srv/security-master.debian.org/queue/reject``
-- ``dak admin forget-signature ${CHANGES}``
-- ``dcmd mv -n ${CHANGES} ../unchecked``
-- ``/srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked``
-- ``cronon``
+
+::
+
+    cronoff
+    CHANGES=FILENAME.changes
+    dak process-new
+    cd /srv/security-master.debian.org/queue/new/COMMENTS
+    { echo NOTOK; echo; echo "Moving back to unchecked"; } > "REJECT.${CHANGES}"
+    rm "ACCEPT.${CHANGES}"
+    dak process-policy new; dak clean-suites
+    cd /srv/security-master.debian.org/queue/reject
+    dak admin forget-signature ${CHANGES}
+    dcmd mv -nt ../unchecked -- ${CHANGES}
+    /srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked
+    cronon
 
 Built-Using
 ========================================================================
