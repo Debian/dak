@@ -69,6 +69,7 @@ from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLock
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
 from daklib.policy import UploadCopy, PolicyQueueUploadHandler
+from daklib.termcolor import colorize as Color
 
 # Globals
 Options = None
@@ -162,7 +163,7 @@ def print_new(upload, missing, indexed, session, file=sys.stdout):
         section = m['section']
         priority = m['priority']
         if m["type"] == 'deb' and priority != 'optional':
-            priority = '\033[31m' + priority + '\033[0m'
+            priority = Color(priority, "red")
         included = "" if m['included'] else "NOT UPLOADED"
         if indexed:
             line = "(%s): %-20s %-20s %-20s %s" % (index, package, priority, section, included)
@@ -179,8 +180,12 @@ def print_new(upload, missing, indexed, session, file=sys.stdout):
             print('%s: %s' % (t[0], t[1]))
     notes = get_new_comments(upload.policy_queue, upload.changes.source)
     for note in notes:
-        print("\nAuthor: %s\nVersion: %s\nTimestamp: %s\n\n%s"
-              % (note.author, note.version, note.notedate, note.comment))
+        print("\n")
+        print(Color("Author:", "yellow"), "%s" % note.author)
+        print(Color("Version:", "yellow"), "%s" % note.version)
+        print(Color("Timestamp:", "yellow"), "%s" % note.timestamp)
+        print("\n\n")
+        print(note.comment)
         print("-" * 72)
     return len(notes) > 0
 
