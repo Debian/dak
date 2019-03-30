@@ -35,3 +35,7 @@ Host rsync-to-ssh.upload.debian.org
   ControlMaster auto
   ControlPath ~/.ssh/socket-%n
   ControlPersist yes
+
+Host lw08.debian.org
+  User dak
+  IdentityFile /srv/security-master.debian.org/s3kr1t/fetch_snapshot_hashes
