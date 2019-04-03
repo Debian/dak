@@ -1341,8 +1341,11 @@ class ArchiveUpload(object):
 
             source_suites = self.session.query(Suite).filter(Suite.suite_id.in_(source_suite_ids)).subquery()
 
-            source_component_func = lambda source: self._source_component(overridesuite, source, only_overrides=False)
-            binary_component_func = lambda binary: self._binary_component(overridesuite, binary, only_overrides=False)
+            def source_component_func(source):
+                return self._source_component(overridesuite, source, only_overrides=False)
+
+            def binary_component_func(binary):
+                return self._binary_component(overridesuite, binary, only_overrides=False)
 
             (db_source, db_binaries) = self._install_to_suite(suite, redirected_suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
 
@@ -1407,7 +1410,9 @@ class ArchiveUpload(object):
             source_component = self.session.query(Component).order_by(Component.component_id).first()
         else:
             source_component = self.session.query(Component).filter_by(component_name=source_component_name).one()
-        source_component_func = lambda source: source_component
+
+        def source_component_func(source):
+            return source_component
 
         db_changes = self._install_changes()
         (db_source, db_binaries) = self._install_to_suite(suite, new_suite, source_component_func, binary_component_func, source_suites=True, extra_source_archives=[suite.archive], new_upload=True)
