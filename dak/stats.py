@@ -58,12 +58,12 @@ buffer = 0
 FORMAT_SWITCH = '2009-08'
 blacklisted = ('dak', 'katie')
 
-NEW = ('^(\d{14})\|(?:jennifer|process-unchecked|.*?\|dak)'
-       '\|(Moving to new|ACCEPT-TO-NEW)')
-new_ACTIONS = '^(\d{14})\|[^\|]*\|(\S+)\|NEW (\S+)[:\|]'
-old_ACTIONS = ('(?:lisa|process-new)\|program start\|(.*?)\|'
-               '(?:lisa|process-new)\|program end')
-old_ACTION = '^(\d{14})\|(?:lisa|process-new)\|(Accepting changes|rejected)\|'
+NEW = (r'^(\d{14})\|(?:jennifer|process-unchecked|.*?\|dak)'
+       r'\|(Moving to new|ACCEPT-TO-NEW)')
+new_ACTIONS = r'^(\d{14})\|[^\|]*\|(\S+)\|NEW (\S+)[:\|]'
+old_ACTIONS = (r'(?:lisa|process-new)\|program start\|(.*?)\|'
+               r'(?:lisa|process-new)\|program end')
+old_ACTION = r'^(\d{14})\|(?:lisa|process-new)\|(Accepting changes|rejected)\|'
 
 ################################################################################
 

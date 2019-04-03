@@ -414,7 +414,7 @@ def remove(session, reason, suites, removals,
             if len(element) == 3:
                 if element[2].find("source") > 0:
                     sources.append("%s_%s" % tuple(elem.strip(" ") for elem in element[:2]))
-                    element[2] = sub("source\s?,?", "", element[2]).strip(" ")
+                    element[2] = sub(r"source\s?,?", "", element[2]).strip(" ")
                 if element[2]:
                     binaries.append("%s_%s [%s]" % tuple(elem.strip(" ") for elem in element))
 

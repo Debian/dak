@@ -16,12 +16,12 @@ fd.close()
 removals = re.split('=\n=', data)
 for removal in removals:
     removal = re.sub('\n\n', '\n', removal)
-    date = re.search('\[Date: (.*)\]\s\[', removal).group(1)
-    ftpmaster = re.search('\[ftpmaster: (.*)]', removal).group(1)
+    date = re.search(r'\[Date: (.*)\]\s\[', removal).group(1)
+    ftpmaster = re.search(r'\[ftpmaster: (.*)]', removal).group(1)
     suite = re.search('from ([^:]+):', removal).group(1)
-    packages = re.split('from [\S\s]+:\n', removal)[1].split('\n---')[0]
+    packages = re.split(r'from [\S\s]+:\n', removal)[1].split('\n---')[0]
     reason = re.split('---\n', removal)[1].split('\n---')[0]
-    bug = re.search('Closed bugs: (\d+)', removal)
+    bug = re.search(r'Closed bugs: (\d+)', removal)
     print('Date: %s' % date)
     print('Ftpmaster: %s' % ftpmaster)
     print('Suite: %s' % suite)
@@ -33,7 +33,7 @@ for removal in removals:
                 element = row.split('|')
                 if element[2].find('source') > 0:
                     sources.append(' %s_%s' % tuple(elem.strip(' ') for elem in element[:2]))
-                    element[2] = re.sub('source\s?,?', '', element[2]).strip(' ')
+                    element[2] = re.sub(r'source\s?,?', '', element[2]).strip(' ')
                 if element[2]:
                     binaries.append(' %s_%s [%s]' % tuple(elem.strip(' ') for elem in element))
     if sources:

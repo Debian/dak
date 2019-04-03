@@ -70,13 +70,13 @@ re_package = re.compile(r"^(.+?)_.*")
 re_doc_directory = re.compile(r".*/doc/([^/]*).*")
 
 re_contrib = re.compile('^contrib/')
-re_nonfree = re.compile('^non\-free/')
+re_nonfree = re.compile('^non-free/')
 
-re_localhost = re.compile("localhost\.localdomain")
-re_version = re.compile('^(.*)\((.*)\)')
+re_localhost = re.compile(r"localhost\.localdomain")
+re_version = re.compile(r'^(.*)\((.*)\)')
 
 re_newlinespace = re.compile('\n')
-re_spacestrip = re.compile('(\s)')
+re_spacestrip = re.compile(r'(\s)')
 
 # From new_security_install.py
 re_taint_free = re.compile(r"^['/;\-\+\.~\s\w]+$")

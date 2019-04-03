@@ -291,7 +291,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
 
 #############################################################################
 
-_translations_query = """
+_translations_query = r"""
 WITH
   override_suite AS
     (SELECT

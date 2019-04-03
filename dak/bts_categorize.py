@@ -81,8 +81,8 @@ class BugClassifier(object):
     True
     """
     rm_re = re.compile("^RM")
-    dak_re = re.compile("^\[dak\]")
-    arch_re = re.compile("^\[Architectures\]")
+    dak_re = re.compile(r"^\[dak\]")
+    arch_re = re.compile(r"^\[Architectures\]")
     override_re = re.compile("^override")
 
     classifiers = {rm_re: 'remove',

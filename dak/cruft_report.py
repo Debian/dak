@@ -174,7 +174,7 @@ def do_nfu(nfu_packages):
 def parse_nfu(architecture):
     cnf = Config()
     # utils/hpodder_1.1.5.0: Not-For-Us [optional:out-of-date]
-    r = re.compile("^\w+/([^_]+)_.*: Not-For-Us")
+    r = re.compile(r"^\w+/([^_]+)_.*: Not-For-Us")
 
     ret = set()
 

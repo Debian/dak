@@ -105,7 +105,7 @@ def parse_leave_reason(fname):
 
     Return a dictionary {filename: reason}"""
 
-    reason_re = re.compile(".+\|process-new\|(.+)\|NEW (ACCEPT|REJECT)\|(\S+)")
+    reason_re = re.compile(r".+\|process-new\|(.+)\|NEW (ACCEPT|REJECT)\|(\S+)")
 
     try:
         f = open(fname)

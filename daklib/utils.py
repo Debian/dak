@@ -1076,7 +1076,7 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
     for source in wnpp.keys():
         bugs = []
         for wnpp_bug in wnpp[source]:
-            bug_no = re.search("(\d)+", wnpp_bug).group()
+            bug_no = re.search(r"(\d)+", wnpp_bug).group()
             if bug_no:
                 bugs.append(bug_no)
         wnpp[source] = bugs
