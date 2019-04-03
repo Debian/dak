@@ -81,6 +81,8 @@ Remove PACKAGE(s) from suite(s).
   -h, --help                 show this help and exit
   -m, --reason=MSG           reason for removal
   -n, --no-action            don't do anything
+  -o, --outdated             remove binaries from the specified source package
+                             that were built from previous source versions
   -p, --partial              don't affect override files
   -R, --rdep-check           check reverse dependencies
   -s, --suite=SUITE          act on this suite
@@ -138,6 +140,7 @@ def main():
                  ('R', "rdep-check", "Rm::Options::Rdep-Check"),
                  ('m', "reason", "Rm::Options::Reason", "HasArg"), # Hysterical raisins; -m is old-dinstall option for rejection reason
                  ('n', "no-action", "Rm::Options::No-Action"),
+                 ('o', "outdated", "Rm::Options::Outdated"),
                  ('p', "partial", "Rm::Options::Partial"),
                  ('s', "suite", "Rm::Options::Suite", "HasArg"),
                  ('S', "source-only", "Rm::Options::Source-Only"),
@@ -145,7 +148,7 @@ def main():
 
     for i in ['NoArchAllRdeps',
                "architecture", "binary", "binary-only", "carbon-copy", "component",
-               "done", "help", "no-action", "partial", "rdep-check", "reason",
+               "done", "help", "no-action", "outdated", "partial", "rdep-check", "reason",
                "source-only", "Do-Close"]:
         key = "Rm::Options::%s" % (i)
         if key not in cnf:
@@ -166,14 +169,17 @@ def main():
         utils.fubar("need at least one package name as an argument.")
     if Options["Architecture"] and Options["Source-Only"]:
         utils.fubar("can't use -a/--architecture and -S/--source-only options simultaneously.")
-    if ((Options["Binary"] and Options["Source-Only"])
-            or (Options["Binary"] and Options["Binary-Only"])
-            or (Options["Binary-Only"] and Options["Source-Only"])):
-        utils.fubar("Only one of -b/--binary, -B/--binary-only and -S/--source-only can be used.")
+    actions = [Options["Binary"], Options["Binary-Only"], Options["Source-Only"], Options["Outdated"]]
+    nr_actions = len([act for act in actions if act])
+    if nr_actions > 1:
+        utils.fubar("Only one of -b/--binary, -B/--binary-only, -o/--outdated and -S/--source-only can be used.")
     if "Carbon-Copy" not in Options and "Done" not in Options:
         utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
     if Options["Architecture"] and not Options["Partial"]:
         utils.warn("-a/--architecture implies -p/--partial.")
+        Options["Partial"] = "true"
+    if Options["Outdated"] and not Options["Partial"]:
+        utils.warn("-o/--outdated implies -p/--partial.")
         Options["Partial"] = "true"
     if Options["Do-Close"] and not Options["Done"]:
         utils.fubar("No.")
@@ -236,7 +242,26 @@ def main():
     # XXX: TODO: This all needs converting to use placeholders or the object
     #            API. It's an SQL injection dream at the moment
 
-    if Options["Binary"]:
+    if Options["Outdated"]:
+        # Remove binary packages that were built from an outdated version of
+        # the specified source package
+        q = session.execute("""
+                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
+                FROM binaries b
+                     JOIN source s ON s.id = b.source
+                     JOIN bin_associations ba ON ba.bin = b.id
+                     JOIN architecture a ON a.id = b.architecture
+                     JOIN suite su ON su.id = ba.suite
+                     JOIN files f ON f.id = b.file
+                     JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
+                     JOIN component c ON c.id = af.component_id
+                     JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
+                WHERE
+                   s.version < newest_source.version
+                   %s %s %s %s
+        """ % (con_packages, con_suites, con_components, con_architectures))
+        to_remove.extend(q)
+    elif Options["Binary"]:
         # Removal by binary package name
         q = session.execute("""
                 SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
