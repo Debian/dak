@@ -295,8 +295,8 @@ class Upload(object):
                 if debian_emails:
                     uid_email = debian_emails[0]
             if ("source" in self.pkg.changes["architecture"] and uid_email and utils.is_email_alias(uid_email)):
-                if (self.pkg.changes["maintaineremail"] not in sponsor_addresses and
-                    self.pkg.changes["changedbyemail"] not in sponsor_addresses):
+                if (self.pkg.changes["maintaineremail"] not in sponsor_addresses
+                    and self.pkg.changes["changedbyemail"] not in sponsor_addresses):
                     self.pkg.changes["sponsoremail"] = uid_email
 
         return sponsored

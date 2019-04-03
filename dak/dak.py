@@ -194,8 +194,8 @@ def main():
     if len(sys.argv) == 0:
         daklib.utils.fubar("err, argc == 0? how is that possible?")
     elif (len(sys.argv) == 1
-          or (len(sys.argv) == 2 and
-              (sys.argv[1] == "--help" or sys.argv[1] == "-h"))):
+          or (len(sys.argv) == 2
+              and (sys.argv[1] == "--help" or sys.argv[1] == "-h"))):
         usage(functionality)
 
     # First see if we were invoked with/as the name of a module

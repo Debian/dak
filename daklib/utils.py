@@ -846,8 +846,8 @@ def gpg_get_key_addresses(fingerprint):
     try:
         with open(os.devnull, "wb") as devnull:
             output = daklib.daksubprocess.check_output(
-                ["gpg", "--no-default-keyring"] + gpg_keyring_args().split() +
-                ["--with-colons", "--list-keys", fingerprint], stderr=devnull)
+                ["gpg", "--no-default-keyring"] + gpg_keyring_args().split()
+                + ["--with-colons", "--list-keys", fingerprint], stderr=devnull)
     except subprocess.CalledProcessError:
         pass
     else:

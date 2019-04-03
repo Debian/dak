@@ -316,8 +316,8 @@ def main():
         for r, d, f in os.walk(Cnf["Show-Deferred::LinkPath"]):
             for af in f:
                 afp = os.path.join(r, af)
-                if (not os.path.exists(afp) or
-                    (af.endswith('.changes') and af not in available_changes)):
+                if (not os.path.exists(afp)
+                    or (af.endswith('.changes') and af not in available_changes)):
                     os.unlink(afp)
 
 if __name__ == '__main__':

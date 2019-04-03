@@ -313,8 +313,8 @@ def parse_prod(logdate):
     (fd, tmpfile) = utils.temp_filename(utils.get_conf()['Dir::TempPath'])
     system('xzcat %s > %s' % (mailarchive, tmpfile))
     for message in mbox(tmpfile):
-        if (message['subject'] and
-                message['subject'].startswith('Comments regarding')):
+        if (message['subject']
+                and message['subject'].startswith('Comments regarding')):
             try:
                 member = users[' '.join(message['From'].split()[:-1])]
             except KeyError:

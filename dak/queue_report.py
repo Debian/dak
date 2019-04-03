@@ -493,10 +493,10 @@ def process_queue(queue, log, rrd_dir):
                 if '@' in sponsor_login:
                     if fingerprint in logins:
                         sponsor_login = logins[fingerprint]
-                if (sponsor_name != maintainer["maintainername"] and
-                  sponsor_name != changeby["changedbyname"] and
-                  sponsor_login + '@debian.org' != maintainer["maintaineremail"] and
-                  sponsor_name != changeby["changedbyemail"]):
+                if (sponsor_name != maintainer["maintainername"]
+                  and sponsor_name != changeby["changedbyname"]
+                  and sponsor_login + '@debian.org' != maintainer["maintaineremail"]
+                  and sponsor_name != changeby["changedbyemail"]):
                     sponsor = sponsor_login
 
             for arch in dbc.architecture.split():

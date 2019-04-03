@@ -501,8 +501,8 @@ def __suite_architecture_list(d, args):
     s = d.session()
     for j in s.query(Suite).order_by(Suite.suite_name):
         architectures = j.get_architectures(skipsrc=True, skipall=True)
-        print(j.suite_name + ': ' +
-              ', '.join([a.arch_string for a in architectures]))
+        print(j.suite_name + ': '
+              + ', '.join([a.arch_string for a in architectures]))
 
 
 def __suite_architecture_listarch(d, args):
@@ -612,8 +612,8 @@ def __suite_component_list(d, args):
     s = d.session()
     for j in s.query(Suite).order_by(Suite.suite_name):
         components = j.components
-        print(j.suite_name + ': ' +
-              ', '.join([c.component_name for c in components]))
+        print(j.suite_name + ': '
+              + ', '.join([c.component_name for c in components]))
 
 
 def __suite_component_listcomponent(d, args):

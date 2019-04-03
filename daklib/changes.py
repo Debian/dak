@@ -301,20 +301,20 @@ class Changes(object):
         return chg
 
     def unknown_files_fields(self, name):
-        return sorted(list(set(self.files[name].keys()) -
-                            set(CHANGESFIELDS_FILES)))
+        return sorted(list(set(self.files[name].keys())
+                           - set(CHANGESFIELDS_FILES)))
 
     def unknown_changes_fields(self):
-        return sorted(list(set(self.changes.keys()) -
-                            set(CHANGESFIELDS_MANDATORY + CHANGESFIELDS_OPTIONAL)))
+        return sorted(list(set(self.changes.keys())
+                           - set(CHANGESFIELDS_MANDATORY + CHANGESFIELDS_OPTIONAL)))
 
     def unknown_dsc_fields(self):
-        return sorted(list(set(self.dsc.keys()) -
-                            set(CHANGESFIELDS_DSC)))
+        return sorted(list(set(self.dsc.keys())
+                           - set(CHANGESFIELDS_DSC)))
 
     def unknown_dsc_files_fields(self, name):
-        return sorted(list(set(self.dsc_files[name].keys()) -
-                            set(CHANGESFIELDS_DSCFILES_MANDATORY + CHANGESFIELDS_DSCFILES_OPTIONAL)))
+        return sorted(list(set(self.dsc_files[name].keys())
+                           - set(CHANGESFIELDS_DSCFILES_MANDATORY + CHANGESFIELDS_DSCFILES_OPTIONAL)))
 
     def str_files(self):
         r = []
