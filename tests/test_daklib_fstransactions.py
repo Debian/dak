@@ -109,6 +109,7 @@ class FilesystemTransactionTestCase(DakTestCase):
         with TemporaryDirectory() as t:
             self._write_to_a(t)
             a = t.filename('a')
+
             class TestException(Exception):
                 pass
 

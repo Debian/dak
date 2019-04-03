@@ -2522,6 +2522,7 @@ class DBConn(object):
         # Monkey patch a new dialect in in order to support service= syntax
         import sqlalchemy.dialects.postgresql
         from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
+
         class PGDialect_psycopg2_dak(PGDialect_psycopg2):
             def create_connect_args(self, url):
                 if str(url).startswith('postgresql://service='):

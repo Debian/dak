@@ -498,6 +498,7 @@ class BinaryTimestampCheck(Check):
             def __init__(self):
                 self.future_files = dict()
                 self.past_files = dict()
+
             def callback(self, member, data):
                 if member.mtime > future_cutoff:
                     self.future_files[member.name] = member.mtime
