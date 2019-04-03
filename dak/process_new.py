@@ -44,17 +44,14 @@
 
 from __future__ import print_function
 
-import copy
 import errno
 import os
 import readline
 import stat
 import sys
-import time
 import contextlib
 import pwd
 import apt_pkg
-import apt_inst
 import examine_package
 import subprocess
 import daklib.daksubprocess
@@ -64,8 +61,8 @@ from daklib.dbconn import *
 from daklib.queue import *
 from daklib import daklog
 from daklib import utils
-from daklib.regexes import re_no_epoch, re_default_answer, re_isanum, re_package
-from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
+from daklib.regexes import re_default_answer, re_isanum
+from daklib.dak_exceptions import CantOpenError, AlreadyLockedError
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
 from daklib.policy import UploadCopy, PolicyQueueUploadHandler

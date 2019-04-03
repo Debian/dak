@@ -38,7 +38,6 @@ import os
 import tempfile
 import time
 import apt_pkg
-import glob
 
 from daklib import utils
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures

@@ -32,7 +32,6 @@
 
 from __future__ import print_function
 
-import commands
 import os
 import stat
 import sys

@@ -50,7 +50,6 @@ import os
 import re
 import sys
 import apt_pkg
-import apt_inst
 import shutil
 import subprocess
 import threading

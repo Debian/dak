@@ -37,7 +37,6 @@ import commands
 import errno
 import fcntl
 
-from daklib import queue
 from daklib import daklog
 from daklib import utils
 from daklib.dbconn import *

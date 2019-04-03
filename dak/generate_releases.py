@@ -35,15 +35,12 @@ from __future__ import print_function
 import sys
 import os
 import os.path
-import stat
 import time
 import gzip
 import bz2
 import errno
 import apt_pkg
 import subprocess
-from tempfile import mkstemp, mkdtemp
-import commands
 from sqlalchemy.orm import object_session
 
 from daklib import utils, daklog

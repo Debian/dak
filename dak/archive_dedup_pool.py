@@ -28,7 +28,6 @@ from __future__ import print_function
 import apt_pkg
 import errno
 import os
-import stat
 import sys
 
 from daklib.dbconn import DBConn

@@ -31,14 +31,11 @@ from daklib.fstransactions import FilesystemTransaction
 from daklib.regexes import re_changelog_versions, re_bin_only_nmu
 import daklib.daksubprocess
 
-import apt_pkg
-from datetime import datetime
 import os
 import shutil
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import object_session
 import sqlalchemy.exc
-import tempfile
 import traceback
 
 

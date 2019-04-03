@@ -41,23 +41,17 @@ import functools
 import os
 from os.path import normpath
 import re
-import psycopg2
 import subprocess
-import traceback
 
-from datetime import datetime, timedelta
 from debian.debfile import Deb822
-from errno import ENOENT
-from tempfile import mkstemp, mkdtemp
 from tarfile import TarFile
 
 from inspect import getargspec
 
 import sqlalchemy
-from sqlalchemy import create_engine, Table, MetaData, Column, Integer, desc, \
-    Text, ForeignKey
+from sqlalchemy import create_engine, Table, desc
 from sqlalchemy.orm import sessionmaker, mapper, relation, object_session, \
-    backref, MapperExtension, EXT_CONTINUE, object_mapper
+    backref, object_mapper
 import sqlalchemy.types
 from sqlalchemy.orm.collections import attribute_mapped_collection
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -71,7 +65,6 @@ from .aptversion import AptVersion
 # in the database
 from .config import Config
 from .textutils import fix_maintainer
-from .dak_exceptions import DBUpdateError, NoSourceFieldError, FileExistsError
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings

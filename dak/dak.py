@@ -41,7 +41,6 @@ import traceback
 import daklib.utils
 
 from daklib.daklog import Logger
-from daklib.config import Config
 from daklib.dak_exceptions import CantOpenError
 
 ################################################################################

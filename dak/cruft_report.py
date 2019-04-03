@@ -37,7 +37,6 @@ Check for obsolete binary packages
 
 from __future__ import print_function
 
-import commands
 import functools
 import os
 import sys

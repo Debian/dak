@@ -25,10 +25,9 @@ import sys
 import time
 
 from daklib.config import Config
-from daklib.command import CommandError, CommandFile
+from daklib.command import CommandFile
 from daklib.daklog import Logger
 from daklib.fstransactions import FilesystemTransaction
-from daklib.gpg import GpgException
 from daklib.utils import find_next_free
 
 

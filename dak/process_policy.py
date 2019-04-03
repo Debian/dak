@@ -45,7 +45,6 @@ import sqlalchemy.sql as sql
 from daklib.dbconn import *
 from daklib import daklog
 from daklib import utils
-from daklib.dak_exceptions import CantOpenError, AlreadyLockedError, CantGetLockError
 from daklib.externalsignature import check_upload_for_external_signature_request
 from daklib.config import Config
 from daklib.archive import ArchiveTransaction, source_component_from_package_list

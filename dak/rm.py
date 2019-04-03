@@ -42,21 +42,16 @@
 
 from __future__ import print_function
 
-import commands
 import functools
 import os
 import sys
 import apt_pkg
-import apt_inst
-from re import sub
 
 from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import *
 from daklib.rm import remove
-from daklib.regexes import re_strip_source_version, re_bin_only_nmu
-import debianbts as bts
 
 ################################################################################
 

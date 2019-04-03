@@ -30,17 +30,13 @@ import datetime
 import os
 import pwd
 import grp
-import select
 import socket
 import shutil
 import sqlalchemy.sql as sql
 import sys
 import tempfile
-import traceback
-import stat
 import apt_inst
 import apt_pkg
-import time
 import re
 import email as modemail
 import subprocess
@@ -51,16 +47,14 @@ import functools
 import daklib.config as config
 import daklib.daksubprocess
 from .dbconn import DBConn, get_architecture, get_component, get_suite, \
-                   get_override_type, Keyring, session_wrapper, \
                    get_active_keyring_paths, \
-                   get_suite_architectures, get_or_set_metadatakey, DBSource, \
+                   get_suite_architectures, get_or_set_metadatakey, \
                    Component, Override, OverrideType
-from sqlalchemy import desc
 from .dak_exceptions import *
 from .gpg import SignedFile
 from .textutils import fix_maintainer
 from .regexes import re_html_escaping, html_escaping, re_single_line_field, \
-                    re_multi_line_field, re_srchasver, re_taint_free, \
+                    re_multi_line_field, re_srchasver, \
                     re_re_mark, re_whitespace_comment, re_issource, \
                     re_build_dep_arch, re_parse_maintainer
 

@@ -169,7 +169,6 @@ import sys
 import traceback
 import apt_pkg
 import time
-from sqlalchemy.orm.exc import NoResultFound
 
 from daklib import daklog
 from daklib.dbconn import *

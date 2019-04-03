@@ -26,7 +26,7 @@ from __future__ import print_function
 
 from daklib.dbconn import *
 from daklib.config import Config
-from daklib import utils, daklog
+from daklib import daklog
 
 import apt_pkg
 import sys

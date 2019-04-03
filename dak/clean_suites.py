@@ -41,9 +41,8 @@ import os
 import sqlalchemy.sql as sql
 import stat
 import sys
-import time
 import apt_pkg
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from daklib.config import Config
 from daklib.dbconn import *
