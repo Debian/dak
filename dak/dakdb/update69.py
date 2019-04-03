@@ -78,6 +78,6 @@ $function$""")
         c.execute("UPDATE config SET value = '69' WHERE name = 'db_revision'")
         self.db.commit()
 
-    except psycopg2.ProgrammingError, msg:
+    except psycopg2.ProgrammingError as msg:
         self.db.rollback()
         raise DBUpdateError('Unable to apply sick update 69, rollback issued. Error message : %s' % (str(msg)))
