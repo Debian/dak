@@ -51,6 +51,7 @@ def suites():
     bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
+
 QueryRegister().register_path('/suites', suites)
 
 
@@ -118,5 +119,6 @@ def suite(suite=None):
 
     bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(so)
+
 
 QueryRegister().register_path('/suite', suite)

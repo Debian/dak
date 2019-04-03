@@ -399,4 +399,5 @@ class Changes(object):
 
         return "\n".join(r)
 
+
 __all__.append('Changes')

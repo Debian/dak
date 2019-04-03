@@ -112,6 +112,7 @@ def obtain_release(base, suite_name, keyring, fingerprint=None):
         raise Exception("Suite {0} doesn't match suite or codename from Release file.".format(suite_name))
     return r
 
+
 _compressions = ('.xz', '.gz', '.bz2')
 
 

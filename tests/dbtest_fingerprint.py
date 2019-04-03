@@ -68,5 +68,6 @@ class FingerprintTestCase(DBDakTestCase):
         self.assertRaises(IntegrityError, self.uid_duplicate_uid)
         self.session.rollback()
 
+
 if __name__ == '__main__':
     unittest.main()

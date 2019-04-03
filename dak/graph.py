@@ -68,6 +68,7 @@ def deferred_colours():
         colours[i] = ''.join(['%02X' % (c * 255) for c in colours[i]])
     return colours
 
+
 colours = deferred_colours()
 
 
@@ -237,6 +238,7 @@ def main():
         graph(*(stdargs + ['10years', '10 years', 'now-10y', True]))
 
 ################################################################################
+
 
 if __name__ == '__main__':
     main()

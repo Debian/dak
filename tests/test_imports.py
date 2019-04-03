@@ -17,5 +17,6 @@ class ImportTestCase(DakTestCase):
 
         locals()['test_importing_%s' % cmd] = test_fn
 
+
 if __name__ == '__main__':
     unittest.main()

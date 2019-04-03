@@ -30,6 +30,7 @@ class FakeSuite(object):
     def __init__(self, *architectures):
         self.architectures = [FakeArchitecture(a) for a in architectures]
 
+
 source_all = {
     'Package-List': '\n libdune-common-doc deb doc optional arch=all\n',
     'Binary': 'libdune-common-doc\n',
@@ -187,6 +188,7 @@ class TestPackageList(DakTestCase):
         suite_amd64 = FakeSuite('amd64')
         p_amd64 = pl.packages_for_suite(suite_amd64)
         self.assertEqual(len(p_amd64), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

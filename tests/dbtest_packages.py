@@ -241,5 +241,6 @@ class PackageTestCase(DBDakTestCase):
                                                 arch_list=['amd64'], session=self.session)
         self.assertEqual(None, result)
 
+
 if __name__ == '__main__':
     unittest.main()

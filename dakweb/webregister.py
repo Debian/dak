@@ -29,4 +29,5 @@ class QueryRegister(object):
             path = '/' + path
         return self.queries.get(path, '/')
 
+
 __all__ = ['QueryRegister']

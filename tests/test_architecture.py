@@ -51,5 +51,6 @@ class MatchArchitecture(DakTestCase):
 
         self.assert_(not match_architecture('all', 'any'))
 
+
 if __name__ == '__main__':
     unittest.main()

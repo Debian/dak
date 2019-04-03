@@ -184,5 +184,6 @@ class ArchiveTestCase(DBDakTestCase):
             self.clean_suites()
         return [dbconn.Fingerprint, dbconn.Uid]
 
+
 if __name__ == '__main__':
     main()

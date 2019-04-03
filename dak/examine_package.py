@@ -113,6 +113,7 @@ def headline(s, level=2, bodyelement=None):
     else:
         return "---- %s ----\n" % (s)
 
+
 # Colour definitions, 'end' isn't really for use
 
 ansi_colours = {

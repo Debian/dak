@@ -76,6 +76,7 @@ def main():
         copier.do_copy()
         print('Installer has been copied successfully.')
 
+
 root_dir = Config()['Dir::Root']
 
 

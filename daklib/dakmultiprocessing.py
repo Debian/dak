@@ -48,6 +48,7 @@ class SignalException(Exception):
     def __str__(self):
         return "<SignalException: %d>" % self.signum
 
+
 __all__.append('SignalException')
 
 
@@ -105,5 +106,6 @@ class DakProcessPool(Pool):
             if r[0] > status:
                 status = r[0]
         return status
+
 
 __all__.append('DakProcessPool')

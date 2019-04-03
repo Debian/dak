@@ -20,6 +20,8 @@ from dakweb.webregister import QueryRegister
 def root_path():
     """Returns a useless welcome message"""
     return json.dumps('Use the /list_paths path to list all available paths')
+
+
 QueryRegister().register_path('/', root_path)
 
 
@@ -27,6 +29,8 @@ QueryRegister().register_path('/', root_path)
 def list_paths():
     """Returns a list of available paths"""
     redirect("https://ftp-team.pages.debian.net/dak/epydoc/dakweb-module.html#__package__")
+
+
 QueryRegister().register_path('/list_paths', list_paths)
 
 
@@ -38,6 +42,8 @@ def path_help(path=None):
 
     redirect("https://ftp-team.pages.debian.net/dak/epydoc/%s-module.html#%s" %
              (QueryRegister().get_path_help(path), path))
+
+
 QueryRegister().register_path('/path_help', list_paths)
 
 # Import our other methods

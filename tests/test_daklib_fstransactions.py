@@ -122,5 +122,6 @@ class FilesystemTransactionTestCase(DakTestCase):
                 pass
             self.assert_(os.path.exists(a))
 
+
 if __name__ == '__main__':
     main()

@@ -58,5 +58,6 @@ class ValidateChangesFormat(DakTestCase):
         self.assertInvalid((1, 7), field='notfiles')
         self.assertValid((1, 8), field='notfiles')
 
+
 if __name__ == '__main__':
     unittest.main()

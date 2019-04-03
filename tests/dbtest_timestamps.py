@@ -51,5 +51,6 @@ class TimestampTestCase(DBDakTestCase):
     def classes_to_clean(self):
         return (Uid,)
 
+
 if __name__ == '__main__':
     unittest.main()

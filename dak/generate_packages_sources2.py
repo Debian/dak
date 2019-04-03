@@ -52,6 +52,7 @@ SUITE can be a space separated list, e.g.
 
 #############################################################################
 
+
 # Here be dragons.
 _sources_query = R"""
 SELECT
@@ -144,6 +145,7 @@ def generate_sources(suite_id, component_id):
     return (PROC_STATUS_SUCCESS, message)
 
 #############################################################################
+
 
 # Here be large dragons.
 _packages_query = R"""
@@ -290,6 +292,7 @@ def generate_packages(suite_id, component_id, architecture_id, type_name):
     return (PROC_STATUS_SUCCESS, message)
 
 #############################################################################
+
 
 _translations_query = r"""
 WITH
@@ -447,6 +450,7 @@ def main():
     logger.close()
 
     sys.exit(pool.overall_status())
+
 
 if __name__ == '__main__':
     main()

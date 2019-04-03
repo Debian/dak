@@ -63,6 +63,7 @@ OPTIONS
         Print this documentation.
 """)
 
+
 arguments = [('s', 'simulate', 'BtsCategorize::Options::Simulate'),
              ('v', 'verbose', 'BtsCategorize::Options::Verbose'),
              ('q', 'quiet', 'BtsCategorize::Options::Quiet'),

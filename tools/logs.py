@@ -126,5 +126,6 @@ def dump_file(outfn, keystolist, showothers):
     p.flush()
     assert not p.close()
 
+
 for afn, params in graphs.items():
     dump_file(os.path.join(GRAPH_DIR, afn + '.png'), **params)

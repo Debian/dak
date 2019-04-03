@@ -99,5 +99,6 @@ def main(argv=None):
                 fs.copy(src, dst, symlink=symlink)
         fs.commit()
 
+
 if __name__ == '__main__':
     main()

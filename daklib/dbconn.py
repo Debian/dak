@@ -93,6 +93,7 @@ class DebVersion(sqlalchemy.types.UserDefinedType):
     def result_processor(self, dialect, coltype):
         return None
 
+
 from sqlalchemy.databases import postgres
 postgres.ischema_names['debversion'] = DebVersion
 
@@ -149,6 +150,7 @@ def session_wrapper(fn):
     wrapped.__name__ = fn.__name__
 
     return wrapped
+
 
 __all__.append('session_wrapper')
 
@@ -253,6 +255,7 @@ class ORMObject(object):
                 'Method clone() failed for non-persistent object:\n%s' % self)
         return new_object
 
+
 __all__.append('ORMObject')
 
 ################################################################################
@@ -262,12 +265,14 @@ class ACL(ORMObject):
     def __repr__(self):
         return "<ACL {0}>".format(self.name)
 
+
 __all__.append('ACL')
 
 
 class ACLPerSource(ORMObject):
     def __repr__(self):
         return "<ACLPerSource acl={0} fingerprint={1} source={2} reason={3}>".format(self.acl.name, self.fingerprint.fingerprint, self.source, self.reason)
+
 
 __all__.append('ACLPerSource')
 
@@ -302,6 +307,7 @@ def get_architecture(architecture, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_architecture')
 
 ################################################################################
@@ -313,6 +319,7 @@ class Archive(object):
 
     def __repr__(self):
         return '<Archive %s>' % self.archive_name
+
 
 __all__.append('Archive')
 
@@ -342,6 +349,7 @@ def get_archive(archive, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_archive')
 
 ################################################################################
@@ -357,6 +365,7 @@ class ArchiveFile(object):
     def path(self):
         return os.path.join(self.archive.path, 'pool', self.component.component_name, self.file.filename)
 
+
 __all__.append('ArchiveFile')
 
 ################################################################################
@@ -369,6 +378,7 @@ class BinContents(ORMObject):
 
     def properties(self):
         return ['file', 'binary']
+
 
 __all__.append('BinContents')
 
@@ -452,6 +462,7 @@ class DBBinary(ORMObject):
         query = session.query(BinaryMetadata).filter_by(binary=self)
         return MetadataProxy(session, query)
 
+
 __all__.append('DBBinary')
 
 
@@ -468,6 +479,7 @@ def get_suites_binary_in(package, session=None):
     """
 
     return session.query(Suite).filter(Suite.binaries.any(DBBinary.package == package)).all()
+
 
 __all__.append('get_suites_binary_in')
 
@@ -503,6 +515,7 @@ def get_component_by_package_suite(package, suite_list, arch_list=[], session=No
     else:
         return binary.poolfile.component.component_name
 
+
 __all__.append('get_component_by_package_suite')
 
 ################################################################################
@@ -514,6 +527,7 @@ class BuildQueue(object):
 
     def __repr__(self):
         return '<BuildQueue %s>' % self.queue_name
+
 
 __all__.append('BuildQueue')
 
@@ -540,6 +554,7 @@ class Component(ORMObject):
         return ['component_name', 'component_id', 'description',
             'meets_dfsg', 'overrides_count']
 
+
 __all__.append('Component')
 
 
@@ -564,6 +579,7 @@ def get_component(component, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_component')
 
 
@@ -574,6 +590,7 @@ def get_mapped_component_name(component_name):
         if component_name == src:
             component_name = dst
     return component_name
+
 
 __all__.append('get_mapped_component_name')
 
@@ -600,6 +617,7 @@ def get_mapped_component(component_name, session=None):
     component = session.query(Component).filter_by(component_name=component_name).first()
     return component
 
+
 __all__.append('get_mapped_component')
 
 
@@ -614,6 +632,7 @@ def get_component_names(session=None):
 
     return [x.component_name for x in session.query(Component).all()]
 
+
 __all__.append('get_component_names')
 
 ################################################################################
@@ -626,6 +645,7 @@ class DBConfig(object):
     def __repr__(self):
         return '<DBConfig %s>' % self.name
 
+
 __all__.append('DBConfig')
 
 ################################################################################
@@ -637,6 +657,7 @@ class DSCFile(object):
 
     def __repr__(self):
         return '<DSCFile %s>' % self.dscfile_id
+
 
 __all__.append('DSCFile')
 
@@ -672,6 +693,7 @@ def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None
 
     return q.all()
 
+
 __all__.append('get_dscfiles')
 
 ################################################################################
@@ -683,6 +705,7 @@ class ExternalOverride(ORMObject):
 
     def __repr__(self):
         return '<ExternalOverride %s = %s: %s>' % (self.package, self.key, self.value)
+
 
 __all__.append('ExternalOverride')
 
@@ -740,6 +763,7 @@ class PoolFile(ORMObject):
 
         return True
 
+
 __all__.append('PoolFile')
 
 ################################################################################
@@ -752,6 +776,7 @@ class Fingerprint(ORMObject):
     def properties(self):
         return ['fingerprint', 'fingerprint_id', 'keyring', 'uid',
             'binary_reject']
+
 
 __all__.append('Fingerprint')
 
@@ -780,6 +805,7 @@ def get_fingerprint(fpr, session=None):
         ret = None
 
     return ret
+
 
 __all__.append('get_fingerprint')
 
@@ -816,6 +842,7 @@ def get_or_set_fingerprint(fpr, session=None):
         ret = fingerprint
 
     return ret
+
 
 __all__.append('get_or_set_fingerprint')
 
@@ -965,6 +992,7 @@ class Keyring(object):
 
         return (byname, byuid)
 
+
 __all__.append('Keyring')
 
 
@@ -988,6 +1016,7 @@ def get_keyring(keyring, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_keyring')
 
 
@@ -998,6 +1027,7 @@ def get_active_keyring_paths(session=None):
     @return: list of active keyring paths
     """
     return [x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).order_by(desc(Keyring.priority)).all()]  # noqa:E712
+
 
 __all__.append('get_active_keyring_paths')
 
@@ -1010,6 +1040,7 @@ class DBChange(object):
 
     def __repr__(self):
         return '<DBChange %s>' % self.changesname
+
 
 __all__.append('DBChange')
 
@@ -1037,6 +1068,7 @@ def get_dbchange(filename, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_dbchange')
 
 ################################################################################
@@ -1054,6 +1086,7 @@ class Maintainer(ORMObject):
             return ('', '', '', '')
 
         return fix_maintainer(self.name.strip())
+
 
 __all__.append('Maintainer')
 
@@ -1090,6 +1123,7 @@ def get_or_set_maintainer(name, session=None):
 
     return ret
 
+
 __all__.append('get_or_set_maintainer')
 
 
@@ -1108,6 +1142,7 @@ def get_maintainer(maintainer_id, session=None):
 
     return session.query(Maintainer).get(maintainer_id)
 
+
 __all__.append('get_maintainer')
 
 ################################################################################
@@ -1119,6 +1154,7 @@ class NewComment(object):
 
     def __repr__(self):
         return '''<NewComment for '%s %s' (%s)>''' % (self.package, self.version, self.comment_id)
+
 
 __all__.append('NewComment')
 
@@ -1147,6 +1183,7 @@ def has_new_comment(policy_queue, package, version, session=None):
     q = q.filter_by(version=version)
 
     return bool(q.count() > 0)
+
 
 __all__.append('has_new_comment')
 
@@ -1184,6 +1221,7 @@ def get_new_comments(policy_queue, package=None, version=None, comment_id=None, 
 
     return q.all()
 
+
 __all__.append('get_new_comments')
 
 ################################################################################
@@ -1202,6 +1240,7 @@ class Override(ORMObject):
     def properties(self):
         return ['package', 'suite', 'component', 'overridetype', 'section',
             'priority']
+
 
 __all__.append('Override')
 
@@ -1254,6 +1293,7 @@ def get_override(package, suite=None, component=None, overridetype=None, session
 
     return q.all()
 
+
 __all__.append('get_override')
 
 
@@ -1265,6 +1305,7 @@ class OverrideType(ORMObject):
 
     def properties(self):
         return ['overridetype', 'overridetype_id', 'overrides_count']
+
 
 __all__.append('OverrideType')
 
@@ -1292,6 +1333,7 @@ def get_override_type(override_type, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_override_type')
 
 ################################################################################
@@ -1303,6 +1345,7 @@ class PolicyQueue(object):
 
     def __repr__(self):
         return '<PolicyQueue %s>' % self.queue_name
+
 
 __all__.append('PolicyQueue')
 
@@ -1330,6 +1373,7 @@ def get_policy_queue(queuename, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_policy_queue')
 
 ################################################################################
@@ -1351,6 +1395,7 @@ class PolicyQueueUpload(object):
     def __lt__(self, other):
         return self._key() < other._key()
 
+
 __all__.append('PolicyQueueUpload')
 
 ################################################################################
@@ -1358,6 +1403,7 @@ __all__.append('PolicyQueueUpload')
 
 class PolicyQueueByhandFile(object):
     pass
+
 
 __all__.append('PolicyQueueByhandFile')
 
@@ -1383,6 +1429,7 @@ class Priority(ORMObject):
             return (self.priority != val)
         # This signals to use the normal comparison operator
         return NotImplemented
+
 
 __all__.append('Priority')
 
@@ -1410,6 +1457,7 @@ def get_priority(priority, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_priority')
 
 
@@ -1432,6 +1480,7 @@ def get_priorities(session=None):
         ret[x.priority] = x.priority_id
 
     return ret
+
 
 __all__.append('get_priorities')
 
@@ -1466,6 +1515,7 @@ def get_section(section, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_section')
 
 
@@ -1488,6 +1538,7 @@ def get_sections(session=None):
         ret[x.section] = x.section_id
 
     return ret
+
 
 __all__.append('get_sections')
 
@@ -1513,6 +1564,7 @@ class SignatureHistory(ORMObject):
     def query(self, session):
         return session.query(SignatureHistory).filter_by(fingerprint=self.fingerprint, signature_timestamp=self.signature_timestamp, contents_sha1=self.contents_sha1).first()
 
+
 __all__.append('SignatureHistory')
 
 ################################################################################
@@ -1525,6 +1577,7 @@ class SrcContents(ORMObject):
 
     def properties(self):
         return ['file', 'source']
+
 
 __all__.append('SrcContents')
 
@@ -1589,6 +1642,7 @@ class DBSource(ORMObject):
         query = session.query(SourceMetadata).filter_by(source=self)
         return MetadataProxy(session, query)
 
+
 __all__.append('DBSource')
 
 
@@ -1605,6 +1659,7 @@ def get_suites_source_in(source, session=None):
     """
 
     return session.query(Suite).filter(Suite.sources.any(source=source)).all()
+
 
 __all__.append('get_suites_source_in')
 
@@ -1638,6 +1693,7 @@ def get_source_in_suite(source, suite_name, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_source_in_suite')
 
 
@@ -1666,6 +1722,7 @@ def import_metadata_into_db(obj, session=None):
 
     session.commit_or_flush()
 
+
 __all__.append('import_metadata_into_db')
 
 ################################################################################
@@ -1677,6 +1734,7 @@ class SrcFormat(object):
 
     def __repr__(self):
         return '<SrcFormat %s>' % (self.format_name)
+
 
 __all__.append('SrcFormat')
 
@@ -1792,6 +1850,7 @@ class Suite(ORMObject):
             return self.release_suite
         return self.suite_name
 
+
 __all__.append('Suite')
 
 
@@ -1832,6 +1891,7 @@ def get_suite(suite, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_suite')
 
 ################################################################################
@@ -1867,6 +1927,7 @@ def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
     except AttributeError:
         return []
 
+
 __all__.append('get_suite_architectures')
 
 ################################################################################
@@ -1891,6 +1952,7 @@ class Uid(ORMObject):
 
     def properties(self):
         return ['uid', 'name', 'fingerprint']
+
 
 __all__.append('Uid')
 
@@ -1927,6 +1989,7 @@ def get_or_set_uid(uidname, session=None):
 
     return ret
 
+
 __all__.append('get_or_set_uid')
 
 
@@ -1940,6 +2003,7 @@ def get_uid_from_fingerprint(fpr, session=None):
     except NoResultFound:
         return None
 
+
 __all__.append('get_uid_from_fingerprint')
 
 ################################################################################
@@ -1951,6 +2015,7 @@ class MetadataKey(ORMObject):
 
     def properties(self):
         return ['key']
+
 
 __all__.append('MetadataKey')
 
@@ -1985,6 +2050,7 @@ def get_or_set_metadatakey(keyname, session=None):
 
     return ret
 
+
 __all__.append('get_or_set_metadatakey')
 
 ################################################################################
@@ -2000,6 +2066,7 @@ class BinaryMetadata(ORMObject):
     def properties(self):
         return ['binary', 'key', 'value']
 
+
 __all__.append('BinaryMetadata')
 
 ################################################################################
@@ -2014,6 +2081,7 @@ class SourceMetadata(ORMObject):
 
     def properties(self):
         return ['source', 'key', 'value']
+
 
 __all__.append('SourceMetadata')
 
@@ -2060,6 +2128,7 @@ class VersionCheck(ORMObject):
         #return ['suite_id', 'check', 'reference_id']
         return ['check']
 
+
 __all__.append('VersionCheck')
 
 
@@ -2074,6 +2143,7 @@ def get_version_checks(suite_name, check=None, session=None):
     if check:
         q = q.filter_by(check=check)
     return q.all()
+
 
 __all__.append('get_version_checks')
 
@@ -2495,5 +2565,6 @@ class DBConn(object):
         if work_mem > 0:
             session.execute("SET LOCAL work_mem TO '%d MB'" % work_mem)
         return session
+
 
 __all__.append('DBConn')

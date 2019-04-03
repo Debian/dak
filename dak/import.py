@@ -148,6 +148,7 @@ def import_dump(log, transaction, suite, component, fh,
 
         transaction.commit()
 
+
 _export_query = r"""
 WITH
 tmp AS
@@ -245,6 +246,7 @@ def main(argv=None):
             transaction.commit()
 
     log.close()
+
 
 if __name__ == '__main__':
     main()

@@ -60,6 +60,7 @@ def dsc_in_suite(suite=None, source=None):
     bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
+
 QueryRegister().register_path('/dsc_in_suite', dsc_in_suite)
 
 
@@ -104,6 +105,7 @@ def file_in_archive(filepattern=None):
     bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
+
 QueryRegister().register_path('/file_in_archive', file_in_archive)
 
 
@@ -141,6 +143,7 @@ def sha256sum_in_archive(sha256sum=None):
     bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
+
 QueryRegister().register_path('/sha256sum_in_archive', sha256sum_in_archive)
 
 
@@ -175,6 +178,7 @@ def sources_in_suite(suite=None):
 
     return json.dumps(ret)
 
+
 QueryRegister().register_path('/sources_in_suite', sources_in_suite)
 
 
@@ -201,6 +205,7 @@ def all_sources():
 
     bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
+
 
 QueryRegister().register_path('/all_sources', all_sources)
 
@@ -237,5 +242,6 @@ def source_by_metadata(key=None):
     s.close()
 
     return json.dumps(ret)
+
 
 QueryRegister().register_path('/source/by_metadata', source_by_metadata)

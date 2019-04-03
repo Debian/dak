@@ -102,5 +102,6 @@ class FixMaintainerTestCase(DakTestCase):
         # Check for invalid email address
         self.assertNotValid("James Troup <james@nocrew.org")
 
+
 if __name__ == '__main__':
     unittest.main()

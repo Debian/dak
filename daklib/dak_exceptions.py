@@ -42,6 +42,7 @@ class DakError(Exception):
     def __str__(self):
         return self.message
 
+
 __all__ = ['DakError']
 
 # If you want to have a new exception in dak, add it here.
@@ -71,6 +72,7 @@ def construct_dak_exception(name, description):
         __doc__ = description
     setattr(Er, "__name__", name)
     return Er
+
 
 for e in dakerrors.keys():
     globals()[e] = construct_dak_exception(e, dakerrors[e])

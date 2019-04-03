@@ -103,5 +103,6 @@ class MetadataTestCase(DBDakTestCase):
         self.session.delete(self.src_hello)
         self.session.flush()
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -38,6 +38,7 @@ class CompressionMethod(object):
         self.extension = extension
         self.command = command
 
+
 _compression_methods = (
     CompressionMethod('bzip2', '.bz2', ['bzip2', '-9']),
     CompressionMethod('gzip', '.gz', ['gzip', '-9cn', '--rsyncable', '--no-name']),

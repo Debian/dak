@@ -15,6 +15,7 @@ class DakTestCase(unittest.TestCase):
 def fixture(*dirs):
     return join(DAK_ROOT_DIR, 'tests', 'fixtures', *dirs)
 
+
 os.environ['DAK_TEST'] = '1'
 os.environ['DAK_CONFIG'] = fixture('dak.conf')
 

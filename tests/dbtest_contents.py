@@ -164,5 +164,6 @@ class ContentsTestCase(DBDakTestCase):
             BinContents(file='\xc3\xb6'))
         self.session.flush()
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -80,5 +80,6 @@ class CruftTestCase(DBDakTestCase):
         self.assertEqual('hello built by: hello(2.2-1, 2.2-2), sl(3.03-16)',
                          str(bin))
 
+
 if __name__ == '__main__':
     unittest.main()

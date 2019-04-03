@@ -127,6 +127,7 @@ class HashFunc(object):
         self.func = func
         self.db_name = db_name
 
+
 RELEASE_HASHES = [
     HashFunc('MD5Sum', apt_pkg.md5sum, 'md5sum'),
     HashFunc('SHA1', apt_pkg.sha1sum, 'sha1'),
@@ -534,6 +535,7 @@ def generate_helper(suite_id):
     return (PROC_STATUS_SUCCESS, 'Release file written for %s' % suite.suite_name)
 
 #######################################################################################
+
 
 if __name__ == '__main__':
     main()

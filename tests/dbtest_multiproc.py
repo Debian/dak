@@ -41,5 +41,6 @@ class MultiProcTestCase(DBDakTestCase):
         pool.join()
         self.assertEqual(5 * 7, self.result)
 
+
 if __name__ == '__main__':
     unittest.main()

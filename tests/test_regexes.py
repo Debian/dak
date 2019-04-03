@@ -78,5 +78,6 @@ class re_parse_lintian(DakTestCase):
             }
         )
 
+
 if __name__ == '__main__':
     unittest.main()

@@ -90,6 +90,8 @@ def dak_getstatusoutput(cmd):
         ret = 0
 
     return ret, output
+
+
 commands.getstatusoutput = dak_getstatusoutput
 
 ################################################################################
@@ -1037,6 +1039,7 @@ def get_changes_files(from_dir):
     return changes_files
 
 ################################################################################
+
 
 Cnf = config.Config().Cnf
 

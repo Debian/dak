@@ -30,6 +30,7 @@ def _load_table(path):
             table.append(line.split())
     return table
 
+
 _cached_cputable = None
 
 
@@ -38,6 +39,7 @@ def _cputable():
     if _cached_cputable is None:
         _cached_cputable = _load_table('/usr/share/dpkg/cputable')
     return _cached_cputable
+
 
 _cached_arch2tuple = None
 _cached_tuple2arch = None

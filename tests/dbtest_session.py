@@ -178,5 +178,6 @@ class SessionTestCase(DBDakTestCase):
         # We need to clean all Uid objects in case some test fails.
         return (Uid,)
 
+
 if __name__ == '__main__':
     unittest.main()

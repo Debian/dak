@@ -17,5 +17,6 @@ def suite():
 def is_test(filename):
     return filename.startswith('dbtest_') and filename.endswith('.py')
 
+
 if __name__ == "__main__":
     unittest.main(defaultTest="suite")

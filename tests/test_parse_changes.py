@@ -94,5 +94,6 @@ class ParseChangesTestCase(ParseChangesTestCase):
                 )
                 self.assertFalse(changes.get('you'))
 
+
 if __name__ == '__main__':
     unittest.main()

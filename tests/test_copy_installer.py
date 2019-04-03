@@ -58,5 +58,6 @@ testing.
 Architectures to copy: amd64
 Architectures to skip: i386''', copier.get_message())
 
+
 if __name__ == '__main__':
     unittest.main()

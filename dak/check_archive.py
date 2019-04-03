@@ -501,6 +501,7 @@ def check_build_depends():
 
 ################################################################################
 
+
 _add_missing_source_checksums_query = R"""
 INSERT INTO source_metadata
   (src_id, key_id, value)
@@ -598,6 +599,7 @@ def main():
         usage(1)
 
 ################################################################################
+
 
 if __name__ == '__main__':
     main()

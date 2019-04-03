@@ -34,6 +34,7 @@ def decompress_bz2(input, output):
 def decompress_gz(input, output):
     subprocess.check_call(["gzip", "--decompress"], stdin=input, stdout=output)
 
+
 decompressors = {
     '.xz': decompress_xz,
     '.bz2': decompress_bz2,

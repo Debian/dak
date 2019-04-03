@@ -234,6 +234,7 @@ def architecture(command):
     else:
         die("E: architecture command unknown")
 
+
 dispatch['architecture'] = architecture
 dispatch['a'] = architecture
 
@@ -310,6 +311,7 @@ def component(command):
         component_rm(command[2])
     else:
         die("E: component command unknown")
+
 
 dispatch['component'] = component
 
@@ -491,6 +493,7 @@ def suite(command):
     else:
         die("E: suite command unknown")
 
+
 dispatch['suite'] = suite
 dispatch['s'] = suite
 
@@ -602,6 +605,7 @@ def suite_architecture(command):
     else:
         die("E: suite-architecture command unknown")
 
+
 dispatch['suite-architecture'] = suite_architecture
 dispatch['s-a'] = suite_architecture
 
@@ -711,6 +715,7 @@ def suite_component(command):
     else:
         die("E: suite-component command unknown")
 
+
 dispatch['suite-component'] = suite_component
 dispatch['s-c'] = suite_component
 
@@ -788,6 +793,7 @@ def archive(command):
     else:
         die("E: archive command unknown")
 
+
 dispatch['archive'] = archive
 
 ################################################################################
@@ -864,6 +870,7 @@ def version_check(command):
     else:
         die("E: version-check command unknown")
 
+
 dispatch['version-check'] = version_check
 dispatch['v-c'] = version_check
 
@@ -919,6 +926,7 @@ def show_config(command):
             print(o.value)
         except NoResultFound:
             print("W: option '%s' not set" % mode)
+
 
 dispatch['config'] = show_config
 dispatch['c'] = show_config
@@ -984,6 +992,7 @@ def keyring(command):
     else:
         die("E: keyring command unknown")
 
+
 dispatch['keyring'] = keyring
 dispatch['k'] = keyring
 
@@ -1037,6 +1046,7 @@ def change_component(args):
 
         transaction.commit()
 
+
 dispatch['change-component'] = change_component
 
 ################################################################################
@@ -1057,6 +1067,7 @@ def forget_signature(args):
     else:
         print("Signature was not known to dak.")
     session.rollback()
+
 
 dispatch['forget-signature'] = forget_signature
 
@@ -1090,6 +1101,7 @@ def main():
         die("E: Unknown command")
 
 ################################################################################
+
 
 if __name__ == '__main__':
     main()

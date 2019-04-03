@@ -126,6 +126,7 @@ class FormatFromStringTestCase(DakTestCase):
         self.assertInvalid(' 1.0 ')
         self.assertInvalid('8.4 (hardy)')
 
+
 if __name__ == '__main__':
     import unittest
     unittest.main()
