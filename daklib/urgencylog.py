@@ -95,4 +95,3 @@ class UrgencyLog(object):
             move(self.log_filename, new_filename)
         else:
             os.unlink(self.log_filename)
-
