@@ -63,7 +63,6 @@ Updates dak's database schema to the lastest version. You should disable crontab
   -y, --yes                 do not ask for confirmation""")
         sys.exit(exit_code)
 
-
 ################################################################################
 
     def update_db_to_zero(self):
