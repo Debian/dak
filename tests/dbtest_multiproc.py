@@ -6,12 +6,13 @@ from daklib.dbconn import DBConn
 
 from multiprocessing import Pool
 from time import sleep
+import sqlalchemy.sql as sql
 import unittest
 
 
 def read_number():
     session = DBConn().session()
-    result = session.query('foo').from_statement('select 7 as foo').scalar()
+    result = session.query('foo').from_statement(sql.text('select 7 as foo')).scalar()
     sleep(0.1)
     session.close()
     return result
