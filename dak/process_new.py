@@ -180,7 +180,7 @@ def print_new(upload, missing, indexed, session, file=sys.stdout):
         print("\n")
         print(Color("Author:", "yellow"), "%s" % note.author)
         print(Color("Version:", "yellow"), "%s" % note.version)
-        print(Color("Timestamp:", "yellow"), "%s" % note.timestamp)
+        print(Color("Timestamp:", "yellow"), "%s" % note.notedate)
         print("\n\n")
         print(note.comment)
         print("-" * 72)
