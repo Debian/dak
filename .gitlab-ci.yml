@@ -32,6 +32,7 @@ pages:
     - mkdir -p public/epydoc
     - epydoc -q --html --graph all --css blue -n DAK -o public/epydoc --include-log --show-imports dak dakweb
     - mv coverage public/coverage
+  stage: deploy
   artifacts:
     paths:
       - public
