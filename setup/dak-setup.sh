@@ -75,7 +75,12 @@ dak-setup() {
   (cd ${setupdir}; ./init_minimal_conf | $USER_CMD tee ${DAK_CONFIG} >/dev/null)
   $USER_CMD echo 'DB::Role "dak";' | tee -a ${DAK_CONFIG} >/dev/null
 
-  ln -s ${DAK_ROOT}/dak/dak.py ${DAKBASE}/bin/dak
+  if [[ ! -v DAK_INTEGRATION_TEST ]]; then
+    ln -s ${DAK_ROOT}/dak/dak.py ${DAKBASE}/bin/dak
+  else
+    # wrapper to collect coverage information
+    ln -s ${DAK_ROOT}/integration-tests/dak-coverage.sh ${DAKBASE}/bin/dak
+  fi
 
   # Update the database schema
   $USER_CMD ${DAK_ROOT}/dak/dak.py update-db --yes

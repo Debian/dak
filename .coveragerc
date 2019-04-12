@@ -5,3 +5,4 @@ omit =
   */lib/python*/*
   */dist-packages/*
   */tests/*
+source = .

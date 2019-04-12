@@ -16,6 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+if [ "x$1" = "x--with-coverage" ]; then
+    RUN_COVERAGE=y
+else
+	RUN_COVERAGE=
+fi
+
+export RUN_COVERAGE
+
 set -eu
 
 if [ ! -f dak/dak.py ]; then
