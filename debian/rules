@@ -7,6 +7,10 @@ ifneq ($(JENKINS_EXPORTS_DIR),)
 PYBUILD_EXTRA_ARGS = --junit-xml=$(JENKINS_EXPORTS_DIR)/test-results/tests.xml
 endif
 
+ifeq ($(RUN_COVERAGE),y)
+PYTEST_COV_OPTIONS = --cov-branch --cov --cov-report=
+endif
+
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 ifneq ($(JENKINS_EXPORTS_DIR),)
@@ -14,8 +18,18 @@ ifneq ($(JENKINS_EXPORTS_DIR),)
 endif
 	mkdir -p debian/test-gnupghome
 	make -C tests/fixtures/packages
-	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v daklib tests $(PYBUILD_EXTRA_ARGS)
+	GNUPGHOME=$$(pwd)/debian/test-gnupghome py.test -v $(PYTEST_COV_OPTIONS) daklib tests $(PYBUILD_EXTRA_ARGS)
+ifeq ($(RUN_COVERAGE),y)
+	python-coverage combine --append
+endif
 	./integration-tests/run-tests
+
+ifeq ($(RUN_COVERAGE),y)
+	python-coverage combine --append
+	python-coverage report -m
+	echo
+	python-coverage html -d coverage
+endif
 endif
 
 # Replace with "debian/test-gnupghome/" in d/clean once

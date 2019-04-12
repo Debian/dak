@@ -11,7 +11,10 @@ test stretch:
 test buster:
   <<: *template
   image: debian:buster
-  script: debian/run-ci
+  script: debian/run-ci --with-coverage
+  artifacts:
+    paths:
+      - coverage
 
 flake8:
   <<: *template
@@ -28,6 +31,7 @@ pages:
     - apt-get install -y python-epydoc
     - mkdir -p public/epydoc
     - epydoc -q --html --graph all --css blue -n DAK -o public/epydoc --include-log --show-imports dak dakweb
+    - mv coverage public/coverage
   artifacts:
     paths:
       - public
