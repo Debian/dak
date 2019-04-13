@@ -16,9 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+_escape_newline() {
+    echo "$1" | perl -pe 's/\n/\\n/g'
+}
+
 assert-equal() {
   if [[ "${2}" != "${3}" ]]; then
-    echo "E: ${1} returned '${2}' (expected: '${3}')" >&2
+    local actual=$(_escape_newline "$2") expected=$(_escape_newline "$3")
+    echo "E: ${1} returned '${actual}' (expected: '${expected}')" >&2
     exit 1
   fi
 }

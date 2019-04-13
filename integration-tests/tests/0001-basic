@@ -62,7 +62,7 @@ EOF
   packages=$(fixture-package-dir)
   import-fixture-signing-key
 
-  cp ${packages:?}/nonfree-package_* ${packages:?}/package_* ${DAKBASE}/tmp
+  cp ${packages:?}/nonfree-package_* ${packages:?}/package_0.1* ${DAKBASE}/tmp
 
   dak process-upload -d ${DAKBASE}/tmp --automatic
 )
