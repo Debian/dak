@@ -1,0 +1,50 @@
+#! /bin/bash
+#
+# © 2017 Ansgar Burchardt <ansgar@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+
+
+# find-postgresql-version: () -> str
+#   locate postgresql version for which both server and debversion
+#   extension are installed.  exits with error if no version is found.
+#   returns: version, e.g. "9.6"
+find-postgresql-version() {
+  local status
+  for v in 11 10 9.6 9.4; do
+    status=$(dpkg-query \
+             -f'${db:Status-Status} ' \
+             -W postgresql-${v} postgresql-${v}-debversion 2>/dev/null || :)
+    if [ "${status}" = "installed installed " ]; then
+      echo ${v}
+      exit 0
+    fi
+  done
+  echo "No PostgreSQL version with server and debversion extension found." >&2
+  exit 1
+}
+
+pgversion=$(find-postgresql-version)
+export DAK_INTEGRATION_TEST=1
+export DAK_ROOT="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+
+# run-script-with-pg: (cmd, args...) -> ''
+#   Run the given cmd (with optional arguments) with a postgres
+#   virtual enviromnent running.
+
+run-script-with-pg()  {
+    pg_virtualenv -v "${pgversion}" "$@"
+}
