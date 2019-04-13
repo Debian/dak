@@ -59,10 +59,10 @@ EOF
 )
 
 (
-  packages=${DAK_ROOT:?}/tests/fixtures/packages
-  ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
-  dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
-  cp ${packages:?}/nonfree-package_* ${packages:?}/package_* ${DAKBASE}/tmp
+  packages=$(fixture-package-dir)
+  import-fixture-signing-key
+
+  cp ${packages:?}/nonfree-package_* ${packages:?}/package_0.1* ${DAKBASE}/tmp
 
   dak process-upload -d ${DAKBASE}/tmp --automatic
 )

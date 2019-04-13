@@ -1,0 +1,180 @@
+#! /bin/bash
+#
+# © 2019 Niels Thykier <niels@thykier.net>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+
+import-fixture-signing-key
+packages=$(fixture-package-dir)
+
+# add a unstable suite with amd64
+dak admin architecture add amd64 AMD64
+dak admin suite add unstable "" codename=sid
+dak admin suite-architecture add unstable source all amd64
+dak admin suite-component add unstable main contrib non-free
+
+dak admin suite add testing "" codename=buster
+dak admin suite-architecture add testing source all amd64
+dak admin suite-component add testing main contrib non-free
+
+assert-control-suite-list() {
+    local suite="$1" expected="$2"
+    actual=$(dak control-suite --list="${suite}")
+    assert-equal "dak control-suite --list=${suite}" "${actual}" "${expected}"
+}
+
+(
+  dak control-overrides -s unstable -t deb -a << EOF
+package required admin
+EOF
+  dak control-overrides -s unstable -t dsc -a << EOF
+package admin
+EOF
+)
+
+(
+  packages=$(fixture-package-dir)
+  import-fixture-signing-key
+
+  cp ${packages:?}/package_0.1* ${DAKBASE}/tmp
+
+  dak process-upload -d ${DAKBASE}/tmp --automatic
+)
+
+# unstable should have 0.1
+(
+    expected="$(cat <<EOF
+package 0.1-1 all
+package 0.1-1 source
+EOF
+)"
+    assert-control-suite-list unstable "${expected}"
+)
+
+# testing should be empty
+(
+    expected=""
+    assert-control-suite-list testing "${expected}"
+)
+
+# dak ls test just for the sake for it
+(
+    expected="$(cat <<EOF
+package    | 0.1-1         | unstable   | source, all
+EOF
+)"
+    actual=$(dak ls -S -s unstable package)
+    assert-equal "dak ls -S -s unstable -f=control-suite package" "${actual}" "${expected}"
+)
+
+# Move package 0.1 to testing
+(
+    dak control-suite --list=unstable | dak control-suite --add=testing
+    actual=$(dak control-suite --list=testing)
+    expected=$(dak control-suite --list=unstable)
+    assert-equal "dak control-suite --list=testing" "${actual}" "${expected}"
+)
+
+(
+  dak contents scan-binary
+  dak contents scan-source
+  dak generate-packages-sources2 -s unstable
+  dak contents generate -a dak-master -s unstable
+  # TODO: make this work in the CI; needs GnuPG key
+  #dak generate-release -s unstable
+)
+
+(
+  packages=$(fixture-package-dir)
+  import-fixture-signing-key
+
+  cp ${packages:?}/package_0.2* ${DAKBASE}/tmp
+
+  dak process-upload -d ${DAKBASE}/tmp --automatic
+)
+
+# unstable currently has both and control-suite should confirm this
+(
+    expected="$(cat <<EOF
+package 0.1-1 all
+package 0.2-1 all
+package 0.1-1 source
+package 0.2-1 source
+EOF
+)"
+    assert-control-suite-list unstable "${expected}"
+)
+
+# testing should be unchanged (i.e. only have 0.1)
+(
+    expected="$(cat <<EOF
+package 0.1-1 all
+package 0.1-1 source
+EOF
+)"
+    assert-control-suite-list testing "${expected}"
+)
+
+# dak ls run just for the sake of it
+(
+    expected="$(cat <<EOF
+package    | 0.1-1         | unstable   | source, all
+package    | 0.2-1         | unstable   | source, all
+EOF
+)"
+    actual=$(dak ls -S -s unstable package)
+    assert-equal "dak ls -S -s unstable -f=control-suite package" "${actual}" "${expected}"
+)
+
+# Clean up unstable
+(
+    dak dominate
+)
+
+# unstable now only has version 0.2
+(
+    expected="$(cat <<EOF
+package 0.2-1 all
+package 0.2-1 source
+EOF
+)"
+    assert-control-suite-list unstable "${expected}"
+)
+
+# testing still has version 0.1
+(
+    expected="$(cat <<EOF
+package 0.1-1 all
+package 0.1-1 source
+EOF
+)"
+    assert-control-suite-list testing "${expected}"
+)
+
+# dak ls run just for the sake of it
+(
+    expected="$(cat <<EOF
+package    | 0.2-1         | unstable   | source, all
+EOF
+)"
+    actual=$(dak ls -S -s unstable package)
+    assert-equal "dak ls -S -s unstable -f=control-suite package" "${actual}" "${expected}"
+)
