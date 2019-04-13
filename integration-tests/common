@@ -22,3 +22,14 @@ assert-equal() {
     exit 1
   fi
 }
+
+fixture-package-dir() {
+    packages=${DAK_ROOT:?}/tests/fixtures/packages
+    echo "${packages}"
+}
+
+import-fixture-signing-key() {
+    packages=$(fixture-package-dir)
+    ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
+    dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
+}
