@@ -1,0 +1,101 @@
+#! /bin/bash
+#
+# © 2019 Niels Thykier <niels@thykier.net>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+
+# add a unstable suite with amd64
+dak admin architecture add amd64 AMD64
+
+for suite in testing stable; do
+  dak admin suite add "${suite}" ""
+  dak admin suite-architecture add "${suite}" source all amd64
+  dak admin suite-component add "${suite}" main contrib non-free
+done
+
+echo "---- testing ----"
+
+# Play a bit with testing
+(
+    dak admin suite-config set testing allowcsset=yes accept_source_uploads=no \
+        accept_binary_uploads=no changelog="dists/testing/ChangeLog" \
+        changelog_url="http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog"
+)
+
+# Verify that the values match our changes
+(
+    expected="$(cat <<EOF
+allowcsset=True
+accept_source_uploads=False
+accept_binary_uploads=False
+changelog=dists/testing/ChangeLog
+changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
+EOF
+)"
+    actual=$(dak admin suite-config get testing allowcsset accept_source_uploads accept_binary_uploads \
+             changelog changelog_url
+          )
+
+    assert-equal "dak admin s-cfg get allowcsset accept_source_uploads accept_binary_uploads" \
+                 "${actual}" "${expected}"
+
+    # Also try to do a listing
+    dak admin suite-config list testing
+)
+
+echo "---- stable ----"
+
+# Set stable to be untouchable (and set allowcsset to a known value)
+(
+    dak admin suite-config set stable allowcsset=no untouchable=yes
+)
+# Verify the new state
+(
+    expected="$(cat <<EOF
+allowcsset=False
+untouchable=True
+EOF
+)"
+    actual="$(dak admin s-cfg get stable allowcsset untouchable)"
+    assert-equal "dak admin s-cfg get stable allowcsset untouchable" \
+                 "${actual}" "${expected}"
+    dak admin suite-config --dry-run set stable allowcsset=yes
+    dak admin suite-config --dry-run set stable untouchable=no
+    # And it is nothing really changed anything with dry-run
+    actual="$(dak admin s-cfg get stable allowcsset untouchable)"
+    assert-equal "dak admin s-cfg get stable allowcsset untouchable" \
+                 "${actual}" "${expected}"
+
+    dak admin suite-config list stable
+    # And reset/changes the configs for real
+    dak admin suite-config set stable allowcsset=yes untouchable=no
+
+    expected="$(cat <<EOF
+allowcsset=True
+untouchable=False
+EOF
+)"
+    actual="$(dak admin s-cfg get stable allowcsset untouchable)"
+    assert-equal "dak admin s-cfg get stable allowcsset untouchable" \
+                 "${actual}" "${expected}"
+
+)
+

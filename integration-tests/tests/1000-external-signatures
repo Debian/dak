@@ -29,7 +29,7 @@ dak admin suite add unstable "" codename=sid
 dak admin suite-architecture add unstable source all amd64
 dak admin suite-component add unstable main contrib non-free
 dak admin suite add-build-queue unstable buildd-unstable buildd-sid ${DAKHOST}
-psql -d projectb -c "UPDATE suite SET allowcsset=true WHERE suite_name='unstable'"
+dak admin suite-config set unstable allowcsset=yes
 
 packages=${DAK_ROOT:?}/tests/fixtures/packages
 ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
