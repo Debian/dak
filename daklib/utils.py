@@ -1434,3 +1434,14 @@ def find_possibly_compressed_file(filename):
             return _file
 
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+
+################################################################################
+
+
+def parse_boolean_from_user(value):
+    value = value.lower()
+    if value in {'yes', 'true', 'enable', 'enabled'}:
+        return True
+    if value in {'no', 'false', 'disable', 'disabled'}:
+        return False
+    raise ValueError("Not sure whether %s should be a True or a False" % value)

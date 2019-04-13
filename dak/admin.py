@@ -131,6 +131,14 @@ Perform administrative work on the dak database.
      s-c rm SUITE COMPONENT remove component from suite (will only work if
                             no packages remain for the component in the suite)
 
+  suite-config / s-cfg:
+     s-cfg list             show the names of the configurations
+     s-cfg list SUITE       show the configuration values for SUITE
+     s-cfg get SUITE NAME ...
+                            show the value for NAME in SUITE
+     s-cfg set SUITE NAME=VALUE ...
+                            set NAME to VALUE in SUITE
+
   archive:
      archive list           list all archives
      archive add NAME ROOT DESCRIPTION [primary-mirror=MIRROR] [tainted=1]
@@ -718,6 +726,127 @@ def suite_component(command):
 
 dispatch['suite-component'] = suite_component
 dispatch['s-c'] = suite_component
+
+
+################################################################################
+
+# Sentinal for detecting read-only configurations
+SUITE_CONFIG_READ_ONLY = object()
+
+ALLOWED_SUITE_CONFIGS = {
+    'accept_binary_uploads': utils.parse_boolean_from_user,
+    'accept_source_uploads': utils.parse_boolean_from_user,
+    'allowcsset': utils.parse_boolean_from_user,
+    'announce': SUITE_CONFIG_READ_ONLY,
+    'butautomaticupgrades': utils.parse_boolean_from_user,
+    'byhash': utils.parse_boolean_from_user,
+    'changelog': str,
+    'changelog_url': str,
+    # TODO: Create a validator/parser for this
+    'checksums': SUITE_CONFIG_READ_ONLY,
+    'description': str,
+    'include_long_description': utils.parse_boolean_from_user,
+    'indices_compression': SUITE_CONFIG_READ_ONLY,
+    'label': str,
+    'mail_whitelist': str,
+    'notautomatic': utils.parse_boolean_from_user,
+    'origin': str,
+    'priority': int,
+    'signingkeys': SUITE_CONFIG_READ_ONLY,
+    'untouchable': utils.parse_boolean_from_user,
+    'validtime': int,
+}
+
+
+def __suite_config_get(d, args):
+    die_arglen(args, 4, "E: suite-config get needs the name of a configuration")
+    session = d.session()
+    suite_name = args[2]
+    suite = get_suite(suite_name, session)
+    for arg in args[3:]:
+        if arg not in ALLOWED_SUITE_CONFIGS:
+            die("Unknown (or unsupported) suite configuration variable")
+        value = getattr(suite, arg)
+        print("%s=%s" % (arg, value))
+
+
+def __suite_config_set(d, args):
+    die_arglen(args, 4, "E: suite-config set needs the name of a configuration")
+    session = d.session()
+    suite_name = args[2]
+    suite = get_suite(suite_name, session)
+    for arg in args[3:]:
+        if '=' not in arg:
+            die("Missing value for configuration %s: Use key=value format" % arg)
+        conf_name, new_value_str = arg.split('=', 1)
+        converter = ALLOWED_SUITE_CONFIGS.get(conf_name)
+        if converter is None:
+            die("Unknown (or unsupported) suite configuration variable")
+        if converter is SUITE_CONFIG_READ_ONLY:
+            die("Cannot change %s from the command line" % arg)
+        try:
+            new_value = converter(new_value_str)
+        except RuntimeError as e:
+            warn("Could not convert value %s for %s" % (conf_name, new_value_str))
+            raise e
+        setattr(suite, conf_name, new_value)
+        print("%s=%s" % (conf_name, new_value))
+    if dryrun:
+        session.rollback()
+        print()
+        print("This was a dryrun; changes have been rolled back")
+    else:
+        session.commit()
+
+
+def __suite_config_list(d, args):
+    suite = None
+    session = d.session()
+    if len(args) > 3:
+        warn("W: Ignoring extra argument after the suite name")
+    if len(args) == 3:
+        suite_name = args[2]
+        suite = get_suite(suite_name, session)
+    else:
+        print("Valid suite-config options managable by this command:")
+        print()
+
+    for arg in sorted(ALLOWED_SUITE_CONFIGS):
+        mode = 'writable'
+        if ALLOWED_SUITE_CONFIGS[arg] is SUITE_CONFIG_READ_ONLY:
+            mode = 'read-ony'
+        if suite is not None:
+            value = getattr(suite, arg)
+            print("%s=%s" % (arg, value))
+        else:
+            print(" * %s (%s)" % (arg, mode))
+
+
+def suite_config(command):
+    args = [str(x) for x in command]
+    Cnf = utils.get_conf()
+    d = DBConn()
+
+    die_arglen(args, 2, "E: suite-config needs a command")
+    mode = args[1].lower()
+
+    if mode == 'get':
+        __suite_config_get(d, args)
+    elif mode == 'set':
+        __suite_config_set(d, args)
+    elif mode == 'list':
+        __suite_config_list(d, args)
+    else:
+        suite = get_suite(mode, d.session())
+        if suite is not None:
+            warn("Did you get the order of the suite and the subcommand wrong?")
+        warn("Syntax: dak admin %s {get,set,...} <suite>" % args[0])
+        die("E: suite-config command unknown")
+
+
+dispatch['suite-config'] = suite_config
+dispatch['s-cfg'] = suite_config
+
 
 ################################################################################
 
