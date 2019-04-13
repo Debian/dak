@@ -58,7 +58,7 @@ def list_packages(packages, suites=None, components=None, architectures=None, bi
             result = session.execute(query).fetchall()
 
             if len(result) == 0:
-                raise StopIteration
+                return
 
             lengths = {
                 'package': max(10, max(len(row[t.c.package]) for row in result)),
@@ -93,7 +93,7 @@ def list_packages(packages, suites=None, components=None, architectures=None, bi
             result = session.execute(query).fetchall()
 
             if len(result) == 0:
-                raise StopIteration
+                return
 
             def val():
                 return defaultdict(val)
