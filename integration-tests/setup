@@ -40,5 +40,22 @@ test-cleanup() {
   fi
 }
 
-trap test-cleanup EXIT
-test-setup
+if [[ ! -v DAK_INTERACTIVE_SHELL ]]; then
+    trap test-cleanup EXIT
+    test-setup
+fi
+
+if [ "$0" = "${BASH_SOURCE}" ] ; then
+    echo "============= STARTING interactive dak integration test shell ==========="
+    echo
+    echo "Run psql for accessing projectb"
+    echo "Run dak commands via \"dak <cmd>\""
+    echo "Note that some data (e.g. postgres and dak.conf) will be discarded at"
+    echo "the end of the run"
+    echo
+    echo "You may want to run \"make -C tests/fixtures/packages\" and"
+    echo "\"integration-tests/tests/0001-basic\" test to import some basic data"
+    echo
+    DAK_INTERACTIVE_SHELL=1 "${SHELL}" -s
+    echo "============= STOPPING interactive dak integration test shell ==========="
+fi

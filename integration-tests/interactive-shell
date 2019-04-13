@@ -1,6 +1,6 @@
 #! /bin/bash
 #
-# © 2017 Ansgar Burchardt <ansgar@debian.org>
+# © 2019 Niels Thykier <niels@thykier.net>
 # License: GPL-2+
 #
 # This program is free software; you can redistribute it and/or modify
@@ -19,10 +19,7 @@
 set -e
 set -u
 
-. "$(dirname "${BASH_SOURCE}")/runner-lib"
+DIR="$(dirname "${BASH_SOURCE}")"
+. "${DIR}/runner-lib"
 
-for t in "${DAK_ROOT}/integration-tests/tests/"[0-9]*[^~] \
-    "${DAK_ROOT}/tests/run-dbtests"; do
-  echo "=== Running ${t##*/}"
-  run-script-with-pg "${t}"
-done
+run-script-with-pg "${DIR}/setup"
