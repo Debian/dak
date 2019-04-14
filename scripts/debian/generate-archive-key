@@ -25,6 +25,11 @@ if [[ ${err} -ne 0 ]]; then
     exit 8
 fi
 
+if ! [ -w "$(tty)" ]; then
+    echo "E: No access to tty; required for passphrase input"
+    exit 1
+fi
+
 # designated revokers
 revokers=(
     80E976F14A508A48E9CA3FE9BC372252CA1CF964 # Ansgar Burchardt <ansgar@debian.org>
