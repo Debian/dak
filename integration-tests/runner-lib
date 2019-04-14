@@ -43,7 +43,7 @@ export DAK_ROOT="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
 
 # run-script-with-pg: (cmd, args...) -> ''
 #   Run the given cmd (with optional arguments) with a postgres
-#   virtual enviromnent running.
+#   virtual environment running.
 
 run-script-with-pg()  {
     pg_virtualenv -v "${pgversion}" "$@"
