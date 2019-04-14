@@ -25,9 +25,11 @@ test-setup() {
   local setupdir="${DAK_ROOT}/setup"
 
   export DAKBASE=$(mktemp -d)
+  export HOME="${DAKBASE}/home"
   export DAKHOST=dak-master
   export PGDATABASE=projectb
 
+  mkdir "$HOME" || exit $?
   ${setupdir}/dak-setup.sh
 
   export PATH="${DAKBASE}/bin:${PATH}"

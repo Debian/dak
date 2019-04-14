@@ -25,7 +25,9 @@ fi
 test-setup() {
   # Create the database as expected by the tests
   export DAKBASE=${DAK_ROOT}/tests/fixtures/tmpdak
+  export HOME="${DAKBASE}/home"
   ${DAK_ROOT}/setup/dak-setup.sh
+  mkdir "$HOME" || exit $?
 }
 
 test-cleanup() {
