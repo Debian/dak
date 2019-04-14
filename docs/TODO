@@ -17,8 +17,6 @@ Various
 
 * Check TODO.old and move still-valid/useful entries over here.
 
-* need a testsuite _badly_
-
 * database table "binaries" contains a  column 'type TEXT NOT
   NULL'. This should be made a FK on override_type, as it only contains
   deb/udeb strings.
