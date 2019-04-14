@@ -15,7 +15,7 @@ conf=${1:-""}
 output=${2:-""}
 
 err=0
-for package in gnupg libgfshare-bin pinentry-tty; do
+for package in gnupg libgfshare-bin pinentry-curses; do
     if ! dpkg -l ${package} >/dev/null 2>&1; then
         echo "Missing package ${package}"
         err=1
@@ -145,7 +145,7 @@ default-preference-list SHA512 SHA384 SHA256 SHA224 AES256 AES192 AES CAST5 ZLIB
 EOF
 
 cat > gpg-agent.conf <<EOF
-pinentry-program /usr/bin/pinentry-tty
+pinentry-program /usr/bin/pinentry-curses
 EOF
 
 cat > generate-key.conf <<EOF
