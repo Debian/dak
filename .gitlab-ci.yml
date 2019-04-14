@@ -30,7 +30,7 @@ pages:
     - apt-get update
     - apt-get install -y python-epydoc
     - mkdir -p public/epydoc
-    - epydoc -q --html --graph all --css blue -n DAK -o public/epydoc --include-log --show-imports dak dakweb
+    - epydoc -q --html --graph all --css white -n DAK -o public/epydoc --include-log --show-imports dak dakweb
     - mv coverage public/coverage
   stage: deploy
   artifacts:
