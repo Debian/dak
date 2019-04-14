@@ -27,31 +27,41 @@ from daklib.utils import mail_addresses_for_upload, TemplateSubst, send_mail
 
 
 class ProcessedUpload(object):
+    """Contains data of a processed upload.
+    """
     # people
-    maintainer = None
-    changed_by = None
-    fingerprint = None
+    maintainer = None #: Maintainer: field contents
+    changed_by = None #: Changed-By: field contents
+    fingerprint = None #: Fingerprint of upload signer
 
     # suites
-    suites = []
-    from_policy_suites = []
+    suites = [] #: Destination suites
+    from_policy_suites = [] #: Policy suites
 
     # package
-    changes = None
-    changes_filename = None
-    sourceful = None
-    source = None
-    architecture = None
-    version = None
-    bugs = None
+    changes = None #: Contents of .changes file from upload
+    changes_filename = None #: Changes Filename
+    sourceful = None #: Did upload contain source
+    source = None #: Source value from changes
+    architecture = None #: Architectures from changes
+    version = None #: Version from changes
+    bugs = None #: Bugs closed in upload
 
     # program
-    program = "unknown-program"
+    program = "unknown-program" #: Which dak program was in use
 
-    warnings = []
+    warnings = [] #: Eventual warnings for upload
 
 
 def _subst_for_upload(upload):
+    """ Prepare substitutions used for announce mails.
+
+    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
+    @param upload: upload to handle
+
+    @rtype: dict
+    @returns: A dict of substition values for use by L{daklib.utils.TemplateSubst}
+    """
     cnf = Config()
 
     maintainer = upload.maintainer or cnf['Dinstall::MyEmailAddress']
@@ -98,6 +108,17 @@ def _whitelists(upload):
 
 
 def announce_reject(upload, reason, rejected_by=None):
+    """ Announce a reject.
+
+    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
+    @param upload: upload to handle
+
+    @type  reason: string
+    @param reason: Reject reason
+
+    @type  rejected_by: string
+    @param rejected_by: Who is doing the reject.
+    """
     cnf = Config()
     subst = _subst_for_upload(upload)
     whitelists = _whitelists(upload)
@@ -118,6 +139,12 @@ def announce_reject(upload, reason, rejected_by=None):
 
 
 def announce_accept(upload):
+    """ Announce an upload.
+
+    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
+    @param upload: upload to handle
+    """
+
     cnf = Config()
     subst = _subst_for_upload(upload)
     whitelists = _whitelists(upload)
@@ -171,6 +198,12 @@ def announce_accept(upload):
 
 
 def announce_new(upload):
+    """ Announce an upload going to NEW.
+
+    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
+    @param upload: upload to handle
+    """
+
     cnf = Config()
     subst = _subst_for_upload(upload)
     whitelists = _whitelists(upload)
