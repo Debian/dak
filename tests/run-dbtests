@@ -16,10 +16,16 @@ if [[ ! -v DAK_INTEGRATION_TEST ]]; then
   SYS_CMD="sudo"
   KEEP_ENV_OPT="-E"
   USER_CMD="sudo -u dak PGDATABASE=${PGDATABASE} DAKBASE=${DAKBASE}"
+  PYTHON_COVERAGE=
 else
   SYS_CMD=""
   KEEP_ENV_OPT=""
   USER_CMD=""
+  if [ "$RUN_COVERAGE" = "y" ]; then
+      PYTHON_COVERAGE="python-coverage run --rcfile ${DAK_ROOT}/.coveragerc --parallel-mode"
+  else
+      PYTHON_COVERAGE=
+  fi
 fi
 
 test-setup() {
@@ -43,4 +49,4 @@ if [[ "$1" != "--nocleanup" ]]; then
 fi
 
 test-setup
-$USER_CMD ${DAK_ROOT}/tests/dbtest_all.py
+$USER_CMD $PYTHON_COVERAGE ${DAK_ROOT}/tests/dbtest_all.py
