@@ -23,7 +23,6 @@ set -u
 . ${DAK_ROOT:?}/integration-tests/setup
 
 import-fixture-signing-key
-packages=$(fixture-package-dir)
 
 # add a unstable suite with amd64
 dak admin architecture add amd64 AMD64
@@ -52,7 +51,6 @@ EOF
 
 (
   packages=$(fixture-package-dir)
-  import-fixture-signing-key
 
   cp ${packages:?}/package_0.1* ${DAKBASE}/tmp
 
@@ -104,7 +102,6 @@ EOF
 
 (
   packages=$(fixture-package-dir)
-  import-fixture-signing-key
 
   cp ${packages:?}/package_0.2* ${DAKBASE}/tmp
 

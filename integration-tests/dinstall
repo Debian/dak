@@ -1,0 +1,166 @@
+# -*- mode: sh -*-
+#
+# © 2019 Niels Thykier <niels@thykier.net>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+declare public_archives=(ftp-master debian-debug)
+declare -r scriptdir=${DAKBASE}/scripts
+declare -r overridedir=${scriptdir}/override # debian
+declare -r pdiff_tempdir="${DAKBASE}/_dinstall-pdiff-temp"
+
+setup_debian_like_archive() {
+    dak admin archive add ftp-master "${DAKBASE}/ftp-master" "main archive"
+    dak admin archive add debian-debug "${DAKBASE}/debian-debug" "debug archive"
+    dak admin architecture add amd64 AMD64
+    dak admin architecture add i386 "Intel ia32"
+
+    # unstable
+    dak admin suite add-all-arches unstable "" codename=sid archive=ftp-master
+    dak admin suite-component add unstable main contrib non-free
+    dak admin suite add-build-queue unstable buildd-unstable buildd-sid build-queues
+    dak admin suite-config set unstable allowcsset=no byhash=yes \
+        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
+    # testing
+    dak admin suite add-all-arches testing "" codename=buster archive=ftp-master
+    dak admin suite-component add testing main contrib non-free
+    dak admin suite-config set testing allowcsset=yes byhash=yes \
+        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
+        changelog=dists/testing/ChangeLog
+
+    # testing-proposed-updates
+    dak admin suite add-all-arches testing-proposed-updates "" \
+        codename=buster-proposed-updates archive=ftp-master
+    dak admin suite-component add testing-proposed-updates main contrib non-free
+    dak admin suite-config set testing-proposed-updates allowcsset=yes byhash=yes \
+        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
+
+    
+    # experimental
+    dak admin suite add-all-arches experimental "" codename=rc-buggy archive=ftp-master
+    dak admin suite-component add experimental main contrib non-free
+    dak admin suite add-build-queue experimental buildd-experimental buildd-rc-buggy build-queues
+    dak admin suite-config set experimental allowcsset=no byhash=yes \
+        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
+        notautomatic=yes butautomaticupgrades=no
+}
+
+dinstall() {
+    echo "STARTING dinstall"
+    dinstall_stage_start_up
+    dinstall_stage_indices
+    dinstall_stage_packages_contents
+    dinstall_stage_dists
+
+# state scripts (OMITTED)
+    # mkmaintainers
+    # copyoverrides
+    # mklslar
+    # mkfilesindices
+    # mkchecksums
+    # dedup
+    # signotherfiles
+    # mirror hardlinks
+# UNLOCK UNCHECKED
+# UNLOCK DAILY
+    echo "FINISHED dinstall"
+}
+
+dinstall_stage_start_up() {
+    # LOCK DAILY
+    # LOCK UNCHECKED
+    # run p-u-new (OMITTED)
+    # run backports-policy (OMITTED)
+    # cruft
+    echo "Checking for cruft in overrides"
+    dak check-overrides
+}
+
+dinstall_stage_indices() {
+    # run dominate
+  
+    echo "Removing obsolete source and binary associations"
+    dak dominate
+    # NB: testing-debug is omitted in PROD as well (presumably
+    # because the RT tooling handles that part)
+    dak manage-debug-suites unstable-debug experimental-debug
+    
+    # run autocruft
+    autocruft
+
+    # run import-keyring (orig function fingerprints)
+    # Skip: fingerprints / import-kerings
+    # - It is used for sync'ing the deiban keyrings and emailing
+    #   d-project.  Both of which we can do without in a test.
+
+    # run overrides
+    echo "Writing overrides into text files"
+    mkdir -p $overridedir
+    (cd $overridedir && dak make-overrides)
+
+    # run pkg-file-mapping (orig function mpfm)
+    mpfm
+}
+
+dinstall_stage_packages_contents() {
+    # run apt-ftparchive (orig function packages)
+    echo "  Generating Packages/Sources for: ${public_archives[*]}"
+    dak generate-packages-sources2 -a "${public_archives[*]}"
+    echo "  Generating Contents for: ${public_archives[*]}"
+    dak contents generate -a "${public_archives[*]}"
+}
+
+dinstall_stage_dists() {
+    # run pdiff
+    echo "Generating pdiff files"
+    rm -fr "${pdiff_tempdir}"
+    mkdir -p "${pdiff_tempdir}"
+    dak generate-index-diffs -d "${pdiff_tempdir}" -a "${public_archives[*]}"
+    # run release files (OMITTED) - TODO: make this work in the CI; needs GnuPG key
+    echo "TODO: Generating Release files"
+    # dak generate-releases -a "${public_archives[*]}"
+    # run cleanup (OMITTED) - it removes tempfiles that we do not have
+}
+
+autocruft() {
+    echo "Check for obsolete binary packages"
+    dak auto-decruft -s unstable
+    dak auto-decruft -s experimental --if-newer-version-in unstable --if-newer-version-in-rm-msg "NVIU"
+    dak auto-decruft -s testing-proposed-updates --if-newer-version-in testing --if-newer-version-in-rm-msg "NVIT" --decruft-equal-versions
+}
+
+get_archiveroot() {
+    local archivename="$1"
+    local query="SELECT path FROM archive WHERE name='${archivename}'"
+    local archiveroot="$(psql -tAc "${query}")"
+    if [[ -z ${archiveroot} ]]; then
+        echo "get_archiveroot: couldn't get archiveroot for '${archivename}'" >&2
+        return 1
+    fi
+    echo "${archiveroot}"
+}
+
+mpfm() {
+    local archiveroot
+
+    echo "Generating package / file mapping"
+    for archive in "${public_archives[@]}"; do
+        echo "  archive: ${archive}"
+        archiveroot="$(get_archiveroot "${archive}")"
+        mkdir -p "${archiveroot}/indices"
+        dak make-pkg-file-mapping "${archive}" | bzip2 -9 > "${archiveroot}/indices/package-file.map.bz2"
+    done
+}
+
