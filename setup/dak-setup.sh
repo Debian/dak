@@ -29,10 +29,16 @@ dak-setup() {
     PG_CMD="sudo -E -u postgres"
     SYS_CMD="sudo -E"
     USER_CMD="sudo -E -u dak -s -H"
+    PYTHON_COVERAGE=
   else
     PG_CMD=""
     SYS_CMD=""
     USER_CMD=""
+    if [ "$RUN_COVERAGE" = "y" ]; then
+      PYTHON_COVERAGE="python-coverage run --rcfile ${DAK_ROOT}/.coveragerc --parallel-mode"
+    else
+      PYTHON_COVERAGE=
+    fi
   fi
 
   # Get default values from init_vars.
@@ -83,9 +89,9 @@ dak-setup() {
   fi
 
   # Update the database schema
-  $USER_CMD ${DAK_ROOT}/dak/dak.py update-db --yes
+  $USER_CMD $PYTHON_COVERAGE ${DAK_ROOT}/dak/dak.py update-db --yes
   # Run dak init-dirs to set up the initial /srv/dak tree
-  $USER_CMD ${DAK_ROOT}/dak/dak.py init-dirs
+  $USER_CMD $PYTHON_COVERAGE ${DAK_ROOT}/dak/dak.py init-dirs
 }
 
 dak-setup
