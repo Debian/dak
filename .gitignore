@@ -1,6 +1,9 @@
 *.pyc
 *~
 .coverage
+.coverage.*.*
+.idea
+.cache
 cover/
 web/epydoc/
 web/d-i
@@ -27,3 +30,11 @@ web/transitions.yaml
 web/cruft-report-daily.txt
 web/pseudo-packages.*
 web/licenses/
+
+tests/fixtures/packages/*.buildinfo
+tests/fixtures/packages/*.tar.*
+tests/fixtures/packages/*.deb
+tests/fixtures/packages/*.dsc
+tests/fixtures/packages/**/.debhelper
+tests/fixtures/packages/**/*.debhelper.log
+tests/fixtures/packages/**/*.substvars
