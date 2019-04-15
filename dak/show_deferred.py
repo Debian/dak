@@ -212,13 +212,12 @@ def get_upload_data(changesfn):
 
 
 def list_uploads(filelist, rrd_dir):
-    uploads = map(get_upload_data, filelist)
-    uploads.sort()
+    uploads = sorted(get_upload_data(x) for x in filelist)
     # print the summary page
     print(header())
     if uploads:
         print(table_header())
-        print(''.join(map(lambda x: table_row(*x[1:6]), uploads)).encode('utf-8'))
+        print(''.join(table_row(*x[1:6]) for x in uploads).encode('utf-8'))
         print(table_footer())
     else:
         print('<h1>Currently no deferred uploads to Debian</h1>')
@@ -306,11 +305,10 @@ def main():
 
     filelist = []
     for r, d, f in os.walk(Cnf["Show-Deferred::DeferredQueue"]):
-        filelist += map(lambda x: os.path.join(r, x),
-                         filter(lambda x: x.endswith('.changes'), f))
+        filelist.extend(os.path.join(r, x) for x in f if x.endswith('.changes'))
     list_uploads(filelist, rrd_dir)
 
-    available_changes = set(map(os.path.basename, filelist))
+    available_changes = set(os.path.basename(x) for x in filelist)
     if "Show-Deferred::LinkPath" in Cnf:
         # remove dead links
         for r, d, f in os.walk(Cnf["Show-Deferred::LinkPath"]):

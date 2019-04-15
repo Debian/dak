@@ -335,13 +335,13 @@ def read_changes_or_dsc(suite, filename, session=None):
             if use_html:
                 dsc[k] = formatted_text(dsc[k], strip=True)
             else:
-                dsc[k] = ('\n' + '\n'.join(map(lambda x: ' ' + x, dsc[k].split('\n')))).rstrip()
+                dsc[k] = ('\n' + '\n'.join(' ' + x for x in dsc[k].split('\n'))).rstrip()
         else:
             dsc[k] = escape_if_needed(dsc[k])
 
-    keysinorder = filter(lambda x: not x.lower().startswith('checksums-'), keysinorder)
-
-    filecontents = '\n'.join(map(lambda x: format_field(x, dsc[x.lower()]), keysinorder)) + '\n'
+    filecontents = '\n'.join(format_field(x, dsc[x.lower()])
+                             for x in keysinorder if x.lower().startswith('checksums-')
+    ) + '\n'
     return filecontents
 
 
