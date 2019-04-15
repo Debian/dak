@@ -71,11 +71,11 @@ class FilesystemTransactionTestCase(DakTestCase):
 
             with FilesystemTransaction() as fs:
                 self._copy_a_b(t, fs)
-                self.assert_(os.path.exists(t.filename('a')))
-                self.assert_(os.path.exists(t.filename('b')))
+                self.assertTrue(os.path.exists(t.filename('a')))
+                self.assertTrue(os.path.exists(t.filename('b')))
 
-            self.assert_(os.path.exists(t.filename('a')))
-            self.assert_(os.path.exists(t.filename('b')))
+            self.assertTrue(os.path.exists(t.filename('a')))
+            self.assertTrue(os.path.exists(t.filename('b')))
 
     def test_copy_existing_and_rollback(self):
         with TemporaryDirectory() as t:
@@ -86,24 +86,24 @@ class FilesystemTransactionTestCase(DakTestCase):
             try:
                 with FilesystemTransaction() as fs:
                     self._copy_a_b(t, fs)
-                    self.assert_(os.path.exists(t.filename('a')))
-                    self.assert_(os.path.exists(t.filename('b')))
+                    self.assertTrue(os.path.exists(t.filename('a')))
+                    self.assertTrue(os.path.exists(t.filename('b')))
                     raise TestException()
             except TestException:
                 pass
 
-            self.assert_(os.path.exists(t.filename('a')))
-            self.assert_(not os.path.exists(t.filename('b')))
+            self.assertTrue(os.path.exists(t.filename('a')))
+            self.assertTrue(not os.path.exists(t.filename('b')))
 
     def test_unlink_and_commit(self):
         with TemporaryDirectory() as t:
             self._write_to_a(t)
             a = t.filename('a')
             with FilesystemTransaction() as fs:
-                self.assert_(os.path.exists(a))
+                self.assertTrue(os.path.exists(a))
                 fs.unlink(a)
-                self.assert_(not os.path.exists(a))
-            self.assert_(not os.path.exists(a))
+                self.assertTrue(not os.path.exists(a))
+            self.assertTrue(not os.path.exists(a))
 
     def test_unlink_and_rollback(self):
         with TemporaryDirectory() as t:
@@ -115,13 +115,13 @@ class FilesystemTransactionTestCase(DakTestCase):
 
             try:
                 with FilesystemTransaction() as fs:
-                    self.assert_(os.path.exists(a))
+                    self.assertTrue(os.path.exists(a))
                     fs.unlink(a)
-                    self.assert_(not os.path.exists(a))
+                    self.assertTrue(not os.path.exists(a))
                     raise TestException()
             except TestException:
                 pass
-            self.assert_(os.path.exists(a))
+            self.assertTrue(os.path.exists(a))
 
 
 if __name__ == '__main__':

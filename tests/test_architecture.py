@@ -25,31 +25,31 @@ from daklib.architecture import match_architecture
 
 class MatchArchitecture(DakTestCase):
     def testEqual(self):
-        self.assert_(match_architecture('amd64', 'amd64'))
-        self.assert_(match_architecture('linux-amd64', 'linux-amd64'))
-        self.assert_(match_architecture('linux-amd64', 'amd64'))
-        self.assert_(match_architecture('amd64', 'linux-amd64'))
-        self.assert_(not match_architecture('amd64', 'i386'))
-        self.assert_(match_architecture('kfreebsd-amd64', 'kfreebsd-amd64'))
-        self.assert_(not match_architecture('kfreebsd-amd64', 'amd64'))
+        self.assertTrue(match_architecture('amd64', 'amd64'))
+        self.assertTrue(match_architecture('linux-amd64', 'linux-amd64'))
+        self.assertTrue(match_architecture('linux-amd64', 'amd64'))
+        self.assertTrue(match_architecture('amd64', 'linux-amd64'))
+        self.assertTrue(not match_architecture('amd64', 'i386'))
+        self.assertTrue(match_architecture('kfreebsd-amd64', 'kfreebsd-amd64'))
+        self.assertTrue(not match_architecture('kfreebsd-amd64', 'amd64'))
 
     def testAny(self):
-        self.assert_(match_architecture('amd64', 'any'))
-        self.assert_(match_architecture('amd64', 'any-amd64'))
-        self.assert_(match_architecture('x32', 'any-amd64'))
-        self.assert_(match_architecture('kfreebsd-amd64', 'any-amd64'))
-        self.assert_(not match_architecture('amd64', 'any-i386'))
+        self.assertTrue(match_architecture('amd64', 'any'))
+        self.assertTrue(match_architecture('amd64', 'any-amd64'))
+        self.assertTrue(match_architecture('x32', 'any-amd64'))
+        self.assertTrue(match_architecture('kfreebsd-amd64', 'any-amd64'))
+        self.assertTrue(not match_architecture('amd64', 'any-i386'))
 
-        self.assert_(match_architecture('kfreebsd-amd64', 'kfreebsd-any'))
-        self.assert_(not match_architecture('amd64', 'kfreebsd-any'))
+        self.assertTrue(match_architecture('kfreebsd-amd64', 'kfreebsd-any'))
+        self.assertTrue(not match_architecture('amd64', 'kfreebsd-any'))
 
     def testAll(self):
-        self.assert_(match_architecture('all', 'all'))
+        self.assertTrue(match_architecture('all', 'all'))
 
-        self.assert_(not match_architecture('amd64', 'all'))
-        self.assert_(not match_architecture('all', 'amd64'))
+        self.assertTrue(not match_architecture('amd64', 'all'))
+        self.assertTrue(not match_architecture('all', 'amd64'))
 
-        self.assert_(not match_architecture('all', 'any'))
+        self.assertTrue(not match_architecture('all', 'any'))
 
 
 if __name__ == '__main__':
