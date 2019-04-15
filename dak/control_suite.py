@@ -126,7 +126,7 @@ def britney_changelog(packages, suite, session):
 
     new = {}
     for p in current.keys():
-        if p in old.keys():
+        if p in old:
             if apt_pkg.version_compare(current[p], old[p]) > 0:
                 new[p] = [current[p], old[p]]
         else:

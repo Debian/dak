@@ -253,7 +253,7 @@ def export_files(session, archive, clpool, progress=False):
         files = [f for f in files if f != filelist]
         if len(files):
             if root != clpool:
-                if root.split('/')[-1] not in sources.keys():
+                if root.split('/')[-1] not in sources:
                     if os.path.exists(root):
                         stats['removed'] += len(os.listdir(root))
                         rmtree(root)

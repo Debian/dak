@@ -1224,7 +1224,7 @@ def main():
 
     subcommand = str(arguments[0])
 
-    if subcommand in dispatch.keys():
+    if subcommand in dispatch:
         dispatch[subcommand](arguments)
     else:
         die("E: Unknown command")
