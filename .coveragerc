@@ -6,3 +6,4 @@ omit =
   */dist-packages/*
   */tests/*
 source = .
+concurrency = multiprocessing
