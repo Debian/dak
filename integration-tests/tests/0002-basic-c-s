@@ -96,8 +96,7 @@ EOF
   dak contents scan-source
   dak generate-packages-sources2 -s unstable
   dak contents generate -a dak-master -s unstable
-  # TODO: make this work in the CI; needs GnuPG key
-  #dak generate-release -s unstable
+  dak generate-release -s unstable
 )
 
 (
