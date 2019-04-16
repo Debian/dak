@@ -62,7 +62,7 @@ class ParseDscTestCase(ParseChangesTestCase):
 
     def test_9(self):
         changes = self.assertParse('dsc/9.dsc', -1, 1)
-        self.assert_(changes['question'] == 'Is this a bug?')
+        self.assertTrue(changes['question'] == 'Is this a bug?')
         self.assertFalse(changes.get('this'))
 
     def test_10(self):
@@ -83,7 +83,7 @@ class ParseChangesTestCase(ParseChangesTestCase):
 
         binaries = changes['binary']
 
-        self.assert_('krb5-ftpd' in binaries.split())
+        self.assertTrue('krb5-ftpd' in binaries.split())
 
     def test_3(self):
         for filename in ('valid', 'bogus-pre', 'bogus-post'):

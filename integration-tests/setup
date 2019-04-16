@@ -34,10 +34,16 @@ test-setup() {
 
   export PATH="${DAKBASE}/bin:${PATH}"
   export DAK_CONFIG="${DAKBASE}/etc/dak.conf"
+  export GNUPGHOME="${DAKBASE}/gpg"
+  cp -a "${DAK_ROOT}/tests/fixtures/packages/gpg" "${GNUPGHOME}"
+  chmod 0700 "${GNUPGHOME}"
+  echo "Dinstall::SigningHomedir \"${GNUPGHOME}\";" >> "${DAK_CONFIG}"
 }
 
 test-cleanup() {
   if [[ -v DAKBASE ]]; then
+    # Ensure we stop the gpg-agent to avoid leaving processes running
+    gpg-connect-agent --homedir "${GNUPGHOME}" KILLAGENT /bye
     rm -rf -- "${DAKBASE}"
   fi
 }

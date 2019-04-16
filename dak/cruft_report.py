@@ -99,6 +99,7 @@ def do_anais(architecture, binaries_list, source, session):
     if architecture == "any" or architecture == "all":
         return ""
 
+    version_sort_key = functools.cmp_to_key(apt_pkg.version_compare)
     anais_output = ""
     architectures = {}
     for arch in architecture.split():
@@ -116,7 +117,7 @@ def do_anais(architecture, binaries_list, source, session):
             version = i[1]
             if arch in architectures:
                 versions.append(version)
-        versions.sort(key=functools.cmp_to_key(apt_pkg.version_compare))
+        versions.sort(key=version_sort_key)
         if versions:
             latest_version = versions.pop()
         else:
@@ -132,11 +133,8 @@ def do_anais(architecture, binaries_list, source, session):
 
         if versions_d != {}:
             anais_output += "\n (*) %s_%s [%s]: %s\n" % (binary, latest_version, source, architecture)
-            versions = versions_d.keys()
-            versions.sort(key=functools.cmp_to_key(apt_pkg.version_compare))
-            for version in versions:
-                arches = versions_d[version]
-                arches.sort()
+            for version in sorted(versions_d, key=version_sort_key):
+                arches = sorted(versions_d[version])
                 anais_output += "    o %s: %s\n" % (version, ", ".join(arches))
     return anais_output
 
@@ -318,18 +316,15 @@ def do_dubious_nbs(dubious_nbs):
     print("-----------")
     print()
 
-    dubious_nbs_keys = dubious_nbs.keys()
-    dubious_nbs_keys.sort()
-    for source in dubious_nbs_keys:
+    version_sort_key = functools.cmp_to_key(apt_pkg.version_compare)
+    for source in sorted(dubious_nbs):
         print(" * %s_%s builds: %s" % (source,
                                        source_versions.get(source, "??"),
                                        source_binaries.get(source, "(source does not exist)")))
         print("      won't admit to building:")
-        versions = dubious_nbs[source].keys()
-        versions.sort(key=functools.cmp_to_key(apt_pkg.version_compare))
+        versions = sorted(dubious_nbs[source], key=version_sort_key)
         for version in versions:
-            packages = dubious_nbs[source][version].keys()
-            packages.sort()
+            packages = sorted(dubious_nbs[source][version])
             print("        o %s: %s" % (version, ", ".join(packages)))
 
         print()
@@ -676,11 +671,10 @@ def main():
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
     dubious_nbs = {}
-    for source in nbs.keys():
-        for package in nbs[source].keys():
-            versions = nbs[source][package].keys()
-            versions.sort(key=functools.cmp_to_key(apt_pkg.version_compare))
-            latest_version = versions.pop()
+    version_sort_key = functools.cmp_to_key(apt_pkg.version_compare)
+    for source in nbs:
+        for package in nbs[source]:
+            latest_version = max(nbs[source][package], key=version_sort_key)
             source_version = source_versions.get(source, "0")
             if apt_pkg.version_compare(latest_version, source_version) == 0:
                 add_nbs(dubious_nbs, source, latest_version, package, suite_id, session)
@@ -704,11 +698,8 @@ def main():
         print("Unbuilt binary packages")
         print("-----------------------")
         print()
-        keys = bin_not_built.keys()
-        keys.sort()
-        for source in keys:
-            binaries = bin_not_built[source].keys()
-            binaries.sort()
+        for source in sorted(bin_not_built):
+            binaries = sorted(bin_not_built[source])
             print(" o %s: %s" % (source, ", ".join(binaries)))
         print()
 
