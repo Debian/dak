@@ -346,7 +346,7 @@ def check_timestamps():
             apt_inst.debExtract(f, Ent, "data.tar.gz")
             count += 1
 
-    print("Checked %d files (out of %d)." % (count, len(db_files.keys())))
+    print("Checked %d files (out of %d)." % (count, len(db_files)))
 
 ################################################################################
 

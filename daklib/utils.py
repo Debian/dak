@@ -189,7 +189,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None)
         index += 1
         indexed_lines[index] = line[:-1]
 
-    num_of_lines = len(indexed_lines.keys())
+    num_of_lines = len(indexed_lines)
     index = 0
     first = -1
     while index < num_of_lines:
