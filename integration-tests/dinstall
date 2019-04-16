@@ -55,6 +55,21 @@ setup_debian_like_archive() {
     dak admin suite-config set experimental allowcsset=no byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         notautomatic=yes butautomaticupgrades=no
+
+
+    # Version constraints
+    # Run "dak admin v-c list" to see them
+
+    # experimental
+    for suite in unstable testing ; do
+        dak admin v-c add experimental MustBeNewerThan $suite
+    done
+
+    # testing-proposed-updates
+    dak admin v-c add testing-proposed-updates Enhances testing
+    dak admin v-c add testing-proposed-updates MustBeNewerThan testing
+    # unstable
+    dak admin v-c add unstable MustBeNewerThan testing
 }
 
 dinstall() {
