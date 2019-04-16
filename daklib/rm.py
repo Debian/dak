@@ -41,11 +41,11 @@
 
 from __future__ import absolute_import, print_function
 
-import commands
 import apt_pkg
 import fcntl
 import functools
 import sqlalchemy.sql as sql
+import subprocess
 from re import sub
 from collections import defaultdict
 from .regexes import re_build_dep_arch
@@ -331,7 +331,7 @@ def remove(session, reason, suites, removals,
     @param whoami: The person (or entity) doing the removal.  Defaults to utils.whoami()
 
     @type date: string
-    @param date: The date of the removal. Defaults to commands.getoutput("date -R")
+    @param date: The date of the removal. Defaults to `date -R`
 
     @type done_bugs: list
     @param done_bugs: A list of bugs to be closed when doing this removal.
@@ -375,7 +375,7 @@ def remove(session, reason, suites, removals,
         whoami = utils.whoami()
 
     if date is None:
-        date = commands.getoutput("date -R")
+        date = subprocess.check_output(["date", "-R"]).rstrip()
 
     if partial and components:
 

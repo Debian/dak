@@ -24,7 +24,6 @@
 
 from __future__ import absolute_import, print_function
 
-import commands
 import codecs
 import datetime
 import os
@@ -68,31 +67,6 @@ default_config = "/etc/dak/dak.conf"     #: default dak config, defines host pro
 
 alias_cache = None        #: Cache for email alias checks
 key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
-
-# Monkeypatch commands.getstatusoutput as it may not return the correct exit
-# code in lenny's Python. This also affects commands.getoutput and
-# commands.getstatus.
-
-
-def dak_getstatusoutput(cmd):
-    pipe = daklib.daksubprocess.Popen(cmd, shell=True, universal_newlines=True,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-    output = pipe.stdout.read()
-
-    pipe.wait()
-
-    if output[-1:] == '\n':
-        output = output[:-1]
-
-    ret = pipe.wait()
-    if ret is None:
-        ret = 0
-
-    return ret, output
-
-
-commands.getstatusoutput = dak_getstatusoutput
 
 ################################################################################
 
@@ -504,9 +478,11 @@ def send_mail(message, filename="", whitelists=None):
         os.close(fd)
 
     # Invoke sendmail
-    (result, output) = commands.getstatusoutput("%s < %s" % (Cnf["Dinstall::SendmailCommand"], filename))
-    if (result != 0):
-        raise SendmailFailedError(output)
+    try:
+        with open(filename, 'r') as fh:
+            subprocess.check_output(Cnf["Dinstall::SendmailCommand"].split(), stdin=fh, stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        raise SendmailFailedError(e.output.rstrip())
 
     # Clean up any temporary files
     if message:
