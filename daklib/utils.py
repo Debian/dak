@@ -131,18 +131,14 @@ def open_file(filename, mode='r'):
 
 def our_raw_input(prompt=""):
     if prompt:
-        while 1:
-            try:
-                sys.stdout.write(prompt)
-                break
-            except IOError:
-                pass
+        print(prompt, end='')
+    # TODO: py3: use `print(..., flush=True)`
     sys.stdout.flush()
     try:
         ret = raw_input()
         return ret
     except EOFError:
-        sys.stderr.write("\nUser interrupt (^D).\n")
+        print("\nUser interrupt (^D).", file=sys.stderr)
         raise SystemExit
 
 ################################################################################
@@ -607,12 +603,12 @@ def TemplateSubst(subst_map, filename):
 
 
 def fubar(msg, exit_code=1):
-    sys.stderr.write("E: %s\n" % (msg))
+    print("E:", msg, file=sys.stderr)
     sys.exit(exit_code)
 
 
 def warn(msg):
-    sys.stderr.write("W: %s\n" % (msg))
+    print("W:", msg, file=sys.stderr)
 
 ################################################################################
 

@@ -777,7 +777,7 @@ def end():
         sets = "set"
         if accept_count > 1:
             sets = "sets"
-        sys.stderr.write("Accepted %d package %s, %s.\n" % (accept_count, sets, utils.size_type(int(accept_bytes))))
+        print("Accepted %d package %s, %s." % (accept_count, sets, utils.size_type(int(accept_bytes))), file=sys.stderr)
         Logger.log(["total", accept_count, accept_bytes])
 
     if not Options["No-Action"] and not Options["Trainee"]:
@@ -832,7 +832,7 @@ def main():
     readline.parse_and_bind("tab: complete")
 
     if len(uploads) > 1:
-        sys.stderr.write("Sorting changes...\n")
+        print("Sorting changes...", file=sys.stderr)
         uploads = sort_uploads(new_queue, uploads, session, Options["No-Binaries"])
 
     if Options["Comments"]:
