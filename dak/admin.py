@@ -54,6 +54,15 @@ def die_arglen(args, args_needed, msg):
         die(msg)
 
 
+def get_suite_or_die(suite_name, session=None, error_message=None):
+    suite = get_suite(suite_name.lower(), session=session)
+    if suite is None:
+        if error_message is None:
+            error_message = "E: Invalid/unknown suite %(suite_name)s"
+        die(error_message % {'suite_name': suite_name})
+    return suite
+
+
 def usage(exit_code=0):
     """Perform administrative work on the dak database."""
 
@@ -340,9 +349,7 @@ def __suite_show(d, args):
         die("E: showing an suite entry requires a suite")
 
     s = d.session()
-    su = get_suite(args[2].lower())
-    if su is None:
-        die("E: can't find suite entry for %s" % (args[2].lower()))
+    su = get_suite_or_die(args[2])
 
     print(su.details())
 
@@ -410,9 +417,7 @@ def __suite_rm(d, args):
     if not dryrun:
         try:
             s = d.session()
-            su = get_suite(name.lower())
-            if su is None:
-                die("E: Cannot find suite {0}".format(name))
+            su = get_suite_or_die(name, s)
             s.delete(su)
             s.commit()
         except IntegrityError as e:
@@ -518,9 +523,7 @@ def __suite_architecture_list(d, args):
 
 def __suite_architecture_listarch(d, args):
     die_arglen(args, 3, "E: suite-architecture list-arch requires a suite")
-    suite = get_suite(args[2].lower(), d.session())
-    if suite is None:
-        die('E: suite %s is invalid' % args[2].lower())
+    suite = get_suite_or_die(args[2], d.session())
     a = suite.get_architectures(skipsrc=True, skipall=True)
     for j in a:
         print(j.arch_string)
@@ -541,9 +544,7 @@ def __suite_architecture_add(d, args):
 
     s = d.session()
 
-    suite = get_suite(args[2].lower(), s)
-    if suite is None:
-        die("E: Can't find suite %s" % args[2].lower())
+    suite = get_suite_or_die(args[2], s)
 
     for arch_name in args[3:]:
         arch = get_architecture(arch_name.lower(), s)
@@ -574,9 +575,7 @@ def __suite_architecture_rm(d, args):
     if not dryrun:
         try:
             suite_name = args[2].lower()
-            suite = get_suite(suite_name, s)
-            if suite is None:
-                die('E: no such suite %s' % suite_name)
+            suite = get_suite_or_die(suite_name, s)
             arch_string = args[3].lower()
             architecture = get_architecture(arch_string, s)
             if architecture not in suite.architectures:
@@ -630,9 +629,7 @@ def __suite_component_list(d, args):
 
 def __suite_component_listcomponent(d, args):
     die_arglen(args, 3, "E: suite-component list-component requires a suite")
-    suite = get_suite(args[2].lower(), d.session())
-    if suite is None:
-        die('E: suite %s is invalid' % args[2].lower())
+    suite = get_suite_or_die(args[2], d.session())
     for c in suite.components:
         print(c.component_name)
 
@@ -652,9 +649,7 @@ def __suite_component_add(d, args):
 
     s = d.session()
 
-    suite = get_suite(args[2].lower(), s)
-    if suite is None:
-        die("E: Can't find suite %s" % args[2].lower())
+    suite = get_suite_or_die(args[2], s)
 
     for component_name in args[3:]:
         component = get_component(component_name.lower(), s)
@@ -684,9 +679,7 @@ def __suite_component_rm(d, args):
     if not dryrun:
         try:
             suite_name = args[2].lower()
-            suite = get_suite(suite_name, s)
-            if suite is None:
-                die('E: no such suite %s' % suite_name)
+            suite = get_suite_or_die(suite_name, s)
             component_string = args[3].lower()
             component = get_component(arch_string, s)
             if component not in suite.components:
@@ -762,7 +755,7 @@ def __suite_config_get(d, args):
     die_arglen(args, 4, "E: suite-config get needs the name of a configuration")
     session = d.session()
     suite_name = args[2]
-    suite = get_suite(suite_name, session)
+    suite = get_suite_or_die(suite_name, session)
     for arg in args[3:]:
         if arg not in ALLOWED_SUITE_CONFIGS:
             die("Unknown (or unsupported) suite configuration variable")
@@ -774,7 +767,7 @@ def __suite_config_set(d, args):
     die_arglen(args, 4, "E: suite-config set needs the name of a configuration")
     session = d.session()
     suite_name = args[2]
-    suite = get_suite(suite_name, session)
+    suite = get_suite_or_die(suite_name, session)
     for arg in args[3:]:
         if '=' not in arg:
             die("Missing value for configuration %s: Use key=value format" % arg)
@@ -806,7 +799,7 @@ def __suite_config_list(d, args):
         warn("W: Ignoring extra argument after the suite name")
     if len(args) == 3:
         suite_name = args[2]
-        suite = get_suite(suite_name, session)
+        suite = get_suite_or_die(suite_name, session)
     else:
         print("Valid suite-config options managable by this command:")
         print()
@@ -941,12 +934,10 @@ def __version_check_list_suite(d, suite_name):
 
 
 def __version_check_add(d, suite_name, check, reference_name):
-    suite = get_suite(suite_name)
-    if not suite:
-        die("E: Could not find suite %s." % (suite_name))
-    reference = get_suite(reference_name)
-    if not reference:
-        die("E: Could not find reference suite %s." % (reference_name))
+    suite = get_suite_or_die(suite_name,
+                             error_message="E: Could not find suite %(suite_name)s")
+    reference = get_suite_or_die(reference_name,
+                             error_message="E: Could not find reference suite %(suite_name)s")
 
     session = d.session()
     vc = VersionCheck()
@@ -958,12 +949,10 @@ def __version_check_add(d, suite_name, check, reference_name):
 
 
 def __version_check_rm(d, suite_name, check, reference_name):
-    suite = get_suite(suite_name)
-    if not suite:
-        die("E: Could not find suite %s." % (suite_name))
-    reference = get_suite(reference_name)
-    if not reference:
-        die("E: Could not find reference suite %s." % (reference_name))
+    suite = get_suite_or_die(suite_name,
+                             error_message="E: Could not find suite %(suite_name)s")
+    reference = get_suite_or_die(reference_name,
+                             error_message="E: Could not find reference suite %(suite_name)s")
 
     session = d.session()
     try:
