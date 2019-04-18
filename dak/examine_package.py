@@ -317,7 +317,7 @@ def read_changes_or_dsc(suite, filename, session=None):
         return formatted_text("can't parse .dsc control info")
     dsc_file.close()
 
-    filecontents = strip_pgp_signature(filename)
+    filecontents = strip_pgp_signature(filename).decode('utf-8')
     keysinorder = []
     for l in filecontents.split('\n'):
         m = re.match(r'([-a-zA-Z0-9]*):', l)
