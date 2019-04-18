@@ -225,9 +225,9 @@ def export_files(session, archive, clpool, progress=False):
             stats['unpack'] += 1
             if progress:
                 if stats['unpack'] % 100 == 0:
-                    sys.stderr.write('%d packages unpacked\n' % stats['unpack'])
+                    print('%d packages unpacked' % stats['unpack'], file=sys.stderr)
                 elif stats['unpack'] % 10 == 0:
-                    sys.stderr.write('.')
+                    print('.', end='', file=sys.stderr)
             for file in files:
                 for f in glob(os.path.join(tempdir, 'debian', '*%s' % file)):
                     for s in unpack[p][1]:

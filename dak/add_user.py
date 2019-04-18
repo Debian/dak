@@ -18,7 +18,7 @@ add his key to the GPGKeyring
 # I know what I say. I dont know python and I wrote it. So go and read some other stuff.
 from __future__ import print_function
 
-import commands
+import subprocess
 import sys
 import apt_pkg
 
@@ -73,10 +73,12 @@ def main():
     if not keyrings:
         keyrings = get_active_keyring_paths()
 
-    cmd = "gpg --with-colons --no-secmem-warning --no-auto-check-trustdb --no-default-keyring %s --with-fingerprint --list-key %s" \
-           % (utils.gpg_keyring_args(keyrings),
-              Cnf["Add-User::Options::Key"])
-    (result, output) = commands.getstatusoutput(cmd)
+    cmd = ["gpg", "--with-colons", "--no-secmem-warning",
+           "--no-auto-check-trustdb", "--with-fingerprint",
+           "--no-default-keyring"]
+    cmd.extend(utils.gpg_keyring_args(keyrings).split())
+    cmd.extend(["--list-key", "--", Cnf["Add-User::Options::Key"]])
+    output = subprocess.check_output(cmd).rstrip()
     m = re_gpg_fingerprint_colon.search(output)
     if not m:
         print(output)

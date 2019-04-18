@@ -340,13 +340,13 @@ def check_timestamps():
         if os.access(filename, os.R_OK):
             f = utils.open_file(filename)
             current_file = filename
-            sys.stderr.write("Processing %s.\n" % (filename))
+            print("Processing %s." % (filename), file=sys.stderr)
             apt_inst.debExtract(f, Ent, "control.tar.gz")
             f.seek(0)
             apt_inst.debExtract(f, Ent, "data.tar.gz")
             count += 1
 
-    print("Checked %d files (out of %d)." % (count, len(db_files.keys())))
+    print("Checked %d files (out of %d)." % (count, len(db_files)))
 
 ################################################################################
 

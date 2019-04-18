@@ -5,6 +5,8 @@
 # Author: Filippo Giunchedi <filippo@debian.org>
 # Version: 0.5
 
+from __future__ import print_function
+
 import cgi
 import os
 import os.path
@@ -110,7 +112,7 @@ def parse_leave_reason(fname):
     try:
         f = open(fname)
     except IOError as e:
-        sys.stderr.write("Can't open %s: %s\n" % (fname, e))
+        print("Can't open %s: %s" % (fname, e), file=sys.stderr)
         return {}
 
     res = {}
@@ -195,12 +197,12 @@ if __name__ == "__main__":
     (settings, args) = parser.parse_args()
 
     if not os.path.exists(settings.outdir):
-        sys.stderr.write("Outdir '%s' does not exists\n" % settings.outdir)
+        print("Outdir '%s' does not exists" % settings.outdir, file=sys.stderr)
         parser.print_help()
         sys.exit(1)
 
     if not os.path.exists(settings.datadir):
-        sys.stderr.write("Datadir '%s' does not exists\n" % settings.datadir)
+        print("Datadir '%s' does not exists" % settings.datadir, file=sys.stderr)
         parser.print_help()
         sys.exit(1)
 
@@ -225,7 +227,7 @@ if __name__ == "__main__":
         status.feed_in.write_xml(file(feed_in_file, "w+"), "utf-8")
         status.feed_out.write_xml(file(feed_out_file, "w+"), "utf-8")
     except IOError as why:
-        sys.stderr.write("Unable to write feeds: %s\n" % why)
+        print("Unable to write feeds:", why, file=sys.stderr)
         sys.exit(1)
 
     status.queue = current_queue
@@ -233,7 +235,7 @@ if __name__ == "__main__":
     try:
         cPickle.dump(status, open(status_db, "w+"))
     except IOError as why:
-        sys.stderr.write("Unable to save status: %s\n" % why)
+        print("Unable to save status:", why, file=sys.stderr)
         sys.exit(1)
 
 # vim:et:ts=4

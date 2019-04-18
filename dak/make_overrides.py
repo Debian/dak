@@ -123,7 +123,7 @@ def main():
             print("Skipping %s as it is marked as untouchable" % suite.suite_name)
             continue
 
-        sys.stderr.write("Processing %s...\n" % (suite.suite_name))
+        print("Processing %s..." % (suite.suite_name), file=sys.stderr)
         override_suite = suite.overridecodename or suite.codename
 
         for component in session.query(Component).all():

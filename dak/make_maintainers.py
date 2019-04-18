@@ -170,7 +170,7 @@ SELECT
 
     if Options["Print"]:
         for package in sorted(maintainers):
-            sys.stdout.write(format(package, maintainers[package]))
+            print(format(package, maintainers[package]), end='')
     else:
         maintainer_file = open('Maintainers', 'w')
         uploader_file = open('Uploaders', 'w')

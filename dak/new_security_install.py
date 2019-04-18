@@ -68,9 +68,10 @@ def spawn(command):
     if Options["No-Action"]:
         print("[%s]" % (command))
     else:
-        (result, output) = commands.getstatusoutput(command)
-        if (result != 0):
-            utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, output), result)
+        try:
+            subprocess.check_output(command.split(), stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, e.output.rstrip()), e.returncode)
 
 ##################### ! ! ! N O T E ! ! !  #####################
 #
