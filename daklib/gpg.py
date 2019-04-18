@@ -164,12 +164,13 @@ class SignedFile(object):
             r, w, x_ = select.select(read_set, write_set, ())
             for fd in r:
                 data = os.read(fd, 4096)
-                if data == "":
+                if len(data) == 0:
                     read_set.remove(fd)
-                read_lines[fd].append(data)
+                else:
+                    read_lines[fd].append(data)
             for fd in w:
                 data = write[fd][write_pos[fd]:]
-                if data == "":
+                if len(data) == 0:
                     os.close(fd)
                     write_set.remove(fd)
                 else:
