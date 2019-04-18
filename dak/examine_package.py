@@ -562,6 +562,7 @@ def get_copyright(deb_filename):
 
 
 def get_readme_source(dsc_filename):
+    # TODO: py3: use tempfile.TemporaryDirectory
     tempdir = utils.temp_dirname()
     targetdir = os.path.join(tempdir, "source")
 
