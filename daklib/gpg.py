@@ -151,7 +151,7 @@ class SignedFile(object):
         assert len(self.fingerprints) == len(self.signature_ids)
 
     def _do_io(self, read, write):
-        for fd in write.keys():
+        for fd in write:
             old = fcntl.fcntl(fd, fcntl.F_GETFL)
             fcntl.fcntl(fd, fcntl.F_SETFL, old | os.O_NONBLOCK)
 
@@ -159,7 +159,7 @@ class SignedFile(object):
         write_pos = dict((fd, 0) for fd in write)
 
         read_set = list(read)
-        write_set = write.keys()
+        write_set = list(write)
         while len(read_set) > 0 or len(write_set) > 0:
             r, w, x_ = select.select(read_set, write_set, ())
             for fd in r:
@@ -176,7 +176,7 @@ class SignedFile(object):
                     bytes_written = os.write(fd, data)
                     write_pos[fd] += bytes_written
 
-        return dict((fd, "".join(read_lines[fd])) for fd in read_lines.keys())
+        return dict((fd, "".join(read_lines[fd])) for fd in read_lines)
 
     def _parse_timestamp(self, timestamp, datestring=None):
         """parse timestamp in GnuPG's format
