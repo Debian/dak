@@ -166,7 +166,7 @@ class ArchiveTransaction(object):
             source = source_query.first()
             if source is None:
                 raise ArchiveException('{0}: trying to install to {1}, but could not find source'.format(binary.hashed_file.filename, suite.suite_name))
-            self.copy_source(source, suite, component)
+            self.copy_source(source, suite, source.poolfile.component)
 
         db_file = self._install_file(directory, binary.hashed_file, suite.archive, component, source_name)
 
