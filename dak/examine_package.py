@@ -579,7 +579,8 @@ def get_readme_source(dsc_filename):
     path = os.path.join(targetdir, 'debian/README.source')
     res = ""
     if os.path.exists(path):
-        res += do_command(["cat", "--", path])
+        with open(path, 'r') as fh:
+            res += formatted_text(fh.read())
     else:
         res += "No README.source in this package\n\n"
 
