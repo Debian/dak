@@ -33,9 +33,10 @@ dinstall
 (
   packages=$(fixture-package-dir)
 
-  cp ${packages:?}/nonfree-package_* ${packages:?}/package_0.1* ${DAKBASE}/tmp
+  upload_changes ${packages:?}/nonfree-package_0.1-1_amd64.changes
+  upload_changes ${packages:?}/package_0.1-1_amd64.changes
 
-  dak process-upload -d ${DAKBASE}/tmp --automatic
+  process_uploads
 )
 
 echo "Verifying that packages in NEW are *not* published"
