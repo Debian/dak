@@ -563,9 +563,9 @@ def get_copyright(deb_filename):
 
 def get_readme_source(dsc_filename):
     tempdir = utils.temp_dirname()
-    os.rmdir(tempdir)
+    targetdir = os.path.join(tempdir, "source")
 
-    cmd = ('dpkg-source', '--no-check', '--no-copy', '-x', dsc_filename, tempdir)
+    cmd = ('dpkg-source', '--no-check', '--no-copy', '-x', dsc_filename, targetdir)
     try:
         daklib.daksubprocess.check_output(cmd, stderr=1)
     except subprocess.CalledProcessError as e:
@@ -575,7 +575,7 @@ def get_readme_source(dsc_filename):
         res += e.output
         return res
 
-    path = os.path.join(tempdir, 'debian/README.source')
+    path = os.path.join(targetdir, 'debian/README.source')
     res = ""
     if os.path.exists(path):
         res += do_command(["cat", "--", path])
