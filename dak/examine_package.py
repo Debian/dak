@@ -568,7 +568,7 @@ def get_readme_source(dsc_filename):
 
     cmd = ('dpkg-source', '--no-check', '--no-copy', '-x', dsc_filename, targetdir)
     try:
-        daklib.daksubprocess.check_output(cmd, stderr=1)
+        daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         res = "How is education supposed to make me feel smarter? Besides, every time I learn something new, it pushes some\n old stuff out of my brain. Remember when I took that home winemaking course, and I forgot how to drive?\n"
         res += "Error, couldn't extract source, WTF?\n"
