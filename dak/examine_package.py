@@ -52,6 +52,8 @@ import sys
 import apt_pkg
 import shutil
 import subprocess
+import tarfile
+import tempfile
 import threading
 
 from daklib import utils
@@ -60,7 +62,7 @@ from daklib.dbconn import DBConn, get_component_by_package_suite
 from daklib.gpg import SignedFile
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
-                           re_package, re_doc_directory
+                           re_package, re_doc_directory, re_file_binary
 from daklib.dak_exceptions import ChangesUnicodeError
 import daklib.daksubprocess
 
@@ -511,22 +513,43 @@ def do_lintian(filename):
     return do_command(cmd, escaped=True)
 
 
+def extract_one_file_from_deb(deb_filename, match):
+    with tempfile.TemporaryFile() as tmpfh:
+        dpkg_cmd = ('dpkg-deb', '--fsys-tarfile', deb_filename)
+        daklib.daksubprocess.check_call(dpkg_cmd, stdout=tmpfh)
+
+        tmpfh.seek(0)
+        with tarfile.open(fileobj=tmpfh, mode="r") as tar:
+            matched_member = None
+            for member in tar:
+                if member.isfile() and match.match(member.name):
+                    matched_member = member
+                    break
+
+            if not matched_member:
+                return None, None
+
+            fh = tar.extractfile(matched_member)
+            matched_data = fh.read()
+            fh.close()
+
+            return matched_member.name, matched_data
+
+
 def get_copyright(deb_filename):
     global printed
 
-    package = re_package.sub(r'\1', os.path.basename(deb_filename))
-    o = os.popen("dpkg-deb -c %s | egrep 'usr(/share)?/doc/[^/]*/copyright' | awk '{print $6}' | head -n 1" % (deb_filename))
-    cright = o.read()[:-1]
+    re_copyright = re.compile(r"\./usr(/share)?/doc/(?P<package>[^/]+)/copyright")
+    cright_path, cright = extract_one_file_from_deb(deb_filename, re_copyright)
 
-    if cright == "":
+    if not cright_path:
         return formatted_text("WARNING: No copyright found, please check package manually.")
 
-    doc_directory = re_doc_directory.sub(r'\1', cright)
+    package = re_file_binary.match(os.path.basename(deb_filename)).group('package')
+    doc_directory = re_copyright.match(cright_path).group('package')
     if package != doc_directory:
         return formatted_text("WARNING: wrong doc directory (expected %s, got %s)." % (package, doc_directory))
 
-    o = os.popen("dpkg-deb --fsys-tarfile %s | tar xvOf - %s 2>/dev/null" % (deb_filename, cright))
-    cright = o.read()
     copyrightmd5 = hashlib.md5(cright).hexdigest()
 
     res = ""
