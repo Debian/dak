@@ -342,7 +342,7 @@ def read_changes_or_dsc(suite, filename, session=None):
             dsc[k] = escape_if_needed(dsc[k])
 
     filecontents = '\n'.join(format_field(x, dsc[x.lower()])
-                             for x in keysinorder if x.lower().startswith('checksums-')
+                             for x in keysinorder if not x.lower().startswith('checksums-')
     ) + '\n'
     return filecontents
 
