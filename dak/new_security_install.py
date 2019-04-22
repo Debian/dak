@@ -33,9 +33,9 @@ import os
 import sys
 import time
 import apt_pkg
-import commands
 import errno
 import fcntl
+import subprocess
 
 from daklib import daklog
 from daklib import utils
