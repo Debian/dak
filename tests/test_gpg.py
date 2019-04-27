@@ -22,13 +22,13 @@ from base_test import DakTestCase, fixture
 from daklib.gpg import GpgException, SignedFile
 
 keyring = fixture('gpg/gnupghome/pubring.gpg')
-fpr_valid = '0ABB89079CB58F8F94F6F310CB9D5C5828606E84'
-fpr_expired = '05A558AE65B77B559BBE0C4D543B2BAEDA044F0B'
-fpr_expired_subkey = '8865D9EC71713394ADBD8F729F7A24B7F6388CE1'
+fpr_valid = b'0ABB89079CB58F8F94F6F310CB9D5C5828606E84'
+fpr_expired = b'05A558AE65B77B559BBE0C4D543B2BAEDA044F0B'
+fpr_expired_subkey = b'8865D9EC71713394ADBD8F729F7A24B7F6388CE1'
 
 
 def verify(filename, require_signature=True):
-    with open(fixture(filename)) as fh:
+    with open(fixture(filename), mode='rb') as fh:
         data = fh.read()
     return SignedFile(data, [keyring], require_signature)
 
@@ -39,7 +39,7 @@ class GpgTest(DakTestCase):
         self.assertTrue(result.valid)
         self.assertFalse(result.weak_signature)
         self.assertEqual(result.primary_fingerprint, fpr_valid)
-        self.assertEqual(result.contents, "Valid: yes\n")
+        self.assertEqual(result.contents, b"Valid: yes\n")
         self.assertEqual(result.signature_timestamp, datetime.datetime(2014, 9, 2, 21, 24, 10))
 
     def test_weak_sha1(self):
@@ -47,7 +47,7 @@ class GpgTest(DakTestCase):
         self.assertTrue(result.valid)
         self.assertTrue(result.weak_signature)
         self.assertEqual(result.primary_fingerprint, fpr_valid)
-        self.assertEqual(result.contents, "Message generated with gpg --homedir gnupghome --digest-algo=sha1 --clearsign\n")
+        self.assertEqual(result.contents, b"Message generated with gpg --homedir gnupghome --digest-algo=sha1 --clearsign\n")
         self.assertEqual(result.signature_timestamp, datetime.datetime(2017, 2, 22, 18, 59, 59))
 
     def test_weak_ripemd160(self):
@@ -55,14 +55,14 @@ class GpgTest(DakTestCase):
         self.assertTrue(result.valid)
         self.assertTrue(result.weak_signature)
         self.assertEqual(result.primary_fingerprint, fpr_valid)
-        self.assertEqual(result.contents, "Message generated with gpg --homedir gnupghome --digest-algo=ripemd160 --clearsign\n")
+        self.assertEqual(result.contents, b"Message generated with gpg --homedir gnupghome --digest-algo=ripemd160 --clearsign\n")
         self.assertEqual(result.signature_timestamp, datetime.datetime(2017, 2, 22, 19, 2, 54))
 
     def test_expired(self):
         result = verify('gpg/expired.asc', False)
         self.assertFalse(result.valid)
         self.assertEqual(result.primary_fingerprint, fpr_expired)
-        self.assertEqual(result.contents, "Valid: expired\n")
+        self.assertEqual(result.contents, b"Valid: expired\n")
         self.assertEqual(result.signature_timestamp, datetime.datetime(2001, 2, 1, 0, 0, 0))
 
     def test_expired_assertion(self):
@@ -73,7 +73,7 @@ class GpgTest(DakTestCase):
         result = verify('gpg/expired-subkey.asc', False)
         self.assertFalse(result.valid)
         self.assertEqual(result.primary_fingerprint, fpr_expired_subkey)
-        self.assertEqual(result.contents, "Valid: expired-subkey\n")
+        self.assertEqual(result.contents, b"Valid: expired-subkey\n")
         self.assertEqual(result.signature_timestamp, datetime.datetime(2014, 2, 1, 0, 0, 0))
 
     def test_expires_subkey_assertion(self):
