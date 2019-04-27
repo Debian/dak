@@ -198,7 +198,7 @@ propups() {
     local target_suite="${1}"
     local f="${2:-propups.${target_suite}}"
     if ${wget} -O "${f}" "${release_base}/${f}"; then
-        echo "Please check ${f}"
+        echo "Please check ${f} (will open an editor for you)"
         confirm
         $EDITOR ${f}
         dak control-suite --force --add ${target_suite} < ${f}
@@ -215,7 +215,7 @@ log "RM time"
 hadrms=0
 
 if ${wget} -O "removallist" "${release_base}/removals.${suitename}"; then
-    echo "Please check removallist file, I am going to run it as shell script when you confirm"
+    echo "Please check removallist file, I am going to run it as shell script when you confirm (will open an editor for you)"
     confirm
     $EDITOR removallist
     bash removallist
@@ -242,7 +242,7 @@ done
 set -e
 
 if [[ ${hadrms} -ne 0 ]]; then
-    echo "You did some removals, please copy their entries into the changelog"
+    echo "You did some removals, please copy their entries into the changelog (will open an editor for you)"
     confirm
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
     rm -f ${ftpdir}/dists/${suite}/ChangeLog~
@@ -313,7 +313,7 @@ echo "Now check if it looks good"
 for f in README README.html dists/README dists/${suite}/ChangeLog; do
   diff -u ${mirrordir}/ftp-master/${f} ${ftpdir}/${f} || :
 done
-read -e -p "Does the diff look ok? Enter anything if not, empty if yes" diffcheck
+read -e -p "Does the diff look ok? Enter anything if not, empty if yes (if nonempty, I will open an editor for you)" diffcheck
 if [[ -n ${diffcheck} ]]; then
     cd ${ftpdir}/dists/${suite}
     $EDITOR ChangeLog ../README ../../README ../../README.html
@@ -354,7 +354,8 @@ while :; do
 done
 
 if [[ ${hadremove} -ne 0 ]]; then
-    echo "You did some removals, please copy their entries into the changelog"
+    echo "You did some removals, please copy their entries into the changelog (will open an editor for you)"
+    confirm
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
     rm -f -- ${ftpdir}/dists/${suite}/ChangeLog~
 fi
