@@ -174,7 +174,9 @@ while :; do
     fi
 done
 
+log "Merging the ${pusuite}-debug into ${suite}-debug"
 dak control-suite --add ${suite}-debug < ${pusuite}-debug.list
+log "Cleaning ${pusuite} and ${pusuite}-debug"
 dak control-suite --remove ${pusuite} < ${pusuite}.list
 dak control-suite --remove ${pusuite}-debug < ${pusuite}-debug.list
 
