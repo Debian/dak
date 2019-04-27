@@ -20,6 +20,16 @@ declare public_archives=(ftp-master debian-debug)
 declare -r scriptdir=${DAKBASE}/scripts
 declare -r overridedir=${scriptdir}/override # debian
 declare -r pdiff_tempdir="${DAKBASE}/_dinstall-pdiff-temp"
+declare -r upload_dir="${DAKBASE}/uploads"
+
+mkdir -p $upload_dir
+
+set_debugsuite() {
+    suite=$1
+    debugsuite=$2
+    # there should be a better way to do this
+    echo "update suite set debugsuite_id=(select id from suite where suite_name='$debugsuite') where suite_name='$suite';" | psql
+}
 
 setup_debian_like_archive() {
     dak admin archive add ftp-master "${DAKBASE}/ftp-master" "main archive"
@@ -33,12 +43,25 @@ setup_debian_like_archive() {
     dak admin suite add-build-queue unstable buildd-unstable buildd-sid build-queues
     dak admin suite-config set unstable allowcsset=no byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
+
+    dak admin suite add-all-arches unstable-debug "" codename=sid-debug archive=debian-debug
+    dak admin suite-component add unstable-debug main contrib non-free
+    dak admin suite-config set unstable-debug allowcsset=no byhash=yes \
+        accept_binary_uploads=False accept_source_uploads=False
+    set_debugsuite unstable unstable-debug
+
     # testing
     dak admin suite add-all-arches testing "" codename=buster archive=ftp-master
     dak admin suite-component add testing main contrib non-free
     dak admin suite-config set testing allowcsset=yes byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         changelog=dists/testing/ChangeLog
+
+    dak admin suite add-all-arches testing-debug "" codename=sid-debug archive=debian-debug
+    dak admin suite-component add testing-debug main contrib non-free
+    dak admin suite-config set testing-debug allowcsset=no byhash=yes \
+        accept_binary_uploads=False accept_source_uploads=False
+    set_debugsuite testing testing-debug
 
     # testing-proposed-updates
     dak admin suite add-all-arches testing-proposed-updates "" \
@@ -70,6 +93,14 @@ setup_debian_like_archive() {
     dak admin v-c add testing-proposed-updates MustBeNewerThan testing
     # unstable
     dak admin v-c add unstable MustBeNewerThan testing
+}
+
+upload_changes() {
+    dcmd cp -v "$@" $upload_dir
+}
+
+process_uploads() {
+    dak process-upload -d $upload_dir --automatic
 }
 
 dinstall() {

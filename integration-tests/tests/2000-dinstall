@@ -33,9 +33,11 @@ dinstall
 (
   packages=$(fixture-package-dir)
 
-  cp ${packages:?}/nonfree-package_* ${packages:?}/package_0.1* ${DAKBASE}/tmp
+  upload_changes ${packages:?}/nonfree-package_0.1-1_amd64.changes
+  upload_changes ${packages:?}/package_0.1-1_amd64.changes
+  upload_changes ${packages:?}/main-contrib-with-debug_0.1-1_amd64.changes
 
-  dak process-upload -d ${DAKBASE}/tmp --automatic
+  process_uploads
 )
 
 echo "Verifying that packages in NEW are *not* published"
@@ -57,12 +59,42 @@ EOF
   dak control-overrides -s unstable -t dsc -a << EOF
 package admin
 EOF
+
+echo a | dak process-new main-contrib-with-debug_0.1-1_amd64.changes
   
   dak process-new --automatic
   dak process-policy new
+)
+
+(
+  upload_changes ${packages:?}/main-contrib-with-debug_0.2-1_amd64.changes
+  process_uploads
+
+  dak ls main-contrib-with-debug
+
+  to_testing="$(cat <<EOF
+contrib-with-debug 0.2-1 amd64
+main-contrib-with-debug 0.2-1 source
+main-package 0.2-1 all
+package 0.1-1 all
+package 0.1-1 source
+EOF
+)"
+
+  echo "$to_testing" | dak control-suite -s testing
+
 )
 
 # After running dinstall, the package should now be present in the pool
 dinstall
 ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc
 echo "Published successfully"
+
+echo "contents of testing:"
+dak control-suite -l testing
+echo ""
+echo "contents of unstable:"
+dak control-suite -l unstable
+echo ""
+
+dak ls main-contrib-with-debug

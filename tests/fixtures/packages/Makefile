@@ -1,7 +1,7 @@
 export GNUPGHOME = $(CURDIR)/gpg
 SHELL = /bin/bash
 
-TAR = linux_42.0 nonfree-package_0.1 package_0.1 package_0.2 package-built-using_0.1
+TAR = linux_42.0 nonfree-package_0.1 package_0.1 package_0.2 package-built-using_0.1 main-contrib-with-debug_0.1 main-contrib-with-debug_0.2
 PACKAGES = $(TAR)
 
 all: packages

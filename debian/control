@@ -5,6 +5,7 @@ Build-Depends: alembic,
                debhelper (>= 9~),
 # Either a recent debhelper/dpkg-dev or fakeroot is needed to build test packages
                debhelper (>= 11.2~) | fakeroot,
+               devscripts,
                dpkg-dev (>= 1.19.0.5) | fakeroot,
                jq,
                postgresql-11 | postgresql-9.6 | postgresql-9.4,
