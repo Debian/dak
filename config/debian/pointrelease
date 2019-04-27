@@ -200,6 +200,7 @@ propups() {
     if ${wget} -O "${f}" "${release_base}/${f}"; then
         echo "Please check ${f}"
         confirm
+        $EDITOR ${f}
         dak control-suite --force --add ${target_suite} < ${f}
     fi
 }
