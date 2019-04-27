@@ -356,6 +356,7 @@ done
 if [[ ${hadremove} -ne 0 ]]; then
     echo "You did some removals, please copy their entries into the changelog"
     $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
+    rm -f -- ${ftpdir}/dists/${suite}/ChangeLog~
 fi
 
 log "Cleaning up debug suite"
