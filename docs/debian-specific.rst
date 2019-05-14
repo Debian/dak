@@ -83,10 +83,11 @@ NEW processing
     CHANGES=FILENAME.changes
     dak process-new
     cd /srv/security-master.debian.org/queue/new/COMMENTS
-    { echo NOTOK; echo; echo "Moving back to unchecked"; } > "REJECT.${CHANGES}"
-    rm "ACCEPT.${CHANGES}"
+    echo $'NOTOK\n\nMoving back to unchecked' > "REJECT.${CHANGES%.changes}"
+    rm "ACCEPT.${CHANGES%.changes}"
     dak process-policy new; dak clean-suites
     cd /srv/security-master.debian.org/queue/reject
+    # Careful! This is only correct if there are no previous uploads!
     dak admin forget-signature ${CHANGES}
     dcmd mv -nt ../unchecked -- ${CHANGES}
     /srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked
