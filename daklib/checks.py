@@ -464,7 +464,7 @@ class BinaryCheck(Check):
                 field, control,
                 dependency_parser=apt_pkg.parse_depends,
                 allow_alternatives=True,
-                require_strict_dependency=False):
+                allow_relations=('', '<', '<=', '=', '>=', '>')):
             value = control.get(field)
             if value is not None:
                 if value.strip() == '':
@@ -476,9 +476,9 @@ class BinaryCheck(Check):
                 for group in depends:
                     if not allow_alternatives and len(group) != 1:
                         raise Reject('{0}: {1}: alternatives are not allowed'.format(fn))
-                    if require_strict_dependency \
-                       and any(dependency[2] != '=' for dependency in group):
-                        raise Reject('{0}: {1}: only strict dependencies ("=") are allowed'.format(fn, field))
+                    for dep_pkg, dep_ver, dep_rel in group:
+                        if dep_rel not in allow_relations:
+                            raise Reject('{}: {}: depends on {}, but only relations {} are allowed for this field'.format(fn, field, " ".join(dep_pkg, dep_rel, dep_ver), allow_relations))
 
         for field in ('Breaks', 'Conflicts', 'Depends', 'Enhances', 'Pre-Depends',
                       'Recommends', 'Replaces', 'Suggests'):
@@ -486,11 +486,11 @@ class BinaryCheck(Check):
 
         check_dependency_field("Provides", control,
                                allow_alternatives=False,
-                               require_strict_dependency=True)
+                               allow_relations=('', '='))
         check_dependency_field("Built-Using", control,
                                dependency_parser=apt_pkg.parse_src_depends,
                                allow_alternatives=False,
-                               require_strict_dependency=True)
+                               allow_relations=('=',))
 
 
 class BinaryTimestampCheck(Check):
