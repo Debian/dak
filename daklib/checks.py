@@ -460,26 +460,23 @@ class BinaryCheck(Check):
 
         # check dependency field syntax
 
-        for field in ('Breaks', 'Conflicts', 'Depends', 'Enhances', 'Pre-Depends',
-                      'Provides', 'Recommends', 'Replaces', 'Suggests'):
+        def check_field(field, control,
+                        dependency_parser=apt_pkg.parse_depends):
             value = control.get(field)
             if value is not None:
                 if value.strip() == '':
                     raise Reject('{0}: empty {1} field'.format(fn, field))
                 try:
-                    apt_pkg.parse_depends(value)
+                    dependency_parser(value)
                 except:
                     raise Reject('{0}: APT could not parse {1} field'.format(fn, field))
 
+        for field in ('Breaks', 'Conflicts', 'Depends', 'Enhances', 'Pre-Depends',
+                      'Provides', 'Recommends', 'Replaces', 'Suggests'):
+            check_field(field, control)
+
         for field in ('Built-Using',):
-            value = control.get(field)
-            if value is not None:
-                if value.strip() == '':
-                    raise Reject('{0}: empty {1} field'.format(fn, field))
-                try:
-                    apt_pkg.parse_src_depends(value)
-                except:
-                    raise Reject('{0}: APT could not parse {1} field'.format(fn, field))
+            check_field(field, control, dependency_parser=apt_pkg.parse_src_depends)
 
 
 class BinaryTimestampCheck(Check):
