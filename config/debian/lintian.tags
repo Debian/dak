@@ -88,6 +88,7 @@ lintian:
     - file-in-etc-not-marked-as-conffile
     - file-in-usr-marked-as-conffile
     - forbidden-postrm-interpreter
+    - invalid-versioned-provides
     - latest-debian-changelog-entry-without-new-date
     - library-in-debug-or-profile-should-not-be-stripped
     - license-problem-md5sum-non-distributable-file
