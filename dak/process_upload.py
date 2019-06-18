@@ -499,7 +499,7 @@ def process_changes(changes_filenames):
             c = daklib.upload.Changes(directory, filename, keyring_files)
             # Force parsing the .changes so we can catch InvalidChangesException now
             #pylint: disable=pointless-statement
-            c.byhand_files
+            c.files
             changes.append([directory, c])
         except Exception as e:
             Logger.log([filename, "Error while loading changes: {0}".format(e)])
