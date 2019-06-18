@@ -85,16 +85,6 @@ class TransitionsError(DakError):
     pass
 
 
-class NoSourceFieldError(DakError):
-    "Exception raised - we cant find the source - wtf?"
-    pass
-
-
-class MissingContents(DakError):
-    "Exception raised - we could not determine contents for this deb"
-    pass
-
-
 class DBUpdateError(DakError):
     "Exception raised - could not update the database"
     pass
@@ -107,9 +97,4 @@ class ChangesUnicodeError(DakError):
 
 class AlreadyLockedError(DakError):
     "Exception raised - package already locked by someone else"
-    pass
-
-
-class CantGetLockError(DakError):
-    "Exception raised - lockfile already in use"
     pass
