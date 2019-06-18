@@ -692,7 +692,15 @@ class ArchiveUpload(object):
 
             self.changes = upload.Changes(self.directory, self.original_changes.filename, self.keyrings)
 
-            for f in self.changes.files.itervalues():
+            files = {}
+            try:
+                files = self.changes.files
+            except InvalidChangesException:
+                # Do not raise an exception; upload will be rejected later
+                # due to the missing files
+                pass
+
+            for f in files.itervalues():
                 src = os.path.join(self.original_directory, f.filename)
                 dst = os.path.join(self.directory, f.filename)
                 if not os.path.exists(src):
