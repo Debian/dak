@@ -26,21 +26,8 @@ Exception classes used in dak
 class DakError(Exception):
     """
     Base class for all simple errors in this module.
-
     """
-
-    def __init__(self, message=""):
-        """
-        @type message: string
-        @param message: explanation of the error
-
-        """
-        Exception.__init__(self)
-        self.args = str(message)
-        self.message = str(message)
-
-    def __str__(self):
-        return self.message
+    pass
 
 
 class ParseMaintError(DakError):
