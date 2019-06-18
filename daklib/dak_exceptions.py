@@ -43,40 +43,86 @@ class DakError(Exception):
         return self.message
 
 
-__all__ = ['DakError']
-
-# If you want to have a new exception in dak, add it here.
-dakerrors = {
-    "ParseMaintError":     """Exception raised for errors in parsing a maintainer field.""",
-    "ParseChangesError":   """Exception raised for errors in parsing a changes file.""",
-    "InvalidDscError":     """Exception raised for invalid dsc files.""",
-    "UnknownFormatError":  """Exception raised for unknown Format: lines in changes files.""",
-    "NoFilesFieldError":   """Exception raised for missing files field in dsc/changes.""",
-    "CantOpenError":       """Exception raised when files can't be opened.""",
-    "CantOverwriteError":  """Exception raised when files can't be overwritten.""",
-    "FileExistsError":     """Exception raised when destination file exists.""",
-    "SendmailFailedError": """Exception raised when Sendmail invocation failed.""",
-    "NoFreeFilenameError": """Exception raised when no alternate filename was found.""",
-    "TransitionsError":    """Exception raised when transitions file can't be parsed.""",
-    "NoSourceFieldError":  """Exception raised - we cant find the source - wtf?""",
-    "MissingContents":     """Exception raised - we could not determine contents for this deb""",
-    "DBUpdateError":       """Exception raised - could not update the database""",
-    "ChangesUnicodeError": """Exception raised - changes file not properly utf-8 encoded""",
-    "AlreadyLockedError":  """Exception raised - package already locked by someone else""",
-    "CantGetLockError":    """Exception raised - lockfile already in use""",
-} #: All dak exceptions
+class ParseMaintError(DakError):
+    "Exception raised for errors in parsing a maintainer field."
+    pass
 
 
-def construct_dak_exception(name, description):
-    class Er(DakError):
-        __doc__ = description
-    setattr(Er, "__name__", name)
-    return Er
+class ParseChangesError(DakError):
+    "Exception raised for errors in parsing a changes file."
+    pass
 
 
-for e in dakerrors.keys():
-    globals()[e] = construct_dak_exception(e, dakerrors[e])
-    __all__ += [e]
+class InvalidDscError(DakError):
+    "Exception raised for invalid dsc files."
+    pass
 
 
-################################################################################
+class UnknownFormatError(DakError):
+    "Exception raised for unknown Format: lines in changes files."
+    pass
+
+
+class NoFilesFieldError(DakError):
+    """Exception raised for missing files field in dsc/changes."""
+    pass
+
+
+class CantOpenError(DakError):
+    """Exception raised when files can't be opened."""
+    pass
+
+
+class CantOverwriteError(DakError):
+    "Exception raised when files can't be overwritten."
+    pass
+
+
+class FileExistsError(DakError):
+    "Exception raised when destination file exists."
+    pass
+
+
+class SendmailFailedError(DakError):
+    "Exception raised when Sendmail invocation failed."
+    pass
+
+
+class NoFreeFilenameError(DakError):
+    "Exception raised when no alternate filename was found."
+    pass
+
+
+class TransitionsError(DakError):
+    "Exception raised when transitions file can't be parsed."
+    pass
+
+
+class NoSourceFieldError(DakError):
+    "Exception raised - we cant find the source - wtf?"
+    pass
+
+
+class MissingContents(DakError):
+    "Exception raised - we could not determine contents for this deb"
+    pass
+
+
+class DBUpdateError(DakError):
+    "Exception raised - could not update the database"
+    pass
+
+
+class ChangesUnicodeError(DakError):
+    "Exception raised - changes file not properly utf-8 encoded"
+    pass
+
+
+class AlreadyLockedError(DakError):
+    "Exception raised - package already locked by someone else"
+    pass
+
+
+class CantGetLockError(DakError):
+    "Exception raised - lockfile already in use"
+    pass
