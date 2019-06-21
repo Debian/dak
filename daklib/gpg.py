@@ -247,7 +247,7 @@ class SignedFile(object):
         elif fields[1] in (b'PLAINTEXT', b'GOODSIG', b'KEY_CONSIDERED',
                            b'NEWSIG', b'NOTATION_NAME', b'NOTATION_FLAGS',
                            b'NOTATION_DATA', b'SIGEXPIRED', b'KEYEXPIRED',
-                           b'POLICY_URL', b'PROGRESS'):
+                           b'POLICY_URL', b'PROGRESS', b'VERIFICATION_COMPLIANCE_MODE'):
             pass
 
         elif fields[1] in (b'EXPSIG', b'EXPKEYSIG'):
