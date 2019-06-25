@@ -52,7 +52,6 @@ $statusdelay = 30;
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-arm64-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-armhf-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-armel-keyring.gpg",
-              "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-hurd-i386-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-i386-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-ia64-keyring.gpg",
               "/srv/keyring.debian.org/keyrings/buildd-keyrings/buildd-mips64el-keyring.gpg",
