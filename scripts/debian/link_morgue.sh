@@ -120,7 +120,7 @@ if [ "$(hostname -s)" != "stabile" ]; then
 
     # We only transfer symlinks or files changed more than 14 days ago
     # (assuming we won't ever find anything on snapshot for them)
-    find . \( -type l -o \( -type f -ctime 14 \) \) -print0 >${LISTFILE}
+    find . \( -type l -o \( -type f -ctime +14 \) \) -print0 >${LISTFILE}
 
     # morgue-sync has to be setup in ~/.ssh/config and the authorized_keys
     # on the other side should contain (one line, no #)
