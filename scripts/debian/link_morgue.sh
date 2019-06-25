@@ -125,7 +125,7 @@ if [ "$(hostname -s)" != "stabile" ]; then
     # morgue-sync has to be setup in ~/.ssh/config and the authorized_keys
     # on the other side should contain (one line, no #)
 # command="rsync --server -lHogDtpRe.Lsf --remove-source-files . /srv/morgue.debian.org/sync/ftp-master",
-# no-port-forwarding,no-X11-forwarding,no-agent-forwarding,from="ftp-master.debian.org" ssh-rsa...
+# restrict,from="ftp-master.debian.org" ssh-rsa...
     rsync -aHq -e "ssh -o Batchmode=yes -o ConnectTimeout=30 -o SetupTimeout=30 " --remove-source-files --from0 --files-from=${LISTFILE} $base/morgue/ morgue-sync:/srv/morgue.debian.org/sync/$archive
 
     # And remove empty subdirs. To remove entire hierarchies we probably should run this
