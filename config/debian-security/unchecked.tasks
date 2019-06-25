@@ -8,7 +8,6 @@ process_policy_security        embargoed                         none           
 process_policy_security        unembargoed                       none                       false     false
 export_policy                  embargoed                         none                       false     false
 sync_accepted                  none                              none                       false     false
-update_kfreebsd                none                              none                       false     false
 make_buildd_dir                security                          none                       false     false
 trigger_wb_security            none                              none                       false     false
 clean_suites                   none                              none                       false     false

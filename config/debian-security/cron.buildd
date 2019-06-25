@@ -8,7 +8,7 @@ set -u
 
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
-DISTS="oldoldstable oldstable oldstable-kfreebsd stable testing"
+DISTS="oldoldstable oldstable stable testing"
 
 if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
     exit 0
@@ -38,9 +38,6 @@ if [ ! -z "${dists}" ]; then
                 ;;
             oldstable)
                 send=jessie
-                ;;
-            oldstable-kfreebsd)
-                send=jessie-kfreebsd
                 ;;
             stable)
                 send=stretch

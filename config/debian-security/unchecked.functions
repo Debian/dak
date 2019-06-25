@@ -3,10 +3,6 @@ function sync_accepted() {
           ${queuedir}/accepted/ rsync-to-ssh.upload.debian.org:/does/not/matter
 }
 
-function update_kfreebsd() {
-    dak update-suite oldstable oldstable-kfreebsd
-}
-
 function trigger_wb_security() {
     ${configdir}/cron.buildd
 }
