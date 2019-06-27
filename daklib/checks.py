@@ -837,11 +837,7 @@ class NoSourceOnlyCheck(Check):
             for suite in ('oldstable', 'oldstable-proposed-updates', 'oldstable-security',
                           'jessie', 'jessie-proposed-updates', 'jessie-security',
                           'oldstable-backports', 'oldstable-backports-sloppy',
-                          'jessie-backports', 'jessie-backports-sloppy',
-                          'oldoldstable', 'oldoldstable-security',
-                          'wheezy', 'wheezy-security',
-                          'oldoldstable-backports', 'oldoldstable-backports-sloppy',
-                          'wheezy-backports', 'wheezy-backports-sloppy'):
+                          'jessie-backports', 'jessie-backports-sloppy'):
                 if suite in changes.distributions:
                     raise Reject('Suite {} is not configured to build arch:all packages. Please include them in your upload'.format(suite))
 
