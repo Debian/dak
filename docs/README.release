@@ -303,6 +303,64 @@ dak admin v-c add testing-updates MustBeNewerThan oldoldstable
 dak admin v-c add unstable MustBeNewerThan testing
 dak admin v-c add experimental MustBeNewerThan testing
 
+
+# backports
+dak admin suite add ${new_oldstable}-backports-sloppy '' origin="Debian Backports" label='Debian Backports' codename=${new_oldstable}-backports-sloppy description='Debian 9 - Sloppy Backports' notautomatic=true butautomaticupgrades=true archive=ftp-master
+dak admin suite add ${new_oldstable}-backports-sloppy-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_oldstable}-backports-sloppy-debug description='Debian 9 - Sloppy Backports - Debug Information' notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
+
+dak admin suite add ${new_stable}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_stable}-debug description='Debian 10 - Backports - Debug Information' notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
+
+dak admin suite add ${new_testing}-backports '' origin="Debian Backports" label='Debian Backports' codename=${new_testing}-backports description='Debian X.Y - Backports' notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false archive=ftp-master
+dak admin suite add ${new_testing}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_testing}-backports-debug description='Debian X.Y - Backports - Debug Information' notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
+
+for suite in ${new_oldstable}-backports-sloppy ${new_oldstable}-backports-sloppy-debug; do
+  dak admin s-c add ${suite} main contrib non-free
+  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_stable})
+done
+for suite in ${new_stable}-backports-debug; do
+  dak admin s-c add ${suite} main contrib non-free
+  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_stable})
+done
+for suite in ${new_testing}-backports ${new_testing}-backports-debug; do
+  dak admin s-c add ${suite} main contrib non-free
+  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_testing})
+done
+
+dak admin s add-build-queue ${new_oldstable}-backports-sloppy buildd-${new_oldstable}-backports-sloppy buildd-${new_oldstable}-backports-sloppy build-queues
+dak admin s add-build-queue ${new_stable}-backports buildd-${new_stable}-backports buildd-${new_stable}-backports build-queues
+dak admin s add-build-queue ${new_testing}-backports buildd-${new_testing}-backports buildd-${new_testing}-backports build-queues
+
+\set new_oldstable `echo ${new_oldstable}`
+\set new_stable `echo ${new_stable}`
+\set new_testing `echo ${new_testing}`
+begin;
+
+  update suite set debugsuite_id = (select id from suite where codename=concat(:'new_oldstable', '-backports-sloppy-debug')) where codename=concat(:'new_oldstable', '-backports-sloppy');
+  update suite set debugsuite_id = (select id from suite where codename=concat(:'new_stable', '-backports-debug')) where codename=concat(:'new_stable', '-backports');
+  update suite set debugsuite_id = (select id from suite where codename=concat(:'new_testing', '-backports-debug')) where codename=concat(:'new_testing', '-backports');
+
+  update suite set
+    announce=array['debian-backports-changes@lists.debian.org'],
+    indices_compression=array['xz'],
+    i18n_compression=array['xz'],
+    byhash=true,
+    checksums=array['sha256'],
+    new_queue_id=10,
+    changelog_url='http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog'
+  where codename in (
+      concat(:'new_oldstable', '-backports-sloppy'), concat(:'new_stable', '-backports'), concat(:'new_testing', '-backports'),
+      concat(:'new_oldstable', '-backports-sloppy-debug'), concat(:'new_stable', '-backports-debug'), concat(:'new_testing', '-backports-debug'),
+      concat('buildd-', :'new_oldstable', '-backports-sloppy'), concat('buildd-', :'new_stable', '-backports'), concat('buildd-', :'new_testing', '-backports'));
+
+  update suite set signingkeys = ARRAY['126C0D24BD8A2942CC7DF8AC7638D0442B90D010', 'E1CF20DDFFE4B89E802658F1E0B11894F66AEC98'] where suite_name in ('stretch-backports-sloppy', 'stretch-backports-sloppy-debug', 'buildd-stretch-backports-sloppy');
+  update suite set signingkeys = ARRAY['E1CF20DDFFE4B89E802658F1E0B11894F66AEC98', '80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE'] WHERE suite_name IN ('buster-backports', 'buster-backports-debug', 'buildd-buster-backports', 'bullseye-backports', 'bullseye-backports-debug', 'buildd-bullseye-backports');
+
+commit;
+
+for s in ${new_oldstable}-backports-sloppy{,-debug} ${new_stable}-backports{,-debug} ${new_testing}-backports{,-debug}; do
+  dak generate-packages-sources2 -s ${s}
+done
+
 FINISH:
 for s in testing testing-proposed-updates testing-updates; do
   dak generate-packages-sources2 -s ${s}
