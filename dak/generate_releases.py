@@ -302,7 +302,7 @@ class ReleaseWriter(object):
                     )
 
         cnf = Config()
-        cnf_suite_suffix = cnf.get("Dinstall::SuiteSuffix", "")
+        cnf_suite_suffix = cnf.get("Dinstall::SuiteSuffix", "").rstrip("/")
 
         suite_suffix = utils.suite_suffix(suite.suite_name)
 
