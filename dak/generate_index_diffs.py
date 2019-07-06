@@ -416,7 +416,7 @@ def main():
         architectures = get_suite_architectures(suite, skipall=True, session=session)
         components = [c.component_name for c in session.query(Component.component_name)]
 
-        suite_suffix = Cnf.find("Dinstall::SuiteSuffix")
+        suite_suffix = utils.suite_suffix(suitename)
         if components and suite_suffix:
             longsuite = suite + "/" + suite_suffix
         else:

@@ -1417,3 +1417,16 @@ def parse_boolean_from_user(value):
     if value in {'no', 'false', 'disable', 'disabled'}:
         return False
     raise ValueError("Not sure whether %s should be a True or a False" % value)
+
+
+def suite_suffix(suite_name):
+    """Return suite_suffix for the given suite"""
+    suffix = Cnf.find('Dinstall::SuiteSuffix', '')
+    if suffix == '':
+        return ''
+    elif 'Dinstall::SuiteSuffixSuites' not in Cnf:
+        # TODO: warn (once per run) that SuiteSuffix will be deprecated in the future
+        return suffix
+    elif suite_name in Cnf.value_list('Dinstall::SuiteSuffixSuites'):
+        return suffix
+    return ''

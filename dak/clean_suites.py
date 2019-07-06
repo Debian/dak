@@ -398,7 +398,6 @@ SELECT f.id, f.fingerprint FROM fingerprint f
 
 def clean_byhash(now_date, session):
     cnf = Config()
-    suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
 
     Logger.log(["Cleaning out unused by-hash files..."])
 
@@ -413,6 +412,7 @@ def clean_byhash(now_date, session):
 
     if not Options["No-Action"]:
         for base, suite, path in q:
+            suite_suffix = utils.suite_suffix(suite)
             filename = os.path.join(base, 'dists', suite, suite_suffix, path)
             try:
                 os.unlink(filename)

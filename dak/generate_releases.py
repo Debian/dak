@@ -144,7 +144,7 @@ class ReleaseWriter(object):
         Absolute path to the suite-specific files.
         """
         cnf = Config()
-        suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
+        suite_suffix = utils.suite_suffix(self.suite.suite_name)
 
         return os.path.join(self.suite.archive.path, 'dists',
                             self.suite.suite_name, suite_suffix)
@@ -155,7 +155,7 @@ class ReleaseWriter(object):
         This should be a path that sorts after the dists/ directory.
         """
         cnf = Config()
-        suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
+        suite_suffix = utils.suite_suffix(self.suite.suite_name)
 
         return os.path.join(self.suite.archive.path, 'zzz-dists',
                             self.suite.suite_name, suite_suffix)
@@ -303,7 +303,7 @@ class ReleaseWriter(object):
 
         cnf = Config()
 
-        suite_suffix = cnf.find("Dinstall::SuiteSuffix", "")
+        suite_suffix = utils.suite_suffix(suite.suite_name)
 
         self.create_output_directories()
         self.create_release_symlinks()
