@@ -1,3 +1,5 @@
 VRULE:1429991520#0b19c1:jessie release
 VRULE:1486333796#00ff00:stretch freeze
 VRULE:1497650400#00ff00:stretch release
+VRULE:1552345200#00ff00:buster freeze
+VRULE:1562397149#00ff00:buster release

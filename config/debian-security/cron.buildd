@@ -8,7 +8,7 @@ set -u
 
 export SCRIPTVARS=/srv/security-master.debian.org/dak/config/debian-security/vars
 . $SCRIPTVARS
-DISTS="oldstable stable testing"
+DISTS="oldoldstable oldstable stable testing"
 
 if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
     exit 0
@@ -34,16 +34,16 @@ if [ ! -z "${dists}" ]; then
     for d in ${dists}; do
         case ${d} in
             oldoldstable)
-                send=wheezy
-                ;;
-            oldstable)
                 send=jessie
                 ;;
-            stable)
+            oldstable)
                 send=stretch
                 ;;
-            testing)
+            stable)
                 send=buster
+                ;;
+            testing)
+                send=bullseye
                 ;;
             *)
                 send=unknown

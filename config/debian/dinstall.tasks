@@ -13,7 +13,7 @@ i18n1                  none                       i18n\ 1                    fal
 dep11                  none                       dep11\ 1                   false     true
 LOCK                   UNCHECKED                  1200                       exclusive false
 punew                  stable-new                 p-u-new                    false     false
-# opunew                 oldstable-new              o-p-u-new                  false     false
+opunew                 oldstable-new              o-p-u-new                  false     false
 backports_policy       none                       backports-policy           false     false
 cruft                  none                       cruft                      true      false
 NOSTAGE                state\ indices             none                       false     false

@@ -127,7 +127,7 @@ function cruft() {
 function dominate() {
     log "Removing obsolete source and binary associations"
     dak dominate
-    dak manage-debug-suites unstable-debug experimental-debug stretch-backports-debug testing-proposed-updates-debug
+    dak manage-debug-suites unstable-debug experimental-debug stretch-backports-debug buster-backports-debug testing-proposed-updates-debug
 }
 
 function autocruft() {
@@ -212,7 +212,7 @@ function copyoverrides() {
     (
         shopt -s nullglob
         rm -f ${indices}/override.*.gz
-        for ofile in ${overridedir}/override.{wheezy,jessie,stretch,buster,sid}.{,extra.}{main,contrib,non-free}*; do
+        for ofile in ${overridedir}/override.{jessie,stretch,buster,bullseye,sid}.{,extra.}{main,contrib,non-free}*; do
             bname=${ofile##*/}
             gzip -9cv --rsyncable  --no-name ${ofile} > ${indices}/${bname}.gz
             chmod g+w ${indices}/${bname}.gz
@@ -348,12 +348,12 @@ function mkfilesindices() {
     done
 
     (cd $base/ftp/
-     for dist in sid jessie stretch buster; do
+     for dist in sid jessie stretch buster bullseye; do
 	 find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
      done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz ; zcat translation-stretch.list.gz ; zcat translation-buster.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz ; zcat translation-stretch.list.gz ; zcat translation-buster.list.gz ; zcat translation-bullseye.list.gz) |
         sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
