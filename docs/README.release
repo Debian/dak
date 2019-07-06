@@ -303,6 +303,7 @@ dak admin v-c add testing-updates MustBeNewerThan oldoldstable
 dak admin v-c add unstable MustBeNewerThan testing
 dak admin v-c add experimental MustBeNewerThan testing
 
+# copy d-i to new testing (so same d-i in stable, testing, unstable)
 
 # backports
 dak admin suite add ${new_oldstable}-backports-sloppy '' origin="Debian Backports" label='Debian Backports' codename=${new_oldstable}-backports-sloppy description='Debian 9 - Sloppy Backports' notautomatic=true butautomaticupgrades=true close_bugs=false archive=ftp-master
@@ -432,10 +433,3 @@ for suite in testing-security buildd-testing-security; do
   dak generate-packages-sources2 -s ${suite}
   dak generate-releases -s ${suite}
 done
-
-########################################################################
-
-TODO:
-buster-backports-debug
-buildd-buster-backports?
-bullseye-backports
