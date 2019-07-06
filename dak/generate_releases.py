@@ -302,6 +302,7 @@ class ReleaseWriter(object):
                     )
 
         cnf = Config()
+        cnf_suite_suffix = cnf.get("Dinstall::SuiteSuffix", "")
 
         suite_suffix = utils.suite_suffix(suite.suite_name)
 
@@ -383,6 +384,18 @@ class ReleaseWriter(object):
         uncompnotseen = {}
 
         for dirpath, dirnames, filenames in os.walk(".", followlinks=True, topdown=True):
+            # SuiteSuffix deprecation:
+            # components on security-master are updates/{main,contrib,non-free}, but
+            # we want dists/${suite}/main.  Until we can rename the components,
+            # we cheat by having an updates -> . symlink.  This should not be visited.
+            if cnf_suite_suffix:
+                path = os.path.join(dirpath, cnf_suite_suffix)
+                try:
+                    target = os.readlink(path)
+                    if target == ".":
+                        dirnames.remove(cnf_suite_suffix)
+                except OSError, ValueError:
+                    pass
             for entry in filenames:
                 if dirpath == '.' and entry in ["Release", "Release.gpg", "InRelease"]:
                     continue
