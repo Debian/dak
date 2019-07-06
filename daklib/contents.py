@@ -274,7 +274,7 @@ class ContentsWriter(object):
         '''
         Writes a result message to the logfile.
         '''
-        class_.logger.log(result)
+        class_.logger.log(list(result))
 
     @classmethod
     def write_all(class_, logger, archive_names=[], suite_names=[], component_names=[], force=False):
