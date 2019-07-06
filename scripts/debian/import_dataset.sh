@@ -29,6 +29,23 @@ set -u
 export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
+# This script can be called as `import_dataset.sh --from-ssh-command`.
+# In this case SSH_ORIGINAL_COMMAND is expected to be of the form
+#     import_dataset.sh <suite> <md5sum>
+if [ "${1}" = "--from-ssh-command" ]; then
+    set -- ${SSH_ORIGINAL_COMMAND}
+    if [ $1 != "import_dataset.sh" ]; then
+        echo >&2 "E: expect to be called as 'import_dataset.sh <suite> <md5sum>'"
+        exit 1
+    fi
+    shift
+    if [ $# -ne 2 ]; then
+        echo >&2 "E: expect exacly two arguments (suite, md5sum)"
+        exit 1
+    fi
+    SSH_ORIGINAL_COMMAND="${2}"
+fi
+
 IMPORTSUITE=${1:-"testing"}
 BRITNEY=""
 MD5SUM="${SSH_ORIGINAL_COMMAND}"
