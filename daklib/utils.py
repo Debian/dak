@@ -252,11 +252,6 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
 
     return changes
 
-################################################################################
-
-
-def hash_key(hashname):
-    return '%ssum' % hashname
 
 ################################################################################
 
