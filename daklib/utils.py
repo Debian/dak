@@ -29,7 +29,6 @@ import datetime
 import os
 import pwd
 import grp
-import socket
 import shutil
 import sqlalchemy.sql as sql
 import sys
