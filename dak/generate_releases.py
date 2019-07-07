@@ -394,7 +394,7 @@ class ReleaseWriter(object):
                     target = os.readlink(path)
                     if target == ".":
                         dirnames.remove(cnf_suite_suffix)
-                except OSError, ValueError:
+                except (OSError, ValueError):
                     pass
             for entry in filenames:
                 if dirpath == '.' and entry in ["Release", "Release.gpg", "InRelease"]:
