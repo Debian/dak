@@ -133,7 +133,7 @@ def extract_component_from_section(section):
 ################################################################################
 
 
-def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None):
+def parse_deb822(armored_contents, signing_rules=0, keyrings=None):
     require_signature = True
     if keyrings is None:
         keyrings = []
