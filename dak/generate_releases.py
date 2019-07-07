@@ -45,7 +45,6 @@ from sqlalchemy.orm import object_session
 
 from daklib import utils, daklog
 from daklib.regexes import re_gensubrelease, re_includeinrelease_byhash, re_includeinrelease_plain
-from daklib.dak_exceptions import *
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS
@@ -143,7 +142,6 @@ class ReleaseWriter(object):
         """
         Absolute path to the suite-specific files.
         """
-        cnf = Config()
         suite_suffix = utils.suite_suffix(self.suite.suite_name)
 
         return os.path.join(self.suite.archive.path, 'dists',
@@ -394,7 +392,7 @@ class ReleaseWriter(object):
                     target = os.readlink(path)
                     if target == ".":
                         dirnames.remove(cnf_suite_suffix)
-                except OSError, ValueError:
+                except (OSError, ValueError):
                     pass
             for entry in filenames:
                 if dirpath == '.' and entry in ["Release", "Release.gpg", "InRelease"]:
@@ -505,8 +503,6 @@ def main():
             archive_names = utils.split_args(Options['Archive'])
             query = query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))
         suites = query.all()
-
-    broken = []
 
     for s in suites:
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
