@@ -263,9 +263,7 @@ def main():
             changesd[k] = ""
         changesd[k] += "    %s\n" % (v)
 
-    keys = changesd.keys()
-    keys.sort()
-    for k in keys:
+    for k in sorted(changesd):
         print("%s\n%s\n" % (k, changesd[k]))
 
 ################################################################################

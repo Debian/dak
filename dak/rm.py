@@ -361,11 +361,9 @@ def main():
     for maintainer_id in maintainers.keys():
         maintainer_list.append(get_maintainer(maintainer_id).name)
     summary = ""
-    removals = d.keys()
-    removals.sort()
+    removals = sorted(d)
     for package in removals:
-        versions = d[package].keys()
-        versions.sort(key=functools.cmp_to_key(apt_pkg.version_compare))
+        versions = sorted(d[package], key=functools.cmp_to_key(apt_pkg.version_compare))
         for version in versions:
             d[package][version].sort(key=utils.ArchKey)
             summary += "%10s | %10s | %s\n" % (package, version, ", ".join(d[package][version]))

@@ -123,8 +123,7 @@ def daily_install_stats():
         elif action == "installed":
             stats[date]["size"] += float(split[5])
 
-    dates = stats.keys()
-    dates.sort()
+    dates = sorted(stats)
     for date in dates:
         packages = stats[date]["packages"]
         size = int(stats[date]["size"] / 1024.0 / 1024.0)
@@ -186,8 +185,7 @@ def number_of_packages():
         suite_id_list.append(suite_id)
     output_list = [output_format(i) for i in suite_list]
     longest_suite = max(len(suite) for suite in output_list)
-    arch_list = arches.values()
-    arch_list.sort()
+    arch_list = sorted(arches.values())
     longest_arch = max(len(arch) for arch in arch_list)
     # Header
     output = (" " * longest_arch) + " |"
