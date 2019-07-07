@@ -209,7 +209,7 @@ dak admin suite add stable-new '' codename=${new_stable}-new archive=policy
 \set new_stable `echo ${new_stable}`
 begin;
 insert into policy_queue (queue_name, path, change_perms, suite_id) values ('stable-new', '/srv/ftp-master.debian.org/queue/p-u-new', '0644', (select id from suite where codename=concat(:'new_stable', '-new')));
-update suite set policy_queue_id = (select id from policy_queue where queue_name = concat(:'new_stable', '-new')) where codename = concat(:'new_stable', '-proposed-updates');
+update suite set policy_queue_id = (select id from policy_queue where queue_name = 'stable-new') where codename = concat(:'new_stable', '-proposed-updates');
 commit;
 
 dak admin s-c add stable-new main contrib non-free
@@ -336,7 +336,10 @@ dak admin s add-build-queue ${new_testing}-backports buildd-${new_testing}-backp
 \set new_testing `echo ${new_testing}`
 begin;
 
-  update suite set debugsuite_id = (select id from suite where codename=concat(:'new_oldstable', '-backports-sloppy-debug')) where codename=concat(:'new_oldstable', '-backports-sloppy');
+  update suite set
+      debugsuite_id = (select id from suite where codename=concat(:'new_oldstable', '-backports-sloppy-debug')),
+      policy_queue_id = (select id from policy_queue where queue_name = 'backports-policy')
+      where codename=concat(:'new_oldstable', '-backports-sloppy');
   update suite set debugsuite_id = (select id from suite where codename=concat(:'new_stable', '-backports-debug')) where codename=concat(:'new_stable', '-backports');
   update suite set debugsuite_id = (select id from suite where codename=concat(:'new_testing', '-backports-debug')) where codename=concat(:'new_testing', '-backports');
 
@@ -390,8 +393,8 @@ begin;
   update suite set signingkeys = array['6ED6F5CB5FA6FB2F460AE88EEDA0D2388AE22BA9', '5E61B217265DDA9807A23C5FF4DFAB270CAA96DFA'] where suite_name in ('stable', 'stable-debug', 'buildd-stable');
   update suite set indices_compression=array['xz'], i18n_compression=array['xz'], checksums=arraay['sha256'], byhash=true where suite_name in ('buildd-stable', 'stable-debug', 'stable');
 
-  update suite set description = 'Debian 10 - Security Updates - Debug Information' where suite_name = 'stable';
-  update suite set description = 'Debian 10 - Security Updates - Debug Information' where suite_name = 'stable-debug';'
+  update suite set version = '10', description = 'Debian 10 - Security Updates - Debug Information' where suite_name = 'stable';
+  update suite set version = '10', description = 'Debian 10 - Security Updates - Debug Information' where suite_name = 'stable-debug';'
 commit;
 
 
