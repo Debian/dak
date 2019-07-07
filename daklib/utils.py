@@ -29,7 +29,6 @@ import datetime
 import os
 import pwd
 import grp
-import socket
 import shutil
 import sqlalchemy.sql as sql
 import sys
@@ -133,7 +132,7 @@ def extract_component_from_section(section):
 ################################################################################
 
 
-def parse_deb822(armored_contents, signing_rules=0, keyrings=None, session=None):
+def parse_deb822(armored_contents, signing_rules=0, keyrings=None):
     require_signature = True
     if keyrings is None:
         keyrings = []
@@ -252,11 +251,6 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
 
     return changes
 
-################################################################################
-
-
-def hash_key(hashname):
-    return '%ssum' % hashname
 
 ################################################################################
 
@@ -519,50 +513,6 @@ def move(src, dest, overwrite=0, perms=0o664):
     os.chmod(dest, perms)
     os.unlink(src)
 
-
-def copy(src, dest, overwrite=0, perms=0o664):
-    if os.path.exists(dest) and os.path.isdir(dest):
-        dest_dir = dest
-    else:
-        dest_dir = os.path.dirname(dest)
-    if not os.path.exists(dest_dir):
-        umask = os.umask(00000)
-        os.makedirs(dest_dir, 0o2775)
-        os.umask(umask)
-    #print "Copying %s to %s..." % (src, dest)
-    if os.path.exists(dest) and os.path.isdir(dest):
-        dest += '/' + os.path.basename(src)
-    # Don't overwrite unless forced to
-    if os.path.lexists(dest):
-        if not overwrite:
-            raise FileExistsError
-        else:
-            if not os.access(dest, os.W_OK):
-                raise CantOverwriteError
-    shutil.copy2(src, dest)
-    os.chmod(dest, perms)
-
-################################################################################
-
-
-def which_conf_file():
-    if os.getenv('DAK_CONFIG'):
-        return os.getenv('DAK_CONFIG')
-
-    res = socket.getfqdn()
-    # In case we allow local config files per user, try if one exists
-    if Cnf.find_b("Config::" + res + "::AllowLocalConfig"):
-        homedir = os.getenv("HOME")
-        confpath = os.path.join(homedir, "/etc/dak.conf")
-        if os.path.exists(confpath):
-            apt_pkg.read_config_file_isc(Cnf, confpath)
-
-    # We are still in here, so there is no local config file or we do
-    # not allow local files. Do the normal stuff.
-    if Cnf.get("Config::" + res + "::DakConfig"):
-        return Cnf["Config::" + res + "::DakConfig"]
-
-    return default_config
 
 ################################################################################
 
@@ -975,20 +925,6 @@ def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
         os.chown(tfname, -1, gid)
     return tfname
 
-################################################################################
-
-
-def is_email_alias(email):
-    """ checks if the user part of the email is listed in the alias file """
-    global alias_cache
-    if alias_cache is None:
-        aliasfn = which_alias_file()
-        alias_cache = set()
-        if aliasfn:
-            for l in open(aliasfn):
-                alias_cache.add(l.split(':')[0])
-    uid = email.split('@')[0]
-    return uid in alias_cache
 
 ################################################################################
 

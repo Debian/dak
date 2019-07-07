@@ -50,7 +50,6 @@ import apt_pkg
 from daklib.config import Config
 from daklib.dbconn import *
 from daklib import utils
-from daklib.dak_exceptions import *
 from daklib.rm import remove
 
 ################################################################################
