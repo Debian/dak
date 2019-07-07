@@ -65,7 +65,7 @@ def deferred_colours():
     colours = [0] * 16
     for i in range(0, 16):
         colours[i] = colorsys.hsv_to_rgb(i / 16.0, 1.0, 0.5 + i / 32.0)
-        colours[i] = ''.join(['%02X' % (c * 255) for c in colours[i]])
+        colours[i] = ''.join('%02X' % int(c * 255) for c in colours[i])
     return colours
 
 
