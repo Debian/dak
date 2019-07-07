@@ -191,7 +191,7 @@ done
 )
 
 ${NEW_STABLE}-R0:
-dak admin suite add ${new_stable}-r0 '' description='Extraneous packages/sources required for GPL compliance' origin=Debian label=Debian codename=${new_stable}-r0 archive=ftp-master
+dak admin suite add ${new_stable}-r0 '' description='Extraneous packages/sources required for GPL compliance' origin=Debian label=Debian codename=${new_stable}-r0 accept_source_uploads=false accept_binary_uploads=false archive=ftp-master
 dak admin s-c add ${new_stable}-r0 main contrib non-free
 dak admin s-a add ${new_stable}-r0 $(dak admin s-a list-arch stable)
 
@@ -204,7 +204,7 @@ begin;
 commit;
 
 POLICY QUEUES:
-dak admin suite add stable-new '' codename=${new_stable}-new archive=policy
+dak admin suite add stable-new '' codename=${new_stable}-new accept_source_uploads=false accept_binary_uploads=false archive=policy
 
 \set new_stable `echo ${new_stable}`
 begin;
@@ -216,11 +216,11 @@ dak admin s-c add stable-new main contrib non-free
 dak admin s-a add stable-new source all $(dak admin s-a list-arch stable)
 
 NEW TESTING:
-dak admin suite add testing '' origin=Debian label=Debian codename=${new_testing} description='Debian x.y Testing distribution - Not Released' archive=ftp-master changelog_url='https://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog'
+dak admin suite add testing '' origin=Debian label=Debian codename=${new_testing} description='Debian x.y Testing distribution - Not Released' accept_source_uploads=false accept_binary_uploads=false archive=ftp-master changelog_url='https://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog'
 dak admin s-c add testing main contrib non-free
 dak admin s-a add testing source all $(dak admin s-a list-arch stable)
 
-dak admin suite add testing-debug '' origin=Debian label='Debian debug' codename=${new_testing}-debug description='Debian x.y Testing distribution - Not Released - Debug Information' archive=debian-debug
+dak admin suite add testing-debug '' origin=Debian label='Debian debug' codename=${new_testing}-debug description='Debian x.y Testing distribution - Not Released - Debug Information' accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
 dak admin s-c add testing-debug main contrib non-free
 dak admin s-a add testing-debug source all $(dak admin s-a list-arch stable)
 
@@ -228,11 +228,11 @@ dak admin suite add testing-proposed-updates '' origin=Debian label=Debian coden
 dak admin s-c add testing-proposed-updates main contrib non-free
 dak admin s-a add testing-proposed-updates source all $(dak admin s-a list-arch stable)
 
-dak admin suite add testing-proposed-updates-debug '' origin=Debian label='Debian debug' codename=${new_testing}-proposed-updates-debug description='Debian x.y Testing - Proposed Updates - Not Released - Debug Information' archive=debian-debug
+dak admin suite add testing-proposed-updates-debug '' origin=Debian label='Debian debug' codename=${new_testing}-proposed-updates-debug description='Debian x.y Testing - Proposed Updates - Not Released - Debug Information' accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
 dak admin s-c add testing-proposed-updates-debug main contrib non-free
 dak admin s-a add testing-proposed-updates-debug source all $(dak admin s-a list-arch stable)
 
-dak admin suite add testing-updates '' origin=Debian label=Debian codename=${new_testing}-updates description='Debian x.y Testing distribution Updates - Not Released' archive=ftp-master
+dak admin suite add testing-updates '' origin=Debian label=Debian codename=${new_testing}-updates description='Debian x.y Testing distribution Updates - Not Released' accept_source_uploads=false accept_binary_uploads=false archive=ftp-master
 dak admin s-c add testing-updates main contrib non-free
 dak admin s-a add testing-updates source all $(dak admin s-a list-arch stable)
 
@@ -269,8 +269,6 @@ begin;
 
   update suite set indices_compression = array['xz'], byhash=true, checksums=array['sha256'] where suite_name in ('testing-debug', 'testing-proposed-updates-debug', 'buildd-testing-proposed-updates', 'testing-proposed-updates', 'testing-updates');
   update suite set indices_compression = array['gzip', 'xz'], byhash=true, checksums=array['md5sum', 'sha256'] where suite_name = 'testing';
-
-  update suite set accept_source_uploads=false, accept_binary_uploads=false where suite_name in ('testing-debug', 'testing-proposed-updates-debug', 'testing-updates', 'testing');
 commit;
 
 dak external-overrides copy unstable testing
@@ -398,9 +396,9 @@ begin;
 commit;
 
 
-dak admin suite add testing-security '' origin=Debian label=Debian-Security codename=${new_testing:?}-security description='Debian x.y Testing - Security Updates - Not Released' archive=security
+dak admin suite add testing-security '' origin=Debian label=Debian-Security codename=${new_testing:?}-security description='Debian x.y Testing - Security Updates - Not Released' accept_source_uploads=false accept_binary_uploads=false archive=security
 
-dak admin suite add testing-security-debug '' origin=Debian label="Debian-Security debug" codename=${new_testing:?}-security-debug description='Debian x.y Testing - Security Updates - Debug Information - Not Released' archive=debian-security-debug
+dak admin suite add testing-security-debug '' origin=Debian label="Debian-Security debug" codename=${new_testing:?}-security-debug description='Debian x.y Testing - Security Updates - Debug Information - Not Released' accept_source_uploads=false accept_binary_uploads=false archive=debian-security-debug
 
 for suite in testing-security testing-security-debug; do
   dak admin s-c add ${suite} updates/{main,contrib,non-free}
@@ -411,10 +409,11 @@ dak admin s add-build-queue testing-security buildd-testing-security buildd-${ne
 
 \set new_testing `echo ${new_testing}`
 begin;
-  update suite set accept_source_uploads=false, accept_binary_uploads=false, overridesuite='testing-security'
-  where suite_name in ('testing-security', 'testing-security-debug');
   update suite set indices_compression=array['xz'], i18n_compression=array['xz'], checksums=array['sha256'], byhash=true, signingkeys = array['6ED6F5CB5FA6FB2F460AE88EEDA0D2388AE22BA9', '5E61B217265DA9807A23C5FF4DFAB270CAA96DFA'] where suite_name in ('testing-security', 'testing-security-debug', 'buildd-testing-security');
-  update suite set debugsuite_id = (select id from suite where suite_name = 'testing-security-debug') where suite_name = 'testing-security';
+  update suite set
+      debugsuite_id = (select id from suite where suite_name = 'testing-security-debug'),
+      policy_queue_id = (select id from policy_queue where queue_name = 'embargoed')
+      where suite_name = 'testing-security';
 commit;
 
 cd ${ftpdir}/dists
