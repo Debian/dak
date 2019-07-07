@@ -143,7 +143,6 @@ class ReleaseWriter(object):
         """
         Absolute path to the suite-specific files.
         """
-        cnf = Config()
         suite_suffix = utils.suite_suffix(self.suite.suite_name)
 
         return os.path.join(self.suite.archive.path, 'dists',
@@ -505,8 +504,6 @@ def main():
             archive_names = utils.split_args(Options['Archive'])
             query = query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))
         suites = query.all()
-
-    broken = []
 
     for s in suites:
         # Setup a multiprocessing Pool. As many workers as we have CPU cores.
