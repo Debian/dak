@@ -545,28 +545,6 @@ def copy(src, dest, overwrite=0, perms=0o664):
 ################################################################################
 
 
-def which_conf_file():
-    if os.getenv('DAK_CONFIG'):
-        return os.getenv('DAK_CONFIG')
-
-    res = socket.getfqdn()
-    # In case we allow local config files per user, try if one exists
-    if Cnf.find_b("Config::" + res + "::AllowLocalConfig"):
-        homedir = os.getenv("HOME")
-        confpath = os.path.join(homedir, "/etc/dak.conf")
-        if os.path.exists(confpath):
-            apt_pkg.read_config_file_isc(Cnf, confpath)
-
-    # We are still in here, so there is no local config file or we do
-    # not allow local files. Do the normal stuff.
-    if Cnf.get("Config::" + res + "::DakConfig"):
-        return Cnf["Config::" + res + "::DakConfig"]
-
-    return default_config
-
-################################################################################
-
-
 def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     with open_file(filename) as templatefile:
