@@ -520,28 +520,6 @@ def move(src, dest, overwrite=0, perms=0o664):
     os.unlink(src)
 
 
-def copy(src, dest, overwrite=0, perms=0o664):
-    if os.path.exists(dest) and os.path.isdir(dest):
-        dest_dir = dest
-    else:
-        dest_dir = os.path.dirname(dest)
-    if not os.path.exists(dest_dir):
-        umask = os.umask(00000)
-        os.makedirs(dest_dir, 0o2775)
-        os.umask(umask)
-    #print "Copying %s to %s..." % (src, dest)
-    if os.path.exists(dest) and os.path.isdir(dest):
-        dest += '/' + os.path.basename(src)
-    # Don't overwrite unless forced to
-    if os.path.lexists(dest):
-        if not overwrite:
-            raise FileExistsError
-        else:
-            if not os.access(dest, os.W_OK):
-                raise CantOverwriteError
-    shutil.copy2(src, dest)
-    os.chmod(dest, perms)
-
 ################################################################################
 
 
