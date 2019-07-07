@@ -45,7 +45,6 @@ from sqlalchemy.orm import object_session
 
 from daklib import utils, daklog
 from daklib.regexes import re_gensubrelease, re_includeinrelease_byhash, re_includeinrelease_plain
-from daklib.dak_exceptions import *
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS

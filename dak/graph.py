@@ -30,7 +30,6 @@ import rrdtool
 import apt_pkg
 
 from daklib import utils
-from daklib.dak_exceptions import *
 
 Cnf = None
 default_names = ["byhand", "new", "deferred"]
