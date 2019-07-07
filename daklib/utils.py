@@ -975,20 +975,6 @@ def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
         os.chown(tfname, -1, gid)
     return tfname
 
-################################################################################
-
-
-def is_email_alias(email):
-    """ checks if the user part of the email is listed in the alias file """
-    global alias_cache
-    if alias_cache is None:
-        aliasfn = which_alias_file()
-        alias_cache = set()
-        if aliasfn:
-            for l in open(aliasfn):
-                alias_cache.add(l.split(':')[0])
-    uid = email.split('@')[0]
-    return uid in alias_cache
 
 ################################################################################
 
