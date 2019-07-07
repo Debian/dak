@@ -140,7 +140,7 @@ Perform administrative work on the dak database.
      s-c rm SUITE COMPONENT remove component from suite (will only work if
                             no packages remain for the component in the suite)
 
-  suite-config / s-cfg:
+  suite-config / suite-cfg / s-cfg:
      s-cfg list             show the names of the configurations
      s-cfg list SUITE       show the configuration values for SUITE
      s-cfg get SUITE NAME ...
@@ -838,6 +838,7 @@ def suite_config(command):
 
 
 dispatch['suite-config'] = suite_config
+dispatch['suite-cfg'] = suite_config
 dispatch['s-cfg'] = suite_config
 
 
