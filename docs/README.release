@@ -117,17 +117,23 @@ commit;
 MOVE STUFF AROUND:
 
 cd /srv/ftp-master.debian.org/ftp/dists
+
+rm oldstable-backports oldstable-proposed-updates oldstable-updates
+ln -sTf ${new_oldstable}-backports oldstable-backports
+ln -sTf ${new_oldstable}-proposed-updates oldstable-proposed-updates
+ln -sTf ${new_oldstable}-updates oldstable-updates
+
 rm stable-backports stable-proposed-updates stable-updates
-ln -sf ${new_stable}-backports stable-backports
-ln -sf ${new_stable}-proposed-updates stable-proposed-updates
-ln -sf ${new_stable}-updates stable-updates
+ln -sTf ${new_stable}-backports stable-backports
+ln -sTf ${new_stable}-proposed-updates stable-proposed-updates
+ln -sTf ${new_stable}-updates stable-updates
 
 rm testing testing-proposed-updates testing-updates
-ln -sf ${new_testing} testing
-ln -sf ${new_testing}-proposed-updates testing-proposed-updates
-ln -sf ${new_testing}-updates testing-updates
+ln -sTf ${new_testing} testing
+ln -sTf ${new_testing}-proposed-updates testing-proposed-updates
+ln -sTf ${new_testing}-updates testing-updates
 
-ln -s ${new_stable} Debian10.0
+ln -sT ${new_stable} Debian10.0
 
 # edit README, README.html, dists/README
 rm -r dists/${new_stable}/*/*.diff
@@ -147,8 +153,8 @@ cd /srv/ftp-master.debian.org/public/incoming.debian.org/web/debian-buildd/dists
 rm buildd-${new_stable}-proposed-updates buildd-${new_oldstable}-proposed-updates
 mv buildd-proposed-updates buildd-${new_oldstable}-proposed-updates
 mv buildd-testing-proposed-updates buildd-${new_stable}-proposed-updates
-ln -s buildd-${new_oldstable}-proposed-updates buildd-oldstable-proposed-updates
-ln -s buildd-${new_stable}-proposed-updates buildd-proposed-updates
+ln -sT buildd-${new_oldstable}-proposed-updates buildd-oldstable-proposed-updates
+ln -sT buildd-${new_stable}-proposed-updates buildd-proposed-updates
 
 D-I CLEANUP:
 cd /srv/ftp-master.debian.org/ftp/dists/${new_stable}/main
@@ -216,11 +222,11 @@ dak admin s-c add stable-new main contrib non-free
 dak admin s-a add stable-new source all $(dak admin s-a list-arch stable)
 
 NEW TESTING:
-dak admin suite add testing '' origin=Debian label=Debian codename=${new_testing} description='Debian x.y Testing distribution - Not Released' accept_source_uploads=false accept_binary_uploads=false archive=ftp-master changelog_url='https://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog'
+dak admin suite add testing '' origin=Debian label=Debian codename=${new_testing} description='Debian x.y Testing distribution - Not Released' accept_source_uploads=false accept_binary_uploads=false allowcsset=True archive=ftp-master changelog_url='https://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog'
 dak admin s-c add testing main contrib non-free
 dak admin s-a add testing source all $(dak admin s-a list-arch stable)
 
-dak admin suite add testing-debug '' origin=Debian label='Debian debug' codename=${new_testing}-debug description='Debian x.y Testing distribution - Not Released - Debug Information' accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
+dak admin suite add testing-debug '' origin=Debian label='Debian debug' codename=${new_testing}-debug description='Debian x.y Testing distribution - Not Released - Debug Information' accept_source_uploads=false accept_binary_uploads=false allowcsset=True archive=debian-debug
 dak admin s-c add testing-debug main contrib non-free
 dak admin s-a add testing-debug source all $(dak admin s-a list-arch stable)
 
@@ -232,7 +238,7 @@ dak admin suite add testing-proposed-updates-debug '' origin=Debian label='Debia
 dak admin s-c add testing-proposed-updates-debug main contrib non-free
 dak admin s-a add testing-proposed-updates-debug source all $(dak admin s-a list-arch stable)
 
-dak admin suite add testing-updates '' origin=Debian label=Debian codename=${new_testing}-updates description='Debian x.y Testing distribution Updates - Not Released' accept_source_uploads=false accept_binary_uploads=false archive=ftp-master
+dak admin suite add testing-updates '' origin=Debian label=Debian codename=${new_testing}-updates description='Debian x.y Testing distribution Updates - Not Released' accept_source_uploads=false accept_binary_uploads=false allowcsset=True archive=ftp-master
 dak admin s-c add testing-updates main contrib non-free
 dak admin s-a add testing-updates source all $(dak admin s-a list-arch stable)
 
@@ -277,7 +283,7 @@ dak admin s add-build-queue testing-proposed-updates buildd-testing-proposed-upd
 
 cd /srv/ftp-master.debian.org/public/incoming.debian.org/web/debian-buildd/dists
 mkdir buildd-${new_testing}-proposed-updates
-ln -s buildd-${new_testing}-proposed-updates buildd-testing-proposed-updates
+ln -sT buildd-${new_testing}-proposed-updates buildd-testing-proposed-updates
 
 MOVE MOVING AROUND:
 cd /srv/ftp-master.debian.org/queue
@@ -324,6 +330,9 @@ for suite in ${new_testing}-backports ${new_testing}-backports-debug; do
   dak admin s-c add ${suite} main contrib non-free
   dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_testing})
 done
+
+cd ${ftpdir}/dists
+ln -sT ${new_oldstable}-backports-sloppy oldstable-backports-sloppy
 
 dak admin s add-build-queue ${new_oldstable}-backports-sloppy buildd-${new_oldstable}-backports-sloppy buildd-${new_oldstable}-backports-sloppy build-queues
 dak admin s add-build-queue ${new_stable}-backports buildd-${new_stable}-backports buildd-${new_stable}-backports build-queues
@@ -418,18 +427,18 @@ commit;
 
 cd ${ftpdir}/dists
 mkdir ${new_testing}-security
-ln -s ${new_testing}-security testing-security
-ln -s . ${new_testing}-security/updates
+ln -sT ${new_testing}-security testing-security
+ln -sT . ${new_testing}-security/updates
 
 cd /srv/security-master.debian.org/build-queues/dists
 mkdir buildd-${new_testing}-security
-ln -s buildd-${new_testing}-security buildd-testing-security
-ln -s . ${new_testing}-security/updates
+ln -sT buildd-${new_testing}-security buildd-testing-security
+ln -sT . ${new_testing}-security/updates
 
 cd /srv/security-master.debian.org/archive/debian-security-debug/dists
 mkdir ${new_testing}-security-debug
-ln -s ${new_testing}-security-debug testing-security-debug
-ln -s . ${new_testing}-security-debug/updates
+ln -sT ${new_testing}-security-debug testing-security-debug
+ln -sT . ${new_testing}-security-debug/updates
 
 for suite in testing-security buildd-testing-security; do
   dak generate-packages-sources2 -s ${suite}
