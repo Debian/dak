@@ -133,15 +133,6 @@ def daily_install_stats():
 ################################################################################
 
 
-def longest(list):
-    longest = 0
-    for i in list:
-        l = len(i)
-        if l > longest:
-            longest = l
-    return longest
-
-
 def output_format(suite):
     output_suite = []
     for word in suite.split("-"):
@@ -194,10 +185,10 @@ def number_of_packages():
             suite_arches[suite_id][arch.arch_string] = ""
         suite_id_list.append(suite_id)
     output_list = [output_format(i) for i in suite_list]
-    longest_suite = longest(output_list)
+    longest_suite = max(len(suite) for suite in output_list)
     arch_list = arches.values()
     arch_list.sort()
-    longest_arch = longest(arch_list)
+    longest_arch = max(len(arch) for arch in arch_list)
     # Header
     output = (" " * longest_arch) + " |"
     for suite in output_list:
