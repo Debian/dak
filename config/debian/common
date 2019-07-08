@@ -97,7 +97,6 @@ function make_buildd_dir () {
 
     if [[ $archive = security ]]; then
         ${scriptsdir}/update-buildd-archive ${base}/build-queues ${incoming}/debian-security-buildd
-        $configdir/cron.buildd
         sudo -u archvsync runmirrors -a security-buildd-pool
     else
         # Stick a last modified date in the page footer
