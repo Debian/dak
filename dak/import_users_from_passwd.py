@@ -95,17 +95,13 @@ def main():
         uname = i.strip()
         known_postgres_unames[uname] = ""
 
-    keys = postgres_unames.keys()
-    keys.sort()
-    for uname in keys:
+    for uname in sorted(postgres_unames):
         if uname not in passwd_unames and uname not in known_postgres_unames:
             print("I: Deleting %s from Postgres, no longer in passwd or list of known Postgres users" % (uname))
             q = session.execute('DROP USER "%s"' % (uname))
 
-    keys = passwd_unames.keys()
-    keys.sort()
     safe_name = re.compile('^[A-Za-z0-9]+$')
-    for uname in keys:
+    for uname in sorted(passwd_unames):
         if uname not in postgres_unames:
             if not Options["Quiet"]:
                 print("Creating %s user in Postgres." % (uname))

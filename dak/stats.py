@@ -123,23 +123,13 @@ def daily_install_stats():
         elif action == "installed":
             stats[date]["size"] += float(split[5])
 
-    dates = stats.keys()
-    dates.sort()
+    dates = sorted(stats)
     for date in dates:
         packages = stats[date]["packages"]
         size = int(stats[date]["size"] / 1024.0 / 1024.0)
         print("%s %s %s" % (date, packages, size))
 
 ################################################################################
-
-
-def longest(list):
-    longest = 0
-    for i in list:
-        l = len(i)
-        if l > longest:
-            longest = l
-    return longest
 
 
 def output_format(suite):
@@ -194,19 +184,15 @@ def number_of_packages():
             suite_arches[suite_id][arch.arch_string] = ""
         suite_id_list.append(suite_id)
     output_list = [output_format(i) for i in suite_list]
-    longest_suite = longest(output_list)
-    arch_list = arches.values()
-    arch_list.sort()
-    longest_arch = longest(arch_list)
+    longest_suite = max(len(suite) for suite in output_list)
+    arch_list = sorted(arches.values())
+    longest_arch = max(len(arch) for arch in arch_list)
     # Header
     output = (" " * longest_arch) + " |"
     for suite in output_list:
         output = output + suite.center(longest_suite) + " |"
     output = output + "\n" + (len(output) * "-") + "\n"
     # per-arch data
-    arch_list = arches.values()
-    arch_list.sort()
-    longest_arch = longest(arch_list)
     for arch in arch_list:
         arch_id = arch_ids[arch]
         output = output + arch.center(longest_arch) + " |"

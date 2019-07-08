@@ -502,8 +502,7 @@ def process_queue(queue, log, rrd_dir):
             for arch in dbc.architecture.split():
                 arches.add(arch)
             versions.add(dbc.version)
-        arches_list = list(arches)
-        arches_list.sort(key=utils.ArchKey)
+        arches_list = sorted(arches, key=utils.ArchKey)
         arch_list = " ".join(arches_list)
         version_list = " ".join(sorted(versions, reverse=True))
         if len(version_list) > max_version_len:
