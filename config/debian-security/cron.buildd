@@ -21,17 +21,9 @@ trigger_wb() {
     local send=
 
     case "${dist}" in
-        oldoldstable)
-            send=jessie
-            ;;
-        oldstable)
-            send=stretch
-            ;;
-        stable)
-            send=buster
-            ;;
-        testing-security)
-            send=bullseye
+        oldoldstable|oldstable|stable|testing-security)
+            send=$(dak admin suite-config get-value "${dist}" codename)
+            send=${send%-security}
             ;;
         *)
             send=unknown
