@@ -38,6 +38,7 @@ trigger_wb() {
             ;;
     esac
 
+    echo "triggering w-b for suite ${dist} (known as ${send} by w-b)"
     ssh -n wbadm@buildd trigger.security $send
 }
 
