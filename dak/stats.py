@@ -204,9 +204,6 @@ def number_of_packages():
         output = output + suite.center(longest_suite) + " |"
     output = output + "\n" + (len(output) * "-") + "\n"
     # per-arch data
-    arch_list = arches.values()
-    arch_list.sort()
-    longest_arch = longest(arch_list)
     for arch in arch_list:
         arch_id = arch_ids[arch]
         output = output + arch.center(longest_arch) + " |"
