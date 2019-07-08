@@ -737,6 +737,7 @@ ALLOWED_SUITE_CONFIGS = {
     'changelog_url': str,
     # TODO: Create a validator/parser for this
     'checksums': SUITE_CONFIG_READ_ONLY,
+    'codename': SUITE_CONFIG_READ_ONLY,
     'description': str,
     'include_long_description': utils.parse_boolean_from_user,
     'indices_compression': SUITE_CONFIG_READ_ONLY,
@@ -746,6 +747,7 @@ ALLOWED_SUITE_CONFIGS = {
     'origin': str,
     'priority': int,
     'signingkeys': SUITE_CONFIG_READ_ONLY,
+    'suite_name': SUITE_CONFIG_READ_ONLY,
     'untouchable': utils.parse_boolean_from_user,
     'validtime': int,
 }
