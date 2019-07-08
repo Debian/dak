@@ -14,42 +14,36 @@ if [ -e $ftpdir/Archive_Maintenance_In_Progress ]; then
     exit 0
 fi
 
-dists=
-now=$(date +%s)
-check=$(( now - 3*60 ))
+last_changed=${1:?}
+
+trigger_wb() {
+    local dist="${1:?}"
+    local send=
+
+    case "${dist}" in
+        oldoldstable)
+            send=jessie
+            ;;
+        oldstable)
+            send=stretch
+            ;;
+        stable)
+            send=buster
+            ;;
+        testing-security)
+            send=bullseye
+            ;;
+        *)
+            send=unknown
+            ;;
+    esac
+
+    ssh -n wbadm@buildd trigger.security $send
+}
 
 for dist in $DISTS; do
-    smodtime=$(stat -c "%Y" $base/build-queues/dists/buildd-$dist/updates/*/source/Sources.xz | sort -n | tail -1)
-    pmodtime=$(stat -c "%Y" $base/build-queues/dists/buildd-$dist/updates/*/binary-*/Packages.xz | sort -n | tail -1)
-
-    if [ ${smodtime} -gt ${check} ] || [ ${pmodtime} -gt ${check} ]; then
-        # Packages/Sources changed in the last minutes
-        dists="${dists} ${dist}"
-    else
-        continue
+    dist_changed=$(psql -qAtc "SELECT last_changed > '${last_changed}' FROM suite WHERE suite_name = '${dist}'")
+    if [[ "${dist_changed}" = "t" ]]; then
+        trigger_wb ${dist}
     fi
 done
-
-if [ ! -z "${dists}" ]; then
-    for d in ${dists}; do
-        case ${d} in
-            oldoldstable)
-                send=jessie
-                ;;
-            oldstable)
-                send=stretch
-                ;;
-            stable)
-                send=buster
-                ;;
-            testing-security)
-                send=bullseye-security
-                ;;
-            *)
-                send=unknown
-                ;;
-        esac
-
-        ssh -n wbadm@buildd trigger.security $send
-    done
-fi
