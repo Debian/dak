@@ -11,10 +11,9 @@ function fix_overrides() {
 
     for suite in oldoldstable oldstable stable testing; do
         case $suite in
-            oldoldstable) override_suite=jessie ;;
-            oldstable) override_suite=stretch  ;;
-            stable)    override_suite=buster  ;;
-            testing)   override_suite=bullseye ;;
+            oldoldstable|oldstable|stable|testing)
+                override_suite=$(dak admin suite-config get-value "${suite}" codename)
+                ;;
             *) echo "Unknown suite type ($suite)"; exit 1;;
         esac
         for component in $components; do

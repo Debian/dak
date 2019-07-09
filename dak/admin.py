@@ -737,6 +737,7 @@ ALLOWED_SUITE_CONFIGS = {
     'changelog_url': str,
     # TODO: Create a validator/parser for this
     'checksums': SUITE_CONFIG_READ_ONLY,
+    'codename': SUITE_CONFIG_READ_ONLY,
     'description': str,
     'include_long_description': utils.parse_boolean_from_user,
     'indices_compression': SUITE_CONFIG_READ_ONLY,
@@ -746,12 +747,13 @@ ALLOWED_SUITE_CONFIGS = {
     'origin': str,
     'priority': int,
     'signingkeys': SUITE_CONFIG_READ_ONLY,
+    'suite_name': SUITE_CONFIG_READ_ONLY,
     'untouchable': utils.parse_boolean_from_user,
     'validtime': int,
 }
 
 
-def __suite_config_get(d, args):
+def __suite_config_get(d, args, direct_value=False):
     die_arglen(args, 4, "E: suite-config get needs the name of a configuration")
     session = d.session()
     suite_name = args[2]
@@ -760,7 +762,10 @@ def __suite_config_get(d, args):
         if arg not in ALLOWED_SUITE_CONFIGS:
             die("Unknown (or unsupported) suite configuration variable")
         value = getattr(suite, arg)
-        print("%s=%s" % (arg, value))
+        if direct_value:
+            print(value)
+        else:
+            print("%s=%s" % (arg, value))
 
 
 def __suite_config_set(d, args):
@@ -823,8 +828,13 @@ def suite_config(command):
     die_arglen(args, 2, "E: suite-config needs a command")
     mode = args[1].lower()
 
-    if mode == 'get':
-        __suite_config_get(d, args)
+    if mode in {'get', 'get-value'}:
+        direct_value = False
+        if mode == 'get-value':
+            direct_value = True
+            if len(args) > 4:
+                die("E: get-value must receive exactly one key to lookup")
+        __suite_config_get(d, args, direct_value=direct_value)
     elif mode == 'set':
         __suite_config_set(d, args)
     elif mode == 'list':
