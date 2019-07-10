@@ -23,8 +23,7 @@ DINSTALLSTATE="${webdir}/dinstall.status"
 extimportdists=""
 if [ "${functionname}" = ftp-master.debian.org ]; then
   for suite in testing unstable; do
-    codename=$(dak admin s show ${suite}|grep '^Codename')
-    codename=${codename##* }
+    codename=$(dak admin suite-config get-value ${suite} codename)
     extimportdists="${extimportdists} ${codename}"
   done
 fi

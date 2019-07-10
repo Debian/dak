@@ -542,8 +542,7 @@ function i18n2() {
     mkdir -p ${scriptdir}/i18n/${STAMP}
     cd ${scriptdir}/i18n/${STAMP}
     for suite in stable testing unstable; do
-        codename=$(dak admin s show ${suite}|grep '^Codename')
-        codename=${codename##* }
+        codename=$(dak admin suite-config get-value ${suite} codename)
         echo "Codename is ${codename}"
         dak control-suite -l ${suite} >${codename}
     done
