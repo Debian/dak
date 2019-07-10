@@ -212,7 +212,11 @@ function copyoverrides() {
     (
         shopt -s nullglob
         rm -f ${indices}/override.*.gz
-        for ofile in ${overridedir}/override.{jessie,stretch,buster,bullseye,sid}.{,extra.}{main,contrib,non-free}*; do
+        TESTING=$(dak admin suite-config get-value testing codename)
+        STABLE=$(dak admin suite-config get-value stable codename)
+        OLDSTABLE=$(dak admin suite-config get-value oldstable codename)
+        OLDOLDSTABLE=$(dak admin suite-config get-value oldoldstable codename)
+        for ofile in ${overridedir}/override.{$OLDOLDSTABLE,$OLDSTABLE,$STABLE,$TESTING,sid}.{,extra.}{main,contrib,non-free}*; do
             bname=${ofile##*/}
             gzip -9cv --rsyncable  --no-name ${ofile} > ${indices}/${bname}.gz
             chmod g+w ${indices}/${bname}.gz
@@ -347,13 +351,18 @@ function mkfilesindices() {
             sort -u | poolfirst > ../arch-$a.files
     done
 
+    TESTING=$(dak admin suite-config get-value testing codename)
+    STABLE=$(dak admin suite-config get-value stable codename)
+    OLDSTABLE=$(dak admin suite-config get-value oldstable codename)
+    OLDOLDSTABLE=$(dak admin suite-config get-value oldoldstable codename)
+
     (cd $base/ftp/
-     for dist in sid jessie stretch buster bullseye; do
+     for dist in sid $OLDOLDSTABLE $OLDSTABLE $STABLE $TESTING; do
 	 find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
      done
     )
 
-    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-jessie.list.gz ; zcat translation-stretch.list.gz ; zcat translation-buster.list.gz ; zcat translation-bullseye.list.gz) |
+    (cat ../arch-i386.files ../arch-amd64.files; zcat suite-proposed-updates.list.gz ; zcat translation-sid.list.gz ; zcat translation-$OLDOLDSTABLE.list.gz ; zcat translation-$OLDSTABLE.list.gz ; zcat translation-$STABLE.list.gz ; zcat translation-$TESTING.list.gz) |
         sort -u | poolfirst > ../typical.files
 
     rm -f $ARCHLIST
