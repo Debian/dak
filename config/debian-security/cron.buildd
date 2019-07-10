@@ -35,7 +35,7 @@ trigger_wb() {
 }
 
 for dist in $DISTS; do
-    dist_changed=$(psql -qAtc "SELECT last_changed > '${last_changed}' FROM suite WHERE suite_name = '${dist}'")
+    dist_changed=$(psql -qAtc "SELECT BOOL_OR(last_changed > '${last_changed}') FROM suite WHERE suite_name IN ('${dist}', 'buildd-${dist}')")
     if [[ "${dist_changed}" = "t" ]]; then
         trigger_wb ${dist}
     fi
