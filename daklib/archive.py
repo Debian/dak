@@ -695,7 +695,7 @@ class ArchiveUpload(object):
             files = {}
             try:
                 files = self.changes.files
-            except InvalidChangesException:
+            except upload.InvalidChangesException:
                 # Do not raise an exception; upload will be rejected later
                 # due to the missing files
                 pass
