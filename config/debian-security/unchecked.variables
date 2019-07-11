@@ -2,4 +2,9 @@ function last_changed() {
     psql -qAtc "SELECT MAX(last_changed) FROM suite WHERE archive_id=(SELECT id FROM archive WHERE name='$1')"
 }
 
+function last_changed_buildd() {
+    psql -qAtc "SELECT MAX(last_changed) FROM suite WHERE archive_id = ANY(SELECT id FROM archive WHERE name='security' OR name='build-queues')"
+}
+
 declare -gr LAST_CHANGED=$(last_changed security)
+declare -gr LAST_CHANGED_BUILDD=$(last_changed_buildd)

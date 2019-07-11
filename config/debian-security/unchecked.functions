@@ -4,7 +4,7 @@ function sync_accepted() {
 }
 
 function trigger_wb_security() {
-    ${configdir}/cron.buildd "${LAST_CHANGED}"
+    ${configdir}/cron.buildd "${LAST_CHANGED_BUILDD}"
 }
 
 function clean_suites() {
