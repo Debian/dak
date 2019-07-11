@@ -185,8 +185,6 @@ class TranslationFileWriter(BaseFileWriter):
             'compression': ['bzip2'],
             'language':     'en',
         }
-        if keywords['suite'] in ['unstable', 'experimental']:
-                flags['compression'] = ['xz']
         flags.update(keywords)
         template = "%(archive)s/dists/%(suite)s/%(component)s/i18n/Translation-%(language)s"
         super(TranslationFileWriter, self).__init__(template, **flags)
