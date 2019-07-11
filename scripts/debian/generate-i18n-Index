@@ -43,7 +43,7 @@ trap trap_exit EXIT HUP INT QUIT TERM
 exec 3>Index
 
 echo "SHA1:" >&3
-for file in Translation-*.bz2 ; do
+for file in Translation-*.bz2 Translation-*.xz ; do
 	sha=$(sha1sum "$file"); sha="${sha%% *}"
 	size=$(stat -c %s "${file}")
 	printf ' %s % 7s %s\n' "$sha" "$size" "$file" >&3

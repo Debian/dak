@@ -73,7 +73,7 @@ function i18n1() {
                 for dir in ${extimportdists}; do
                     if [[ -d dists/${dir}/  ]]; then
                         cd dists/${dir}/main/i18n
-                        rsync -aq --delete --delete-after --exclude by-hash --exclude Translation-en.bz2 --exclude "Translation-*.diff/" . ${ftpdir}/dists/${dir}/main/i18n/.
+                        rsync -aq --delete --delete-after --exclude by-hash --exclude Translation-en.bz2 --exclude Translation-en.xz --exclude "Translation-*.diff/" . ${ftpdir}/dists/${dir}/main/i18n/.
                     fi
                     cd ${scriptdir}/i18nsync
                 done
