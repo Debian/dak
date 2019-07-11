@@ -12,6 +12,7 @@
 
 set -e
 set -u
+set -o nullglob
 export LC_ALL=C
 
 usage () {
