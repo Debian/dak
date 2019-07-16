@@ -527,7 +527,8 @@ class BinaryTimestampCheck(Check):
             path = os.path.join(upload.directory, filename)
             deb = apt_inst.DebFile(path)
             tar = TarTime()
-            deb.control.go(tar.callback)
+            for archive in (deb.control, deb.data):
+                archive.go(tar.callback)
             if tar.future_files:
                 raise Reject(format_reason(filename, 'future', tar.future_files))
             if tar.past_files:
