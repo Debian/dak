@@ -63,7 +63,7 @@ trap cleanup EXIT TERM HUP INT QUIT
 if lockfile -r3 "${lockfile}" 2> /dev/null; then
     case "${mode}" in
         sync)
-            timeout --verbose "${timeout}" \
+            timeout "${timeout}" \
             rsync -aH -B8192 \
                   ${extra1} \
                   --exclude "/.nobackup" \
@@ -92,7 +92,7 @@ if lockfile -r3 "${lockfile}" 2> /dev/null; then
             # command for the remote side:
             # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
 
-            timeout --verbose "${timeout}" \
+            timeout "${timeout}" \
             rsync -aH -B8192 \
                   --exclude "/.nobackup" \
                   --exclude mirror \
@@ -107,7 +107,7 @@ if lockfile -r3 "${lockfile}" 2> /dev/null; then
             # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp.debian.org/"
             ;;
         code)
-            timeout --verbose "${timeout}" \
+            timeout "${timeout}" \
             rsync -aH -B8192 \
                   --exclude "/.nobackup" \
                   --delete --delete-after \
