@@ -27,7 +27,7 @@ export SCRIPTVARS=/srv/ftp-master.debian.org/dak/config/debian/vars
 . $SCRIPTVARS
 
 usage() {
-    echo "usage: $0 <lock> <host1> <host2> sync|code"
+    echo "usage: $0 <lock> <host1> <host2> sync|code <timeout=30m>"
     echo
     echo "sync dd-accessible copy of the archive"
     echo
@@ -36,11 +36,12 @@ usage() {
     echo "  host1:     hostname for syncing /srv/ftp-master.debian.org"
     echo "  host2:     hostname for syncing /srv/ftp.debian.org"
     echo "  sync|code: sync syncs everything"
+    echo "  timeout:   timeout for rsync, see man:timeout(1)"
     echo "             code only syncs the dak/ directory (uses host1 value as target)"
     exit ${1:-0}
 }
 
-if [ $# -ne 4 ]; then
+if [ $# -lt 4 ]; then
   usage 1
 fi
 
@@ -48,6 +49,7 @@ lockfile="${lockdir}/${1}"
 host1="${2}"
 host2="${3}"
 mode="${4}"
+timeout="${5:-30m}"
 
 # extra options for rsync of /srv/ftp-master.debian.org
 extra1=""
@@ -61,6 +63,7 @@ trap cleanup EXIT TERM HUP INT QUIT
 if lockfile -r3 "${lockfile}" 2> /dev/null; then
     case "${mode}" in
         sync)
+            timeout --verbose "${timeout}" \
             rsync -aH -B8192 \
                   ${extra1} \
                   --exclude "/.nobackup" \
@@ -84,12 +87,12 @@ if lockfile -r3 "${lockfile}" 2> /dev/null; then
                   --exclude "/public/incoming.debian.org" \
                   --exclude "/tiffani/" \
                   --delete --delete-after \
-                  --timeout 3600 \
                   -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
                   /srv/ftp-master.debian.org/ "${host1}:/srv/ftp-master.debian.org/"
             # command for the remote side:
             # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp-master.debian.org/"
 
+            timeout --verbose "${timeout}" \
             rsync -aH -B8192 \
                   --exclude "/.nobackup" \
                   --exclude mirror \
@@ -98,17 +101,16 @@ if lockfile -r3 "${lockfile}" 2> /dev/null; then
                   --exclude .da-backup.trace \
                   --exclude web-users/ \
                   --delete --delete-after \
-                  --timeout 3600 \
                   -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
                   /srv/ftp.debian.org/ "${host2}:/srv/ftp.debian.org/"
             # command for the remote side:
             # command="rsync --server -lHogDtpre.iLsf -B8192 --timeout=3600 --delete-after . /srv/ftp.debian.org/"
             ;;
         code)
+            timeout --verbose "${timeout}" \
             rsync -aH -B8192 \
                   --exclude "/.nobackup" \
                   --delete --delete-after \
-                  --timeout 3600 \
                   -e 'ssh -o ConnectTimeout=30 -o SetupTimeout=30' \
                   /srv/ftp-master.debian.org/dak/ "${host1}:/srv/ftp-master.debian.org/dak/"
             # command for the remote side:
