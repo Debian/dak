@@ -320,7 +320,7 @@ dak admin suite add ${new_testing}-backports-debug '' origin="Debian Backports" 
 
 for suite in ${new_oldstable}-backports-sloppy ${new_oldstable}-backports-sloppy-debug; do
   dak admin s-c add ${suite} main contrib non-free
-  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_stable})
+  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_oldstable})
 done
 for suite in ${new_stable}-backports-debug; do
   dak admin s-c add ${suite} main contrib non-free
@@ -365,6 +365,10 @@ begin;
 
   update suite set signingkeys = ARRAY['126C0D24BD8A2942CC7DF8AC7638D0442B90D010', 'E1CF20DDFFE4B89E802658F1E0B11894F66AEC98'] where suite_name in ('stretch-backports-sloppy', 'stretch-backports-sloppy-debug', 'buildd-stretch-backports-sloppy');
   update suite set signingkeys = ARRAY['E1CF20DDFFE4B89E802658F1E0B11894F66AEC98', '80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE'] WHERE suite_name IN ('buster-backports', 'buster-backports-debug', 'buildd-buster-backports', 'bullseye-backports', 'bullseye-backports-debug', 'buildd-bullseye-backports');
+
+  insert into suite_permission (suite_id, role)
+    select id, 'backports' from suite
+    where codename in (concat(:'new_oldstable', '-backports-sloppy'), concat(:'new_testing', '-backports'));
 
 commit;
 
