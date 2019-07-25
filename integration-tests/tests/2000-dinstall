@@ -23,6 +23,8 @@ set -u
 . ${DAK_ROOT:?}/integration-tests/setup
 . ${DAK_ROOT:?}/integration-tests/dinstall
 
+echo "Dinstall::AllowSourceOnlyUploads true;" >> ${DAKBASE}/etc/dak.conf
+
 setup_debian_like_archive
 import-fixture-signing-key
 
