@@ -42,7 +42,8 @@ setup_debian_like_archive() {
     dak admin suite-component add unstable main contrib non-free
     dak admin suite add-build-queue unstable buildd-unstable buildd-sid build-queues
     dak admin suite-config set unstable allowcsset=no byhash=yes \
-        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
+        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
+        overrideprocess=True
 
     dak admin suite add-all-arches unstable-debug "" codename=sid-debug archive=debian-debug
     dak admin suite-component add unstable-debug main contrib non-free
@@ -55,7 +56,8 @@ setup_debian_like_archive() {
     dak admin suite-component add testing main contrib non-free
     dak admin suite-config set testing allowcsset=yes byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
-        changelog=dists/testing/ChangeLog
+        changelog=dists/testing/ChangeLog \
+        overrideprocess=True overrideorigin=unstable
 
     dak admin suite add-all-arches testing-debug "" codename=sid-debug archive=debian-debug
     dak admin suite-component add testing-debug main contrib non-free
@@ -68,7 +70,8 @@ setup_debian_like_archive() {
         codename=buster-proposed-updates archive=ftp-master
     dak admin suite-component add testing-proposed-updates main contrib non-free
     dak admin suite-config set testing-proposed-updates allowcsset=yes byhash=yes \
-        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
+        changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
+        overridesuite=testing
 
     
     # experimental
@@ -77,7 +80,8 @@ setup_debian_like_archive() {
     dak admin suite add-build-queue experimental buildd-experimental buildd-rc-buggy build-queues
     dak admin suite-config set experimental allowcsset=no byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
-        notautomatic=yes butautomaticupgrades=no
+        notautomatic=yes butautomaticupgrades=no \
+        overridesuite=unstable overridecodename=sid
 
 
     # Version constraints
