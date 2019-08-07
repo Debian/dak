@@ -21,6 +21,10 @@ package_0.2_F \
 package-built-using_0.1_F \
 main-contrib-with-debug_0.1_F \
 main-contrib-with-debug_0.2_F \
+binnmu_0.1_F \
+binnmu_0.1+b1_B \
+binnmu_0.2_S \
+binnmu_0.2_B \
 
 ALL = $(PACKAGES)
 
