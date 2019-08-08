@@ -38,6 +38,7 @@ dinstall
   upload_changes ${packages:?}/nonfree-package_0.1-1_amd64.changes
   upload_changes ${packages:?}/package_0.1-1_amd64.changes
   upload_changes ${packages:?}/main-contrib-with-debug_0.1-1_amd64.changes
+  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
 
   process_uploads
 )
@@ -63,6 +64,7 @@ package admin
 EOF
 
 echo a | dak process-new main-contrib-with-debug_0.1-1_amd64.changes
+echo a | dak process-new binnmupkg_0.1-1_amd64.changes
   
   dak process-new --automatic
   dak process-policy new
@@ -80,6 +82,8 @@ main-contrib-with-debug 0.2-1 source
 main-package 0.2-1 all
 package 0.1-1 all
 package 0.1-1 source
+binnmupkg 0.1-1 amd64
+binnmupkg 0.1-1 source
 EOF
 )"
 
@@ -92,11 +96,25 @@ dinstall
 ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc
 echo "Published successfully"
 
-echo "contents of testing:"
-dak control-suite -l testing
-echo ""
-echo "contents of unstable:"
-dak control-suite -l unstable
-echo ""
+
+(
+  upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-2_amd64.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
+  process_uploads
+
+  list_all_suites
+
+  dinstall
+
+  list_all_suites
+
+)
+
+list_all_suites
 
 dak ls main-contrib-with-debug
