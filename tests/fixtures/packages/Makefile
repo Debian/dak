@@ -25,6 +25,11 @@ binnmu_0.1_F \
 binnmu_0.1+b1_B \
 binnmu_0.2_S \
 binnmu_0.2_B \
+pkgnew_0.1_F \
+pkgnew_0.2~exp_F \
+pkgnew_0.2_S \
+pkgnew_0.2_A \
+pkgnew_0.2_B \
 
 ALL = $(PACKAGES)
 
