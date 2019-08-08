@@ -19,6 +19,7 @@
 declare public_archives=(ftp-master debian-debug)
 declare -r scriptdir=${DAKBASE}/scripts
 declare -r overridedir=${scriptdir}/override # debian
+echo "Dir::Override \"${overridedir}\";" >> "${DAK_CONFIG}"
 declare -r pdiff_tempdir="${DAKBASE}/_dinstall-pdiff-temp"
 declare -r upload_dir="${DAKBASE}/uploads"
 
