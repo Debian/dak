@@ -39,6 +39,7 @@ dinstall
   upload_changes ${packages:?}/package_0.1-1_amd64.changes
   upload_changes ${packages:?}/main-contrib-with-debug_0.1-1_amd64.changes
   upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
+  upload_changes ${packages:?}/pkgnew_0.1-1_amd64.changes
 
   process_uploads
 )
@@ -65,6 +66,7 @@ EOF
 
 echo a | dak process-new main-contrib-with-debug_0.1-1_amd64.changes
 echo a | dak process-new binnmupkg_0.1-1_amd64.changes
+echo a | dak process-new pkgnew_0.1-1_amd64.changes
   
   dak process-new --automatic
   dak process-policy new
@@ -96,8 +98,21 @@ dinstall
 ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc
 echo "Published successfully"
 
-
 (
+  upload_changes ${packages:?}/pkgnew_0.1-2~exp_amd64.changes
+  process_uploads
+
+  echo a | dak process-new pkgnew_0.1-2~exp_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_source.changes
+  process_uploads
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_all.changes
+  process_uploads
+
   upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
   process_uploads
 
@@ -113,8 +128,14 @@ echo "Published successfully"
 
   list_all_suites
 
+  upload_changes ${packages:?}/pkgnew_0.1-2_amd64.changes
+  process_uploads
+
 )
 
 list_all_suites
 
 dak ls main-contrib-with-debug
+
+# check that this package has actually been published
+ls -l ${DAKBASE}/ftp-master/pool/main/p/pkgnew/pkg-any3_0.1-2_amd64.deb
