@@ -107,6 +107,10 @@ echo "Published successfully"
   dak process-new --automatic
   dak process-policy new
 
+  # pretend the upload to experimental happened (more than) 14 days ago to
+  # trigger NVIU issue below
+  echo "update override set created = created - interval '14 days' where package like 'pkg%';" | psql
+
   upload_changes ${packages:?}/pkgnew_0.1-2_source.changes
   process_uploads
 
@@ -124,6 +128,10 @@ echo "Published successfully"
 
   list_all_suites
 
+  # trigger obsolete override issue: needs 2 dinstalls:
+  # NVIU is done after obsolete overrides, so we needs a second dinstall to
+  # remove the overrides for the packages removed by NVIU
+  dinstall
   dinstall
 
   list_all_suites
