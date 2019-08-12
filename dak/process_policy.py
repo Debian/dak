@@ -172,6 +172,13 @@ def comment_accept(upload, srcqueue, comments, transaction):
     all_target_suites = [upload.target_suite]
     all_target_suites.extend([q.suite for q in upload.target_suite.copy_queues])
 
+    throw_away_binaries = False
+    if upload.source is not None:
+        source_component = source_component_func(upload.source)
+        if upload.target_suite.suite_name in cnf.value_list('Dinstall::ThrowAwayNewBinarySuites') and \
+           source_component.component_name in cnf.value_list('Dinstall::ThrowAwayNewBinaryComponents'):
+                throw_away_binaries = True
+
     for suite in all_target_suites:
         debug_suite = suite.debug_suite
 
@@ -181,48 +188,50 @@ def comment_accept(upload, srcqueue, comments, transaction):
             transaction.copy_source(
                 upload.source,
                 suite,
-                source_component_func(upload.source),
+                source_component,
                 allow_tainted=allow_tainted,
             )
 
-            if debug_suite is not None and has_debug_binaries(upload):
-                # If we're handing a debug package, we also need to include the
-                # source in the debug suite as well.
-                transaction.copy_source(
-                    upload.source,
-                    debug_suite,
-                    source_component_func(upload.source),
-                    allow_tainted=allow_tainted,
-                )
+            if not throw_away_binaries:
+                if debug_suite is not None and has_debug_binaries(upload):
+                    # If we're handing a debug package, we also need to include the
+                    # source in the debug suite as well.
+                    transaction.copy_source(
+                        upload.source,
+                        debug_suite,
+                        source_component_func(upload.source),
+                        allow_tainted=allow_tainted,
+                    )
 
-        for db_binary in upload.binaries:
-            # Now, let's work out where to copy this guy to -- if it's
-            # a debug binary, and the suite has a debug suite, let's go
-            # ahead and target the debug suite rather then the stock
-            # suite.
-            copy_to_suite = suite
-            if debug_suite is not None and is_debug_binary(db_binary):
-                copy_to_suite = debug_suite
+        if not throw_away_binaries:
+            for db_binary in upload.binaries:
+                # Now, let's work out where to copy this guy to -- if it's
+                # a debug binary, and the suite has a debug suite, let's go
+                # ahead and target the debug suite rather then the stock
+                # suite.
+                copy_to_suite = suite
+                if debug_suite is not None and is_debug_binary(db_binary):
+                    copy_to_suite = debug_suite
 
-            # build queues and debug suites may miss the source package
-            # if this is a binary-only upload.
-            if copy_to_suite != upload.target_suite:
-                transaction.copy_source(
-                    db_binary.source,
+                # build queues and debug suites may miss the source package
+                # if this is a binary-only upload.
+                if copy_to_suite != upload.target_suite:
+                    transaction.copy_source(
+                        db_binary.source,
+                        copy_to_suite,
+                        source_component_func(db_binary.source),
+                        allow_tainted=allow_tainted,
+                    )
+
+                transaction.copy_binary(
+                    db_binary,
                     copy_to_suite,
-                    source_component_func(db_binary.source),
+                    binary_component_func(db_binary),
                     allow_tainted=allow_tainted,
+                    extra_archives=[upload.target_suite.archive],
                 )
 
-            transaction.copy_binary(
-                db_binary,
-                copy_to_suite,
-                binary_component_func(db_binary),
-                allow_tainted=allow_tainted,
-                extra_archives=[upload.target_suite.archive],
-            )
-
-            check_upload_for_external_signature_request(session, suite, copy_to_suite, db_binary)
+                check_upload_for_external_signature_request(session, suite, copy_to_suite, db_binary)
 
         suite.update_last_changed()
 
