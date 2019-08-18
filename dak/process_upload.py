@@ -500,9 +500,9 @@ def process_changes(changes_filenames):
             changes.append([directory, c])
         except Exception as e:
             try:
-                Logger.log([filename, "Error while loading changes: {0}".format(e)])
+                Logger.log([filename, "Error while loading changes file {0}: {1}".format(fn, e)])
             except Exception as e:
-                Logger.log([filename, "Error while loading changes, with additional error while printing exception: {0}".format(repr(e))])
+                Logger.log([filename, "Error while loading changes file {0}, with additional error while printing exception: {1}".format(fn, repr(e))])
 
     changes.sort(key=lambda x: x[1])
 
