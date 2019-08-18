@@ -117,7 +117,6 @@ lintian:
     - package-not-lowercase
     - package-uses-local-diversion
     - section-is-dh_make-template
-    - source-field-does-not-match-pkg-name
     - symlink-has-too-many-up-segments
     - too-many-architectures
     - uploader-address-is-on-localhost
