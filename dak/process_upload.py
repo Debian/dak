@@ -499,7 +499,10 @@ def process_changes(changes_filenames):
             c = daklib.upload.Changes(directory, filename, keyring_files)
             changes.append([directory, c])
         except Exception as e:
-            Logger.log([filename, "Error while loading changes: {0}".format(e)])
+            try:
+                Logger.log([filename, "Error while loading changes: {0}".format(e)])
+            except Exception as e:
+                Logger.log([filename, "Error while loading changes, with additional error while printing exception: {0}".format(repr(e))])
 
     changes.sort(key=lambda x: x[1])
 
