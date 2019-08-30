@@ -310,25 +310,30 @@ dak admin v-c add experimental MustBeNewerThan testing
 # copy d-i to new testing (so same d-i in stable, testing, unstable)
 
 # backports
-dak admin suite add ${new_oldstable}-backports-sloppy '' origin="Debian Backports" label='Debian Backports' codename=${new_oldstable}-backports-sloppy description='Debian 9 - Sloppy Backports' notautomatic=true butautomaticupgrades=true close_bugs=false archive=ftp-master
-dak admin suite add ${new_oldstable}-backports-sloppy-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_oldstable}-backports-sloppy-debug description='Debian 9 - Sloppy Backports - Debug Information' notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
+dak admin suite add ${new_oldstable}-backports-sloppy '' origin="Debian Backports" label='Debian Backports' codename=${new_oldstable}-backports-sloppy description='Debian 9 - Sloppy Backports' archive=ftp-master
+dak admin suite add ${new_oldstable}-backports-sloppy-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_oldstable}-backports-sloppy-debug description='Debian 9 - Sloppy Backports - Debug Information' archive=debian-debug
 
-dak admin suite add ${new_stable}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_stable}-debug description='Debian 10 - Backports - Debug Information' notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
+dak admin suite add ${new_stable}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_stable}-debug description='Debian 10 - Backports - Debug Information' archive=debian-debug
 
-dak admin suite add ${new_testing}-backports '' origin="Debian Backports" label='Debian Backports' codename=${new_testing}-backports description='Debian X.Y - Backports' notautomatic=true butautomaticupgrades=true close_bugs=false accept_source_uploads=false accept_binary_uploads=false archive=ftp-master
-dak admin suite add ${new_testing}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_testing}-backports-debug description='Debian X.Y - Backports - Debug Information' notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false archive=debian-debug
+dak admin suite add ${new_testing}-backports '' origin="Debian Backports" label='Debian Backports' codename=${new_testing}-backports description='Debian X.Y - Backports' archive=ftp-master
+dak admin suite add ${new_testing}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_testing}-backports-debug description='Debian X.Y - Backports - Debug Information' archive=debian-debug
+
+configure-backports-suite() {
+  local suite=${1:?}
+  local reference=${2:?}
+  dak admin s-c add ${suite} main contrib non-free
+  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${reference})
+  dak admin suite-config set ${suite} notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false close_bugs=false
+}
 
 for suite in ${new_oldstable}-backports-sloppy ${new_oldstable}-backports-sloppy-debug; do
-  dak admin s-c add ${suite} main contrib non-free
-  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_oldstable})
+  configure-backports-suite ${suite} ${new_oldstable}
 done
 for suite in ${new_stable}-backports-debug; do
-  dak admin s-c add ${suite} main contrib non-free
-  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_stable})
+  configure-backports-suite ${suite} ${new_stable}
 done
 for suite in ${new_testing}-backports ${new_testing}-backports-debug; do
-  dak admin s-c add ${suite} main contrib non-free
-  dak admin s-a add ${suite} source all $(dak admin s-a list-arch ${new_testing})
+  configure-backports-suite ${suite} ${new_testing}
 done
 
 cd ${ftpdir}/dists
