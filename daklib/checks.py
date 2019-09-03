@@ -421,7 +421,7 @@ class BinaryCheck(Check):
 
         for field in ('Package', 'Architecture', 'Version', 'Description', 'Section'):
             if field not in control:
-                raise Reject('{0}: Missing mandatory field {0}.'.format(fn, field))
+                raise Reject('{0}: Missing mandatory field {1}.'.format(fn, field))
 
         check_fields_for_valid_utf8(fn, control)
 
