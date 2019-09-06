@@ -387,19 +387,32 @@ log "Release file generated, waiting for RMs checking and (hopefully) signing"
 merge-release-signatures() {
     local archiveroot="${1}"
     local s="${2}"
-    local releasefile="${3}"
-    rm -f ${archiveroot}/dists/${s}/InRelease ${archiveroot}/zzz-dists/${s}/InRelease
+    local oursignature="${3}"
+    local ourmessage="${4}"
+    local releasefile="${5}"
+
+    echo "==== Processing ${s}/${oursignature}..."
+
+    # backup ${oursignature} before we modify it...
+    cp --no-clobber ${archiveroot}/zzz-dists/${s}/${oursignature} ~/${suitename}_${newrev}/${oursignature}
+
     cd ~/${suitename}_${newrev}
     while ! ${wget} -O "${releasefile}" "${release_base}/${releasefile}"; do
         sleep 10
     done
-    cd ${archiveroot}/dists/${s}
-    cat ~/${suitename}_${newrev}/${releasefile} >> Release.gpg
-    gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify Release.gpg Release
+    ${scriptsdir}/gpg-merge-signatures "${oursignature}" "${releasefile}" > ${archiveroot}/dists/${s}/${oursignature}
+
+    gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify ${oursignature} ${ourmessage}
 }
 
-merge-release-signatures $(get_archiveroot ftp-master) ${suite} Release-${newrev}.gpg
-merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug Release-${newrev}-debug.gpg
+merge-release-signatures $(get_archiveroot ftp-master) ${suite} Release.gpg Release Release-${newrev}.gpg
+merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug Release.gpg Release Release-${newrev}-debug.gpg
+if [ "${suitename}" = stretch ]; then
+    rm -f ${archiveroot}/dists/${suite}/InRelease ${archiveroot}/zzz-dists/${suite}/InRelease
+else
+    merge-release-signatures $(get_archiveroot ftp-master) ${suite} InRelease "" InRelease-${newrev}.gpg
+    merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug InRelease "" InRelease-${newrev}-debug.gpg
+fi
 
 echo "Done. Is a mirrorpush needed? Or just one to the cd-builder?"
 read -e -p "Mirrorpush? no/cd/yes " -i "cd" mirrorpush
