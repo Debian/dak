@@ -430,7 +430,8 @@ merge-release-signatures() {
 merge-release-signatures $(get_archiveroot ftp-master) ${suite} Release.gpg Release Release-${newrev}.gpg
 merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug Release.gpg Release Release-${newrev}-debug.gpg
 if [ "${suitename}" = stretch ]; then
-    rm -f ${archiveroot}/dists/${suite}/InRelease ${archiveroot}/zzz-dists/${suite}/InRelease
+    rm -f $(get_archiveroot ftp-master)/dists/${suite}/InRelease $(get_archiveroot ftp-master)/zzz-dists/${suite}/InRelease
+    rm -f $(get_archiveroot debian-debug)/dists/${suite}-debug/InRelease $(get_archiveroot debian-debug)/zzz-dists/${suite}-debug/InRelease
 else
     merge-release-signatures $(get_archiveroot ftp-master) ${suite} InRelease "" InRelease-${newrev}.gpg
     merge-release-signatures $(get_archiveroot debian-debug) ${suite}-debug InRelease "" InRelease-${newrev}-debug.gpg
