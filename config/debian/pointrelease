@@ -175,7 +175,16 @@ while :; do
 done
 
 log "Merging the ${pusuite}-debug into ${suite}-debug"
-dak control-suite --add ${suite}-debug < ${pusuite}-debug.list
+while :; do
+    if dak control-suite --add ${suite}-debug < ${pusuite}-debug.list; then
+        log "Done"
+        break
+    else
+        log "Please check problem and hit enter when i can retry"
+        read
+    fi
+done
+
 log "Cleaning ${pusuite} and ${pusuite}-debug"
 dak control-suite --remove ${pusuite} < ${pusuite}.list
 dak control-suite --remove ${pusuite}-debug < ${pusuite}-debug.list
