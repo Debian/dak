@@ -393,16 +393,29 @@ merge-release-signatures() {
 
     echo "==== Processing ${s}/${oursignature}..."
 
-    # backup ${oursignature} before we modify it...
-    cp --no-clobber ${archiveroot}/zzz-dists/${s}/${oursignature} ~/${suitename}_${newrev}/${oursignature}
+    mkdir -p ~/${suitename}_${newrev}/${s}
 
-    cd ~/${suitename}_${newrev}
+    # backup ${oursignature} before we modify it...
+    # make a .orig copy which we don't overwrite below
+    cp --no-clobber ${archiveroot}/zzz-dists/${s}/${oursignature} ~/${suitename}_${newrev}/${s}/${oursignature}
+    cp --no-clobber ${archiveroot}/zzz-dists/${s}/${oursignature} ~/${suitename}_${newrev}/${s}/${oursignature}.orig
+
+    cd ~/${suitename}_${newrev}/${s}
     while ! ${wget} -O "${releasefile}" "${release_base}/${releasefile}"; do
         sleep 10
     done
-    ${scriptsdir}/gpg-merge-signatures "${oursignature}" "${releasefile}" > ${archiveroot}/dists/${s}/${oursignature}
+
+    ${scriptsdir}/gpg-merge-signatures "${oursignature}" "${releasefile}" > ${oursignature}.combined
+    mv ${oursignature}.combined ${oursignature}
+
+    # If detached, copy the text for checking
+    if [ ! -z ${ourmessage} ]; then
+	    cp ${archiveroot}/dists/${s}/${ourmessage} ${ourmessage}
+    fi
 
     gpg --no-default-keyring --keyring /usr/share/keyrings/debian-archive-keyring.gpg --trust-model=always --verify ${oursignature} ${ourmessage}
+
+    cp ${oursignature} ${archiveroot}/dists/${s}/${oursignature}
 }
 
 merge-release-signatures $(get_archiveroot ftp-master) ${suite} Release.gpg Release Release-${newrev}.gpg
