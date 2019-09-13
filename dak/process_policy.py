@@ -262,6 +262,9 @@ def comment_accept(upload, srcqueue, comments, transaction):
             if os.path.exists(src) and not os.path.exists(dst):
                 fs.copy(src, dst, mode=mode)
 
+    utils.process_buildinfos(upload.policy_queue.path, chg.buildinfo_files,
+                             fs, Logger)
+
     if upload.source is not None and not Options['No-Action']:
         urgency = upload.changes.urgency
         # As per policy 5.6.17, the urgency can be followed by a space and a

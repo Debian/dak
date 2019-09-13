@@ -267,7 +267,8 @@ def accept(directory, upload):
     print("ACCEPT")
 
     upload.install()
-    process_buildinfos(upload)
+    utils.process_buildinfos(upload.directory, upload.changes.buildinfo_files,
+                             upload.transaction.fs, Logger)
 
     accepted_to_real_suite = any(suite.policy_queue is None for suite in upload.final_suites)
     sourceful_upload = 'source' in upload.changes.architectures
@@ -508,25 +509,6 @@ def process_changes(changes_filenames):
 
     for directory, c in changes:
         process_it(directory, c, keyring_files)
-
-
-def process_buildinfos(upload):
-    cnf = Config()
-
-    if 'Dir::BuildinfoArchive' not in cnf:
-        return
-
-    target_dir = os.path.join(
-        cnf['Dir::BuildinfoArchive'],
-        datetime.datetime.now().strftime('%Y/%m/%d'),
-    )
-
-    for f in upload.changes.buildinfo_files:
-        src = os.path.join(upload.directory, f.filename)
-        dst = utils.find_next_free(os.path.join(target_dir, f.filename))
-
-        Logger.log(["Archiving", f.filename])
-        upload.transaction.fs.copy(src, dst, mode=0o644)
 
 ###############################################################################
 

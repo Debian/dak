@@ -1366,3 +1366,37 @@ def suite_suffix(suite_name):
     elif suite_name in Cnf.value_list('Dinstall::SuiteSuffixSuites'):
         return suffix
     return ''
+
+################################################################################
+
+
+def process_buildinfos(directory, buildinfo_files, fs_transaction, logger):
+    """Copy buildinfo files into Dir::BuildinfoArchive
+
+    @type directory: string
+    @param directory: directory where .changes is stored
+
+    @type buildinfo_files: list of str
+    @param buildinfo_files: names of buildinfo files
+
+    @type fs_transaction: L{daklib.fstransactions.FilesystemTransaction}
+    @param fs_transaction: FilesystemTransaction instance
+
+    @type logger: L{daklib.daklog.Logger}
+    @param logger: logger instance
+    """
+
+    if 'Dir::BuildinfoArchive' not in Cnf:
+        return
+
+    target_dir = os.path.join(
+        Cnf['Dir::BuildinfoArchive'],
+        datetime.datetime.now().strftime('%Y/%m/%d'),
+    )
+
+    for f in buildinfo_files:
+        src = os.path.join(directory, f.filename)
+        dst = find_next_free(os.path.join(target_dir, f.filename))
+
+        logger.log(["Archiving", f.filename])
+        fs_transaction.copy(src, dst, mode=0o644)
