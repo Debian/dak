@@ -26,7 +26,7 @@ from __future__ import print_function
 from daklib.dbconn import *
 
 from sqlalchemy import func
-from sqlalchemy.orm import object_session
+from sqlalchemy.orm import object_session, aliased
 
 
 def newer_version(lowersuite_name, highersuite_name, session, include_equal=False):
@@ -40,19 +40,94 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
     lowersuite = get_suite(lowersuite_name, session)
     highersuite = get_suite(highersuite_name, session)
 
-    query = session.query(DBSource.source, func.max(DBSource.version)). \
-        with_parent(highersuite).group_by(DBSource.source)
+    def get_suite_sources(suite):
+        q1 = session.query(DBSource.source,
+                           func.max(DBSource.version).label('version')). \
+            with_parent(suite). \
+            group_by(DBSource.source). \
+            subquery()
+
+        return aliased(q1)
+
+    def get_suite_binaries(suite):
+        q1 = session.query(DBBinary.package,
+                           DBSource.source,
+                           func.max(DBSource.version).label('version'),
+                           Architecture.arch_string,
+                           func.max(DBBinary.version).label('binversion')). \
+            join(DBSource). \
+            with_parent(suite). \
+            join(Architecture). \
+            group_by(
+                DBBinary.package,
+                DBSource.source,
+                Architecture.arch_string,
+            ). \
+            subquery()
+
+        return aliased(q1)
+
+    highq = get_suite_sources(highersuite)
+    lowq = get_suite_sources(lowersuite)
+
+    query = session.query(
+            highq.c.source,
+            highq.c.version.label('higherversion'),
+            lowq.c.version.label('lowerversion')
+            ). \
+        join(lowq, highq.c.source == lowq.c.source)
+
+    if include_equal:
+        query = query.filter(highq.c.version <= lowq.c.version)
+    else:
+        query = query.filter(highq.c.version < lowq.c.version)
 
     list = []
-    for (source, higherversion) in query:
-        q = session.query(func.max(DBSource.version)). \
-            filter_by(source=source)
+    # get all sources that have a higher version in lowersuite than in
+    # highersuite
+    for (source, higherversion, lowerversion) in query:
+        q1 = session.query(DBBinary.package,
+                           DBSource.source,
+                           DBSource.version,
+                           Architecture.arch_string
+            ). \
+            join(DBSource). \
+            with_parent(highersuite). \
+            join(Architecture). \
+            filter(DBSource.source == source). \
+            subquery()
+        q2 = session.query(q1.c.arch_string).group_by(q1.c.arch_string)
+        # all architectures for which source has binaries in highersuite
+        archs_high = set(x[0] for x in q2.all())
+
+        highq = get_suite_binaries(highersuite)
+        lowq = get_suite_binaries(lowersuite)
+
+        query = session.query(highq.c.arch_string). \
+            join(lowq, highq.c.source == lowq.c.source). \
+            filter(highq.c.arch_string == lowq.c.arch_string). \
+            filter(highq.c.package == lowq.c.package). \
+            filter(highq.c.source == source)
+
         if include_equal:
-            q = q.filter(DBSource.version >= higherversion)
+            query = query. \
+                filter(highq.c.binversion <= lowq.c.binversion). \
+                filter(highq.c.version <= lowq.c.version)
         else:
-            q = q.filter(DBSource.version > higherversion)
-        lowerversion = q.with_parent(lowersuite).group_by(DBSource.source).scalar()
-        if lowerversion is not None:
+            query = query. \
+                filter(highq.c.binversion < lowq.c.binversion). \
+                filter(highq.c.version < lowq.c.version)
+
+        query = query.group_by(highq.c.arch_string)
+
+        # all architectures for which source has a newer binary in lowersuite
+        archs_newer = set(x[0] for x in query.all())
+
+        # if has at least one binary in lowersuite which is newer than the one
+        # in highersuite on each architecture for which source has binaries in
+        # highersuite, we know that the builds for all relevant architecture
+        # are done, so we can remove the old source with it's binaries
+        if (archs_newer >= archs_high):
             list.append((source, higherversion, lowerversion))
 
     list.sort()

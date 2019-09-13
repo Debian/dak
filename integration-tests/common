@@ -38,3 +38,11 @@ import-fixture-signing-key() {
     ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
     dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
 }
+
+list_all_suites() {
+    dak admin s list | sort | while read suite
+    do
+        printf "\n\n$suite\n"
+        dak control-suite -l $suite |sort
+    done
+}

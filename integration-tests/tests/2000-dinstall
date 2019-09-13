@@ -23,6 +23,8 @@ set -u
 . ${DAK_ROOT:?}/integration-tests/setup
 . ${DAK_ROOT:?}/integration-tests/dinstall
 
+echo "Dinstall::AllowSourceOnlyUploads true;" >> ${DAKBASE}/etc/dak.conf
+
 setup_debian_like_archive
 import-fixture-signing-key
 
@@ -36,6 +38,8 @@ dinstall
   upload_changes ${packages:?}/nonfree-package_0.1-1_amd64.changes
   upload_changes ${packages:?}/package_0.1-1_amd64.changes
   upload_changes ${packages:?}/main-contrib-with-debug_0.1-1_amd64.changes
+  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
+  upload_changes ${packages:?}/pkgnew_0.1-1_amd64.changes
 
   process_uploads
 )
@@ -61,6 +65,8 @@ package admin
 EOF
 
 echo a | dak process-new main-contrib-with-debug_0.1-1_amd64.changes
+echo a | dak process-new binnmupkg_0.1-1_amd64.changes
+echo a | dak process-new pkgnew_0.1-1_amd64.changes
   
   dak process-new --automatic
   dak process-policy new
@@ -78,6 +84,8 @@ main-contrib-with-debug 0.2-1 source
 main-package 0.2-1 all
 package 0.1-1 all
 package 0.1-1 source
+binnmupkg 0.1-1 amd64
+binnmupkg 0.1-1 source
 EOF
 )"
 
@@ -90,11 +98,52 @@ dinstall
 ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc
 echo "Published successfully"
 
-echo "contents of testing:"
-dak control-suite -l testing
-echo ""
-echo "contents of unstable:"
-dak control-suite -l unstable
-echo ""
+(
+  upload_changes ${packages:?}/pkgnew_0.1-2~exp_amd64.changes
+  process_uploads
+
+  echo a | dak process-new pkgnew_0.1-2~exp_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+
+  # pretend the upload to experimental happened (more than) 14 days ago to
+  # trigger NVIU issue below
+  echo "update override set created = created - interval '14 days' where package like 'pkg%';" | psql
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_source.changes
+  process_uploads
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_all.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-2_amd64.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
+  process_uploads
+
+  list_all_suites
+
+  # trigger obsolete override issue: needs 2 dinstalls:
+  # NVIU is done after obsolete overrides, so we needs a second dinstall to
+  # remove the overrides for the packages removed by NVIU
+  dinstall
+  dinstall
+
+  list_all_suites
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_amd64.changes
+  process_uploads
+
+)
+
+list_all_suites
 
 dak ls main-contrib-with-debug
+
+# check that this package has actually been published
+ls -l ${DAKBASE}/ftp-master/pool/main/p/pkgnew/pkg-any3_0.1-2_amd64.deb

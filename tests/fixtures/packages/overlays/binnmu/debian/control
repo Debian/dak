@@ -1,4 +1,4 @@
-Source: package
+Source: binnmupkg
 Section: misc
 Priority: extra
 Maintainer: A Maintainer <maint@example.com>
@@ -6,8 +6,8 @@ Uploaders: An Uploader <uploader@example.com>
 Build-Depends: debhelper (>= 9)
 Rules-Requires-Root: no
 
-Package: package
-Architecture: all
+Package: binnmupkg
+Architecture: any
 Depends: ${misc:Depends}
 Description: a package
  a package
