@@ -164,7 +164,7 @@ class ReverseDependencyChecker(object):
                FROM source s
                JOIN source_metadata sm ON s.id = sm.src_id
                WHERE s.id in
-                   (SELECT source FROM src_associations
+                   (SELECT src FROM newest_src_association
                        WHERE suite = :suite_id)
                    AND sm.key_id in :metakey_ids
                GROUP BY s.id, s.source''')
