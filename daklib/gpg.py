@@ -223,8 +223,8 @@ class SignedFile(object):
                 self.weak_signature = True
 
             self.valid = True
-            self.fingerprints.append(fields[2])
-            self.primary_fingerprints.append(fields[11])
+            self.fingerprints.append(fields[2].decode('ascii'))
+            self.primary_fingerprints.append(fields[11].decode('ascii'))
             self.signature_timestamp = self._parse_timestamp(fields[4], fields[3])
 
         elif fields[1] == b"BADARMOR":
