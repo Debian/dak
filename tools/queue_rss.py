@@ -224,8 +224,8 @@ if __name__ == "__main__":
     feed_out_file = os.path.join(settings.outdir, outrss_filename)
 
     try:
-        status.feed_in.write_xml(file(feed_in_file, "w+"), "utf-8")
-        status.feed_out.write_xml(file(feed_out_file, "w+"), "utf-8")
+        status.feed_in.write_xml(open(feed_in_file, "w+"), "utf-8")
+        status.feed_out.write_xml(open(feed_out_file, "w+"), "utf-8")
     except IOError as why:
         print("Unable to write feeds:", why, file=sys.stderr)
         sys.exit(1)

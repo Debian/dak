@@ -175,7 +175,7 @@ RRA:MAX:0.5:288:795
 
 
 def get_upload_data(changesfn):
-    achanges = deb822.Changes(file(changesfn))
+    achanges = deb822.Changes(open(changesfn))
     changesname = os.path.basename(changesfn)
     delay = os.path.basename(os.path.dirname(changesfn))
     m = re.match(r'([0-9]+)-day', delay)

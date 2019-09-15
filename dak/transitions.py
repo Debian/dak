@@ -138,7 +138,7 @@ def load_transitions(trans_file):
 
     """
     # Parse the yaml file
-    sourcefile = file(trans_file, 'r')
+    sourcefile = open(trans_file, 'r')
     sourcecontent = sourcefile.read()
     failure = False
     try:
@@ -272,7 +272,7 @@ def write_transitions(from_trans):
     trans_lock = lock_file(trans_file)
     temp_lock = lock_file(trans_temp)
 
-    destfile = file(trans_temp, 'w')
+    destfile = open(trans_temp, 'w')
     yaml.safe_dump(from_trans, destfile, default_flow_style=False)
     destfile.close()
 
