@@ -35,6 +35,7 @@ G{importgraph}
 
 from __future__ import print_function
 
+import importlib
 import os
 import sys
 import traceback
@@ -224,7 +225,7 @@ def main():
                 usage(functionality, 1)
 
     # Invoke the module
-    module = __import__(cmdname.replace("-", "_"))
+    module = importlib.import_module("dak.{}".format(cmdname.replace("-", "_")))
 
     try:
         module.main()
