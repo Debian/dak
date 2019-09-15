@@ -880,8 +880,8 @@ class Keyring(object):
 
     def parse_address(self, uid):
         """parses uid and returns a tuple of real name and email address"""
-        import email.Utils
-        (name, address) = email.Utils.parseaddr(uid)
+        import email.utils
+        (name, address) = email.utils.parseaddr(uid)
         name = re.sub(r"\s*[(].*[)]", "", name)
         name = self.de_escape_gpg_str(name)
         if name == "":
