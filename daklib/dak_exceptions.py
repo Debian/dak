@@ -85,11 +85,6 @@ class DBUpdateError(DakError):
     pass
 
 
-class ChangesUnicodeError(DakError):
-    "Exception raised - changes file not properly utf-8 encoded"
-    pass
-
-
 class AlreadyLockedError(DakError):
     "Exception raised - package already locked by someone else"
     pass

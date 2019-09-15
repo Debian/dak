@@ -63,7 +63,6 @@ from daklib.gpg import SignedFile
 from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory, re_file_binary
-from daklib.dak_exceptions import ChangesUnicodeError
 import daklib.daksubprocess
 
 ################################################################################
@@ -659,7 +658,7 @@ def display_changes(suite, changes_filename):
 def check_changes(changes_filename):
     try:
         changes = utils.parse_changes(changes_filename)
-    except ChangesUnicodeError:
+    except UnicodeDecodeError:
         utils.warn("Encoding problem with changes file %s" % (changes_filename))
     print(display_changes(changes['distribution'], changes_filename))
 

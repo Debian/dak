@@ -205,10 +205,8 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
 
     with open(filename) as changes_in:
         content = changes_in.read()
-    try:
-        unicode(content, 'utf-8')
-    except UnicodeError:
-        raise ChangesUnicodeError("Changes file not proper utf-8")
+    # make sure the file is proper utf-8; raises UnicodeDecodeError if not
+    unicode(content, 'utf-8')
     changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
     if not dsc_file:
