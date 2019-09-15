@@ -52,8 +52,7 @@ def rfc2047_encode(s):
     """
     for enc in ['ascii', 'utf-8', 'iso-8859-1']:
         try:
-            h = email.header.Header(s, enc, 998)
-            return str(h)
+            return email.header.Header(s, enc, 998).encode()
         except UnicodeError:
             pass
 
