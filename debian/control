@@ -2,11 +2,13 @@ Source: dak
 Section: misc
 Priority: optional
 Build-Depends: alembic,
+               bzip2,
                debhelper (>= 9~),
 # Either a recent debhelper/dpkg-dev or fakeroot is needed to build test packages
                debhelper (>= 11.2~) | fakeroot,
                devscripts,
                dpkg-dev (>= 1.19.0.5) | fakeroot,
+               gzip,
                jq,
                postgresql-11 | postgresql-9.6 | postgresql-9.4,
                postgresql-11-debversion | postgresql-9.6-debversion | postgresql-9.4-debversion,
@@ -26,6 +28,7 @@ Build-Depends: alembic,
                python3-apt,
                python3-debian,
                python3-psycopg2,
+               xz-utils,
 Maintainer: Debian FTP-Masters <ftpmaster@debian.org>
 Uploaders: Mark Hymers <mhy@debian.org>,
            Joerg Jaspert <joerg@debian.org>,
@@ -37,8 +40,10 @@ Package: dak
 Architecture: all
 Depends: alembic,
          binutils-multiarch,
+         bzip2,
          dpkg-dev,
          gnupg,
+         gzip,
          less,
          lintian,
          python-apt,
@@ -55,6 +60,7 @@ Depends: alembic,
          python3-debian,
          python3-psycopg2,
          symlinks,
+         xz-utils,
          ${python:Depends}
 Description: Debian's archive maintenance scripts
  This is a collection of archive maintenance scripts used by the
