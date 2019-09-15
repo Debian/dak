@@ -25,7 +25,6 @@ test buster python3:
   - mkdir test-gnupghome
   - 2to3 -wn -x future -x import dak/*.py daklib/*.py
   - GNUPGHOME=$(pwd)/test-gnupghome py.test-3 -v daklib tests
-  allow_failure: true
 
 flake8:
   <<: *template
