@@ -113,7 +113,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None):
         keyrings = []
         require_signature = False
 
-    signed_file = SignedFile(armored_contents, keyrings=keyrings, require_signature=require_signature)
+    signed_file = SignedFile(armored_contents.encode('utf-8'), keyrings=keyrings, require_signature=require_signature)
     contents = signed_file.contents.decode('utf-8')
 
     error = ""
