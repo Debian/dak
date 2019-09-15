@@ -146,7 +146,7 @@ def main():
                 cname = cname.replace('/', '_')
                 filename = os.path.join(cnf["Dir::Override"], "override.%s.%s%s" % (override_suite, cname, suffix))
 
-                output_file = utils.open_file(filename, 'w')
+                output_file = open(filename, 'w')
                 do_list(output_file, suite, component, otype, session)
                 output_file.close()
 

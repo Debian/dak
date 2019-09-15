@@ -251,7 +251,7 @@ def read_control(filename):
     maintainer = ''
     arch = ''
 
-    deb_file = utils.open_file(filename)
+    deb_file = open(filename)
     try:
         extracts = utils.deb_extract_control(deb_file)
         control = apt_pkg.TagSection(extracts)
@@ -310,7 +310,7 @@ def read_control(filename):
 def read_changes_or_dsc(suite, filename, session=None):
     dsc = {}
 
-    dsc_file = utils.open_file(filename)
+    dsc_file = open(filename)
     try:
         dsc = utils.parse_changes(filename, dsc_file=1)
     except:
@@ -643,7 +643,7 @@ def check_deb(suite, deb_filename, session=None):
 
 
 def strip_pgp_signature(filename):
-    with utils.open_file(filename) as f:
+    with open(filename) as f:
         data = f.read()
         signedfile = SignedFile(data, keyrings=(), require_signature=False)
         return signedfile.contents

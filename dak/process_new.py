@@ -211,7 +211,7 @@ def edit_new(overrides, upload, session):
     if result != 0:
         utils.fubar("%s invocation failed for %s." % (editor, temp_filename), result)
     # Read the edited data back in
-    temp_file = utils.open_file(temp_filename)
+    temp_file = open(temp_filename)
     lines = temp_file.readlines()
     temp_file.close()
     os.unlink(temp_filename)

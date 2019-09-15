@@ -430,7 +430,7 @@ def remove(session, reason, suites, removals,
     #######################################################################################################
     log_filename = cnf["Rm::LogFile"]
     log822_filename = cnf["Rm::LogFile822"]
-    with utils.open_file(log_filename, "a") as logfile, utils.open_file(log822_filename, "a") as logfile822:
+    with open(log_filename, "a") as logfile, open(log822_filename, "a") as logfile822:
         fcntl.lockf(logfile, fcntl.LOCK_EX)
         fcntl.lockf(logfile822, fcntl.LOCK_EX)
 

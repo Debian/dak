@@ -336,7 +336,7 @@ def main():
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
             utils.fubar("vi invocation failed for `%s'!" % (temp_filename), result)
-        temp_file = utils.open_file(temp_filename)
+        temp_file = open(temp_filename)
         for line in temp_file.readlines():
             Options["Reason"] += line
         temp_file.close()

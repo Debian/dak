@@ -364,7 +364,7 @@ def main():
         Logger = daklog.Logger("control-overrides", mode)
         if file_list:
             for f in file_list:
-                process_file(utils.open_file(f), suite, component, otype, mode, action, session)
+                process_file(open(f), suite, component, otype, mode, action, session)
         else:
             process_file(sys.stdin, suite, component, otype, mode, action, session)
         Logger.close()

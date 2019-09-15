@@ -189,7 +189,7 @@ def get_upload_data(changesfn):
 
     uploader = achanges.get('changed-by')
     uploader = re.sub(r'^\s*(\S.*)\s+<.*>', r'\1', uploader)
-    with utils.open_file(changesfn) as f:
+    with open(changesfn) as f:
         fingerprint = SignedFile(f.read(), keyrings=get_active_keyring_paths(), require_signature=False).fingerprint
     if "Show-Deferred::LinkPath" in Cnf:
         isnew = False

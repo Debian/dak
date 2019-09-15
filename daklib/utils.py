@@ -77,24 +77,6 @@ def html_escape(s):
 ################################################################################
 
 
-def open_file(filename, mode='r'):
-    """
-    Open C{file}, return fileobject.
-
-    @type filename: string
-    @param filename: path/filename to open
-
-    @type mode: string
-    @param mode: open mode
-
-    @rtype: fileobject
-    @return: open fileobject
-    """
-    return open(filename, mode)
-
-################################################################################
-
-
 def our_raw_input(prompt=""):
     if prompt:
         print(prompt, end='')
@@ -221,7 +203,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
         "-----BEGIN PGP SIGNATURE-----".
     """
 
-    with open_file(filename) as changes_in:
+    with open(filename) as changes_in:
         content = changes_in.read()
     try:
         unicode(content, 'utf-8')
@@ -403,12 +385,12 @@ def send_mail(message, filename="", whitelists=None):
     if Cnf.get('Dinstall::MailWhiteList', ''):
         whitelists.append(Cnf['Dinstall::MailWhiteList'])
     if len(whitelists) != 0:
-        with open_file(filename) as message_in:
+        with open(filename) as message_in:
             message_raw = modemail.message_from_file(message_in)
 
         whitelist = []
         for path in whitelists:
-            with open_file(path, 'r') as whitelist_in:
+            with open(path, 'r') as whitelist_in:
                 for line in whitelist_in:
                     if not re_whitespace_comment.match(line):
                         if re_re_mark.match(line):
@@ -512,7 +494,7 @@ def move(src, dest, overwrite=0, perms=0o664):
 
 def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
-    with open_file(filename) as templatefile:
+    with open(filename) as templatefile:
         template = templatefile.read()
     for k, v in subst_map.iteritems():
         template = template.replace(k, str(v))

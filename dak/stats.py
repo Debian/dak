@@ -104,7 +104,7 @@ SELECT a.arch_string as Architecture, sum(f.size) AS sum
 
 def daily_install_stats():
     stats = {}
-    f = utils.open_file("2001-11")
+    f = open("2001-11")
     for line in f.readlines():
         split = line.strip().split('|')
         program = split[1]

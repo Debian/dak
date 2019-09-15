@@ -288,7 +288,7 @@ def check_checksums():
         filename = f.fullpath
 
         try:
-            fi = utils.open_file(filename)
+            fi = open(filename)
         except:
             utils.warn("can't open '%s'." % (filename))
             continue
@@ -341,7 +341,7 @@ def check_timestamps():
     for pf in q.all():
         filename = os.path.abspath(os.path.join(pf.location.path, pf.filename))
         if os.access(filename, os.R_OK):
-            f = utils.open_file(filename)
+            f = open(filename)
             current_file = filename
             print("Processing %s." % (filename), file=sys.stderr)
             apt_inst.debExtract(f, Ent, "control.tar.gz")

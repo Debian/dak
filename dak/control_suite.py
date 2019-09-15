@@ -142,7 +142,7 @@ def britney_changelog(packages, suite, session):
     q = session.execute(query)
 
     pu = None
-    brit = utils.open_file(brit_file, 'w')
+    brit = open(brit_file, 'w')
 
     for u in q:
         if pu and pu != u[0]:
@@ -465,7 +465,7 @@ def main():
 
             if file_list:
                 for f in file_list:
-                    process_file(utils.open_file(f), suite, action, transaction, britney, force)
+                    process_file(open(f), suite, action, transaction, britney, force)
             else:
                 process_file(sys.stdin, suite, action, transaction, britney, force)
 

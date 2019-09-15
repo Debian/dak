@@ -69,7 +69,7 @@ class Logger(object):
             logfile = sys.stderr
         else:
             umask = os.umask(0o0002)
-            logfile = utils.open_file(logfilename, 'a')
+            logfile = open(logfilename, 'a')
             os.umask(umask)
 
         self.logfile = logfile

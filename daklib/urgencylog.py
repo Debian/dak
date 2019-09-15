@@ -32,7 +32,7 @@ import os
 import time
 
 from .config import Config
-from .utils import warn, open_file, move
+from .utils import warn, move
 
 ###############################################################################
 
@@ -61,7 +61,7 @@ class UrgencyLog(object):
 
                 # Open the logfile
                 self.log_filename = "%s/.install-urgencies-%s.new" % (self.log_dir, self.timestamp)
-                self.log_file = open_file(self.log_filename, 'w')
+                self.log_file = open(self.log_filename, 'w')
 
             else:
                 self.log_dir = None

@@ -127,7 +127,7 @@ def main():
 
         # Lets add user to the email-whitelist file if its configured.
         if "Dinstall::MailWhiteList" in Cnf and Cnf["Dinstall::MailWhiteList"] != "":
-            f = utils.open_file(Cnf["Dinstall::MailWhiteList"], "a")
+            f = open(Cnf["Dinstall::MailWhiteList"], "a")
             for mail in emails:
                 f.write(mail + '\n')
             f.close()

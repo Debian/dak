@@ -180,7 +180,7 @@ def parse_nfu(architecture):
     # Not all architectures may have a wanna-build dump, so we want to ignore missin
     # files
     if os.path.exists(filename):
-        f = utils.open_file(filename)
+        f = open(filename)
         for line in f:
             if line[0] == ' ':
                 continue
