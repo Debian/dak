@@ -42,7 +42,7 @@
 
 ################################################################################
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import errno
 import os
@@ -52,7 +52,7 @@ import sys
 import contextlib
 import pwd
 import apt_pkg
-import examine_package
+import dak.examine_package
 import subprocess
 import daklib.daksubprocess
 from sqlalchemy import or_
@@ -369,22 +369,22 @@ def check_pkg(upload, upload_copy, session):
     less_process = daklib.daksubprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
     try:
         sys.stdout = less_process.stdin
-        print(examine_package.display_changes(suite_name, changes))
+        print(dak.examine_package.display_changes(suite_name, changes))
 
         source = upload.source
         if source is not None:
             source_file = os.path.join(upload_copy.directory, os.path.basename(source.poolfile.filename))
-            print(examine_package.check_dsc(suite_name, source_file))
+            print(dak.examine_package.check_dsc(suite_name, source_file))
 
         for binary in upload.binaries:
             binary_file = os.path.join(upload_copy.directory, os.path.basename(binary.poolfile.filename))
-            examined = examine_package.check_deb(suite_name, binary_file)
+            examined = dak.examine_package.check_deb(suite_name, binary_file)
             # We always need to call check_deb to display package relations for every binary,
             # but we print its output only if new overrides are being added.
             if ("deb", binary.package) in missing:
                 print(examined)
 
-        print(examine_package.output_package_relations())
+        print(dak.examine_package.output_package_relations())
         less_process.stdin.close()
     except IOError as e:
         if e.errno == errno.EPIPE:

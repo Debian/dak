@@ -25,13 +25,13 @@
 
 ################################################################################
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import os
 import sys
 import time
 import apt_pkg
-import examine_package
+import dak.examine_package
 
 from daklib import policy
 from daklib.dbconn import *
@@ -180,16 +180,16 @@ def do_pkg(upload_id):
         distribution = changes.distribution
 
         print(html_header(changes.source, missing), file=outfile)
-        print(examine_package.display_changes(distribution, origchanges), file=outfile)
+        print(dak.examine_package.display_changes(distribution, origchanges), file=outfile)
 
         if upload.source is not None and ('dsc', upload.source.source) in missing:
             fn = os.path.join(upload_copy.directory, upload.source.poolfile.basename)
-            print(examine_package.check_dsc(distribution, fn, session), file=outfile)
+            print(dak.examine_package.check_dsc(distribution, fn, session), file=outfile)
         for binary in upload.binaries:
             if (binary.binarytype, binary.package) not in missing:
                 continue
             fn = os.path.join(upload_copy.directory, binary.poolfile.basename)
-            print(examine_package.check_deb(distribution, fn, session), file=outfile)
+            print(dak.examine_package.check_deb(distribution, fn, session), file=outfile)
 
         print(html_footer(), file=outfile)
 
@@ -245,7 +245,7 @@ def init(session):
 ################################################################################
 
 def main():
-    examine_package.use_html = True
+    dak.examine_package.use_html = True
     pool = DakProcessPool(processes=5)
 
     session = DBConn().session()
