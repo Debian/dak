@@ -41,7 +41,6 @@ import traceback
 import daklib.utils
 
 from daklib.daklog import Logger
-from daklib.dak_exceptions import CantOpenError
 
 ################################################################################
 
@@ -184,7 +183,7 @@ def main():
 
     try:
         logger = Logger('dak top-level', print_starting=False)
-    except CantOpenError:
+    except IOError:
         logger = None
 
     functionality = init()

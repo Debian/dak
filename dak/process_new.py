@@ -62,7 +62,7 @@ from daklib.queue import *
 from daklib import daklog
 from daklib import utils
 from daklib.regexes import re_default_answer, re_isanum
-from daklib.dak_exceptions import CantOpenError, AlreadyLockedError
+from daklib.dak_exceptions import AlreadyLockedError
 from daklib.summarystats import SummaryStats
 from daklib.config import Config
 from daklib.policy import UploadCopy, PolicyQueueUploadHandler
@@ -824,7 +824,7 @@ def main():
     if not Options["No-Action"]:
         try:
             Logger = daklog.Logger("process-new")
-        except CantOpenError as e:
+        except IOError:
             Options["Trainee"] = "True"
 
     Sections = Section_Completer(session)

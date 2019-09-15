@@ -89,15 +89,8 @@ def open_file(filename, mode='r'):
 
     @rtype: fileobject
     @return: open fileobject
-
-    @raise CantOpenError: If IOError is raised by open, reraise it as CantOpenError.
-
     """
-    try:
-        f = open(filename, mode)
-    except IOError:
-        raise CantOpenError(filename)
-    return f
+    return open(filename, mode)
 
 ################################################################################
 

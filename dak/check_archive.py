@@ -42,7 +42,7 @@ import apt_inst
 from daklib.dbconn import *
 from daklib import utils
 from daklib.config import Config
-from daklib.dak_exceptions import InvalidDscError, ChangesUnicodeError, CantOpenError
+from daklib.dak_exceptions import InvalidDscError, ChangesUnicodeError
 
 ################################################################################
 
@@ -189,9 +189,12 @@ def check_dscs():
         except ChangesUnicodeError:
             utils.warn("found invalid dsc file (%s), not properly utf-8 encoded" % f)
             count += 1
-        except CantOpenError:
-            utils.warn("missing dsc file (%s)" % f)
-            count += 1
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                utils.warn("missing dsc file (%s)" % f)
+                count += 1
+            else:
+                raise
         except Exception as e:
             utils.warn("miscellaneous error parsing dsc file (%s): %s" % (f, str(e)))
             count += 1

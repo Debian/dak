@@ -55,11 +55,6 @@ class NoFilesFieldError(DakError):
     pass
 
 
-class CantOpenError(DakError):
-    """Exception raised when files can't be opened."""
-    pass
-
-
 class CantOverwriteError(DakError):
     "Exception raised when files can't be overwritten."
     pass
