@@ -126,6 +126,8 @@ def clean(build_queue, transaction, now=None):
         Logger.log(["removed source from build queue", build_queue.queue_name, source.source, source.version])
         transaction.remove_source(source, suite)
 
+    if binaries or sources:
+        suite.update_last_changed()
 
 def main():
     global Options, Logger
