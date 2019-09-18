@@ -129,6 +129,7 @@ def clean(build_queue, transaction, now=None):
     if binaries or sources:
         suite.update_last_changed()
 
+
 def main():
     global Options, Logger
 
