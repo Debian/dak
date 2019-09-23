@@ -235,6 +235,7 @@ def list_uploads(filelist, rrd_dir):
 Delayed-Until: %s
 Delay-Remaining: %s
 Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])), u[2], u[5])
+                fields = fields.encode('utf-8')
                 print(fields, file=f)
                 encoded = unicode(u[6]).encode('utf-8')
                 print(encoded.rstrip(), file=f)
