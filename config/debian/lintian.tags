@@ -59,6 +59,7 @@ lintian:
     - bad-version-number
     - binary-in-etc
     - build-info-in-binary-control-file-section
+    - changelog-distribution-does-not-match-changes-file
     - conflicting-negation-in-source-relation
     - control-file-has-bad-owner
     - control-file-has-bad-permissions
