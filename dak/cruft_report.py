@@ -326,6 +326,7 @@ def reportNBSMetadata(suite_name, suite_id, session, rdeps=False):
         else:
             print()
 
+
 def reportAllNBS(suite_name, suite_id, session, rdeps=False):
     reportWithoutSource(suite_name, suite_id, session, rdeps)
     reportNewerAll(suite_name, session)
