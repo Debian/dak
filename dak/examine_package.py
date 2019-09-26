@@ -660,7 +660,7 @@ def check_changes(changes_filename):
         changes = utils.parse_changes(changes_filename)
     except UnicodeDecodeError:
         utils.warn("Encoding problem with changes file %s" % (changes_filename))
-    print(display_changes(changes['distribution'], changes_filename))
+    print(display_changes(changes['distribution'], changes_filename).encode('utf-8'))
 
     files = utils.build_file_list(changes)
     for f in files.keys():
