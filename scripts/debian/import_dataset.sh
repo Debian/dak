@@ -54,7 +54,7 @@ case "${IMPORTSUITE}" in
     testing)
         DO_CHANGELOG="true"
         ;;
-    testing-debug|wheezy-updates|jessie-updates|stretch-updates|buster-updates)
+    testing-debug|testing-proposed-updates|wheezy-updates|jessie-updates|stretch-updates|buster-updates)
         DO_CHANGELOG="false"
         ;;
     *)
