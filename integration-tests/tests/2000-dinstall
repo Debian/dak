@@ -126,7 +126,7 @@ echo "Published successfully"
   upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
   process_uploads
 
-  list_all_suites
+  check_all_suites before_dinstall_nviu
 
   # trigger obsolete override issue: needs 2 dinstalls:
   # NVIU is done after obsolete overrides, so we needs a second dinstall to
@@ -134,14 +134,14 @@ echo "Published successfully"
   dinstall
   dinstall
 
-  list_all_suites
+  check_all_suites after_dinstall_nviu
 
   upload_changes ${packages:?}/pkgnew_0.1-2_amd64.changes
   process_uploads
 
 )
 
-list_all_suites
+check_all_suites end
 
 dak ls main-contrib-with-debug
 
