@@ -178,10 +178,11 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
 
     for suite, version in suite_version_list:
         cmp = apt_pkg.version_compare(new_version, version)
-        if suite in must_be_newer_than and cmp < 1:
+        # for control-suite we allow equal version (for uploads, we don't)
+        if suite in must_be_newer_than and cmp < 0:
             utils.warn("%s (%s): version check violated: %s targeted at %s is *not* newer than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
             violations = True
-        if suite in must_be_older_than and cmp > 1:
+        if suite in must_be_older_than and cmp > 0:
             utils.warn("%s (%s): version check violated: %s targeted at %s is *not* older than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
             violations = True
 
