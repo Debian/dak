@@ -217,6 +217,7 @@ def set_suite(file, suite, transaction, britney=False, force=False):
     session = transaction.session
     suite_id = suite.suite_id
     lines = file.readlines()
+    suites = [suite] + [q.suite for q in suite.copy_queues]
 
     # Our session is already in a transaction
 
@@ -258,9 +259,11 @@ def set_suite(file, suite, transaction, britney=False, force=False):
 
             component = pkg.poolfile.component
             if architecture == "source":
-                transaction.copy_source(pkg, suite, component)
+                for s in suites:
+                    transaction.copy_source(pkg, s, component)
             else:
-                transaction.copy_binary(pkg, suite, component)
+                for s in suites:
+                    transaction.copy_binary(pkg, s, component)
 
             Logger.log(["added", suite.suite_name, " ".join(key)])
 
@@ -290,6 +293,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
         return
 
     suite_id = suite.suite_id
+    suites = [suite] + [q.suite for q in suite.copy_queues]
 
     request = []
 
@@ -335,7 +339,8 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
                     utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite.suite_name))
                     continue
                 else:
-                    transaction.copy_source(pkg, suite, component)
+                    for s in suites:
+                        transaction.copy_source(pkg, s, component)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
 
             elif action == "remove":
@@ -362,7 +367,8 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
                     utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
-                    transaction.copy_binary(pkg, suite, component)
+                    for s in suites:
+                        transaction.copy_binary(pkg, s, component)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
             elif action == "remove":
                 if association_id is None:
