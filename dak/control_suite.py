@@ -178,10 +178,11 @@ def version_checks(package, architecture, target_suite, new_version, session, fo
 
     for suite, version in suite_version_list:
         cmp = apt_pkg.version_compare(new_version, version)
-        if suite in must_be_newer_than and cmp < 1:
+        # for control-suite we allow equal version (for uploads, we don't)
+        if suite in must_be_newer_than and cmp < 0:
             utils.warn("%s (%s): version check violated: %s targeted at %s is *not* newer than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
             violations = True
-        if suite in must_be_older_than and cmp > 1:
+        if suite in must_be_older_than and cmp > 0:
             utils.warn("%s (%s): version check violated: %s targeted at %s is *not* older than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
             violations = True
 
@@ -216,6 +217,7 @@ def set_suite(file, suite, transaction, britney=False, force=False):
     session = transaction.session
     suite_id = suite.suite_id
     lines = file.readlines()
+    suites = [suite] + [q.suite for q in suite.copy_queues]
 
     # Our session is already in a transaction
 
@@ -257,9 +259,11 @@ def set_suite(file, suite, transaction, britney=False, force=False):
 
             component = pkg.poolfile.component
             if architecture == "source":
-                transaction.copy_source(pkg, suite, component)
+                for s in suites:
+                    transaction.copy_source(pkg, s, component)
             else:
-                transaction.copy_binary(pkg, suite, component)
+                for s in suites:
+                    transaction.copy_binary(pkg, s, component)
 
             Logger.log(["added", suite.suite_name, " ".join(key)])
 
@@ -289,6 +293,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
         return
 
     suite_id = suite.suite_id
+    suites = [suite] + [q.suite for q in suite.copy_queues]
 
     request = []
 
@@ -334,7 +339,8 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
                     utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite.suite_name))
                     continue
                 else:
-                    transaction.copy_source(pkg, suite, component)
+                    for s in suites:
+                        transaction.copy_source(pkg, s, component)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
 
             elif action == "remove":
@@ -361,7 +367,8 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
                     utils.warn("'%s_%s_%s' already exists in suite %s." % (package, version, architecture, suite))
                     continue
                 else:
-                    transaction.copy_binary(pkg, suite, component)
+                    for s in suites:
+                        transaction.copy_binary(pkg, s, component)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
             elif action == "remove":
                 if association_id is None:

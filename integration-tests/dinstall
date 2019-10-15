@@ -70,6 +70,7 @@ setup_debian_like_archive() {
     dak admin suite add-all-arches testing-proposed-updates "" \
         codename=buster-proposed-updates archive=ftp-master
     dak admin suite-component add testing-proposed-updates main contrib non-free
+    dak admin suite add-build-queue testing-proposed-updates buildd-testing-proposed-updates buildd-buster-proposed-updates build-queues
     dak admin suite-config set testing-proposed-updates allowcsset=yes byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         overridesuite=testing

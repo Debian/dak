@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+declare -r testname=`basename $0`
+
 _escape_newline() {
     echo "$1" | perl -pe 's/\n/\\n/g'
 }
@@ -39,10 +41,31 @@ import-fixture-signing-key() {
     dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
 }
 
-list_all_suites() {
+check_all_suites() {
+    # list all suites and compare the control-suite output to the reference
+    # output from the repo
+    checkname=$1
+    if [ -z "$checkname" ]
+    then
+        echo "E: $testname: check_all_suites called without checkname"
+        exit 1
+    fi
+    csdir="${DAKBASE}/testoutput/$testname/$checkname"
+    refdir="${DAK_ROOT}/integration-tests/test-output/$testname/$checkname"
+    if [ ! -d "$refdir" ]
+    then
+        echo "E: $testname: dir $refdir missing"
+        exit 1
+    fi
+    mkdir -p "$csdir"
     dak admin s list | sort | while read suite
     do
         printf "\n\n$suite\n"
-        dak control-suite -l $suite |sort
+        dak control-suite -l $suite | LANG=C sort | tee "$csdir/$suite"
     done
+    if ! diff -Nur "$refdir" "$csdir"
+    then
+        echo "E: $testname $checkname: output different"
+        exit 1
+    fi
 }

@@ -78,6 +78,8 @@ EOF
   dak generate-release -s unstable
 )
 
+check_all_suites after_accept
+
 (
   dak rm -n -s unstable package
 )
