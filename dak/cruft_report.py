@@ -35,7 +35,7 @@ Check for obsolete binary packages
 
 ################################################################################
 
-from __future__ import print_function
+#from __future__ import print_function
 
 import functools
 import os
@@ -303,6 +303,30 @@ def reportNBS(suite_name, suite_id, rdeps=False):
     session.close()
 
 
+def reportNBSMetadata(suite_name, suite_id, session, rdeps=False):
+    rows = queryNBS_metadata(suite_id, session)
+    title = 'NBS packages (from metadata) in suite %s' % suite_name
+    if rows.rowcount > 0:
+        print('%s\n%s\n' % (title, '-' * len(title)))
+    for row in rows:
+        (packages, architecture, source, version) = row
+        print("* source package %s version %s no longer builds" %
+            (source, version))
+        print("  binary package(s): %s" % packages)
+        print("  on %s" % architecture)
+        print("  - suggested command:")
+        message = '"[auto-cruft] NBS (no longer built by %s)"' % source
+        print("    dak rm -m %s -s %s -a %s -p -R -b %s" %
+            (message, suite_name, architecture, packages))
+        if rdeps:
+            if utils.check_reverse_depends(packages.split(), suite_name, [architecture], session, True):
+                print()
+            else:
+                print("  - No dependency problem found\n")
+        else:
+            print()
+
+
 def reportAllNBS(suite_name, suite_id, session, rdeps=False):
     reportWithoutSource(suite_name, suite_id, session, rdeps)
     reportNewerAll(suite_name, session)
@@ -547,9 +571,9 @@ def main():
 
     # Set up checks based on mode
     if Options["Mode"] == "daily":
-        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu"]
+        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu", "nbs metadata"]
     elif Options["Mode"] == "full":
-        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu", "dubious nbs", "bnb", "bms", "anais"]
+        checks = ["nbs", "nviu", "nvit", "obsolete source", "outdated non-free", "nfu", "nbs metadata", "dubious nbs", "bnb", "bms", "anais"]
     elif Options["Mode"] == "bdo":
         checks = ["nbs",  "obsolete source"]
     else:
@@ -581,6 +605,9 @@ def main():
 
     if "nbs" in checks:
         reportAllNBS(suite_name, suite_id, session, rdeps)
+
+    if "nbs metadata" in checks:
+        reportNBSMetadata(suite_name, suite_id, session, rdeps)
 
     if "outdated non-free" in checks:
         report_outdated_nonfree(suite_name, session, rdeps)

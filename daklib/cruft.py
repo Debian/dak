@@ -307,3 +307,41 @@ with
         group by arch_list, source, version)
     select * from outdated_packages order by source"""
     return session.execute(query, {'suite_id': suite_id})
+
+
+def queryNBS_metadata(suite_id, session):
+    """searches for NBS packages based on metadata extraction of the
+       newest source for a given suite"""
+
+    query = """
+    select string_agg(bin.package, ' ' order by bin.package), (
+      select arch_string
+      from architecture
+      where id = bin.architecture) as architecture, src.source, newsrc.version
+    from bin_associations_binaries bin
+    join src_associations_src src
+    on src.src = bin.source
+    and src.suite = bin.suite
+    join newest_src_association newsrc
+    on newsrc.source = src.source
+    and newsrc.version != src.version
+    and newsrc.suite = bin.suite
+    where bin.suite = :suite_id
+    and bin.package not in (
+      select trim(unnest(string_to_array(meta.value, ',')))
+      from source_metadata meta
+      where meta.src_id = (
+        select newsrc.src
+        from newest_src_association newsrc
+        where newsrc.source = (
+          select s.source
+          from source s
+          where s.id = bin.source)
+        and newsrc.suite = bin.suite)
+      and key_id = (
+        select key_id
+        from metadata_keys
+        where key = 'Binary'))
+    group by src.source, newsrc.version, architecture
+    order by src.source, newsrc.version, bin.architecture"""
+    return session.execute(query, {'suite_id': suite_id})
