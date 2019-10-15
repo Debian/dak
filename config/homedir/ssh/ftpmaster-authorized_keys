@@ -12,10 +12,10 @@ command="/srv/ftp-master.debian.org/dak/scripts/debian/p-u-comment.sh",restrict,
 
 # sync deferred queue overview
 ## html file
-command="rsync --server -logDtpre.iLsfx . /srv/ftp.debian.org/web/deferred.html",restrict,from="128.31.0.69,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGvxeT80rDP/lOqfVAiLRGb32o+2XgiheujPbJS6nm74 sync deferred html file
+command="rsync --server -logDtpre.iLsfx . /srv/ftp.debian.org/web/deferred.html",restrict,from="128.31.0.69,2603:400a:ffff:bb8::801f:45,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGvxeT80rDP/lOqfVAiLRGb32o+2XgiheujPbJS6nm74 sync deferred html file
 
 ## deferred dir
-command="rsync --server --delete -vvlogDtpre.iLsfx . /srv/ftp.debian.org/web/deferred/",restrict,from="128.31.0.69,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPWdzoLnQJ0Zlp5DDKcPOPk5kIYxb9P2XIwcWZk9Nx9d sync deferred html dir
+command="rsync --server --delete -vvlogDtpre.iLsfx . /srv/ftp.debian.org/web/deferred/",restrict,from="128.31.0.69,2603:400a:ffff:bb8::801f:45,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPWdzoLnQJ0Zlp5DDKcPOPk5kIYxb9P2XIwcWZk9Nx9d sync deferred html dir
 
 ## rrd file
-command="rsync --server -vlogDtpre.iLsfx . /srv/ftp.debian.org/web/stat/deferred.rrd",restrict,from="128.31.0.69,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyX7qEexkQ7YW6nskVxwF2zGAX8oJB56Tb7DlxM46Pu sync deferred rrd file
+command="rsync --server -vlogDtpre.iLsfx . /srv/ftp.debian.org/web/stat/deferred.rrd",restrict,from="128.31.0.69,2603:400a:ffff:bb8::801f:45,usper.debian.org" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHyX7qEexkQ7YW6nskVxwF2zGAX8oJB56Tb7DlxM46Pu sync deferred rrd file
