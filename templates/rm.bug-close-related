@@ -21,6 +21,10 @@ For details on the removal, please see https://__BUG_SERVER__/__BUG_NUMBER__
 The version of this package that was in Debian prior to this removal
 can still be found using http://snapshot.debian.org/.
 
+Please note that the changes have been done on the master archive and
+will not propagate to any mirrors until the next dinstall run at the
+earliest.
+
 This message was generated automatically; if you believe that there is
 a problem with it please contact the archive administrators by mailing
 __ADMIN_ADDRESS__.
