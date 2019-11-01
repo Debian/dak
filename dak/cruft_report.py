@@ -319,7 +319,11 @@ def reportNBSMetadata(suite_name, suite_id, session, rdeps=False):
         print("    dak rm -m %s -s %s -a %s -p -R -b %s" %
             (message, suite_name, architecture, packages))
         if rdeps:
-            if utils.check_reverse_depends(packages.split(), suite_name, [architecture], session, True):
+            archs = [architecture]
+            if architecture == "all":
+                # when archs is None, rdeps are checked on all archs in the suit
+                archs = None
+            if utils.check_reverse_depends(packages.split(), suite_name, archs, session, True):
                 print()
             else:
                 print("  - No dependency problem found\n")

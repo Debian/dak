@@ -386,6 +386,9 @@ def main():
     if Options["Rdep-Check"]:
         arches = utils.split_args(Options["Architecture"])
         include_arch_all = Options['NoArchAllRdeps'] == ''
+        if include_arch_all and 'all' in arches:
+            # when arches is None, rdeps are checked on all arches in the suite
+            arches = None
         reverse_depends_check(removals, suites[0], arches, session, include_arch_all=include_arch_all)
 
     # If -n/--no-action, drop out here
