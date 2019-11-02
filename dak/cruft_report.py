@@ -163,7 +163,7 @@ def do_nfu(nfu_packages):
         print("Suggested commands:")
         for architecture in a2p:
             if a2p[architecture]:
-                print((" dak rm -m \"[auto-cruft] NFU\" -s %s -a %s -b %s" % 
+                print((" dak rm -o -m \"[auto-cruft] NFU\" -s %s -a %s -b %s" %
                     (suite.suite_name, architecture, " ".join(a2p[architecture]))))
         print()
 
@@ -271,7 +271,7 @@ def reportNewerAll(suite_name, session):
         print("* package %s is arch any in version %s but arch all in version %s" %
             (package, oldver, newver))
         print("  - suggested command:")
-        print("    dak rm -m %s -s %s -a %s -p -b %s\n" %
+        print("    dak rm -o -m %s -s %s -a %s -p -b %s\n" %
             (message, suite_name, oldarch, package))
 
 
@@ -291,7 +291,7 @@ def reportNBS(suite_name, suite_id, rdeps=False):
         print("  on %s" % arch_string)
         print("  - suggested command:")
         message = '"[auto-cruft] NBS (no longer built by %s)"' % source
-        print("    dak rm -m %s -s %s -a %s -p -R -b %s" %
+        print("    dak rm -o -m %s -s %s -a %s -p -R -b %s" %
             (message, suite_name, arch_string, pkg_string))
         if rdeps:
             if utils.check_reverse_depends(pkg_list, suite_name, arch_list, session, True):
@@ -316,7 +316,7 @@ def reportNBSMetadata(suite_name, suite_id, session, rdeps=False):
         print("  on %s" % architecture)
         print("  - suggested command:")
         message = '"[auto-cruft] NBS (no longer built by %s - based on source metadata)"' % source
-        print("    dak rm -m %s -s %s -a %s -p -R -b %s" %
+        print("    dak rm -o -m %s -s %s -a %s -p -R -b %s" %
             (message, suite_name, architecture, packages))
         if rdeps:
             archs = [architecture]
@@ -526,7 +526,7 @@ def report_outdated_nonfree(suite, session, rdeps=False):
             for binary in sorted(packages[source]):
                 binaries.add(binary)
                 archs = archs.union(packages[source][binary])
-            print('    dak rm -m %s -s %s -a %s -p -R -b %s' %
+            print('    dak rm -o -m %s -s %s -a %s -p -R -b %s' %
                    (message, suite, ','.join(archs), ' '.join(binaries)))
             if rdeps:
                 if utils.check_reverse_depends(list(binaries), suite, archs, session, True):
