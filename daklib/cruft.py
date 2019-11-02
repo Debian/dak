@@ -328,7 +328,7 @@ def queryNBS_metadata(suite_id, session):
     and newsrc.suite = bin.suite
     where bin.suite = :suite_id
     and bin.package not in (
-      select trim(unnest(string_to_array(meta.value, ',')))
+      select trim(' \n' from unnest(string_to_array(meta.value, ',')))
       from source_metadata meta
       where meta.src_id = (
         select newsrc.src
