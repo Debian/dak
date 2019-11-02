@@ -240,7 +240,8 @@ def main():
         # Remove binary packages that were built from an outdated version of
         # the specified source package
         q = session.execute("""
-                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
+                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source,
+                       s.version as source_version, newest_source.version as newest_sversion
                 FROM binaries b
                      JOIN source s ON s.id = b.source
                      JOIN bin_associations ba ON ba.bin = b.id
@@ -258,7 +259,8 @@ def main():
     elif Options["Binary"]:
         # Removal by binary package name
         q = session.execute("""
-                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
+                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source,
+                       s.version as source_version, newest_source.version as newest_sversion
                 FROM binaries b
                      JOIN source s ON s.id = b.source
                      JOIN bin_associations ba ON ba.bin = b.id
@@ -267,6 +269,7 @@ def main():
                      JOIN files f ON f.id = b.file
                      JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
                      JOIN component c ON c.id = af.component_id
+                     JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
                 WHERE TRUE %s %s %s %s
         """ % (con_packages, con_suites, con_components, con_architectures))
         to_remove.extend(q)
@@ -274,7 +277,8 @@ def main():
         # Source-only
         if not Options["Binary-Only"]:
             q = session.execute("""
-                    SELECT s.source, s.version, 'source', s.id, s.maintainer, s.source
+                    SELECT s.source, s.version, 'source', s.id, s.maintainer, s.source,
+                           s.version as source_version, newest_source.version as newest_sversion
                     FROM source s
                          JOIN src_associations sa ON sa.source = s.id
                          JOIN suite su ON su.id = sa.suite
@@ -282,13 +286,15 @@ def main():
                          JOIN files f ON f.id = s.file
                          JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
                          JOIN component c ON c.id = af.component_id
+                         JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
                     WHERE TRUE %s %s %s
             """ % (con_packages, con_suites, con_components))
             to_remove.extend(q)
         if not Options["Source-Only"]:
             # Source + Binary
             q = session.execute("""
-                    SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
+                    SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source,
+                           s.version as source_version, newest_source.version as newest_sversion
                     FROM binaries b
                          JOIN bin_associations ba ON b.id = ba.bin
                          JOIN architecture a ON b.architecture = a.id
@@ -298,6 +304,7 @@ def main():
                          JOIN component c ON af.component_id = c.id
                          JOIN source s ON b.source = s.id
                          JOIN src_associations sa ON s.id = sa.source AND sa.suite = su.id
+                         JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
                     WHERE TRUE %s %s %s %s""" % (con_packages, con_suites, con_components, con_architectures))
             to_remove.extend(q)
 
@@ -350,6 +357,9 @@ def main():
         architecture = i[2]
         maintainer = i[4]
         maintainers[maintainer] = ""
+        source = i[5]
+        source_version = i[6]
+        source_newest = i[7]
         if package not in d:
             d[package] = {}
         if version not in d[package]:
