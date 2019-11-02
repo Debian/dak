@@ -315,7 +315,7 @@ def reportNBSMetadata(suite_name, suite_id, session, rdeps=False):
         print("  binary package(s): %s" % packages)
         print("  on %s" % architecture)
         print("  - suggested command:")
-        message = '"[auto-cruft] NBS (no longer built by %s)"' % source
+        message = '"[auto-cruft] NBS (no longer built by %s - based on source metadata)"' % source
         print("    dak rm -m %s -s %s -a %s -p -R -b %s" %
             (message, suite_name, architecture, packages))
         if rdeps:
