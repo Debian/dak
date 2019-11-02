@@ -176,10 +176,10 @@ def main():
         utils.warn("-o/--outdated implies -p/--partial.")
         Options["Partial"] = "true"
     if Options["Do-Close"] and not Options["Done"]:
-        utils.fubar("No.")
+        utils.fubar("-D/--do-close needs -d/--done (bugnr).")
     if (Options["Do-Close"]
            and (Options["Binary"] or Options["Binary-Only"] or Options["Source-Only"])):
-        utils.fubar("No.")
+        utils.fubar("-D/--do-close cannot be used with -b/--binary, -B/--binary-only or -S/--source-only.")
 
     # Force the admin to tell someone if we're not doing a 'dak
     # cruft-report' inspired removal (or closing a bug, which counts
