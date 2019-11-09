@@ -75,8 +75,8 @@ Remove PACKAGE(s) from suite(s).
   -h, --help                 show this help and exit
   -m, --reason=MSG           reason for removal
   -n, --no-action            don't do anything
-  -o, --outdated             remove binaries from the specified source package
-                             that were built from previous source versions
+  -o, --outdated             remove only outdated sources or binaries that were
+                             built from previous source versions
   -p, --partial              don't affect override files
   -R, --rdep-check           check reverse dependencies
   -s, --suite=SUITE          act on this suite
@@ -163,10 +163,10 @@ def main():
         utils.fubar("need at least one package name as an argument.")
     if Options["Architecture"] and Options["Source-Only"]:
         utils.fubar("can't use -a/--architecture and -S/--source-only options simultaneously.")
-    actions = [Options["Binary"], Options["Binary-Only"], Options["Source-Only"], Options["Outdated"]]
+    actions = [Options["Binary"], Options["Binary-Only"], Options["Source-Only"]]
     nr_actions = len([act for act in actions if act])
     if nr_actions > 1:
-        utils.fubar("Only one of -b/--binary, -B/--binary-only, -o/--outdated and -S/--source-only can be used.")
+        utils.fubar("Only one of -b/--binary, -B/--binary-only and -S/--source-only can be used.")
     if "Carbon-Copy" not in Options and "Done" not in Options:
         utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
     if Options["Architecture"] and not Options["Partial"]:
@@ -176,10 +176,10 @@ def main():
         utils.warn("-o/--outdated implies -p/--partial.")
         Options["Partial"] = "true"
     if Options["Do-Close"] and not Options["Done"]:
-        utils.fubar("No.")
+        utils.fubar("-D/--do-close needs -d/--done (bugnr).")
     if (Options["Do-Close"]
            and (Options["Binary"] or Options["Binary-Only"] or Options["Source-Only"])):
-        utils.fubar("No.")
+        utils.fubar("-D/--do-close cannot be used with -b/--binary, -B/--binary-only or -S/--source-only.")
 
     # Force the admin to tell someone if we're not doing a 'dak
     # cruft-report' inspired removal (or closing a bug, which counts
@@ -227,6 +227,10 @@ def main():
     if Options["Rdep-Check"] and len(suites) > 1:
         utils.fubar("Reverse dependency check on multiple suites is not implemented.")
 
+    q_outdated = "TRUE"
+    if Options["Outdated"]:
+        q_outdated = "s.version < newest_source.version"
+
     to_remove = []
     maintainers = {}
 
@@ -236,11 +240,11 @@ def main():
     # XXX: TODO: This all needs converting to use placeholders or the object
     #            API. It's an SQL injection dream at the moment
 
-    if Options["Outdated"]:
-        # Remove binary packages that were built from an outdated version of
-        # the specified source package
+    if Options["Binary"]:
+        # Removal by binary package name
         q = session.execute("""
-                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
+                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source,
+                       s.version as source_version, newest_source.version as newest_sversion
                 FROM binaries b
                      JOIN source s ON s.id = b.source
                      JOIN bin_associations ba ON ba.bin = b.id
@@ -250,31 +254,15 @@ def main():
                      JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
                      JOIN component c ON c.id = af.component_id
                      JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
-                WHERE
-                   s.version < newest_source.version
-                   %s %s %s %s
-        """ % (con_packages, con_suites, con_components, con_architectures))
-        to_remove.extend(q)
-    elif Options["Binary"]:
-        # Removal by binary package name
-        q = session.execute("""
-                SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
-                FROM binaries b
-                     JOIN source s ON s.id = b.source
-                     JOIN bin_associations ba ON ba.bin = b.id
-                     JOIN architecture a ON a.id = b.architecture
-                     JOIN suite su ON su.id = ba.suite
-                     JOIN files f ON f.id = b.file
-                     JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
-                     JOIN component c ON c.id = af.component_id
-                WHERE TRUE %s %s %s %s
-        """ % (con_packages, con_suites, con_components, con_architectures))
+                WHERE %s %s %s %s %s
+        """ % (q_outdated, con_packages, con_suites, con_components, con_architectures))
         to_remove.extend(q)
     else:
         # Source-only
         if not Options["Binary-Only"]:
             q = session.execute("""
-                    SELECT s.source, s.version, 'source', s.id, s.maintainer, s.source
+                    SELECT s.source, s.version, 'source', s.id, s.maintainer, s.source,
+                           s.version as source_version, newest_source.version as newest_sversion
                     FROM source s
                          JOIN src_associations sa ON sa.source = s.id
                          JOIN suite su ON su.id = sa.suite
@@ -282,13 +270,15 @@ def main():
                          JOIN files f ON f.id = s.file
                          JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
                          JOIN component c ON c.id = af.component_id
-                    WHERE TRUE %s %s %s
-            """ % (con_packages, con_suites, con_components))
+                         JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
+                    WHERE %s %s %s %s
+            """ % (q_outdated, con_packages, con_suites, con_components))
             to_remove.extend(q)
         if not Options["Source-Only"]:
             # Source + Binary
             q = session.execute("""
-                    SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source
+                    SELECT b.package, b.version, a.arch_string, b.id, b.maintainer, s.source,
+                           s.version as source_version, newest_source.version as newest_sversion
                     FROM binaries b
                          JOIN bin_associations ba ON b.id = ba.bin
                          JOIN architecture a ON b.architecture = a.id
@@ -298,7 +288,9 @@ def main():
                          JOIN component c ON af.component_id = c.id
                          JOIN source s ON b.source = s.id
                          JOIN src_associations sa ON s.id = sa.source AND sa.suite = su.id
-                    WHERE TRUE %s %s %s %s""" % (con_packages, con_suites, con_components, con_architectures))
+                         JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
+                    WHERE %s %s %s %s %s
+            """ % (q_outdated, con_packages, con_suites, con_components, con_architectures))
             to_remove.extend(q)
 
     if not to_remove:
@@ -350,6 +342,9 @@ def main():
         architecture = i[2]
         maintainer = i[4]
         maintainers[maintainer] = ""
+        source = i[5]
+        source_version = i[6]
+        source_newest = i[7]
         if package not in d:
             d[package] = {}
         if version not in d[package]:
@@ -386,6 +381,9 @@ def main():
     if Options["Rdep-Check"]:
         arches = utils.split_args(Options["Architecture"])
         include_arch_all = Options['NoArchAllRdeps'] == ''
+        if include_arch_all and 'all' in arches:
+            # when arches is None, rdeps are checked on all arches in the suite
+            arches = None
         reverse_depends_check(removals, suites[0], arches, session, include_arch_all=include_arch_all)
 
     # If -n/--no-action, drop out here
