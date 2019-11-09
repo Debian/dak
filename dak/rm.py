@@ -75,7 +75,7 @@ Remove PACKAGE(s) from suite(s).
   -h, --help                 show this help and exit
   -m, --reason=MSG           reason for removal
   -n, --no-action            don't do anything
-  -o, --outdated             remove only oudated sources or binaries that were
+  -o, --outdated             remove only outdated sources or binaries that were
                              built from previous source versions
   -p, --partial              don't affect override files
   -R, --rdep-check           check reverse dependencies

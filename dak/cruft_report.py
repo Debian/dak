@@ -321,7 +321,7 @@ def reportNBSMetadata(suite_name, suite_id, session, rdeps=False):
         if rdeps:
             archs = [architecture]
             if architecture == "all":
-                # when archs is None, rdeps are checked on all archs in the suit
+                # when archs is None, rdeps are checked on all archs in the suite
                 archs = None
             if utils.check_reverse_depends(packages.split(), suite_name, archs, session, True):
                 print()
