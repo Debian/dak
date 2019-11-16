@@ -294,6 +294,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
 
     suite_id = suite.suite_id
     suites = [suite] + [q.suite for q in suite.copy_queues]
+    extra_archives = [suite.archive]
 
     request = []
 
@@ -368,7 +369,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
                     continue
                 else:
                     for s in suites:
-                        transaction.copy_binary(pkg, s, component)
+                        transaction.copy_binary(pkg, s, component, extra_archives=extra_archives)
                     Logger.log(["added", package, version, architecture, suite.suite_name, pkid])
             elif action == "remove":
                 if association_id is None:
