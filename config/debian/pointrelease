@@ -130,18 +130,17 @@ confirm
 
 log "Preparing"
 pg_timestamp pre_${suite}_${newrev}
-if [[ ! -f ${pusuite}.list ]]; then
-    dak control-suite -l ${pusuite} > ${pusuite}.list &
-fi
-if [[ ! -f ${suite}.list ]]; then
-    dak control-suite -l ${suite} > ${suite}.list &
-fi
-if [[ ! -f ${suite}-debug.list ]]; then
-    dak control-suite -l ${suite}-debug > ${suite}-debug.list &
-fi
-if [[ ! -f ${pusuite}-debug.list ]]; then
-    dak control-suite -l ${pusuite}-debug > ${pusuite}-debug.list &
-fi
+
+control-suite-list() {
+    local s="${1:?}"
+    if [[ ! -f ${s}.list ]]; then
+        dak control-suite -l ${s} > ${s}.list &
+    fi
+}
+control-suite-list ${pusuite}
+control-suite-list ${suite}
+control-suite-list ${pusuite}-debug
+control-suite-list ${suite}-debug
 wait
 
 if [[ -n ${skiplist} ]]; then
@@ -151,39 +150,46 @@ if [[ -n ${skiplist} ]]; then
   done
 fi
 
+edit-changelog() {
+    local prompt="${1:?}"
+    shift
+
+    if [ -n "${prompt}" ]; then
+        echo "${prompt}"
+        confirm
+    fi
+
+    $EDITOR "${ftpdir}/dists/${suite}/ChangeLog" "${@}"
+    rm -f -- "${ftpdir}/dists/${suite}/ChangeLog~" "${ftpdir}/dists/${suite}/#ChangeLog#"
+}
+
 log "Creating changelog"
 tmpfile=$(mktemp -p "${TMPDIR}" changelog.XXXXXX)
 dak make-changelog -s ${pusuite} -b ${suite} | cat - ${ftpdir}/dists/${suite}/ChangeLog > ${tmpfile}
 chmod 0644 ${tmpfile}
 mv ${tmpfile} ${ftpdir}/dists/${suite}/ChangeLog
 if [[ -n ${skiplist} ]]; then
-    echo "Please edit to remove the changelogs for the skipped packages"
-    confirm
-    $EDITOR ${ftpdir}/dists/${suite}/ChangeLog
-    rm -f ${ftpdir}/dists/${suite}/ChangeLog~ "${ftpdir}/dists/${suite}/#ChangeLog#"
+    edit-changelog "Please edit to remove the changelogs for the skipped packages"
 fi
 
-log "Merging ${pusuite} into ${suite}"
-while :; do
-    if dak control-suite --add ${suite} < ${pusuite}.list; then
-        log "Done"
-        break
-    else
-        log "Please check problem and hit enter when i can retry"
-        read
-    fi
-done
+merge-suite() {
+    local source="${1:?}"
+    local target="${2:?}"
 
-log "Merging the ${pusuite}-debug into ${suite}-debug"
-while :; do
-    if dak control-suite --add ${suite}-debug < ${pusuite}-debug.list; then
-        log "Done"
-        break
-    else
-        log "Please check problem and hit enter when i can retry"
-        read
-    fi
-done
+    log "Merging ${source} into ${target}"
+    while :; do
+        if dak control-suite --add ${target} < ${source}.list; then
+            log "Done"
+            break
+        else
+            log "Please check problem and hit enter when i can retry"
+            read
+        fi
+    done
+}
+
+merge-suite ${pusuite} ${suite}
+merge-suite ${pusuite}-debug ${suite}-debug
 
 log "Cleaning ${pusuite} and ${pusuite}-debug"
 dak control-suite --remove ${pusuite} < ${pusuite}.list
@@ -251,10 +257,7 @@ done
 set -e
 
 if [[ ${hadrms} -ne 0 ]]; then
-    echo "You did some removals, please copy their entries into the changelog (will open an editor for you)"
-    confirm
-    $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
-    rm -f ${ftpdir}/dists/${suite}/ChangeLog~ "${ftpdir}/dists/${suite}/#ChangeLog#"
+    edit-changelog "You did some removals, please copy their entries into the changelog (will open an editor for you)" ${webdir}/removals.txt
 fi
 
 log "Checking for d-i updates"
@@ -325,7 +328,7 @@ done
 read -e -p "Does the diff look ok? Enter anything if not, empty if yes (if nonempty, I will open an editor for you)" diffcheck
 if [[ -n ${diffcheck} ]]; then
     cd ${ftpdir}/dists/${suite}
-    $EDITOR ChangeLog ../README ../../README ../../README.html
+    edit-changelog "" ../README ../../README ../../README.html
     rm -f -- ./*~ ../*~ ../../*~ ./"#"*"#" ../"#"*"#" ../../"#"*"#"
 fi
 
@@ -363,10 +366,7 @@ while :; do
 done
 
 if [[ ${hadremove} -ne 0 ]]; then
-    echo "You did some removals, please copy their entries into the changelog (will open an editor for you)"
-    confirm
-    $EDITOR ${ftpdir}/dists/${suite}/ChangeLog ${webdir}/removals.txt
-    rm -f -- ${ftpdir}/dists/${suite}/ChangeLog~ "${ftpdir}/dists/${suite}/#ChangeLog#"
+    edit-changelog "You did some removals, please copy their entries into the changelog (will open an editor for you)" ${webdir}/removals.txt
 fi
 
 log "Cleaning up debug suite"
