@@ -1314,7 +1314,7 @@ def find_possibly_compressed_file(filename):
         if os.path.exists(_file):
             return _file
 
-    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+    raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
 
 ################################################################################
 
