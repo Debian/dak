@@ -1140,7 +1140,7 @@ class ArchiveUpload(object):
 
         changelog_id = None
         # Only add changelog for sourceful uploads and binNMUs
-        if 'source' in self.changes.architectures or re_bin_only_nmu.search(control['Version']):
+        if self.changes.sourceful or re_bin_only_nmu.search(control['Version']):
             query = 'INSERT INTO changelogs_text (changelog) VALUES (:changelog) RETURNING id'
             changelog_id = session.execute(query, {'changelog': control['Changes']}).scalar()
             assert changelog_id is not None
