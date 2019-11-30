@@ -271,7 +271,7 @@ def accept(directory, upload):
                              upload.transaction.fs, Logger)
 
     accepted_to_real_suite = any(suite.policy_queue is None for suite in upload.final_suites)
-    sourceful_upload = 'source' in upload.changes.architectures
+    sourceful_upload = upload.changes.sourceful
 
     control = upload.changes.changes
     if sourceful_upload and not Options['No-Action']:

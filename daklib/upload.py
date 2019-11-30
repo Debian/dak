@@ -467,7 +467,7 @@ class Changes(object):
         return (
             self.changes.get('Source'),
             AptVersion(self.changes.get('Version', '')),
-            'source' not in self.architectures,
+            not self.sourceful,
             self.filename
         )
 

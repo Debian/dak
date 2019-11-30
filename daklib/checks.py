@@ -261,9 +261,9 @@ class ChangesCheck(Check):
             if not re_field_package.match(bn):
                 raise Reject('{0}: Invalid binary package name {1}'.format(fn, bn))
 
-        if 'source' in changes.architectures and changes.source is None:
+        if changes.sourceful and changes.source is None:
             raise Reject("Changes has architecture source, but no source found.")
-        if changes.source is not None and 'source' not in changes.architectures:
+        if changes.source is not None and not changes.sourceful:
             raise Reject("Upload includes source, but changes does not say so.")
 
         try:
@@ -565,11 +565,11 @@ class SourceCheck(Check):
 
     def check(self, upload):
         if upload.changes.source is None:
-            if "source" in upload.changes.architectures:
+            if upload.changes.sourceful:
                 raise Reject("{}: Architecture field includes source, but no source package is included in the upload".format(upload.changes.filename))
             return True
 
-        if "source" not in upload.changes.architectures:
+        if not upload.changes.sourceful:
             raise Reject("{}: Architecture field does not include source, but a source package is included in the upload".format(upload.changes.filename))
 
         changes = upload.changes.changes
@@ -721,7 +721,7 @@ class TransitionCheck(Check):
     """check for a transition"""
 
     def check(self, upload):
-        if 'source' not in upload.changes.architectures:
+        if not upload.changes.sourceful:
             return True
 
         transitions = self.get_transitions()
