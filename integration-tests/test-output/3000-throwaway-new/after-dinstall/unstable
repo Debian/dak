@@ -1,0 +1,9 @@
+linux 42.0-1 source
+main-contrib-with-debug 0.1-1 source
+nonfree-package 0.1-1 all
+nonfree-package 0.1-1 source
+pkg-all1 0.1-1 all
+pkg-all2 0.1-1 all
+pkg-any1 0.1-1 amd64
+pkg-any2 0.1-1 amd64
+pkgnew 0.1-1 source

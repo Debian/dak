@@ -1,0 +1,191 @@
+#! /bin/bash
+#
+# © 2019 Ivo De Decker <ivodd@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+dumpdir=$DAKBASE/dumps
+mkdir -p $dumpdir
+
+check_dump() {
+	filename="$1"
+	match="$2"
+	expected="$3"
+	filter="$4"
+	description="$5"
+
+	in="in"
+	if [ "$expected" = "1" ]
+	then
+		in="not in"
+	fi
+	if [ -z "$description" ]
+	then
+		description="$match"
+		if [ -n "$filter" ]
+		then
+			description="$description with filter $filter"
+		fi
+		description="$description $in"
+	fi
+
+	dumpfile="$dumpdir/$filename"
+
+	set +e
+	(
+		if [ -n "$filter" ]
+		then
+			grep -v "$filter" $dumpfile
+		else
+			cat $dumpfile
+		fi
+	) | grep "$match" > /dev/null
+	ret=$?
+	set -e
+	if [ "$ret" = "$expected" ]
+	then
+		echo "check $description $filename - OK"
+	else
+		echo "E: check $description $filename"
+		exit 1
+	fi
+}
+
+echo "Dinstall::AllowSourceOnlyUploads true;" >> ${DAKBASE}/etc/dak.conf
+cat >> ${DAKBASE}/etc/dak.conf << EOF
+Dinstall {
+  ThrowAwayNewBinarySuites {
+    "unstable";
+  };
+  ThrowAwayNewBinaryComponents {
+    "main";
+  };
+};
+Dinstall::AllowSourceOnlyNewSources {
+  "linux";
+};
+Dir::BuildinfoArchive "${DAKBASE}/buildinfo/";
+
+EOF
+
+import-fixture-signing-key
+
+setup_empty_archive
+setup_unstable
+dinstall
+
+make_dumps() {
+	PREFIX=$1
+	pg_dump -a --inserts -n audit > ${PREFIX}_pgdump_audit
+	pg_dump -a --inserts -N audit > ${PREFIX}_pgdump_noaudit
+	(cd $DAKBASE; find | sort > ${PREFIX}_files)
+}
+
+make_dumps $dumpdir/before-upload
+
+(
+  packages=$(fixture-package-dir)
+
+  upload_changes ${packages:?}/pkgnew_0.1-1_amd64.changes
+  upload_changes ${packages:?}/nonfree-package_0.1-1_amd64.changes
+  upload_changes ${packages:?}/main-contrib-with-debug_0.1-1_amd64.changes
+  upload_changes ${packages:?}/linux_42.0-1_source.changes
+
+  process_uploads
+)
+
+make_dumps $dumpdir/package-in-new
+
+# upload different types of NEW package
+# main - with binaries
+echo a | dak process-new pkgnew_0.1-1_amd64.changes
+# non-free - with binaries
+echo a | dak process-new nonfree-package_0.1-1_amd64.changes
+# source in main, has binaries in main and contrib
+echo a | dak process-new main-contrib-with-debug_0.1-1_amd64.changes
+# source-only NEW upload (whitelisted souce)
+echo a | dak process-new linux_42.0-1_source.changes
+
+do_new
+check_all_suites package-accepted-from-new
+make_dumps $dumpdir/package-accepted-from-new
+
+dinstall
+make_dumps $dumpdir/package-accepted-from-new-afterdinstall
+
+upload_changes ${packages:?}/pkgnew_0.1-1_all-buildd.changes
+process_uploads
+
+upload_changes ${packages:?}/pkgnew_0.1-1_amd64-buildd.changes
+process_uploads
+
+make_dumps $dumpdir/packages-binary-accepted
+dinstall
+check_all_suites after-dinstall
+make_dumps $dumpdir/afterdinstall
+
+for list in package-accepted-from-new package-accepted-from-new-afterdinstall
+do
+	echo "checking files in $list"
+	for file in pkg-any1 pkg-all1
+	do
+		dumpf="${list}_files"
+		# package should be in morgue
+		check_dump "$dumpf" "/morgue/.*/$file" 0 "" "$file in morgue in"
+		# package should not be outside of morgue
+		check_dump "$dumpf" "$file" 1 "/morgue/" "$file not outside morgue in"
+	done
+	echo ""
+done
+
+echo checking buildinfo files
+dumpf="afterdinstall_files"
+for bi in nonfree-package_0.1-1_amd64.buildinfo pkgnew_0.1-1_amd64.buildinfo pkgnew_0.1-1_amd64-buildd.buildinfo
+do
+	check_dump "$dumpf" "/buildinfo/.*$bi" 0 "" "$bi in buildinfo dir in"
+done
+echo ""
+
+echo checking database dumps
+for file in pkg-all1_0.1-1_all.deb pkg-any1_0.1-1_amd64.deb
+do
+	filename=${packages}/$file
+	sha256sum=`sha256sum $filename | awk '{ print $1 }'`
+	for list in package-in-new packages-binary-accepted
+	do
+		dumpf="${list}_pgdump_noaudit"
+		for val in $file $sha256sum
+		do
+			check_dump "$dumpf" "$val" 0 "" "$val in database dump"
+		done
+	done
+	for list in package-accepted-from-new
+	do
+		dumpf="${list}_pgdump_noaudit"
+		for val in $file $sha256sum
+		do
+			check_dump "$dumpf" "$val" 1 "" "$val not in database dump"
+		done
+	done
+done
+echo "done"
+
