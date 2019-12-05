@@ -32,12 +32,16 @@ set_debugsuite() {
     echo "update suite set debugsuite_id=(select id from suite where suite_name='$debugsuite') where suite_name='$suite';" | psql
 }
 
-setup_debian_like_archive() {
+setup_empty_archive() {
     dak admin archive add ftp-master "${DAKBASE}/ftp-master" "main archive"
     dak admin archive add debian-debug "${DAKBASE}/debian-debug" "debug archive"
     dak admin architecture add amd64 AMD64
     dak admin architecture add i386 "Intel ia32"
+    HAVE_EXPERIMENTAL=
+    HAVE_TPU=
+}
 
+setup_unstable() {
     # unstable
     dak admin suite add-all-arches unstable "" codename=sid archive=ftp-master
     dak admin suite-component add unstable main contrib non-free
@@ -51,6 +55,11 @@ setup_debian_like_archive() {
     dak admin suite-config set unstable-debug allowcsset=no byhash=yes \
         accept_binary_uploads=False accept_source_uploads=False
     set_debugsuite unstable unstable-debug
+}
+
+setup_debian_like_archive() {
+    setup_empty_archive
+    setup_unstable
 
     # testing
     dak admin suite add-all-arches testing "" codename=buster archive=ftp-master
@@ -74,6 +83,7 @@ setup_debian_like_archive() {
     dak admin suite-config set testing-proposed-updates allowcsset=yes byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         overridesuite=testing
+    HAVE_TPU=1
 
     
     # experimental
@@ -84,6 +94,7 @@ setup_debian_like_archive() {
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         notautomatic=yes butautomaticupgrades=no \
         overridesuite=unstable overridecodename=sid
+    HAVE_EXPERIMENTAL=1
 
 
     # Version constraints
@@ -189,8 +200,14 @@ dinstall_stage_dists() {
 autocruft() {
     echo "Check for obsolete binary packages"
     dak auto-decruft -s unstable
-    dak auto-decruft -s experimental --if-newer-version-in unstable --if-newer-version-in-rm-msg "NVIU"
-    dak auto-decruft -s testing-proposed-updates --if-newer-version-in testing --if-newer-version-in-rm-msg "NVIT" --decruft-equal-versions
+    if [ -n "$HAVE_EXPERIMENTAL" ]
+    then
+        dak auto-decruft -s experimental --if-newer-version-in unstable --if-newer-version-in-rm-msg "NVIU"
+    fi
+    if [ -n "$HAVE_TPU" ]
+    then
+        dak auto-decruft -s testing-proposed-updates --if-newer-version-in testing --if-newer-version-in-rm-msg "NVIT" --decruft-equal-versions
+    fi
 }
 
 get_archiveroot() {
