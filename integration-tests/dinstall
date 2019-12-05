@@ -116,6 +116,11 @@ upload_changes() {
     dcmd cp -v "$@" $upload_dir
 }
 
+reupload_changes() {
+    dak admin forget-signature "$@"
+    dcmd cp -v "$@" $upload_dir
+}
+
 process_uploads() {
     dak process-upload -d $upload_dir --automatic
 }
