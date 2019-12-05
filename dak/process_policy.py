@@ -303,6 +303,13 @@ def comment_accept(upload, srcqueue, comments, transaction):
             dst = utils.find_next_free(dst)
             fs.copy(src, dst, mode=0o644)
 
+    if throw_away_binaries and upload.target_suite.archive.use_morgue:
+        morguesubdir = cnf.get("New::MorgueSubDir", 'new')
+
+        utils.move_to_morgue(morguesubdir,
+            [db_binary.poolfile.fullpath for db_binary in upload.binaries],
+            fs, Logger)
+
     remove_upload(upload, transaction)
 
 ################################################################################
