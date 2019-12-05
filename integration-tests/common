@@ -57,11 +57,26 @@ check_all_suites() {
         echo "E: $testname: dir $refdir missing"
         exit 1
     fi
-    mkdir -p "$csdir"
+    suitesdir="$csdir/suites"
+    mkdir -p "$csdir/archives"
+    dak admin archive list | sort | while read archive pathinfo rest
+    do
+        pathinfo=${pathinfo#*=}
+        (
+            cd $pathinfo 2> /dev/null && (
+                find . | \
+                # replace the hashes with XXXX
+                perl -pe 's;(by-hash/[^/]*/)([0-9a-f]*)$;($1.('X' x length($2)));e' |\
+                # replace times with XXXX
+                perl -pe 's;(\d\d\d\d-\d\d-\d\d-\d\d\d\d.\d\d);XXXX-XX-XX-XXXX.XX;'
+            ) || true
+        ) | LANG=C sort > "$csdir/archives/$archive"
+    done
+    mkdir -p "$suitesdir"
     dak admin s list | sort | while read suite
     do
         printf "\n\n$suite\n"
-        dak control-suite -l $suite | LANG=C sort | tee "$csdir/$suite"
+        dak control-suite -l $suite | LANG=C sort | tee "$suitesdir/$suite"
     done
     if ! diff -Nur "$refdir" "$csdir"
     then
