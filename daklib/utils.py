@@ -1371,3 +1371,41 @@ def process_buildinfos(directory, buildinfo_files, fs_transaction, logger):
 
         logger.log(["Archiving", f.filename])
         fs_transaction.copy(src, dst, mode=0o644)
+
+################################################################################
+
+
+def move_to_morgue(morguesubdir, filenames, fs_transaction, logger):
+    """Move a file to the correct dir in morgue
+
+    @type morguesubdir: string
+    @param morguesubdir: subdirectory of morgue where this file needs to go
+
+    @type filename: list of str
+    @param filename: names of files
+
+    @type fs_transaction: L{daklib.fstransactions.FilesystemTransaction}
+    @param fs_transaction: FilesystemTransaction instance
+
+    @type logger: L{daklib.daklog.Logger}
+    @param logger: logger instance
+    """
+
+    morguedir = Cnf.get("Dir::Morgue", os.path.join(
+        Cnf.get("Dir::Base"), 'morgue'))
+
+    # Build directory as morguedir/morguesubdir/year/month/day
+    now = datetime.datetime.now()
+    dest = os.path.join(morguedir,
+                        morguesubdir,
+                        str(now.year),
+                        '%.2d' % now.month,
+                        '%.2d' % now.day)
+
+    for filename in filenames:
+        dest_filename = dest + '/' + os.path.basename(filename)
+        # If the destination file exists; try to find another filename to use
+        if os.path.lexists(dest_filename):
+            dest_filename = find_next_free(dest_filename)
+        logger.log(["move to morgue", filename, dest_filename])
+        fs_transaction.move(filename, dest_filename)
