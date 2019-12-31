@@ -378,7 +378,7 @@ function mkchecksums() {
         dsynclist=$dbdir/dsync.${archive}.list
         md5list=${archiveroot}/indices/md5sums
 
-        log -n "Creating md5 / dsync index file for ${archive}... "
+        log "Creating md5 / dsync index file for ${archive}... "
 
         cd "$archiveroot"
         ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
