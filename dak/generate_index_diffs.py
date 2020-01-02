@@ -375,7 +375,7 @@ def main():
                   ('p', "patchname", "Generate-Index-Diffs::Options::PatchName", "hasArg"),
                   ('d', "tmpdir", "Generate-Index-Diffs::Options::TempDir", "hasArg"),
                   ('m', "maxdiffs", "Generate-Index-Diffs::Options::MaxDiffs", "hasArg"),
-                  ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
+                  ('n', "no-act", "Generate-Index-Diffs::Options::NoAct"),
                   ('v', "verbose", "Generate-Index-Diffs::Options::Verbose"),
                 ]
     suites = apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
@@ -397,7 +397,7 @@ def main():
     if not suites:
         query = session.query(Suite.suite_name)
         if Options.get('Archive'):
-            archives = [a.strip() for a in Options['Archive'].split(',')]
+            archives = utils.split_args(Options['Archive'])
             query = query.join(Suite.archive).filter(Archive.archive_name.in_(archives))
         suites = [s.suite_name for s in query]
 

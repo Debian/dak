@@ -60,7 +60,7 @@ setup_debian_like_archive() {
         changelog=dists/testing/ChangeLog \
         overrideprocess=True overrideorigin=unstable
 
-    dak admin suite add-all-arches testing-debug "" codename=sid-debug archive=debian-debug
+    dak admin suite add-all-arches testing-debug "" codename=buster-debug archive=debian-debug
     dak admin suite-component add testing-debug main contrib non-free
     dak admin suite-config set testing-debug allowcsset=no byhash=yes \
         accept_binary_uploads=False accept_source_uploads=False
@@ -177,7 +177,6 @@ dinstall_stage_packages_contents() {
 dinstall_stage_dists() {
     # run pdiff
     echo "Generating pdiff files"
-    rm -fr "${pdiff_tempdir}"
     mkdir -p "${pdiff_tempdir}"
     dak generate-index-diffs -d "${pdiff_tempdir}" -a "${public_archives[*]}"
     # run release files
