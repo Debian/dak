@@ -60,7 +60,7 @@ setup_debian_like_archive() {
         changelog=dists/testing/ChangeLog \
         overrideprocess=True overrideorigin=unstable
 
-    dak admin suite add-all-arches testing-debug "" codename=sid-debug archive=debian-debug
+    dak admin suite add-all-arches testing-debug "" codename=buster-debug archive=debian-debug
     dak admin suite-component add testing-debug main contrib non-free
     dak admin suite-config set testing-debug allowcsset=no byhash=yes \
         accept_binary_uploads=False accept_source_uploads=False
