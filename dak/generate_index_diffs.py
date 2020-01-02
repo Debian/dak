@@ -375,7 +375,7 @@ def main():
                   ('p', "patchname", "Generate-Index-Diffs::Options::PatchName", "hasArg"),
                   ('d', "tmpdir", "Generate-Index-Diffs::Options::TempDir", "hasArg"),
                   ('m', "maxdiffs", "Generate-Index-Diffs::Options::MaxDiffs", "hasArg"),
-                  ('n', "n-act", "Generate-Index-Diffs::Options::NoAct"),
+                  ('n', "no-act", "Generate-Index-Diffs::Options::NoAct"),
                   ('v', "verbose", "Generate-Index-Diffs::Options::Verbose"),
                 ]
     suites = apt_pkg.parse_commandline(Cnf, Arguments, sys.argv)
