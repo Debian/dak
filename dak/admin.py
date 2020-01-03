@@ -825,7 +825,7 @@ def __suite_config_list(d, args):
 
 
 def suite_config(command):
-    args = [str(x) for x in command]
+    args = [x.decode('utf-8') for x in command]
     Cnf = utils.get_conf()
     d = DBConn()
 
