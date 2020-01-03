@@ -681,7 +681,7 @@ def __suite_component_rm(d, args):
             suite_name = args[2].lower()
             suite = get_suite_or_die(suite_name, s)
             component_string = args[3].lower()
-            component = get_component(arch_string, s)
+            component = get_component(component_string, s)
             if component not in suite.components:
                 die("E: component %s not found in suite %s" % (component_string, suite_name))
             suite.components.remove(component)
