@@ -788,8 +788,8 @@ def __suite_config_set(d, args):
             die("Cannot change %s from the command line" % arg)
         try:
             new_value = converter(new_value_str)
-        except RuntimeError as e:
-            warn("Could not convert value %s for %s" % (conf_name, new_value_str))
+        except (RuntimeError, ValueError, TypeError) as e:
+            warn("Could not parse new value for %s (given: %s)" % (conf_name, new_value_str))
             raise e
         setattr(suite, conf_name, new_value)
         print("%s=%s" % (conf_name, new_value))
