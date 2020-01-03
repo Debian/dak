@@ -21,6 +21,7 @@
 
 from __future__ import print_function
 
+import collections
 import json
 import sys
 
@@ -739,34 +740,115 @@ dispatch['s-c'] = suite_component
 SUITE_CONFIG_READ_ONLY = object()
 SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON = object()
 
+
+SuiteConfigSerializer = collections.namedtuple('SuiteConfigSerializer', ['db_name', 'serialize', 'deserialize'])
+
+
+def _serialize_suite(x):
+    if x is None:
+        return None
+    return Suite.get(x).suite_name
+
+
+def _deserialize_suite(x):
+    if x is None:
+        return None
+    return get_suite_or_die(x).suite_id
+
+
+@session_wrapper
+def _serialize_policy_queue(x, session=None):
+    if x is None:
+        return None
+    try:
+        policy_obj = session.query(PolicyQueue).filter_by(policy_queue_id=x).one()
+    except NoResultFound:
+        return None
+    return policy_obj.queue_name
+
+
+def _deserialize_policy_queue(x):
+    if x is None:
+        return None
+    policy_queue = get_policy_queue(x)
+    if policy_queue is None:
+        raise ValueError("There is no policy queue with name %s" % x)
+    return policy_queue.policy_queue_id
+
+
+@session_wrapper
+def _serialize_archive(x, session=None):
+    if x is None:
+        return None
+    try:
+        archive_obj = session.query(Archive).filter_by(archive_id=x).one()
+    except NoResultFound:
+        return None
+    return archive_obj.archive_name
+
+
+CUSTOM_SUITE_CONFIG_SERIALIZERS = {
+    'archive': SuiteConfigSerializer(db_name='archive_id', serialize=_serialize_archive,
+                                     deserialize=None),
+    'debugsuite': SuiteConfigSerializer(db_name='debugsuite_id', serialize=_serialize_suite,
+                                        deserialize=_deserialize_suite),
+    'new_queue': SuiteConfigSerializer(db_name='new_queue_id', serialize=_serialize_policy_queue,
+                                       deserialize=_deserialize_policy_queue),
+    'policy_queue': SuiteConfigSerializer(db_name='policy_queue_id', serialize=_serialize_policy_queue,
+                                          deserialize=_deserialize_policy_queue),
+}
+
+
 ALLOWED_SUITE_CONFIGS = {
     'accept_binary_uploads': utils.parse_boolean_from_user,
     'accept_source_uploads': utils.parse_boolean_from_user,
     'allowcsset': utils.parse_boolean_from_user,
     'announce': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
+    'archive': SUITE_CONFIG_READ_ONLY,
     'butautomaticupgrades': utils.parse_boolean_from_user,
     'byhash': utils.parse_boolean_from_user,
     'changelog': str,
     'changelog_url': str,
     'checksums': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'codename': SUITE_CONFIG_READ_ONLY,
+    'debugsuite': str,
     'description': str,
     'include_long_description': utils.parse_boolean_from_user,
     'indices_compression': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'label': str,
     'mail_whitelist': str,
+    'new_queue': str,
     'notautomatic': utils.parse_boolean_from_user,
     'origin': str,
     'overridecodename': str,
     'overrideorigin': str,
     'overrideprocess': utils.parse_boolean_from_user,
     'overridesuite': str,
+    'policy_queue': str,
     'priority': int,
     'signingkeys': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'suite_name': SUITE_CONFIG_READ_ONLY,
     'untouchable': utils.parse_boolean_from_user,
     'validtime': int,
 }
+
+
+def _get_suite_value(suite, conf_name):
+    serial_config = CUSTOM_SUITE_CONFIG_SERIALIZERS.get(conf_name)
+    if serial_config is None:
+        return getattr(suite, conf_name)
+    db_value = getattr(suite, serial_config.db_name)
+    return serial_config.serialize(db_value)
+
+
+def _set_suite_value(suite, conf_name, new_value):
+    serial_config = CUSTOM_SUITE_CONFIG_SERIALIZERS.get(conf_name)
+    db_name = conf_name
+    if serial_config is not None:
+        assert serial_config.deserialize is not None, "Changing %s is not supported!" % conf_name
+        new_value = serial_config.deserialize(new_value)
+        db_name = serial_config.db_name
+    setattr(suite, db_name, new_value)
 
 
 def __suite_config_get(d, args, direct_value=False, json_format=False):
@@ -778,7 +860,7 @@ def __suite_config_get(d, args, direct_value=False, json_format=False):
     for arg in args[3:]:
         if arg not in ALLOWED_SUITE_CONFIGS:
             die("Unknown (or unsupported) suite configuration variable")
-        value = getattr(suite, arg)
+        value = _get_suite_value(suite, arg)
         if json_format:
             values[arg] = value
         elif direct_value:
@@ -798,21 +880,25 @@ def __suite_config_set(d, args):
         if '=' not in arg:
             die("Missing value for configuration %s: Use key=value format" % arg)
         conf_name, new_value_str = arg.split('=', 1)
-        converter = ALLOWED_SUITE_CONFIGS.get(conf_name)
-        if converter is None:
+        cli_parser = ALLOWED_SUITE_CONFIGS.get(conf_name)
+        if cli_parser is None:
             die("Unknown (or unsupported) suite configuration variable")
-        if converter in (SUITE_CONFIG_READ_ONLY, SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON):
-            if converter == SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON:
+        if cli_parser in (SUITE_CONFIG_READ_ONLY, SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON):
+            if cli_parser == SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON:
                 warn('''Cannot parse value for %s - use echo '{"%s": <...>}' | dak suite-config set-json %s instead''' %
                      (conf_name, conf_name, suite_name))
             die("Cannot change %s from the command line" % arg)
         try:
-            new_value = converter(new_value_str)
+            new_value = cli_parser(new_value_str)
         except (RuntimeError, ValueError, TypeError) as e:
             warn("Could not parse new value for %s (given: %s)" % (conf_name, new_value_str))
             raise e
-        setattr(suite, conf_name, new_value)
-        print("%s=%s" % (conf_name, new_value))
+        try:
+            _set_suite_value(suite, conf_name, new_value)
+        except (RuntimeError, ValueError, TypeError) as e:
+            warn("Could not set new value for %s (given: %s)" % (conf_name, new_value))
+            raise e
+        print("%s=%s" % (conf_name, _get_suite_value(suite, conf_name)))
     if dryrun:
         session.rollback()
         print()
@@ -840,17 +926,17 @@ def __suite_config_set_json(d, args):
 
     for conf_name in sorted(update_config):
         new_value = update_config[conf_name]
-        converter = ALLOWED_SUITE_CONFIGS.get(conf_name)
-        if converter is None:
+        cli_parser = ALLOWED_SUITE_CONFIGS.get(conf_name)
+        if cli_parser is None:
             die("Unknown (or unsupported) suite configuration variable: %s" % conf_name)
-        if converter is SUITE_CONFIG_READ_ONLY:
+        if cli_parser is SUITE_CONFIG_READ_ONLY:
             die("Cannot change %s via JSON" % conf_name)
         try:
-            setattr(suite, conf_name, new_value)
+            _set_suite_value(suite, conf_name, new_value)
         except (RuntimeError, ValueError, TypeError) as e:
             warn("Could not set new value for %s (given: %s)" % (conf_name, new_value))
             raise e
-        print("%s=%s" % (conf_name, getattr(suite, conf_name)))
+        print("%s=%s" % (conf_name, _get_suite_value(suite, conf_name)))
     if dryrun:
         session.rollback()
         print()
@@ -877,7 +963,7 @@ def __suite_config_list(d, args, json_format=False):
     for arg in sorted(ALLOWED_SUITE_CONFIGS):
         mode = 'writable'
         if suite is not None:
-            value = getattr(suite, arg)
+            value = _get_suite_value(suite, arg)
             if json_format:
                 values[arg] = value
             else:

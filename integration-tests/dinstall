@@ -25,13 +25,6 @@ declare -r upload_dir="${DAKBASE}/uploads"
 
 mkdir -p $upload_dir
 
-set_debugsuite() {
-    suite=$1
-    debugsuite=$2
-    # there should be a better way to do this
-    echo "update suite set debugsuite_id=(select id from suite where suite_name='$debugsuite') where suite_name='$suite';" | psql
-}
-
 setup_empty_archive() {
     dak admin archive add ftp-master "${DAKBASE}/ftp-master" "main archive"
     dak admin archive add debian-debug "${DAKBASE}/debian-debug" "debug archive"
@@ -42,38 +35,37 @@ setup_empty_archive() {
 }
 
 setup_unstable() {
-    # unstable
+    # unstable-debug + unstable
+    dak admin suite add-all-arches unstable-debug "" codename=sid-debug archive=debian-debug
+    dak admin suite-component add unstable-debug main contrib non-free
+    dak admin suite-config set unstable-debug allowcsset=no byhash=yes \
+        accept_binary_uploads=False accept_source_uploads=False
+
     dak admin suite add-all-arches unstable "" codename=sid archive=ftp-master
     dak admin suite-component add unstable main contrib non-free
     dak admin suite add-build-queue unstable buildd-unstable buildd-sid build-queues
     dak admin suite-config set unstable allowcsset=no byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
-        overrideprocess=True
+        overrideprocess=True debugsuite=unstable-debug
 
-    dak admin suite add-all-arches unstable-debug "" codename=sid-debug archive=debian-debug
-    dak admin suite-component add unstable-debug main contrib non-free
-    dak admin suite-config set unstable-debug allowcsset=no byhash=yes \
-        accept_binary_uploads=False accept_source_uploads=False
-    set_debugsuite unstable unstable-debug
 }
 
 setup_debian_like_archive() {
     setup_empty_archive
     setup_unstable
 
-    # testing
+    # testing-debug + testing
+    dak admin suite add-all-arches testing-debug "" codename=buster-debug archive=debian-debug
+    dak admin suite-component add testing-debug main contrib non-free
+    dak admin suite-config set testing-debug allowcsset=no byhash=yes \
+        accept_binary_uploads=False accept_source_uploads=False
+
     dak admin suite add-all-arches testing "" codename=buster archive=ftp-master
     dak admin suite-component add testing main contrib non-free
     dak admin suite-config set testing allowcsset=yes byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         changelog=dists/testing/ChangeLog \
-        overrideprocess=True overrideorigin=unstable
-
-    dak admin suite add-all-arches testing-debug "" codename=buster-debug archive=debian-debug
-    dak admin suite-component add testing-debug main contrib non-free
-    dak admin suite-config set testing-debug allowcsset=no byhash=yes \
-        accept_binary_uploads=False accept_source_uploads=False
-    set_debugsuite testing testing-debug
+        overrideprocess=True overrideorigin=unstable debugsuite=testing-debug
 
     # testing-proposed-updates
     dak admin suite add-all-arches testing-proposed-updates "" \
