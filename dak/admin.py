@@ -21,6 +21,7 @@
 
 from __future__ import print_function
 
+import json
 import sys
 
 import apt_pkg
@@ -143,10 +144,21 @@ Perform administrative work on the dak database.
   suite-config / suite-cfg / s-cfg:
      s-cfg list             show the names of the configurations
      s-cfg list SUITE       show the configuration values for SUITE
+     s-cfg list-json SUITE  show the configuration values for SUITE in JSON format
      s-cfg get SUITE NAME ...
-                            show the value for NAME in SUITE
+                            show the value for NAME in SUITE (format: NAME=VALUE)
+     s-cfg get-value SUITE NAME ...
+                            show the value for NAME in SUITE (format: VALUE)
+     s-cfg get-json SUITE NAME ...
+                            show the value for NAME in SUITE (format: JSON object)
      s-cfg set SUITE NAME=VALUE ...
                             set NAME to VALUE in SUITE
+     s-cfg set-json SUITE
+     s-cfg set-json SUITE FILENAME
+                            parse FILENAME (if absent or "-", then stdin) as JSON
+                            and update all configurations listed to match the
+                            value in the JSON.
+                            Uses the same format as list-json or get-json outputs.
 
   archive:
      archive list           list all archives
@@ -723,24 +735,24 @@ dispatch['s-c'] = suite_component
 
 ################################################################################
 
-# Sentinal for detecting read-only configurations
+# Sentinel for detecting read-only configurations
 SUITE_CONFIG_READ_ONLY = object()
+SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON = object()
 
 ALLOWED_SUITE_CONFIGS = {
     'accept_binary_uploads': utils.parse_boolean_from_user,
     'accept_source_uploads': utils.parse_boolean_from_user,
     'allowcsset': utils.parse_boolean_from_user,
-    'announce': SUITE_CONFIG_READ_ONLY,
+    'announce': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'butautomaticupgrades': utils.parse_boolean_from_user,
     'byhash': utils.parse_boolean_from_user,
     'changelog': str,
     'changelog_url': str,
-    # TODO: Create a validator/parser for this
-    'checksums': SUITE_CONFIG_READ_ONLY,
+    'checksums': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'codename': SUITE_CONFIG_READ_ONLY,
     'description': str,
     'include_long_description': utils.parse_boolean_from_user,
-    'indices_compression': SUITE_CONFIG_READ_ONLY,
+    'indices_compression': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'label': str,
     'mail_whitelist': str,
     'notautomatic': utils.parse_boolean_from_user,
@@ -750,26 +762,31 @@ ALLOWED_SUITE_CONFIGS = {
     'overrideprocess': utils.parse_boolean_from_user,
     'overridesuite': str,
     'priority': int,
-    'signingkeys': SUITE_CONFIG_READ_ONLY,
+    'signingkeys': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'suite_name': SUITE_CONFIG_READ_ONLY,
     'untouchable': utils.parse_boolean_from_user,
     'validtime': int,
 }
 
 
-def __suite_config_get(d, args, direct_value=False):
+def __suite_config_get(d, args, direct_value=False, json_format=False):
     die_arglen(args, 4, "E: suite-config get needs the name of a configuration")
     session = d.session()
     suite_name = args[2]
     suite = get_suite_or_die(suite_name, session)
+    values = {}
     for arg in args[3:]:
         if arg not in ALLOWED_SUITE_CONFIGS:
             die("Unknown (or unsupported) suite configuration variable")
         value = getattr(suite, arg)
-        if direct_value:
+        if json_format:
+            values[arg] = value
+        elif direct_value:
             print(value)
         else:
             print("%s=%s" % (arg, value))
+    if json_format:
+        print(json.dumps(values, indent=2, sort_keys=True))
 
 
 def __suite_config_set(d, args):
@@ -784,7 +801,10 @@ def __suite_config_set(d, args):
         converter = ALLOWED_SUITE_CONFIGS.get(conf_name)
         if converter is None:
             die("Unknown (or unsupported) suite configuration variable")
-        if converter is SUITE_CONFIG_READ_ONLY:
+        if converter in (SUITE_CONFIG_READ_ONLY, SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON):
+            if converter == SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON:
+                warn('''Cannot parse value for %s - use echo '{"%s": <...>}' | dak suite-config set-json %s instead''' %
+                     (conf_name, conf_name, suite_name))
             die("Cannot change %s from the command line" % arg)
         try:
             new_value = converter(new_value_str)
@@ -801,7 +821,45 @@ def __suite_config_set(d, args):
         session.commit()
 
 
-def __suite_config_list(d, args):
+def __suite_config_set_json(d, args):
+    session = d.session()
+    suite_name = args[2]
+    suite = get_suite_or_die(suite_name, session)
+    filename = '-'
+    if len(args) > 3:
+        if len(args) > 4:
+            warn("W: Ignoring extra argument after the json file name")
+        filename = args[3]
+    if filename != '-':
+        with open(filename) as fd:
+            update_config = json.load(fd)
+    else:
+        update_config = json.load(sys.stdin)
+    if update_config is None or not isinstance(update_config, dict):
+        die("E: suite-config set-json expects a dictionary (json object), got %s" % type(update_config))
+
+    for conf_name in sorted(update_config):
+        new_value = update_config[conf_name]
+        converter = ALLOWED_SUITE_CONFIGS.get(conf_name)
+        if converter is None:
+            die("Unknown (or unsupported) suite configuration variable: %s" % conf_name)
+        if converter is SUITE_CONFIG_READ_ONLY:
+            die("Cannot change %s via JSON" % conf_name)
+        try:
+            setattr(suite, conf_name, new_value)
+        except (RuntimeError, ValueError, TypeError) as e:
+            warn("Could not set new value for %s (given: %s)" % (conf_name, new_value))
+            raise e
+        print("%s=%s" % (conf_name, getattr(suite, conf_name)))
+    if dryrun:
+        session.rollback()
+        print()
+        print("This was a dryrun; changes have been rolled back")
+    else:
+        session.commit()
+
+
+def __suite_config_list(d, args, json_format=False):
     suite = None
     session = d.session()
     if len(args) > 3:
@@ -810,18 +868,29 @@ def __suite_config_list(d, args):
         suite_name = args[2]
         suite = get_suite_or_die(suite_name, session)
     else:
+        if json_format:
+            die("E: suite-config list-json requires a suite name!")
         print("Valid suite-config options managable by this command:")
         print()
+    values = {}
 
     for arg in sorted(ALLOWED_SUITE_CONFIGS):
         mode = 'writable'
-        if ALLOWED_SUITE_CONFIGS[arg] is SUITE_CONFIG_READ_ONLY:
-            mode = 'read-ony'
         if suite is not None:
             value = getattr(suite, arg)
-            print("%s=%s" % (arg, value))
+            if json_format:
+                values[arg] = value
+            else:
+                print("%s=%s" % (arg, value))
         else:
+            converter = ALLOWED_SUITE_CONFIGS[arg]
+            if converter is SUITE_CONFIG_READ_ONLY:
+                mode = 'read-only'
+            elif converter is SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON:
+                mode = 'writeable (via set-json only)'
             print(" * %s (%s)" % (arg, mode))
+    if json_format:
+        print(json.dumps(values, indent=2, sort_keys=True))
 
 
 def suite_config(command):
@@ -832,17 +901,21 @@ def suite_config(command):
     die_arglen(args, 2, "E: suite-config needs a command")
     mode = args[1].lower()
 
-    if mode in {'get', 'get-value'}:
+    if mode in {'get', 'get-value', 'get-json'}:
         direct_value = False
+        json_format = mode == 'get-json'
         if mode == 'get-value':
             direct_value = True
             if len(args) > 4:
                 die("E: get-value must receive exactly one key to lookup")
-        __suite_config_get(d, args, direct_value=direct_value)
+        __suite_config_get(d, args, direct_value=direct_value, json_format=json_format)
     elif mode == 'set':
         __suite_config_set(d, args)
-    elif mode == 'list':
-        __suite_config_list(d, args)
+    elif mode == 'set-json':
+        __suite_config_set_json(d, args)
+    elif mode in {'list', 'list-json'}:
+        json_format = mode == 'list-json'
+        __suite_config_list(d, args, json_format=json_format)
     else:
         suite = get_suite(mode, d.session())
         if suite is not None:
