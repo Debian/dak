@@ -204,14 +204,12 @@ def main():
 
     if "Graph::Options::Extra-Rrd" in Cnf:
         for i in Cnf["Graph::Options::Extra-Rrd"].split(","):
-            f = open(i)
-            extra_rrdtool_args.extend(f.read().strip().split("\n"))
-            f.close()
+            with open(i) as f:
+                extra_rrdtool_args.extend(f.read().strip().split("\n"))
     elif "Graph::Extra-Rrd" in Cnf:
         for i in Cnf.value_list("Graph::Extra-Rrd"):
-            f = open(i)
-            extra_rrdtool_args.extend(f.read().strip().split("\n"))
-            f.close()
+            with open(i) as f:
+                extra_rrdtool_args.extend(f.read().strip().split("\n"))
 
     if "Graph::Options::Rrd" in Cnf:
         rrd_dir = Cnf["Graph::Options::Rrd"]

@@ -778,7 +778,8 @@ transition is done.""".format(transition_source, currentlymsg, expected, t["rm"]
         if path == '' or not os.path.exists(path):
             return None
 
-        contents = open(path, 'r').read()
+        with open(path, 'r') as fd:
+            contents = fd.read()
         try:
             transitions = yaml.safe_load(contents)
             return transitions

@@ -138,8 +138,8 @@ def load_transitions(trans_file):
 
     """
     # Parse the yaml file
-    sourcefile = open(trans_file, 'r')
-    sourcecontent = sourcefile.read()
+    with open(trans_file, 'r') as sourcefile:
+        sourcecontent = sourcefile.read()
     failure = False
     try:
         trans = yaml.safe_load(sourcecontent)
@@ -272,9 +272,8 @@ def write_transitions(from_trans):
     trans_lock = lock_file(trans_file)
     temp_lock = lock_file(trans_temp)
 
-    destfile = open(trans_temp, 'w')
-    yaml.safe_dump(from_trans, destfile, default_flow_style=False)
-    destfile.close()
+    with open(trans_temp, 'w') as destfile:
+        yaml.safe_dump(from_trans, destfile, default_flow_style=False)
 
     os.rename(trans_temp, trans_file)
     os.close(temp_lock)
@@ -334,8 +333,8 @@ def temp_transitions_file(transitions):
 
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Dir::TempPath"])
     os.chmod(path, 0o644)
-    f = open(path, "w")
-    yaml.safe_dump(transitions, f, default_flow_style=False)
+    with open(path, "w") as f:
+        yaml.safe_dump(transitions, f, default_flow_style=False)
     return path
 
 ################################################################################

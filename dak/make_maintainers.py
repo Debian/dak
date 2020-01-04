@@ -159,27 +159,24 @@ SELECT
     # Process any additional Maintainer files (e.g. from pseudo
     # packages)
     for filename in extra_files:
-        extrafile = open(filename)
-        for line in extrafile.readlines():
-            line = re_comments.sub('', line).strip()
-            if line == "":
-                continue
-            (package, maintainer) = line.split(None, 1)
-            maintainers[package] = maintainer
-            uploaders[package] = [maintainer]
+        with open(filename) as extrafile:
+            for line in extrafile.readlines():
+                line = re_comments.sub('', line).strip()
+                if line == "":
+                    continue
+                (package, maintainer) = line.split(None, 1)
+                maintainers[package] = maintainer
+                uploaders[package] = [maintainer]
 
     if Options["Print"]:
         for package in sorted(maintainers):
             print(format(package, maintainers[package]), end='')
     else:
-        maintainer_file = open('Maintainers', 'w')
-        uploader_file = open('Uploaders', 'w')
-        for package in sorted(uploaders):
-            maintainer_file.write(format(package, maintainers[package]))
-            for uploader in uploaders[package]:
-                uploader_file.write(format(package, uploader))
-        uploader_file.close()
-        maintainer_file.close()
+        with open('Maintainers', 'w') as maintainer_file, open('Uploaders', 'w') as uploader_file:
+            for package in sorted(uploaders):
+                maintainer_file.write(format(package, maintainers[package]))
+                for uploader in uploaders[package]:
+                    uploader_file.write(format(package, uploader))
 
         Logger.close()
 

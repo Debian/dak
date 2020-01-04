@@ -98,9 +98,8 @@ def prod_maintainer(notes, upload):
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        temp_fh = open(temp_filename)
-        prod_message = "".join(temp_fh.readlines())
-        temp_fh.close()
+        with open(temp_filename) as temp_fh:
+            prod_message = "".join(temp_fh.readlines())
         print("Prod message:")
         print(utils.prefix_multi_line_string(prod_message, "  ", include_blank_lines=1))
         prompt = "[P]rod, Edit, Abandon, Quit ?"
@@ -152,9 +151,8 @@ def edit_note(note, upload, session, trainee=False):
     answer = 'E'
     while answer == 'E':
         os.system("%s %s" % (editor, temp_filename))
-        temp_file = open(temp_filename)
-        newnote = temp_file.read().rstrip()
-        temp_file.close()
+        with open(temp_filename) as temp_file:
+            newnote = temp_file.read().rstrip()
         print("New Note:")
         print(utils.prefix_multi_line_string(newnote, "  "))
         prompt = "[D]one, Edit, Abandon, Quit ?"

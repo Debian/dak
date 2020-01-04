@@ -197,9 +197,8 @@ def main():
         raw_input("Press Enter to continue")
 
     for acceptfilename in acceptfiles:
-        accept_file = open(acceptfilename, "w")
-        accept_file.write("OK\n")
-        accept_file.close()
+        with open(acceptfilename, "w") as accept_file:
+            accept_file.write("OK\n")
 
     do_Approve()
 

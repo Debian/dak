@@ -142,21 +142,21 @@ def britney_changelog(packages, suite, session):
     q = session.execute(query)
 
     pu = None
-    brit = open(brit_file, 'w')
+    with open(brit_file, 'w') as brit:
 
-    for u in q:
-        if pu and pu != u[0]:
-            brit.write("\n")
-        brit.write("%s\n" % u[1])
-        pu = u[0]
-    if q.rowcount:
-        brit.write("\n\n\n")
+        for u in q:
+            if pu and pu != u[0]:
+                brit.write("\n")
+            brit.write("%s\n" % u[1])
+            pu = u[0]
+        if q.rowcount:
+            brit.write("\n\n\n")
 
-    for p in list(set(old.keys()).difference(current.keys())):
-        brit.write("REMOVED: %s %s\n" % (p, old[p]))
+        for p in list(set(old.keys()).difference(current.keys())):
+            brit.write("REMOVED: %s %s\n" % (p, old[p]))
 
-    brit.flush()
-    brit.close()
+        brit.flush()
+
 
 #######################################################################################
 

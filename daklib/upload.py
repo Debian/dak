@@ -284,7 +284,8 @@ class Changes(object):
         @type: str
         """
 
-        data = open(self.path, 'rb').read()
+        with open(self.path, 'rb') as fd:
+            data = fd.read()
         self.signature = SignedFile(data, keyrings, require_signature)
         self.changes = apt_pkg.TagSection(self.signature.contents)
         """dict to access fields of the .changes file
@@ -567,7 +568,8 @@ class Source(object):
         self._dsc_file.check(directory)
 
         dsc_file_path = os.path.join(directory, self._dsc_file.input_filename)
-        data = open(dsc_file_path, 'rb').read()
+        with open(dsc_file_path, 'rb') as fd:
+            data = fd.read()
         self.signature = SignedFile(data, keyrings, require_signature)
         self.dsc = apt_pkg.TagSection(self.signature.contents)
         """dict to access fields in the .dsc file
