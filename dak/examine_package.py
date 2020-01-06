@@ -250,16 +250,13 @@ def read_control(filename):
     maintainer = ''
     arch = ''
 
-    deb_file = open(filename)
-    try:
-        extracts = utils.deb_extract_control(deb_file)
-        control = apt_pkg.TagSection(extracts)
-    except:
-        print(formatted_text("can't parse control info"))
-        deb_file.close()
-        raise
-
-    deb_file.close()
+    with open(filename) as deb_file:
+        try:
+            extracts = utils.deb_extract_control(deb_file)
+            control = apt_pkg.TagSection(extracts)
+        except:
+            print(formatted_text("can't parse control info"))
+            raise
 
     control_keys = control.keys()
 
@@ -309,12 +306,11 @@ def read_control(filename):
 def read_changes_or_dsc(suite, filename, session=None):
     dsc = {}
 
-    dsc_file = open(filename)
-    try:
-        dsc = utils.parse_changes(filename, dsc_file=1)
-    except:
-        return formatted_text("can't parse .dsc control info")
-    dsc_file.close()
+    with open(filename) as dsc_file:
+        try:
+            dsc = utils.parse_changes(filename, dsc_file=1)
+        except:
+            return formatted_text("can't parse .dsc control info")
 
     filecontents = strip_pgp_signature(filename).decode('utf-8')
     keysinorder = []

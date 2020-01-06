@@ -328,10 +328,9 @@ def main():
         result = os.system("%s %s" % (editor, temp_filename))
         if result != 0:
             utils.fubar("vi invocation failed for `%s'!" % (temp_filename), result)
-        temp_file = open(temp_filename)
-        for line in temp_file.readlines():
-            Options["Reason"] += line
-        temp_file.close()
+        with open(temp_filename) as temp_file:
+            for line in temp_file.readlines():
+                Options["Reason"] += line
         os.unlink(temp_filename)
 
     # Generate the summary of what's to be removed

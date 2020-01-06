@@ -749,8 +749,8 @@ class ArchiveUpload(object):
 
         sourcedir = os.path.join(self.directory, 'source')
         if not os.path.exists(sourcedir):
-            devnull = open('/dev/null', 'w')
-            daklib.daksubprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=devnull)
+            with open('/dev/null', 'w') as devnull:
+                daklib.daksubprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=devnull)
         if not os.path.isdir(sourcedir):
             raise Exception("{0} is not a directory after extracting source package".format(sourcedir))
         return sourcedir
@@ -1291,13 +1291,13 @@ class ArchiveUpload(object):
         # version history
         sourcedir = self.unpacked_source()
         if sourcedir is not None:
-            fh = open(os.path.join(sourcedir, 'debian', 'changelog'), 'r')
-            versions = fs.create("{0}.versions".format(base), mode=0o644)
-            for line in fh.readlines():
-                if re_changelog_versions.match(line):
-                    versions.write(line)
-            fh.close()
-            versions.close()
+            dch_path = os.path.join(sourcedir, 'debian', 'changelog')
+            with open(dch_path, 'r') as fh:
+                versions = fs.create("{0}.versions".format(base), mode=0o644)
+                for line in fh.readlines():
+                    if re_changelog_versions.match(line):
+                        versions.write(line)
+                versions.close()
 
         # binary -> source mapping
         if self.changes.binaries:

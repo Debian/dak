@@ -310,6 +310,7 @@ def check_checksums():
         sha256sum = apt_pkg.sha256sum(fi)
         if sha256sum != f.sha256sum:
             utils.warn("**WARNING** sha256sum mismatch for '%s' ('%s' [current] vs. '%s' [db])." % (filename, sha256sum, f.sha256sum))
+        fi.close()
 
     print("Done.")
 
@@ -341,12 +342,12 @@ def check_timestamps():
     for pf in q.all():
         filename = os.path.abspath(os.path.join(pf.location.path, pf.filename))
         if os.access(filename, os.R_OK):
-            f = open(filename)
-            current_file = filename
-            print("Processing %s." % (filename), file=sys.stderr)
-            apt_inst.debExtract(f, Ent, "control.tar.gz")
-            f.seek(0)
-            apt_inst.debExtract(f, Ent, "data.tar.gz")
+            with open(filename) as f:
+                current_file = filename
+                print("Processing %s." % (filename), file=sys.stderr)
+                apt_inst.debExtract(f, Ent, "control.tar.gz")
+                f.seek(0)
+                apt_inst.debExtract(f, Ent, "data.tar.gz")
             count += 1
 
     print("Checked %d files (out of %d)." % (count, len(db_files)))

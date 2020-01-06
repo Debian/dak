@@ -756,8 +756,8 @@ class PoolFile(ORMObject):
         if self.filesize != st.st_size:
             return False
 
-        f = open(filename, "r")
-        sha256sum = apt_pkg.sha256sum(f)
+        with open(filename, "r") as f:
+            sha256sum = apt_pkg.sha256sum(f)
         if sha256sum != self.sha256sum:
             return False
 
@@ -1612,7 +1612,8 @@ class DBSource(ORMObject):
         @return: fields is the dsc information in a dictionary form
         '''
         fullpath = self.poolfile.fullpath
-        fields = Deb822(open(self.poolfile.fullpath, 'r'))
+        with open(self.poolfile.fullpath, 'r') as fd:
+            fields = Deb822(fd)
         return fields
 
     metadata = association_proxy('key', 'value')

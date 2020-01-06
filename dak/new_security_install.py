@@ -196,10 +196,9 @@ def main():
     else:
         raw_input("Press Enter to continue")
 
-    for acceptfilename in acceptfiles.keys():
-        accept_file = open(acceptfilename, "w")
-        accept_file.write("OK\n")
-        accept_file.close()
+    for acceptfilename in acceptfiles:
+        with open(acceptfilename, "w") as accept_file:
+            accept_file.write("OK\n")
 
     do_Approve()
 

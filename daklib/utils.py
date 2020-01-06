@@ -552,13 +552,11 @@ def find_next_free(dest, too_many=100):
 
 
 def result_join(original, sep='\t'):
-    resultlist = []
-    for i in xrange(len(original)):
-        if original[i] is None:
-            resultlist.append("")
-        else:
-            resultlist.append(original[i])
-    return sep.join(resultlist)
+    return sep.join(
+        x if x is not None else ""
+        for x in original
+    )
+
 
 ################################################################################
 
@@ -939,8 +937,8 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
 
     line = []
     try:
-        f = open(file)
-        lines = f.readlines()
+        with open(file) as f:
+            lines = f.readlines()
     except IOError as e:
         print("Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file)
         lines = []
@@ -951,7 +949,7 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
         if len(splited_line) > 1:
             wnpp[splited_line[0]] = splited_line[1].split("|")
 
-    for source in wnpp.keys():
+    for source in wnpp:
         bugs = []
         for wnpp_bug in wnpp[source]:
             bug_no = re.search(r"(\d)+", wnpp_bug).group()

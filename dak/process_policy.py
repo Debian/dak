@@ -66,7 +66,8 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
     session = transaction.session
     actions = []
     for comm in [x for x in os.listdir(dir) if x.startswith(opref)]:
-        lines = open(os.path.join(dir, comm)).readlines()
+        with open(os.path.join(dir, comm)) as fd:
+            lines = fd.readlines()
         if len(lines) == 0 or lines[0] != line + "\n":
             continue
 
@@ -412,7 +413,8 @@ def get_processed_upload(upload):
     pu.from_policy_suites = [upload.target_suite]
 
     changes_path = os.path.join(upload.policy_queue.path, upload.changes.changesname)
-    pu.changes = open(changes_path, 'r').read()
+    with open(changes_path, 'r') as fd:
+        pu.changes = fd.read()
     pu.changes_filename = upload.changes.changesname
     pu.sourceful = upload.source is not None
     pu.source = upload.changes.source

@@ -408,7 +408,8 @@ class ReleaseWriter(object):
                 else:
                     continue
 
-                contents = open(filename, 'rb').read()
+                with open(filename, 'rb') as fd:
+                    contents = fd.read()
 
                 # If we find a file for which we have a compressed version and
                 # haven't yet seen the uncompressed one, store the possibility

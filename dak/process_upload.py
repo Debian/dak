@@ -244,7 +244,8 @@ def get_processed_upload(upload):
     pu.suites = upload.final_suites or []
     pu.from_policy_suites = []
 
-    pu.changes = open(upload.changes.path, 'r').read()
+    with open(upload.changes.path, 'r') as fd:
+        pu.changes = fd.read()
     pu.changes_filename = upload.changes.filename
     pu.sourceful = upload.changes.sourceful
     pu.source = control.get('Source')
