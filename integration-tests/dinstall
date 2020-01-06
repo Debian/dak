@@ -116,13 +116,14 @@ dinstall() {
     dinstall_stage_packages_contents
     dinstall_stage_dists
 
-# state scripts (OMITTED)
+# state scripts (mostly OMITTED)
     # mkmaintainers
     # copyoverrides
     # mklslar
     # mkfilesindices
     # mkchecksums
     # dedup
+    dak archive-dedup-pool
     # signotherfiles
     # mirror hardlinks
 # UNLOCK UNCHECKED
