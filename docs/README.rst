@@ -9,3 +9,4 @@ These documents are geared toward getting familiar with DAK:
 - ``development.rst`` - Basic "how to get started with dev"
 - ``TODO`` - Simple list of potential improvements
 - ``database.dia`` - A diagram of the database schema
+- ``code-guidelines.rst`` - Requirements that all patches must meet
