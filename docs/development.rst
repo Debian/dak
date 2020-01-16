@@ -26,7 +26,7 @@ Generate some test packages::
 DAK Subshell
 ------------
 
-**NOTE:** Make sure the hostname configured correctly (/etc/hosts is sufficent).
+**NOTE:** Make sure the hostname is configured correctly (/etc/hosts is sufficient).
 
 Working with a development version of DAK is best done from a testing subshell.
 
@@ -48,7 +48,7 @@ The database can now be poked at using psql::
 
     psql -c 'select * from suite;'
 
-To populate the database such that it mimics the Debian archive::
+To populate the database, such that it mimics the Debian archive::
 
     setup_debian_like_archive
 
@@ -71,7 +71,7 @@ development and testing, the previously built packages can be used::
 This will create symlinks in the temporary upload location pointing at the
 packages that were previously generated.
 
-With packages uploaded (symlinked, copyied, etc.), they can now be processed::
+With packages uploaded (symlinked, copied, etc.), they can now be processed::
 
     process_uploads
 
@@ -88,7 +88,7 @@ Tests
 -----
 
 The full test suite can be run using ``integration-tests/run-tests``. This
-should not be done from wihin an existing subshell; one will be created.
+should not be done from within an existing subshell; one will be created.
 
 New tests should be written within subshells, as a "unit" separator and should
 include a comment.
