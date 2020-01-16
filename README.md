@@ -44,7 +44,7 @@ While we do prefer merge requests as described above, we also accept
 patches send by mail to our mailing list, see above for details on
 the list.
 
-# Setup dak
+# Set Up DAK
 You can find more info about setting dak up inside the [setup](setup)
 Folder and its [README](setup/README).
 

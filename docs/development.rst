@@ -37,7 +37,6 @@ To start the shell::
 
 This will create a temporary directory and database to work from.
 
-
 Once loaded, we need to load some commands::
 
     cd ~/dak
