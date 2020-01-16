@@ -1,5 +1,11 @@
+DAK Setup
+=========
+
+This document describes deployment for use in production. For information
+about development, see ``docs/development.rst``.
+
 Initialising a dak database schema
-==================================
+----------------------------------
 
 The following packages are needed for the database::
 
@@ -48,7 +54,7 @@ update your PATH variable to be able to execute dak::
 
     export PATH="/srv/dak/bin:${PATH}"
 
-WARNING: Please check the templates in /srv/dak/templates over and customise
+**WARNING:** Please check the templates in /srv/dak/templates over and customise
 as necessary
 
 Set up a private signing key: don't set a passphrase as dak will not
@@ -197,7 +203,8 @@ And finally, we can generate the signed Release files::
     Processing unstable
     -----------------------------------------------------------------------
 
-(Look at /srv/dak/ftp/dists/unstable/Release, Release.gpg and InRelease)
+(Look at ``/srv/dak/ftp/dists/unstable/Release``, ``Release.gpg``, and
+``InRelease``)
 
 
 Next steps
