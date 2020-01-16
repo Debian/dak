@@ -48,15 +48,11 @@ NEW processing
 * 'dak process-new' allows you to edit the section and change the
    component, but really shouldn't allow the component change.
 
-* 'dak process-new' allows the creation of empty notes.
-
 * 'dak process-new' should have a "Previous package" option.
 
 * 'dak process-new' should have an option to skip (un-)reviewed packages
 
 * 'dak process-new' should have an option to skip older versions of an upload
-
-* 'dak process-new' loses it's shortcut list on WINCH
 
 * 'dak process-new' doesn't do the right thing with -2 and -1 uploads,
   as you can end up with the .orig.tar.gz not in the pool or belonging
