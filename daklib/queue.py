@@ -155,7 +155,11 @@ def edit_note(note, upload, session, trainee=False):
             newnote = temp_file.read().rstrip()
         print("New Note:")
         print(utils.prefix_multi_line_string(newnote, "  "))
-        prompt = "[D]one, Edit, Abandon, Quit ?"
+        empty_note = not newnote.strip()
+        if empty_note:
+            prompt = "Done, Edit, [A]bandon, Quit ?"
+        else:
+            prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
             answer = utils.our_raw_input(prompt)
