@@ -26,7 +26,7 @@ Host dep11-sync
   IdentityFile /srv/ftp-master.debian.org/s3kr1t/appstream.rsa
 
 Host morgue-sync
-  Hostname lw03.debian.org
+  Hostname lw01.debian.org
   User dak
   IdentityFile /srv/ftp-master.debian.org/s3kr1t/push_morgue
 
