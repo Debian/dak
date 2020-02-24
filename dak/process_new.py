@@ -675,7 +675,10 @@ def lock_package(package):
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_RDONLY, 0o644)
     except OSError as e:
         if e.errno == errno.EEXIST or e.errno == errno.EACCES:
-            user = pwd.getpwuid(os.stat(path)[stat.ST_UID])[4].split(',')[0].replace('.', '')
+            try:
+                user = pwd.getpwuid(os.stat(path)[stat.ST_UID])[4].split(',')[0].replace('.', '')
+            except KeyError:
+                user = "TotallyUnknown"
             raise AlreadyLockedError(user)
 
     try:
