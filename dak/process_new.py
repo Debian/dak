@@ -364,7 +364,7 @@ def check_pkg(upload, upload_copy, session):
     handler = PolicyQueueUploadHandler(upload, session)
     missing = [(m['type'], m["package"]) for m in handler.missing_overrides(hints=missing)]
 
-    less_cmd = ("less", "-R", "-")
+    less_cmd = ("less", "-r", "-")
     less_process = daklib.daksubprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
     try:
         sys.stdout = less_process.stdin
