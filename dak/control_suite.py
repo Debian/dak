@@ -213,31 +213,90 @@ def cmp_package_version(a, b):
 #######################################################################################
 
 
+def copy_to_suites(transaction, pkg, suites):
+    component = pkg.poolfile.component
+    if pkg.arch_string == "source":
+        for s in suites:
+            transaction.copy_source(pkg, s, component)
+    else:
+        for s in suites:
+            transaction.copy_binary(pkg, s, component)
+
+
+def check_propups(pkg, psuites_current, propups):
+    key = (pkg.name, pkg.arch_string)
+    for suite_id in psuites_current:
+        if key in psuites_current[suite_id]:
+            old_version = psuites_current[suite_id][key]
+            if apt_pkg.version_compare(pkg.version, old_version) > 0:
+                propups[suite_id].add(pkg)
+                if pkg.arch_string != "source":
+                    source = pkg.source
+                    propups[suite_id].add(source)
+
+
+def get_propup_suites(suite, session):
+    propup_suites = []
+    for rule in Config().value_list("SuiteMappings"):
+        fields = rule.split()
+        if fields[0] == "propup-version" and fields[1] == suite.suite_name:
+            propup_suites.append(session.query(Suite).filter_by(suite_name=fields[2]).one())
+    return propup_suites
+
+
 def set_suite(file, suite, transaction, britney=False, force=False):
     session = transaction.session
     suite_id = suite.suite_id
     lines = file.readlines()
     suites = [suite] + [q.suite for q in suite.copy_queues]
+    propup_suites = get_propup_suites(suite, session)
 
     # Our session is already in a transaction
 
+    def get_binary_q(suite_id):
+        return session.execute("""SELECT b.package, b.version, a.arch_string, ba.id
+                                    FROM binaries b, bin_associations ba, architecture a
+                                   WHERE ba.suite = :suiteid
+                                     AND ba.bin = b.id AND b.architecture = a.id
+                                ORDER BY b.version ASC""", {'suiteid': suite_id})
+
+    def get_source_q(suite_id):
+        return session.execute("""SELECT s.source, s.version, 'source', sa.id
+                                    FROM source s, src_associations sa
+                                   WHERE sa.suite = :suiteid
+                                     AND sa.source = s.id
+                                ORDER BY s.version ASC""", {'suiteid': suite_id})
+
     # Build up a dictionary of what is currently in the suite
     current = {}
-    q = session.execute("""SELECT b.package, b.version, a.arch_string, ba.id
-                             FROM binaries b, bin_associations ba, architecture a
-                            WHERE ba.suite = :suiteid
-                              AND ba.bin = b.id AND b.architecture = a.id""", {'suiteid': suite_id})
+
+    q = get_binary_q(suite_id)
     for i in q:
         key = i[:3]
         current[key] = i[3]
 
-    q = session.execute("""SELECT s.source, s.version, 'source', sa.id
-                             FROM source s, src_associations sa
-                            WHERE sa.suite = :suiteid
-                              AND sa.source = s.id""", {'suiteid': suite_id})
+    q = get_source_q(suite_id)
     for i in q:
         key = i[:3]
         current[key] = i[3]
+
+    # Build a dictionary of what's currently in the propup suites
+    psuites_current = {}
+    propups_needed = {}
+    for p_s in propup_suites:
+        propups_needed[p_s.suite_id] = set()
+        psuites_current[p_s.suite_id] = {}
+        q = get_binary_q(p_s.suite_id)
+        for i in q:
+            key = (i[0], i[2])
+            # the query is sorted, so we only keep the newest version
+            psuites_current[p_s.suite_id][key] = i[1]
+
+        q = get_source_q(p_s.suite_id)
+        for i in q:
+            key = (i[0], i[2])
+            # the query is sorted, so we only keep the newest version
+            psuites_current[p_s.suite_id][key] = i[1]
 
     # Build up a dictionary of what should be in the suite
     desired = set()
@@ -257,15 +316,10 @@ def set_suite(file, suite, transaction, britney=False, force=False):
             if pkg is None:
                 continue
 
-            component = pkg.poolfile.component
-            if architecture == "source":
-                for s in suites:
-                    transaction.copy_source(pkg, s, component)
-            else:
-                for s in suites:
-                    transaction.copy_binary(pkg, s, component)
-
+            copy_to_suites(transaction, pkg, suites)
             Logger.log(["added", suite.suite_name, " ".join(key)])
+
+            check_propups(pkg, psuites_current, propups_needed)
 
     # Check to see which packages need removed and remove them
     for key, pkid in current.iteritems():
@@ -276,6 +330,12 @@ def set_suite(file, suite, transaction, britney=False, force=False):
             else:
                 session.execute("""DELETE FROM bin_associations WHERE id = :pkid""", {'pkid': pkid})
             Logger.log(["removed", suite.suite_name, " ".join(key), pkid])
+
+    for p_s in propup_suites:
+        for pkg in propups_needed[p_s.suite_id]:
+            copy_to_suites(transaction, pkg, [p_s])
+            info = (pkg.name, pkg.version, pkg.arch_string)
+            Logger.log(["propup", p_s.suite_name, " ".join(info)])
 
     session.commit()
 
