@@ -39,7 +39,6 @@ dinstall
   upload_changes ${packages:?}/package_0.1-1_amd64.changes
   upload_changes ${packages:?}/main-contrib-with-debug_0.1-1_amd64.changes
   upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
-  upload_changes ${packages:?}/pkgnew_0.1-1_amd64.changes
 
   process_uploads
 )
@@ -66,7 +65,6 @@ EOF
 
 echo a | dak process-new main-contrib-with-debug_0.1-1_amd64.changes
 echo a | dak process-new binnmupkg_0.1-1_amd64.changes
-echo a | dak process-new pkgnew_0.1-1_amd64.changes
   
   dak process-new --automatic
   dak process-policy new
@@ -99,24 +97,6 @@ ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc
 echo "Published successfully"
 
 (
-  upload_changes ${packages:?}/pkgnew_0.1-2~exp_amd64.changes
-  process_uploads
-
-  echo a | dak process-new pkgnew_0.1-2~exp_amd64.changes
-
-  dak process-new --automatic
-  dak process-policy new
-
-  # pretend the upload to experimental happened (more than) 14 days ago to
-  # trigger NVIU issue below
-  echo "update override set created = created - interval '14 days' where package like 'pkg%';" | psql
-
-  upload_changes ${packages:?}/pkgnew_0.1-2_source.changes
-  process_uploads
-
-  upload_changes ${packages:?}/pkgnew_0.1-2_all.changes
-  process_uploads
-
   upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
   process_uploads
 
@@ -126,20 +106,9 @@ echo "Published successfully"
   upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
   process_uploads
 
-  check_all_suites before_dinstall_nviu
-
-  # trigger obsolete override issue: needs 2 dinstalls:
-  # NVIU is done after obsolete overrides, so we needs a second dinstall to
-  # remove the overrides for the packages removed by NVIU
-  dinstall
-  dinstall
-
-  check_all_suites after_dinstall_nviu
-
-  upload_changes ${packages:?}/pkgnew_0.1-2_amd64.changes
-  process_uploads
-
 )
+
+dinstall
 
 (
   to_testing2="$(cat <<EOF
@@ -194,5 +163,6 @@ check_all_suites end
 
 dak ls main-contrib-with-debug
 
-# check that this package has actually been published
-ls -l ${DAKBASE}/ftp-master/pool/main/p/pkgnew/pkg-any3_0.1-2_amd64.deb
+# check that these packages have actually been published
+ls -l ${DAKBASE}/ftp-master/pool/main/m/main-contrib-with-debug/main-package_0.2-1_all.deb
+ls -l ${DAKBASE}/ftp-master/pool/contrib/m/main-contrib-with-debug/contrib-with-debug_0.2-1_amd64.deb

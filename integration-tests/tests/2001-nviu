@@ -1,0 +1,107 @@
+#! /bin/bash
+#
+# © 2019 Niels Thykier <niels@thykier.net>
+# © 2019 Ivo De Decker <ivodd@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+echo "Dinstall::AllowSourceOnlyUploads true;" >> ${DAKBASE}/etc/dak.conf
+
+setup_debian_like_archive
+import-fixture-signing-key
+
+packages=$(fixture-package-dir)
+
+(
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
+  upload_changes ${packages:?}/pkgnew_0.1-1_amd64.changes
+
+  process_uploads
+
+  echo a | dak process-new binnmupkg_0.1-1_amd64.changes
+  echo a | dak process-new pkgnew_0.1-1_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+)
+
+to_testing="$(cat <<EOF
+binnmupkg 0.1-1 amd64
+binnmupkg 0.1-1 source
+EOF
+)"
+
+echo "$to_testing" | dak control-suite -s testing
+
+dinstall
+
+(
+  upload_changes ${packages:?}/pkgnew_0.1-2~exp_amd64.changes
+  process_uploads
+
+  echo a | dak process-new pkgnew_0.1-2~exp_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+
+  # pretend the upload to experimental happened (more than) 14 days ago to
+  # trigger NVIU issue below
+  echo "update override set created = created - interval '14 days' where package like 'pkg%';" | psql
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_source.changes
+  process_uploads
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_all.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-2_amd64.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
+  process_uploads
+
+  check_all_suites before_dinstall_nviu
+
+  # trigger obsolete override issue: needs 2 dinstalls:
+  # NVIU is done after obsolete overrides, so we needs a second dinstall to
+  # remove the overrides for the packages removed by NVIU
+  dinstall
+  dinstall
+
+  # pkgnew in experimental isn't cleaned up yet, the amd64 binaries are
+  # missing in unstable
+  check_all_suites after_dinstall_nviu
+
+  upload_changes ${packages:?}/pkgnew_0.1-2_amd64.changes
+  process_uploads
+
+  # now pkgnew will be cleaned up in experimental
+  dinstall
+  dinstall
+)
+
+check_all_suites end
+
