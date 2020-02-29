@@ -38,7 +38,6 @@ dinstall
   upload_changes ${packages:?}/nonfree-package_0.1-1_amd64.changes
   upload_changes ${packages:?}/package_0.1-1_amd64.changes
   upload_changes ${packages:?}/main-contrib-with-debug_0.1-1_amd64.changes
-  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
 
   process_uploads
 )
@@ -64,7 +63,6 @@ package admin
 EOF
 
 echo a | dak process-new main-contrib-with-debug_0.1-1_amd64.changes
-echo a | dak process-new binnmupkg_0.1-1_amd64.changes
   
   dak process-new --automatic
   dak process-policy new
@@ -76,8 +74,6 @@ main-contrib-with-debug 0.2-1 source
 main-package 0.2-1 all
 package 0.1-1 all
 package 0.1-1 source
-binnmupkg 0.1-1 amd64
-binnmupkg 0.1-1 source
 EOF
 )"
 
@@ -95,69 +91,6 @@ EOF
 dinstall
 ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc
 echo "Published successfully"
-
-(
-  upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
-  process_uploads
-
-  upload_changes ${packages:?}/binnmupkg_0.1-2_amd64.changes
-  process_uploads
-
-  upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
-  process_uploads
-
-)
-
-dinstall
-
-(
-  to_testing2="$(cat <<EOF
-contrib-with-debug 0.2-1 amd64
-main-contrib-with-debug 0.2-1 source
-main-package 0.2-1 all
-package 0.1-1 all
-package 0.1-1 source
-binnmupkg 0.1-2 amd64
-binnmupkg 0.1-2 source
-EOF
-)"
-
-  # allow newer binnmupkg (from unstable) into testing
-  echo "$to_testing2" | dak control-suite -s testing
-
-  # remove everything from tpu
-  dak control-suite -s testing-proposed-updates < /dev/null
-  # remove from build queue as well
-  dak manage-build-queue buildd-buster-proposed-updates
-
-  to_tpu="$(cat <<EOF
-binnmupkg 0.1-1+b1 amd64
-binnmupkg 0.1-1 source
-EOF
-)"
-
-  echo "setting testing-proposed-updates with control-suite: this should fail"
-  # put binnmupkg (back) into tpu - the version check should fail
-  if echo "$to_tpu" | dak control-suite -s testing-proposed-updates
-  then
-    echo "E: control-suite should not allow package into testing-proposed-updates older than testing"
-    echo testing
-    dak control-suite -l testing | sort
-    printf "\n\ntesting-proposed-updates\n"
-    dak control-suite -l testing-proposed-updates | sort
-    exit 1
-  else
-    # OK
-    true
-  fi
-
-  # reset testing to what it was before (with force)
-  echo "$to_testing" | dak control-suite -f -s testing
-
-  # put binnmupkg into tpu - this should succeed now
-  echo "$to_tpu" | dak control-suite -s testing-proposed-updates
-
-)
 
 check_all_suites end
 
