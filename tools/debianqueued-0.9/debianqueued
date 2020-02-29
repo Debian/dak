@@ -1672,6 +1672,7 @@ sub pgp_check($) {
     my @command = ("$conf::gpg", "--no-options", "--batch", "--no-tty",
                    "--trust-model", "always", "--no-default-keyring",
 		   (map +("--keyring" => $_), @conf::keyrings),
+		   "--verify-options", "no-show-uid-validity",
 		   "--verify", "-");
     debug(   "executing " . join(" ", @command) );
 
@@ -1706,8 +1707,8 @@ sub pgp_check($) {
     return "";
   } ## end if ($stat)
 
-  $output =~ /^(gpg: )?good signature from (user )?"(.*)"\.?$/im;
-  ( $signator = $3 ) ||= "unknown signator";
+  $output =~ /^(?:gpg: )?good signature from (?:user )?"(.*)"\.?$/im;
+  ( $signator = $1 ) ||= "unknown signator";
   if ($conf::debug) {
     debug("GnuPG signature ok (by $signator)");
   }
