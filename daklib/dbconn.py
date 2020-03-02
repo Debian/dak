@@ -402,6 +402,14 @@ class DBBinary(ORMObject):
     def pkid(self):
         return self.binary_id
 
+    @property
+    def name(self):
+        return self.package
+
+    @property
+    def arch_string(self):
+        return "%s" % self.architecture
+
     def properties(self):
         return ['package', 'version', 'maintainer', 'source', 'architecture',
             'poolfile', 'binarytype', 'fingerprint', 'install_date',
@@ -1598,6 +1606,14 @@ class DBSource(ORMObject):
     @property
     def pkid(self):
         return self.source_id
+
+    @property
+    def name(self):
+        return self.source
+
+    @property
+    def arch_string(self):
+        return 'source'
 
     def properties(self):
         return ['source', 'source_id', 'maintainer', 'changedby',
