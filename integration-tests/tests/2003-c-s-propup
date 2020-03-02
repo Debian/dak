@@ -1,0 +1,161 @@
+#! /bin/bash
+#
+# © 2019 Niels Thykier <niels@thykier.net>
+# © 2019-2020 Ivo De Decker <ivodd@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+echo "Dinstall::AllowSourceOnlyUploads true;" >> ${DAKBASE}/etc/dak.conf
+
+cat >> ${DAKBASE}/etc/dak.conf << EOF
+SuiteMappings
+{
+ "propup-version testing unstable";
+};
+
+EOF
+
+setup_debian_like_archive
+import-fixture-signing-key
+
+# Verify that our dinstall works with an empty archive
+dinstall
+
+reset_testing_and_unstable() {
+	# reset and unstable to what they were
+	dak control-suite -f -s testing < /dev/null
+	echo "$unstable" | dak control-suite -f -s unstable
+}
+
+
+(
+  packages=$(fixture-package-dir)
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
+  upload_changes ${packages:?}/pkgnew_0.1-1_amd64.changes
+  upload_changes ${packages:?}/pkgnew_0.1-2~exp_amd64.changes
+  process_uploads
+
+  echo a | dak process-new binnmupkg_0.1-1_amd64.changes
+  echo a | dak process-new pkgnew_0.1-1_amd64.changes
+  echo a | dak process-new pkgnew_0.1-2~exp_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+)
+
+unstable="$(dak control-suite -l unstable)"
+
+(
+  to_testing="$(cat <<EOF
+binnmupkg 0.1-1 amd64
+binnmupkg 0.1-1 source
+EOF
+)"
+
+  echo "$to_testing" | dak control-suite -s testing
+)
+
+dinstall
+check_all_suites c-s-propup-1
+
+(
+  upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
+  process_uploads
+
+  to_testing2="$(cat <<EOF
+binnmupkg 0.1-1+b1 amd64
+binnmupkg 0.1-1 source
+EOF
+)"
+
+  # allow binnmupkg (from t-p-u) into testing
+  # the binNMU should be propup-ed to unstable
+  echo "$to_testing2" | dak control-suite -s testing
+)
+
+dinstall
+check_all_suites c-s-propup-2
+
+reset_testing_and_unstable
+
+  to_testing3="$(cat <<EOF
+binnmupkg 0.1-1 amd64
+binnmupkg 0.1-1 source
+pkg-all1 0.1-2~exp all
+pkg-all2 0.1-2~exp all
+pkg-all3 0.1-2~exp all
+pkg-all4 0.1-2~exp all
+pkg-any1 0.1-2~exp amd64
+pkg-any2 0.1-2~exp amd64
+pkg-any3 0.1-2~exp amd64
+pkg-any4 0.1-2~exp amd64
+pkgnew 0.1-2~exp source
+EOF
+)"
+
+(
+  # allow pkgnew (from experimental) into testing
+  # normally, a package from experimental won't get into testing, but this is
+  # meant to test what whould happen with a package from proposed-updates,
+  # without adding an additional package to the testsuite
+  echo "$to_testing3" | dak control-suite -s testing
+
+)
+
+dinstall
+check_all_suites c-s-propup-3
+
+reset_testing_and_unstable
+
+(
+  upload_changes ${packages:?}/pkgnew_0.1-2_source.changes
+  upload_changes ${packages:?}/pkgnew_0.1-2_all.changes
+  process_uploads
+)
+
+unstable2="$(dak control-suite -l unstable)"
+
+(
+  # try again, with newer version in unstable, but not all archs are built yet
+  echo "$to_testing3" | dak control-suite -s testing
+)
+
+dinstall
+check_all_suites c-s-propup-4
+
+# reset to situation before last test
+dak control-suite -f -s testing < /dev/null
+echo "$unstable2" | dak control-suite -f -s unstable
+
+(
+  upload_changes ${packages:?}/pkgnew_0.1-2_amd64.changes
+  process_uploads
+
+  # try again, with newer version in unstable, now available on all archs
+  echo "$to_testing3" | dak control-suite -s testing
+)
+
+dinstall
+check_all_suites c-s-propup-5
+
+
