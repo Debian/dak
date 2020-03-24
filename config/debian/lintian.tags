@@ -17,7 +17,6 @@ lintian:
     - embedded-library
     - empty-binary-package
     - file-name-is-not-valid-UTF-8
-    - gzip-file-is-not-multi-arch-same-safe
     - header-has-overly-generic-name
     - install-info-used-in-maintainer-script
     - invalid-date-in-debian-changelog
