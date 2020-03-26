@@ -129,8 +129,8 @@ ansi_colours = {
     'distro': "\033[1m\033[41m"}
 
 html_colours = {
-    'main': ('<span style="color: aqua">', "</span>"),
-    'contrib': ('<span style="color: yellow">', "</span>"),
+    'main': ('<span style="color: green">', "</span>"),
+    'contrib': ('<span style="color: orange">', "</span>"),
     'nonfree': ('<span style="color: red">', "</span>"),
     'provides': ('<span style="color: magenta">', "</span>"),
     'arch': ('<span style="color: green">', "</span>"),
