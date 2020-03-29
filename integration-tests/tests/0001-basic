@@ -83,3 +83,14 @@ check_all_suites after_accept
 (
   dak rm -n -s unstable package
 )
+
+(
+  export REASON="not accepted"
+  export EDITOR=integration-tests/reject-editor
+  # M: manual reject, R: reject
+  printf "M\nR\n" | dak process-new nonfree-package_0.1-1_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+)
+
