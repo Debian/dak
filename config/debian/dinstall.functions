@@ -381,8 +381,12 @@ function mkchecksums() {
         log "Creating md5 / dsync index file for ${archive}... "
 
         cd "$archiveroot"
-        ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
-        ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
+        # 2020-03-29: dsync-flist broken by upgrade to Debian 10,
+        # create an empty file for now.
+        # Maybe we should just drop md5sums...
+        #${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
+        #${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
+        < /dev/null gzip -9 --no-name --rsyncable > ${md5list}.gz
     done
 }
 
