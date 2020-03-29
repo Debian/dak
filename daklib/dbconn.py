@@ -931,7 +931,7 @@ class Keyring(object):
         LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
         ca_cert_file = cnf.get('Import-LDAP-Fingerprints::CACertFile')
 
-        l = ldap.open(LDAPServer)
+        l = ldap.initialize(LDAPServer)
 
         if ca_cert_file:
             l.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)

@@ -778,7 +778,7 @@ def get_logins_from_ldap(fingerprint='*'):
 
     LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
     LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
-    l = ldap.open(LDAPServer)
+    l = ldap.initialize(LDAPServer)
     l.simple_bind_s('', '')
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(keyfingerprint=%s)' % fingerprint,
@@ -796,7 +796,7 @@ def get_users_from_ldap():
 
     LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
     LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
-    l = ldap.open(LDAPServer)
+    l = ldap.initialize(LDAPServer)
     l.simple_bind_s('', '')
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(uid=*)', ['uid', 'cn', 'mn', 'sn'])
