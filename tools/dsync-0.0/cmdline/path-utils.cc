@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <dsync/error.h>
+#include <string.h>
 
 // SimplifyPath - Short function to remove relative path components	/*{{{*/
 // ---------------------------------------------------------------------

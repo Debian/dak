@@ -23,6 +23,7 @@
 #include <dsync/error.h>
 
 #include <fnmatch.h>
+#include <string.h>
 using namespace std;
 									/*}}}*/
 

@@ -16,6 +16,7 @@
 
 #include <dsync/filelistdb.h>
 #include <dsync/error.h>
+#include <string.h>
 									/*}}}*/
 
 // FileListDB::dsFileListDB - Constructor				/*{{{*/
