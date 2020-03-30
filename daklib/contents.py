@@ -380,8 +380,11 @@ def binary_scan_helper(binary_id):
     '''
     This function runs in a subprocess.
     '''
-    scanner = BinaryContentsScanner(binary_id)
-    scanner.scan()
+    try:
+        scanner = BinaryContentsScanner(binary_id)
+        scanner.scan()
+    except Exception as e:
+        print("binary_scan_helper raised an exception: %s" % (e))
 
 
 class UnpackedSource(object):
@@ -503,4 +506,4 @@ def source_scan_helper(source_id):
         scanner = SourceContentsScanner(source_id)
         scanner.scan()
     except Exception as e:
-        print(e)
+        print("source_scan_helper raised an exception: %s" % (e))
