@@ -377,7 +377,13 @@ def action(directory, upload):
 
     okay = upload.check()
 
-    summary = changes.changes.get('Changes', '')
+    try:
+        summary = changes.changes.get('Changes', '')
+    except UnicodeDecodeError as e:
+        summary = "Reading changes failed: %s" % (e)
+        # the upload checks should have detected this, but make sure this
+        # upload gets rejected in any case
+        upload.reject_reasons.append(summary)
 
     package_info = []
     if okay:
