@@ -126,7 +126,9 @@ ansi_colours = {
     'end': "\033[0m",
     'bold': "\033[1m",
     'maintainer': "\033[32m",
-    'distro': "\033[1m\033[41m"}
+    'distro': "\033[1m\033[41m",
+    'error': "\033[1m\033[41m",
+    }
 
 html_colours = {
     'main': ('<span style="color: aqua">', "</span>"),
@@ -136,7 +138,9 @@ html_colours = {
     'arch': ('<span style="color: green">', "</span>"),
     'bold': ('<span style="font-weight: bold">', "</span>"),
     'maintainer': ('<span style="color: green">', "</span>"),
-    'distro': ('<span style="font-weight: bold; background-color: red">', "</span>")}
+    'distro': ('<span style="font-weight: bold; background-color: red">', "</span>"),
+    'error': ('<span style="font-weight: bold; background-color: red">', "</span>"),
+    }
 
 
 def colour_output(s, colour):
@@ -505,7 +509,10 @@ def do_lintian(filename):
 
     cmd.extend(['lintian', '--show-overrides', '--color', color, "--", filename])
 
-    return do_command(cmd, escaped=True)
+    try:
+        return do_command(cmd, escaped=True)
+    except OSError as e:
+        return (colour_output("Running lintian failed: %s" % (e), "error"))
 
 
 def extract_one_file_from_deb(deb_filename, match):
