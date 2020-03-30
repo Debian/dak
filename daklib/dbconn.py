@@ -42,6 +42,7 @@ import functools
 import os
 from os.path import normpath
 import re
+import six
 import subprocess
 
 from debian.debfile import Deb822
@@ -908,7 +909,8 @@ class Keyring(object):
         key = None
         need_fingerprint = False
 
-        for line in p.stdout:
+        for line_raw in p.stdout:
+            line = six.ensure_str(line_raw)
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
