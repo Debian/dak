@@ -1187,7 +1187,7 @@ dispatch['change-component'] = change_component
 
 def forget_signature(args):
     filename = args[1]
-    with open(filename, 'r') as fh:
+    with open(filename, 'rb') as fh:
         data = fh.read()
 
     session = DBConn().session()
