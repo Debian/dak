@@ -253,7 +253,7 @@ class Updates:
 
 
 def create_temp_file(r):
-    f = tempfile.TemporaryFile()
+    f = tempfile.TemporaryFile("w+t")
     while 1:
         x = r.read(65536)
         if not x:
