@@ -35,6 +35,7 @@ pkgnew_0.2_S \
 pkgnew_0.2_A \
 pkgnew_0.2_B \
 snowman_0.1_F \
+grave_0.1_F \
 
 OTHER = \
 linux_42.0-1_source.changes \
