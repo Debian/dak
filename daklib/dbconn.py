@@ -2537,8 +2537,14 @@ class DBConn(object):
             engine_args['pool_size'] = int(cnf['DB::PoolSize'])
         if 'DB::MaxOverflow' in cnf:
             engine_args['max_overflow'] = int(cnf['DB::MaxOverflow'])
-        if cnf.get('DB::Unicode') == 'false':
-            engine_args['use_native_unicode'] = False
+        if six.PY2:
+            # in python2, we want to get str() from the database
+            # if we use the native unicode, we get unicode()
+            if cnf.get('DB::Unicode') == 'false':
+                engine_args['use_native_unicode'] = False
+        else:
+            # in python3, we don't support non-utf-8 connections
+            engine_args['client_encoding'] = 'utf-8'
 
         # Monkey patch a new dialect in in order to support service= syntax
         import sqlalchemy.dialects.postgresql
