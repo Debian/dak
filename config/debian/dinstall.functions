@@ -264,7 +264,7 @@ function mkfilesindices() {
         cd $base/ftp
         find ./dists -maxdepth 1 \! -type d
         find ./dists \! -type d | grep "/source/"
-    ) | sort -u | gzip -9 > source.list.gz
+    ) | sort -u | gzip -9 --rsyncable --no-name > source.list.gz
 
     log "Generating arch lists"
 
@@ -276,7 +276,7 @@ function mkfilesindices() {
          cd $base/ftp
          find ./dists -maxdepth 1 \! -type d
          find ./dists \! -type d | grep -E "(proposed-updates.*_$a.changes$|/main/disks-$a/|/main/installer-$a/|/Contents-$a|/binary-$a/)"
-        ) | sort -u | gzip -9 > arch-$a.list.gz
+        ) | sort -u | gzip -9 --rsyncable --no-name > arch-$a.list.gz
     done
 
     log "Generating suite lists"
@@ -333,7 +333,7 @@ function mkfilesindices() {
                  done
                 )
                 suite_list $id
-            ) | sort -u | gzip -9 > suite-${suite}.list.gz
+            ) | sort -u | gzip -9 --rsyncable --no-name > suite-${suite}.list.gz
         done
 
     log "Finding everything on the ftp site to generate sundries"
@@ -358,7 +358,7 @@ function mkfilesindices() {
 
     (cd $base/ftp/
      for dist in sid $OLDOLDSTABLE $OLDSTABLE $STABLE $TESTING; do
-	 find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 > $base/ftp/indices/files/components/translation-$dist.list.gz
+	 find ./dists/$dist/main/i18n/ \! -type d | sort -u | gzip -9 --rsyncable --no-name > $base/ftp/indices/files/components/translation-$dist.list.gz
      done
     )
 
@@ -385,8 +385,8 @@ function mkchecksums() {
         # create an empty file for now.
         # Maybe we should just drop md5sums...
         #${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
-        #${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9n > ${md5list}.gz
-        < /dev/null gzip -9 --no-name --rsyncable > ${md5list}.gz
+        #${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9 --rsyncable --no-name > ${md5list}.gz
+        < /dev/null gzip -9 --rsyncable --no-name > ${md5list}.gz
     done
 }
 

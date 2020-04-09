@@ -2,7 +2,6 @@
 
 umask 022
 unset CDPATH
-GZIP='--rsyncable --no-name' ; export GZIP
 
 export lockdir=${lockdir:-${base}/lock/}
 export logdir=${logdir:-${base}/log/cron/}
