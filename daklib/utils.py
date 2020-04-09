@@ -79,7 +79,7 @@ def html_escape(s):
 
 def our_raw_input(prompt=""):
     if prompt:
-        print(prompt, end='')
+        print(prompt)
     # TODO: py3: use `print(..., flush=True)`
     sys.stdout.flush()
     try:
