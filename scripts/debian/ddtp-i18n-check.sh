@@ -104,7 +104,7 @@ unset TEMP_WORK_DIR
 # If it's trapped, something bad happened.
 trap_exit () {
 	rm -rf "$TMP_WORK_DIR"
-	rm -f "$dists_parent_dir"/dists/*/main/i18n/Translation-*.bz2
+	rm -f "$dists_parent_dir"/dists/*/main/i18n/Translation-*
 	rm -f "$dists_parent_dir"/dists/*/main/i18n/Index
 	exit 1
 }
