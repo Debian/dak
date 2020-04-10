@@ -1,0 +1,118 @@
+#! /bin/bash
+#
+# © 2019 Niels Thykier <niels@thykier.net>
+# © 2019 Ivo De Decker <ivodd@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+echo "Dinstall::AllowSourceOnlyUploads true;" >> ${DAKBASE}/etc/dak.conf
+
+setup_debian_like_archive
+import-fixture-signing-key
+
+# Verify that our dinstall works with an empty archive
+dinstall
+
+
+(
+  packages=$(fixture-package-dir)
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
+  process_uploads
+
+  echo a | dak process-new binnmupkg_0.1-1_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+)
+
+to_testing="$(cat <<EOF
+binnmupkg 0.1-1 amd64
+binnmupkg 0.1-1 source
+EOF
+)"
+
+echo "$to_testing" | dak control-suite -s testing
+
+dinstall
+
+(
+  upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-2_amd64.changes
+  process_uploads
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1+b1_amd64.changes
+  process_uploads
+
+)
+
+dinstall
+
+(
+  to_testing2="$(cat <<EOF
+binnmupkg 0.1-2 amd64
+binnmupkg 0.1-2 source
+EOF
+)"
+
+  # allow newer binnmupkg (from unstable) into testing
+  echo "$to_testing2" | dak control-suite -s testing
+
+  # remove everything from tpu
+  dak control-suite -s testing-proposed-updates < /dev/null
+  # remove from build queue as well
+  dak manage-build-queue buildd-buster-proposed-updates
+
+  to_tpu="$(cat <<EOF
+binnmupkg 0.1-1+b1 amd64
+binnmupkg 0.1-1 source
+EOF
+)"
+
+  echo "setting testing-proposed-updates with control-suite: this should fail"
+  # put binnmupkg (back) into tpu - the version check should fail
+  if echo "$to_tpu" | dak control-suite -s testing-proposed-updates
+  then
+    echo "E: control-suite should not allow package into testing-proposed-updates older than testing"
+    echo testing
+    dak control-suite -l testing | sort
+    printf "\n\ntesting-proposed-updates\n"
+    dak control-suite -l testing-proposed-updates | sort
+    exit 1
+  else
+    # OK
+    true
+  fi
+
+  # reset testing to what it was before (with force)
+  echo "$to_testing" | dak control-suite -f -s testing
+
+  # put binnmupkg into tpu - this should succeed now
+  echo "$to_tpu" | dak control-suite -s testing-proposed-updates
+
+)
+
+check_all_suites end
+
+

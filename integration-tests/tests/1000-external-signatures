@@ -22,6 +22,7 @@ shopt -s extglob
 
 . ${DAK_ROOT:?}/integration-tests/common
 . ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
 
 # add a unstable suite with amd64
 dak admin architecture add amd64 AMD64
@@ -31,9 +32,8 @@ dak admin suite-component add unstable main contrib non-free
 dak admin suite add-build-queue unstable buildd-unstable buildd-sid ${DAKHOST}
 dak admin suite-config set unstable allowcsset=yes
 
-packages=${DAK_ROOT:?}/tests/fixtures/packages
-ln -sf ${packages:?}/gpg/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
-dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
+import-fixture-signing-key
+packages=$(fixture-package-dir)
 
 cat >> ${DAKBASE}/etc/dak.conf <<-EOT
 External-Signature-Requests {
@@ -72,8 +72,8 @@ expected_empty='
 
 # try NEW upload
 (
-  cp ${packages:?}/linux@(_|-image)* ${DAKBASE}/tmp
-  dak process-upload -d ${DAKBASE}/tmp --automatic
+  upload_changes ${packages:?}/linux_42.0-1_amd64.changes
+  process_uploads
 
   # TODO: test upload is in NEW
 
@@ -108,9 +108,8 @@ expected_empty='
 
 # try non-NEW upload
 (
-  cp ${packages:?}/linux@(_|-image)* ${DAKBASE}/tmp
-  dak admin forget-signature ${DAKBASE}/tmp/linux_*.changes
-  dak process-upload -d ${DAKBASE}/tmp --automatic
+  reupload_changes ${packages:?}/linux_42.0-1_amd64.changes
+  process_uploads
 
   dak manage-external-signature-requests
   if ! diff -u <(jq -S . <<< "${expected}") <(jq -S . ${DAKBASE}/ftp/external-signature-requests.json); then
@@ -139,9 +138,8 @@ expected_empty='
 
   dak control-suite --set unstable </dev/null
   dak manage-build-queues
-  cp ${packages:?}/linux@(_|-image)* ${DAKBASE}/tmp
-  dak admin forget-signature ${DAKBASE}/tmp/linux_*.changes
-  dak process-upload -d ${DAKBASE}/tmp --automatic
+  reupload_changes ${packages:?}/linux_42.0-1_amd64.changes
+  process_uploads
 
   dak manage-external-signature-requests
   if ! diff -u <(jq -S . <<< "${expected}") <(jq -S . ${DAKBASE}/ftp/external-signature-requests.json); then

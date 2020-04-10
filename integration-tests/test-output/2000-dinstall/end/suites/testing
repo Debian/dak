@@ -1,0 +1,5 @@
+contrib-with-debug 0.2-1 amd64
+main-contrib-with-debug 0.2-1 source
+main-package 0.2-1 all
+package 0.1-1 all
+package 0.1-1 source
