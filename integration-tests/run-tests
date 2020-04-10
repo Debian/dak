@@ -24,5 +24,13 @@ set -u
 for t in "${DAK_ROOT}/integration-tests/tests/"[0-9]*[^~] \
     "${DAK_ROOT}/tests/run-dbtests"; do
   echo "=== Running ${t##*/}"
+  set +e
   run-script-with-pg "${t}"
+  res=$?
+  set -e
+  if [ $res != 0 ]
+  then
+	  echo test $t failed
+	  exit 1
+  fi
 done
