@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <wait.h>
 #include <errno.h>
+#include <string.h>
 #include <iostream>
 
 using namespace std;

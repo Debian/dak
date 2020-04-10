@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <time.h>
+#include <string.h>
 
 using namespace std;
 

@@ -24,12 +24,6 @@
 #define MAX(x,y) _max(x,y)
 #endif
 
-// GNU C++ has a min/max operator <coolio>
-#if defined(__GNUG__)
-#define MIN(A,B) ((A) <? (B))
-#define MAX(A,B) ((A) >? (B))
-#endif
-
 /* Templates tend to mess up existing code that uses min/max because of the
    strict matching requirements */
 #if !defined(MIN)
