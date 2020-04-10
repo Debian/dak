@@ -238,3 +238,12 @@ mpfm() {
     done
 }
 
+# process NEW policy queue
+function do_new () {
+    echo "Doing NEW processing"
+    dak process-policy new
+
+    echo "Cleanup NEW/Backports NEW"
+    dak clean-suites -a new
+}
+
