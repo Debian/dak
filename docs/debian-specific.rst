@@ -1,11 +1,10 @@
 DEBIAN-SPECIFIC NOTES
-************************************************************************
+=====================
 
 Git, Salsa Project, Workflow
-------------------------------------------------------------------------
 
 General
-========================================================================
+-------
 Our git repositories are hosted by the Salsa_ Service and available in
 the FTP-Team_ group. The team has all FTPMasters_ set as owner, all
 other team members are developers. The team and most of our repositories
@@ -14,12 +13,14 @@ notes used within the team only.
 
 
 dak.git_
-========================================================================
+--------
+
 This project contains the main code running the Debian archive,
 processing uploads, managing the various suites and releases.
 
 Contributing and workflow
-........................................................................
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Development is done in the **master** branch, be it direct commits
 from FTPMasters_ or via merges from other people (anyone is welcome to
 contribute!).
@@ -57,7 +58,8 @@ From there, an action from one of the FTPMasters_ will move it into
 the archive.
 
 The famous ``deploy`` branch
-########################################################################
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This branch is the code actually in use on the Debian machines, and it
 gets deployed (hence the name) on them automatically.
 
@@ -72,10 +74,10 @@ changes in master as well as preparing the merge commit into
 ``deploy`` is one single action.
 
 security archive
-------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~
 
 NEW processing
-========================================================================
+--------------
 
 ::
 
@@ -94,7 +96,8 @@ NEW processing
     cronon
 
 Built-Using
-========================================================================
+-----------
+
 Source packages referred to via Built-Using need to be included in the
 security archive:
 
@@ -106,7 +109,6 @@ If the .dsc is signed by an old key no longer in the keyring, use
 
 
 
-.. Links and Stuff
 .. _Salsa: http://salsa.debian.org/
 .. _FTP-Team: https://salsa.debian.org/ftp-team/
 .. _FTPMasters: https://www.debian.org/intro/organization#ftpmasters
@@ -115,4 +117,3 @@ If the .dsc is signed by an old key no longer in the keyring, use
 .. _gitlabsmrdocs: https://docs.gitlab.com/ce/gitlab-basics/add-merge-request.html
 .. _gitlab MR documentation: https://docs.gitlab.com/ce/gitlab-basics/add-merge-request.html
 .. |MR| replace:: Merge request
-

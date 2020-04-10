@@ -1,23 +1,14 @@
-Some small guidelines if you want to help coding
-------------------------------------------------
+Code Guidelines
+===============
 
-First: I'm always happy to get patches for Dak. I like to merge
-enhancements, bugfixes, whatever. The more, the better.
+Patches to DAK are always welcome. However, to avoid the disappointment of
+rejection, a few guidelines and expectations need to be established.
 
-Now, to not annoy us all by coming up with small fixes to patches
-multiple times before I merge them, lets write down a few small
-guidelines we all should follow. Yes, the current dakV1 code sure won't
-follow this everywhere, but no need to have new code be the same. :)
+For anything that is not a trivial fix, git trees are strongly preferred over
+simple patch files. These are much easier to import, review, and so on.
 
-I very much prefer git trees to merge from over simple patches,
-especially if you do lots of changes. (No need for a full git tree for a
-one-off fix). Reason is simple - its much easier to work with. And it is
-also way better in terms of assigning who did what, who has to earn the
-praise. :)
-In case you have more than one feature you want me to merge, one branch
-per feature please. If the location of your git tree is stable and
-doesn't change every second day I'm also very grateful. :)
-
+Please keep different features in their own branch and keeep the repository in
+an acessible location until merged.
 
 Code related:
 
@@ -26,20 +17,25 @@ Code related:
 - Its 4 spaces per indentation. No tab.
 
 - You want to make sure to not add useless whitespaces. If your editor
-  doesn't hilight them, Git can help you with that, just set
+  doesn't hilight them, Git can help you with that, just add the following
+  in your ~/.gitconfig, and a git diff should hilight them.
+  Even better, if you enable the hook pre-commit in your copy of the dak
+  code (chmod +x most probably), git will refuse to commit such things.
+
+~/.gitconfig,::
+
   [color "diff"]
      new = green
      old = red
      frag = yellow
      meta = cyan
      commit = normal
-  in your ~/.gitconfig, and a git diff should hilight them.
-  Even better, if you enable the hook pre-commit in your copy of the dak
-  code (chmod +x most probably), git will refuse to commit such things.
 
 - Describe *every* function you write using a docstring. No matter how small.
 
 - Also describe every file.
+
+- And every test unit.
 
 - Don't forget the Copyright/License header in a file. We expect GPLv2 :)
 

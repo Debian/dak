@@ -1,23 +1,25 @@
-				 TODO
-				 ====
+TODO
+====
 
 Various
 -------
 
-* Improve logging in dak control-suite. --add is silent, not nice. same
+* Improve logging in ``dak control-suite``. ``--add`` is silent, not nice. same
    for --remove
 
 * Throw away all DD uploaded .debs. (Depend on "Lintian based automated
    rejects")
   - Need a way to define a build-architecture for arch_all debs. Some of
-   them can only be build on certain architectures.
+   them can only be built on certain architectures.
    A control file header build-architecture: YXY should do it.
-  - its a suite option, not active for all at once.
-  - should have all buildd machines under dsa control
+  - It's a suite option, not active for all at once.
+  - Should have all buildd machines under dsa control
 
 * Check TODO.old and move still-valid/useful entries over here.
 
-* database table "binaries" contains a  column 'type TEXT NOT
+* Need to improve test suite coverage.
+
+* database table "binaries" contains a column 'type TEXT NOT
   NULL'. This should be made a FK on override_type, as it only contains
   deb/udeb strings.
 
@@ -42,8 +44,15 @@ Various
 
 NEW processing
 --------------
+
 * 'dak process-new' allows you to edit the section and change the
    component, but really shouldn't allow the component change.
+
+* 'dak process-new' should have a "Previous package" option.
+
+* 'dak process-new' should have an option to skip (un-)reviewed packages
+
+* 'dak process-new' should have an option to skip older versions of an upload
 
 * 'dak process-new' doesn't do the right thing with -2 and -1 uploads,
   as you can end up with the .orig.tar.gz not in the pool or belonging
@@ -57,10 +66,9 @@ NEW processing
 * <neuro> the orig was in NEW, the changes that caused it to be NEW
   were pulled out in -2, and we end up with no orig in the archive :(
 
-
-
 Override handling
 -----------------
+
 * 'dak check-overrides' should remove the src-only override when a
    binary+source override exists
 
@@ -69,9 +77,9 @@ Override handling
 
 * Fix component handling in overrides
 
-
 Cruft
 -----
+
 * 'dak cruft-report' could do with overrides
 
 * cruft-report could spot "half-dropped" binaries. Like if a package
@@ -83,5 +91,3 @@ Cruft
    2004-02-03]
 
 * 'dak cruft-report' doesn't look at debian-installer but should.
-
-
