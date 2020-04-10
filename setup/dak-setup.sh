@@ -20,7 +20,9 @@
 
 dak-setup() {
   # Get the parent directory of the current script
-  local DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
+  if [[ ! -v DAK_ROOT ]]; then
+    local DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
+  fi
   local setupdir="${DAK_ROOT}/setup"
 
   # This script can be used both for the integration tests and for actual
@@ -89,9 +91,9 @@ dak-setup() {
   fi
 
   # Update the database schema
-  $USER_CMD $PYTHON_COVERAGE ${DAK_ROOT}/dak/dak.py update-db --yes
+  $USER_CMD ${DAKBASE}/bin/dak update-db --yes
   # Run dak init-dirs to set up the initial /srv/dak tree
-  $USER_CMD $PYTHON_COVERAGE ${DAK_ROOT}/dak/dak.py init-dirs
+  $USER_CMD ${DAKBASE}/bin/dak init-dirs
 }
 
 dak-setup
