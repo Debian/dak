@@ -39,7 +39,10 @@ find-postgresql-version() {
 
 pgversion=$(find-postgresql-version)
 export DAK_INTEGRATION_TEST=1
-export DAK_ROOT="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+if [ "${DAK_ROOT+x}" = "" ]
+then
+    export DAK_ROOT="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+fi
 
 # run-script-with-pg: (cmd, args...) -> ''
 #   Run the given cmd (with optional arguments) with a postgres
