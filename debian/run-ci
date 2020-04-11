@@ -1,6 +1,7 @@
 #! /bin/bash
 #
 # © 2018 Ansgar Burchardt <ansgar@debian.org>
+# © 2020 Ivo De Decker <ivodd@debian.org>
 # License: GPL-2+
 #
 # This program is free software; you can redistribute it and/or modify
@@ -15,6 +16,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+run_apt-get() {
+    if [ "$UID" = 0 ]
+    then
+        apt-get $@
+    else
+        echo not running apt-get $@
+    fi
+}
 
 if [ "x$1" = "x--with-coverage" ]; then
     RUN_COVERAGE=y
@@ -31,7 +41,7 @@ if [ ! -f dak/dak.py ]; then
   exit 1
 fi
 
-apt-get update
-apt-get install -y build-essential
-apt-get build-dep -y .
+run_apt-get update
+run_apt-get install -y build-essential
+run_apt-get build-dep -y .
 dpkg-buildpackage -b
