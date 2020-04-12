@@ -1,0 +1,60 @@
+#! /bin/bash
+#
+# © 2020 Ivo De Decker <ivodd@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+setup_empty_archive
+setup_unstable
+import-fixture-signing-key
+
+dinstall
+
+(
+  packages=$(fixture-package-dir)
+
+  upload_changes ${packages:?}/snowman_0.1-1_amd64.changes
+  upload_changes ${packages:?}/grave_0.1-1_amd64.changes
+  process_uploads
+
+  echo a | dak process-new snowman_0.1-1_amd64.changes
+  echo a | dak process-new grave_0.1-1_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+
+)
+
+(
+  dak contents scan-binary
+  dak contents scan-source
+)
+
+dinstall
+
+check_all_suites after_install
+
+echo y |dak rm -C test@example.com -m "remove ☃" snowman
+echo y |dak rm -C test@example.com -m "remove è" grave
+
+check_all_suites after_remove
+

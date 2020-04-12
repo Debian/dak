@@ -1,0 +1,59 @@
+#! /bin/bash
+#
+# © 2020 Ivo De Decker <ivodd@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+setup_empty_archive
+setup_unstable
+# don't load the keys here, we do that below, after changing them
+
+(
+  packages=$(fixture-package-dir)
+
+  # copy the keyring, so that we can modify it
+  cp -Ta ${packages:?}/gpg/ ${DAKBASE:?}/keyrings/
+  export GNUPGHOME=${DAKBASE:?}/keyrings/
+
+  # A Maintainer
+  gpg --faked-system-time 20200303T200000 --quick-set-expire 993C2870F54D83789E55323C13D986C3912E851C 2020-04-04
+  # snowman
+  gpg --faked-system-time 20200303T200000 --quick-set-expire 589E8FA542378066E944B6222F7C63E8F3A2C549 2020-04-04
+  # Développeur
+  gpg --faked-system-time 20200303T200000 --quick-set-expire 22865D3DA7CF3DE67C1AF9A74014AB2D03010AA9 2020-04-04
+  ln -sf ${DAKBASE:?}/keyrings/pubring.gpg ${DAKBASE:?}/keyrings/upload-keyring.gpg
+  dak import-keyring -U "%s" ${DAKBASE}/keyrings/upload-keyring.gpg
+
+  upload_changes ${packages:?}/package_0.1-1_amd64.changes
+  upload_changes ${packages:?}/snowman_0.1-1_amd64.changes
+  upload_changes ${packages:?}/grave_0.1-1_amd64.changes
+  process_uploads
+
+  # show the errors in the log
+  # this will also show some unicode errors
+  cat ${DAKBASE:?}/log/*
+
+)
+
+# check that none of the packages above were accepted
+check_all_suites end
+
