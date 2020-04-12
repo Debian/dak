@@ -393,7 +393,7 @@ def check_pkg(upload, upload_copy, session):
     except KeyboardInterrupt:
         utils.warn("[examine_package] Caught C-c; skipping.")
     finally:
-        less_process.wait()
+        less_process.communicate()
         sys.stdout = save_stdout
 
 ################################################################################
