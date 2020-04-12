@@ -14,22 +14,9 @@ test buster:
       - coverage
       - output
 
-unit test buster python3:
-  <<: *template
-  image: debian:buster
-  script:
-  - apt-get update
-  - apt-get install -y --no-install-recommends 2to3 bzip2 gnupg gzip python3-apt python3-coverage python3-debian python3-debianbts python3-ldap python3-psycopg2 python3-pytest python3-pytest-cov python3-rrdtool python3-sqlalchemy python3-tabulate python3-yaml xz-utils
-  - mkdir test-gnupghome
-  - 2to3 -wn -x future -x import dak/*.py daklib/*.py
-  - GNUPGHOME=$(pwd)/test-gnupghome py.test-3 -v daklib tests
-
 tests buster python3:
   <<: *template
   image: debian:buster
-  # doesn't succeed for now, don't waste ci time by running this all the time,
-  # but define it here for people who want to try
-  when: manual
   script: debian/run-ci --python3
   artifacts:
     paths:
