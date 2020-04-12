@@ -1,0 +1,9 @@
+pkg-all1 0.1-2~exp all
+pkg-all2 0.1-2~exp all
+pkg-all3 0.1-2~exp all
+pkg-all4 0.1-2~exp all
+pkg-any1 0.1-2~exp amd64
+pkg-any2 0.1-2~exp amd64
+pkg-any3 0.1-2~exp amd64
+pkg-any4 0.1-2~exp amd64
+pkgnew 0.1-2~exp source
