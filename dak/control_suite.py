@@ -205,7 +205,7 @@ def cmp_package_version(a, b):
     elif a[2] != 'source' and b[2] == 'source':
         res = 1
     if res == 0:
-        res = cmp(a[0], b[0])
+        res = (a[0] > b[0]) - (a[0] < b[0])
     if res == 0:
         res = apt_pkg.version_compare(a[1], b[1])
     return res

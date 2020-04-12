@@ -37,6 +37,7 @@ from __future__ import absolute_import, print_function
 
 import apt_pkg
 import daklib.daksubprocess
+from daklib.gpg import GpgException
 import functools
 import os
 from os.path import normpath
@@ -894,7 +895,7 @@ class Keyring(object):
 
         cmd = ["gpg", "--no-default-keyring", "--keyring", keyring,
                "--with-colons", "--fingerprint", "--fingerprint"]
-        p = daklib.daksubprocess.Popen(cmd, stdout=subprocess.PIPE)
+        p = daklib.daksubprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         key = None
         need_fingerprint = False
@@ -919,9 +920,10 @@ class Keyring(object):
                 self.fpr_lookup[field[9]] = key
                 need_fingerprint = False
 
-        r = p.wait()
+        (out, err) = p.communicate()
+        r = p.returncode
         if r != 0:
-            raise subprocess.CalledProcessError(r, cmd)
+            raise GpgException("command failed: %s\nstdout: %s\nstderr: %s\n" % (cmd, out, err))
 
     def import_users_from_ldap(self, session):
         import ldap

@@ -2,12 +2,16 @@
 
 from db_test import DBDakTestCase
 from base_test import fixture
+import os
+from os.path import join
 
 from daklib.dbconn import *
 from daklib.queue import get_suite_version_by_source, get_suite_version_by_package
 
 from sqlalchemy.orm.exc import MultipleResultsFound
 import unittest
+
+DAKBASE = os.environ['DAKBASE']
 
 
 class Pkg():
@@ -82,7 +86,7 @@ class PackageTestCase(DBDakTestCase):
                          self.session.query(PoolFile).get(poolfile.file_id))
         self.assertEqual(None, self.session.query(PoolFile).get(-1))
         # test fullpath
-        self.assertEqual(fixture('tmpdak/ftp/pool/main/s/sl/sl_3.03-16.dsc'),
+        self.assertEqual(join(DAKBASE, 'ftp/pool/main/s/sl/sl_3.03-16.dsc'),
                          self.file['sl_3.03-16.dsc'].fullpath)
 
     def test_maintainers(self):

@@ -9,7 +9,9 @@ set -e
 
 # At the end, clean up.
 
-DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
+if [[ ! -v DAK_ROOT ]]; then
+  DAK_ROOT="$(cd $(dirname "$0")/..; pwd)"
+fi
 export PGDATABASE=test_projectb
 
 if [[ ! -v DAK_INTEGRATION_TEST ]]; then
@@ -30,7 +32,7 @@ fi
 
 test-setup() {
   # Create the database as expected by the tests
-  export DAKBASE=${DAK_ROOT}/tests/fixtures/tmpdak
+  export DAKBASE=$(mktemp -d)
   export HOME="${DAKBASE}/home"
   ${DAK_ROOT}/setup/dak-setup.sh
   mkdir "$HOME" || exit $?

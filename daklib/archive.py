@@ -876,7 +876,7 @@ class ArchiveUpload(object):
         session = self.session
 
         mapped_suites = self._mapped_suites()
-        final_suites = set()
+        final_suites = list()
 
         for suite in mapped_suites:
             overridesuite = suite
@@ -884,7 +884,8 @@ class ArchiveUpload(object):
                 overridesuite = session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
             if self._check_new(suite, overridesuite):
                 self.new = True
-            final_suites.add(suite)
+            if suite not in final_suites:
+                final_suites.append(suite)
 
         return final_suites
 

@@ -1044,7 +1044,7 @@ def call_editor(text="", suffix=".txt"):
     @return: string with the edited text
     """
     editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
-    tmp = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    tmp = tempfile.NamedTemporaryFile(mode='w+t', suffix=suffix, delete=False)
     try:
         print(text, end=' ', file=tmp)
         tmp.close()

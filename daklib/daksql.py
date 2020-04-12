@@ -44,7 +44,7 @@ class string_agg(ColumnElement):
 
     def __init__(self, column, seperator, order_by=None):
         self.column = ClauseList(*to_list(column))
-        self.seperator = literal(seperator)
+        self.seperator = literal(seperator, type_=Text)
         self.order_by = None
         if order_by is not None:
             self.order_by = ClauseList(*to_list(order_by))

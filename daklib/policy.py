@@ -177,8 +177,8 @@ class PolicyQueueUploadHandler(object):
         fn = os.path.join(self.upload.policy_queue.path, 'COMMENTS', fn1)
         try:
             fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
-            os.write(fh, 'OK\n')
-            os.close(fh)
+            with os.fdopen(fh, 'wt') as f:
+                f.write('OK\n')
         except OSError as e:
             if e.errno == errno.EEXIST:
                 pass
@@ -199,10 +199,10 @@ class PolicyQueueUploadHandler(object):
         fn = os.path.join(self.upload.policy_queue.path, 'COMMENTS', fn1)
         try:
             fh = os.open(fn, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
-            os.write(fh, 'NOTOK\n')
-            os.write(fh, 'From: {0} <{1}>\n\n'.format(utils.whoami(), cnf['Dinstall::MyAdminAddress']))
-            os.write(fh, reason)
-            os.close(fh)
+            with os.fdopen(fh, 'wt') as f:
+                f.write('NOTOK\n')
+                f.write('From: {0} <{1}>\n\n'.format(utils.whoami(), cnf['Dinstall::MyAdminAddress']))
+                f.write(reason)
         except OSError as e:
             if e.errno == errno.EEXIST:
                 pass
