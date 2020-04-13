@@ -71,9 +71,10 @@ run_apt-get update
 run_apt-get install -y build-essential
 run_apt-get build-dep -y .
 
-if [ "x$DAK_PYTHON3" = "x" ]; then
-    dpkg-buildpackage -b
-else
+export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+export DAK_ROOT=$BASEDIR
+
+if [ "x$DAK_PYTHON3" != "x" ]; then
     run_apt-get install -y --no-install-recommends \
         2to3 \
         python3-coverage \
@@ -98,8 +99,7 @@ cleanup-newroot() {
 
     export DAK_NEWROOT=$(mktemp -d)
     trap cleanup-newroot EXIT
-    export DAK_ROOT=$DAK_NEWROOT
-    export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+    DAK_ROOT=$DAK_NEWROOT
     for dir in dak daklib
     do
         cp -a ${BASEDIR}/${dir}/ ${DAK_ROOT}/${dir}
@@ -110,18 +110,19 @@ cleanup-newroot() {
         ln -s ${BASEDIR}/${filename} ${DAK_ROOT}/${filename}
     done
 
-    mkdir -p $DAK_ROOT/test-gnupghome
-    export GNUPGHOME=${DAK_ROOT}/test-gnupghome
-
-    cd ${DAK_ROOT}
-
-    $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
-
-    make -C tests/fixtures/packages
-
-    ./integration-tests/run-tests
-    ${COVERAGE_CMD} combine --append
-    ${COVERAGE_CMD} report -m
-    echo
-    ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
 fi
+
+mkdir -p $DAK_ROOT/test-gnupghome
+export GNUPGHOME=${DAK_ROOT}/test-gnupghome
+
+cd ${DAK_ROOT}
+
+$PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
+
+make -C tests/fixtures/packages
+
+./integration-tests/run-tests
+${COVERAGE_CMD} combine --append
+${COVERAGE_CMD} report -m
+echo
+${COVERAGE_CMD} html -d ${BASEDIR}/coverage
