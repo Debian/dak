@@ -37,16 +37,25 @@ fi
 
 if [ "x$1" = "x--with-coverage" ]; then
     RUN_COVERAGE=y
+    PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
 else
-	RUN_COVERAGE=
+    RUN_COVERAGE=
+    PYTEST_COV_OPTIONS=""
 fi
 
 export RUN_COVERAGE
 
 if [ "x$1" = "x--python3" ]; then
     DAK_PYTHON3=y
+    PYTEST=py.test-3
+    COVERAGE_CMD=python3-coverage
+    # always run coverage when running python3
+    RUN_COVERAGE=y
+    PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
 else
     DAK_PYTHON3=
+    PYTEST=py.test
+    COVERAGE_CMD=python-coverage
 fi
 
 export DAK_PYTHON3
@@ -106,14 +115,13 @@ cleanup-newroot() {
 
     cd ${DAK_ROOT}
 
-    PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
-    py.test-3 -v ${PYTEST_COV_OPTIONS} daklib tests
+    $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
 
     make -C tests/fixtures/packages
 
     ./integration-tests/run-tests
-    python3-coverage combine --append
-    python3-coverage report -m
+    ${COVERAGE_CMD} combine --append
+    ${COVERAGE_CMD} report -m
     echo
-    python3-coverage html -d ${BASEDIR}/coverage
+    ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
 fi
