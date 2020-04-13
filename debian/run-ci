@@ -54,6 +54,18 @@ fi
 
 export RUN_COVERAGE
 
+copy_coverage_data() {
+    t="$1"
+    if [ "$RUN_COVERAGE" = "y" ]; then
+        TESTNAME=${t##*/}
+        DESTDIR=${BASEDIR}/coveragedata/data_${TESTNAME}
+        echo copy coverage data for $TESTNAME to $DESTDIR
+        mkdir -p $DESTDIR
+        [ -e .coverage ] && cp .coverage $DESTDIR/.coverage.data.${TESTNAME/}
+        cp .coverage.* $DESTDIR || true
+    fi
+}
+
 if [ "x$1" = "x--python3" ]; then
     DAK_PYTHON3=y
     PYTEST=py.test-3
@@ -128,6 +140,7 @@ cd ${DAK_ROOT}
 
 if run_this_test; then
     $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
+    copy_coverage_data "unit_tests"
 else
     echo "not running unit tests in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
 fi
@@ -141,11 +154,15 @@ for t in $TESTS
 do
     if run_this_test; then
         ./integration-tests/run-tests $t
+        copy_coverage_data $t
     else
         echo "not running test $t in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
     fi
+
 done
-${COVERAGE_CMD} combine --append
-${COVERAGE_CMD} report -m
-echo
-${COVERAGE_CMD} html -d ${BASEDIR}/coverage
+if [ "$RUN_COVERAGE" = "y" ]; then
+    ${COVERAGE_CMD} combine --append
+    ${COVERAGE_CMD} report -m
+    echo
+    ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
+fi
