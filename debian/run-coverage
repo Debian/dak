@@ -28,3 +28,6 @@ ${COVERAGE_CMD} combine --append
 ${COVERAGE_CMD} report -m
 echo
 ${COVERAGE_CMD} html -d coverage
+
+mkdir -p logs
+cp output/log* logs/

@@ -15,6 +15,7 @@ test buster:
   parallel: 5
   script: debian/run-ci --with-coverage
   artifacts:
+    expire_in: 1 day
     paths:
       - coverage
       - output
@@ -57,6 +58,7 @@ get coverage:
   artifacts:
     paths:
       - coverage
+      - logs
 
 pages:
   image: debian:9
