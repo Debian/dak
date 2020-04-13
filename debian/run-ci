@@ -26,6 +26,15 @@ run_apt-get() {
     fi
 }
 
+# salsa ci total number of parallel jobs
+if [[ ! -v CI_NODE_TOTAL ]]; then
+    export CI_NODE_TOTAL=1
+fi
+# salsa ci number for this specific job (from 1 to $CI_NODE_TOTAL)
+if [[ ! -v CI_NODE_INDEX ]]; then
+    export CI_NODE_INDEX=1
+fi
+
 if [ "x$1" = "x--with-coverage" ]; then
     RUN_COVERAGE=y
 else
