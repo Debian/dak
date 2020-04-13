@@ -381,12 +381,10 @@ function mkchecksums() {
         log "Creating md5 / dsync index file for ${archive}... "
 
         cd "$archiveroot"
-        # 2020-03-29: dsync-flist broken by upgrade to Debian 10,
-        # create an empty file for now.
-        # Maybe we should just drop md5sums...
-        #${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
-        #${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9 --rsyncable --no-name > ${md5list}.gz
-        < /dev/null gzip -9 --rsyncable --no-name > ${md5list}.gz
+        # FIXME: We should get rid of md5sums, but until then, keep it running.
+        #        People actually use this file.
+        LD_LIBRARY_PATH=${bindir}:${LD_LIBRARY_PATH} ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
+        LD_LIBRARY_PATH=${bindir}:${LD_LIBRARY_PATH} ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9 --rsyncable --no-name > ${md5list}.gz
     done
 }
 
