@@ -383,8 +383,8 @@ function mkchecksums() {
         cd "$archiveroot"
         # FIXME: We should get rid of md5sums, but until then, keep it running.
         #        People actually use this file.
-        LD_LIBRARY_PATH=${bindir}:${LD_LIBRARY_PATH} ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
-        LD_LIBRARY_PATH=${bindir}:${LD_LIBRARY_PATH} ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9 --rsyncable --no-name > ${md5list}.gz
+        LD_LIBRARY_PATH=${bindir}:${LD_LIBRARY_PATH:-} ${bindir}/dsync-flist -q generate $dsynclist --exclude $dsynclist --md5
+        LD_LIBRARY_PATH=${bindir}:${LD_LIBRARY_PATH:-} ${bindir}/dsync-flist -q md5sums $dsynclist | gzip -9 --rsyncable --no-name > ${md5list}.gz
     done
 }
 
