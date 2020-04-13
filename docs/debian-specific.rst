@@ -67,11 +67,19 @@ To not make that a complete nightmare, the commits need to be signed
 with a gpg key from an active FTPMaster_. As such it consists of
 manual merges from the ``master`` branch, followed by a push.
 
-The cronjob for deploying the code (will) run(s) every 15 minutes.
+The cronjob for deploying the code run(s) every 5 minutes.
 
 Todo/Fixme: We want to provide a script so that fetching the latest
 changes in master as well as preparing the merge commit into
 ``deploy`` is one single action.
+
+Deployment details
+-------------------
+As of today (2020-04-13) the code gets deployed on the following
+machines: coccia fasolo respighi seger suchon usper
+
+Also, to seperate code and actual runtime, the code is deployed (and
+owned by) the seperate user dak-code
 
 security archive
 ~~~~~~~~~~~~~~~~
