@@ -26,18 +26,57 @@ run_apt-get() {
     fi
 }
 
+# salsa ci total number of parallel jobs
+if [[ ! -v CI_NODE_TOTAL ]]; then
+    export CI_NODE_TOTAL=1
+fi
+# salsa ci number for this specific job (from 1 to $CI_NODE_TOTAL)
+if [[ ! -v CI_NODE_INDEX ]]; then
+    export CI_NODE_INDEX=1
+fi
+
+MY_CI_COUNTER=0
+
+run_this_test() {
+    MY_MODULO=$(( $MY_CI_COUNTER % $CI_NODE_TOTAL + 1 ))
+    echo "run_this_test: $MY_MODULO $MY_CI_COUNTER"
+    MY_CI_COUNTER=$(( MY_CI_COUNTER + 1 ))
+    [[ $MY_MODULO = $CI_NODE_INDEX ]]
+}
+
 if [ "x$1" = "x--with-coverage" ]; then
     RUN_COVERAGE=y
+    PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
 else
-	RUN_COVERAGE=
+    RUN_COVERAGE=
+    PYTEST_COV_OPTIONS=""
 fi
 
 export RUN_COVERAGE
 
+copy_coverage_data() {
+    t="$1"
+    if [ "$RUN_COVERAGE" = "y" ]; then
+        TESTNAME=${t##*/}
+        DESTDIR=${BASEDIR}/output/coveragedata/data_${TESTNAME}
+        echo copy coverage data for $TESTNAME to $DESTDIR
+        mkdir -p $DESTDIR
+        [ -e .coverage ] && cp .coverage $DESTDIR/.coverage.data.${TESTNAME/}
+        cp .coverage.* $DESTDIR || true
+    fi
+}
+
 if [ "x$1" = "x--python3" ]; then
     DAK_PYTHON3=y
+    PYTEST=py.test-3
+    COVERAGE_CMD=python3-coverage
+    # always run coverage when running python3
+    RUN_COVERAGE=y
+    PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
 else
     DAK_PYTHON3=
+    PYTEST=py.test
+    COVERAGE_CMD=python-coverage
 fi
 
 export DAK_PYTHON3
@@ -49,13 +88,19 @@ if [ ! -f dak/dak.py ]; then
   exit 1
 fi
 
+export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+export DAK_ROOT=$BASEDIR
+
+mkdir -p ${BASEDIR}/output
+LOGFILE=${BASEDIR}/output/log_job${CI_NODE_INDEX}.txt
+
+echo `date` installing packages | tee -a $LOGFILE
+
 run_apt-get update
 run_apt-get install -y build-essential
 run_apt-get build-dep -y .
 
-if [ "x$DAK_PYTHON3" = "x" ]; then
-    dpkg-buildpackage -b
-else
+if [ "x$DAK_PYTHON3" != "x" ]; then
     run_apt-get install -y --no-install-recommends \
         2to3 \
         python3-coverage \
@@ -78,10 +123,10 @@ cleanup-newroot() {
   fi
 }
 
+    echo `date` setting up python3 code with 2to3 | tee -a $LOGFILE
     export DAK_NEWROOT=$(mktemp -d)
     trap cleanup-newroot EXIT
-    export DAK_ROOT=$DAK_NEWROOT
-    export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+    DAK_ROOT=$DAK_NEWROOT
     for dir in dak daklib
     do
         cp -a ${BASEDIR}/${dir}/ ${DAK_ROOT}/${dir}
@@ -92,19 +137,45 @@ cleanup-newroot() {
         ln -s ${BASEDIR}/${filename} ${DAK_ROOT}/${filename}
     done
 
-    mkdir -p $DAK_ROOT/test-gnupghome
-    export GNUPGHOME=${DAK_ROOT}/test-gnupghome
-
-    cd ${DAK_ROOT}
-
-    PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
-    py.test-3 -v ${PYTEST_COV_OPTIONS} daklib tests
-
-    make -C tests/fixtures/packages
-
-    ./integration-tests/run-tests
-    python3-coverage combine --append
-    python3-coverage report -m
-    echo
-    python3-coverage html -d ${BASEDIR}/coverage
 fi
+
+mkdir -p $DAK_ROOT/test-gnupghome
+export GNUPGHOME=${DAK_ROOT}/test-gnupghome
+
+cd ${DAK_ROOT}
+
+if run_this_test; then
+    echo `date` running unit tests | tee -a $LOGFILE
+    $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
+    copy_coverage_data "unit_tests"
+    echo `date` unit tests done | tee -a $LOGFILE
+else
+    echo "not running unit tests in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
+fi
+
+echo `date` making fixtures | tee -a $LOGFILE
+make -C tests/fixtures/packages
+echo `date` making fixtures done | tee -a $LOGFILE
+
+TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
+    ${DAK_ROOT}/tests/run-dbtests"
+
+for t in $TESTS
+do
+    if run_this_test; then
+        echo `date` running $t | tee -a $LOGFILE
+        ./integration-tests/run-tests $t
+        copy_coverage_data $t
+        echo `date` running $t done | tee -a $LOGFILE
+    else
+        echo "not running test $t in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
+    fi
+
+done
+if [ "$RUN_COVERAGE" = "y" ]; then
+    ${COVERAGE_CMD} combine --append
+    ${COVERAGE_CMD} report -m
+    echo
+    ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
+fi
+echo `date` all done | tee -a $LOGFILE

@@ -1,0 +1,30 @@
+#! /bin/bash
+
+if [ "x$1" = "x--python3" ]; then
+    COVERAGE_CMD=python3-coverage
+else
+    COVERAGE_CMD=python-coverage
+fi
+
+TESTS="integration-tests/tests/[0-9]*[^~] \
+    run-dbtests unit_tests"
+
+for TEST in $TESTS
+do
+    dir=output/coveragedata/data_${TEST##*/}
+    echo get coveragedata from $dir
+    if [ ! -d $dir ]
+    then
+        echo no coverage data for $TEST, did the test run?
+        exit 1
+    fi
+    cp $dir/.coverage.* .
+done
+
+apt-get update
+apt-get install -y ${COVERAGE_CMD}
+
+${COVERAGE_CMD} combine --append
+${COVERAGE_CMD} report -m
+echo
+${COVERAGE_CMD} html -d coverage

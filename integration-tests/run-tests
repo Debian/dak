@@ -21,8 +21,15 @@ set -u
 
 . "$(dirname "${BASH_SOURCE}")/runner-lib"
 
-for t in "${DAK_ROOT}/integration-tests/tests/"[0-9]*[^~] \
-    "${DAK_ROOT}/tests/run-dbtests"; do
+TESTS="$@"
+
+if [ -z "$TESTS" ]
+then
+	TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
+		${DAK_ROOT}/tests/run-dbtests"
+fi
+
+for t in $TESTS; do
   echo "=== Running ${t##*/}"
   set +e
   run-script-with-pg "${t}"

@@ -6,15 +6,18 @@
 test stretch:
   <<: *template
   image: debian:stretch
+  parallel: 5
   script: debian/run-ci
 
 test buster:
   <<: *template
   image: debian:buster
+  parallel: 5
   script: debian/run-ci --with-coverage
   artifacts:
     paths:
       - coverage
+      - output
 
 unit test buster python3:
   <<: *template
@@ -36,6 +39,7 @@ tests buster python3:
   artifacts:
     paths:
       - coverage
+      - output
 
 flake8:
   <<: *template
@@ -44,6 +48,15 @@ flake8:
     - apt-get update
     - apt-get install -y python-flake8
     - python -mflake8
+
+get coverage:
+  image: debian:buster
+  stage: coverage
+  script:
+    - debian/run-coverage
+  artifacts:
+    paths:
+      - coverage
 
 pages:
   image: debian:9
@@ -59,3 +72,8 @@ pages:
       - public
   only:
     - master
+
+stages:
+  - test
+  - coverage
+  - deploy
