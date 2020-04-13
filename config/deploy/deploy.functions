@@ -59,3 +59,7 @@ function update_masterdir() {
     # And switch to the commit we just verified
     git checkout ${NEWHEAD}
 }
+
+function cleanlogs() {
+    find ${logdir} -mtime +60 -delete
+}
