@@ -35,6 +35,15 @@ if [[ ! -v CI_NODE_INDEX ]]; then
     export CI_NODE_INDEX=1
 fi
 
+MY_CI_COUNTER=0
+
+run_this_test() {
+    MY_MODULO=$(( $MY_CI_COUNTER % $CI_NODE_TOTAL + 1 ))
+    echo "run_this_test: $MY_MODULO $MY_CI_COUNTER"
+    MY_CI_COUNTER=$(( MY_CI_COUNTER + 1 ))
+    [[ $MY_MODULO = $CI_NODE_INDEX ]]
+}
+
 if [ "x$1" = "x--with-coverage" ]; then
     RUN_COVERAGE=y
     PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
@@ -117,7 +126,11 @@ export GNUPGHOME=${DAK_ROOT}/test-gnupghome
 
 cd ${DAK_ROOT}
 
-$PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
+if run_this_test; then
+    $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
+else
+    echo "not running unit tests in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
+fi
 
 make -C tests/fixtures/packages
 
@@ -126,7 +139,11 @@ TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
 
 for t in $TESTS
 do
-    ./integration-tests/run-tests $t
+    if run_this_test; then
+        ./integration-tests/run-tests $t
+    else
+        echo "not running test $t in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
+    fi
 done
 ${COVERAGE_CMD} combine --append
 ${COVERAGE_CMD} report -m
