@@ -121,7 +121,13 @@ $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
 
 make -C tests/fixtures/packages
 
-./integration-tests/run-tests
+TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
+    ${DAK_ROOT}/tests/run-dbtests"
+
+for t in $TESTS
+do
+    ./integration-tests/run-tests $t
+done
 ${COVERAGE_CMD} combine --append
 ${COVERAGE_CMD} report -m
 echo
