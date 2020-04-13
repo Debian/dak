@@ -58,7 +58,7 @@ copy_coverage_data() {
     t="$1"
     if [ "$RUN_COVERAGE" = "y" ]; then
         TESTNAME=${t##*/}
-        DESTDIR=${BASEDIR}/coveragedata/data_${TESTNAME}
+        DESTDIR=${BASEDIR}/output/coveragedata/data_${TESTNAME}
         echo copy coverage data for $TESTNAME to $DESTDIR
         mkdir -p $DESTDIR
         [ -e .coverage ] && cp .coverage $DESTDIR/.coverage.data.${TESTNAME/}
@@ -88,12 +88,17 @@ if [ ! -f dak/dak.py ]; then
   exit 1
 fi
 
+export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
+export DAK_ROOT=$BASEDIR
+
+mkdir -p ${BASEDIR}/output
+LOGFILE=${BASEDIR}/output/log_job${CI_NODE_INDEX}.txt
+
+echo `date` installing packages | tee -a $LOGFILE
+
 run_apt-get update
 run_apt-get install -y build-essential
 run_apt-get build-dep -y .
-
-export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
-export DAK_ROOT=$BASEDIR
 
 if [ "x$DAK_PYTHON3" != "x" ]; then
     run_apt-get install -y --no-install-recommends \
@@ -118,6 +123,7 @@ cleanup-newroot() {
   fi
 }
 
+    echo `date` setting up python3 code with 2to3 | tee -a $LOGFILE
     export DAK_NEWROOT=$(mktemp -d)
     trap cleanup-newroot EXIT
     DAK_ROOT=$DAK_NEWROOT
@@ -139,13 +145,17 @@ export GNUPGHOME=${DAK_ROOT}/test-gnupghome
 cd ${DAK_ROOT}
 
 if run_this_test; then
+    echo `date` running unit tests | tee -a $LOGFILE
     $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
     copy_coverage_data "unit_tests"
+    echo `date` unit tests done | tee -a $LOGFILE
 else
     echo "not running unit tests in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
 fi
 
+echo `date` making fixtures | tee -a $LOGFILE
 make -C tests/fixtures/packages
+echo `date` making fixtures done | tee -a $LOGFILE
 
 TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
     ${DAK_ROOT}/tests/run-dbtests"
@@ -153,8 +163,10 @@ TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
 for t in $TESTS
 do
     if run_this_test; then
+        echo `date` running $t | tee -a $LOGFILE
         ./integration-tests/run-tests $t
         copy_coverage_data $t
+        echo `date` running $t done | tee -a $LOGFILE
     else
         echo "not running test $t in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
     fi
@@ -166,3 +178,4 @@ if [ "$RUN_COVERAGE" = "y" ]; then
     echo
     ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
 fi
+echo `date` all done | tee -a $LOGFILE
