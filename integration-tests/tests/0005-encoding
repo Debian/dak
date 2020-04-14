@@ -23,6 +23,24 @@ set -u
 . ${DAK_ROOT:?}/integration-tests/setup
 . ${DAK_ROOT:?}/integration-tests/dinstall
 
+HTMLDIR="${DAKBASE}/html"
+mkdir $HTMLDIR
+MAILDIR="${DAKBASE}/mail"
+mkdir $MAILDIR
+
+cat >> ${DAKBASE}/etc/dak.conf << EOF
+Show-New::HTMLPath "${HTMLDIR}";
+Dir::Mail "${MAILDIR}";
+Dinstall::SendmailCommand "${DAK_ROOT}/integration-tests/fake-mailer";
+Dinstall::BugServer "bugs.example.org";
+EOF
+
+sed -i 's/No-Mail "true";/#No-Mail "true";/' $DAKBASE/etc/dak.conf
+
+show_subjects() {
+	grep -h ^Subject ${MAILDIR}/sendmail.* | LC_ALL=C sort
+}
+
 setup_empty_archive
 setup_unstable
 import-fixture-signing-key
@@ -36,12 +54,24 @@ dinstall
   upload_changes ${packages:?}/grave_0.1-1_amd64.changes
   process_uploads
 
-  echo a | dak process-new snowman_0.1-1_amd64.changes
-  echo a | dak process-new grave_0.1-1_amd64.changes
+  # the queue-report contains references to time (age of the uploads), so we
+  # can't check the output against a reference
+  dak queue-report
+
+  dak show-new
+  for htmlfile in $HTMLDIR/snowman_0.1-1.html $HTMLDIR/grave_0.1-1.html
+  do
+    links -dump $htmlfile
+    save_ci_artifact $htmlfile
+  done
+
+  printf "c\na\n" | dak process-new snowman_0.1-1_amd64.changes | cat
+  printf "c\na\n" | dak process-new grave_0.1-1_amd64.changes | cat
 
   dak process-new --automatic
   dak process-policy new
 
+  dak show-new
 )
 
 (
@@ -53,8 +83,13 @@ dinstall
 
 check_all_suites after_install
 
-echo y |dak rm -C test@example.com -m "remove ☃" snowman
-echo y |dak rm -C test@example.com -m "remove è" grave
+check_output maintainers.txt  "dak make-maintainers -a ftp-master -p"
+
+echo y |dak rm -R -C test@example.com -d 123456 -m "remove ☃" snowman
+echo y |dak rm -R -C test@example.com -d 123457 -m "remove è" grave
 
 check_all_suites after_remove
+
+check_output changelog_buildd  "dak make-changelog -b unstable -s buildd-unstable"
+check_output mail_subjects  "show_subjects"
 

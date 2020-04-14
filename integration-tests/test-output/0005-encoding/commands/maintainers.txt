@@ -1,0 +1,2 @@
+grave                Développeur <developpeur@example.com>
+snowman              Snowman ☃ <snowman@example.com>
