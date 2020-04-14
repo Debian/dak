@@ -53,6 +53,8 @@ flake8:
 get coverage:
   image: debian:buster
   stage: coverage
+  dependencies:
+    - test buster
   script:
     - debian/run-coverage
   artifacts:
