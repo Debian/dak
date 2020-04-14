@@ -84,3 +84,18 @@ check_all_suites() {
         exit 1
     fi
 }
+
+save_ci_artifact() {
+    filename="$1"
+
+    if [ ! -d "${DAK_CI_OUTPUT_DIR:-}" ]
+    then
+        echo "DAK_CI_OUTPUT_DIR not set, not saving artifact $filename"
+        return
+    fi
+
+    destdir="${DAK_CI_OUTPUT_DIR}/$testname/"
+    mkdir -p "$destdir"
+
+    cp "$filename" "$destdir"
+}
