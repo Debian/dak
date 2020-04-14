@@ -981,7 +981,7 @@ def __suite_config_list(d, args, json_format=False):
 
 
 def suite_config(command):
-    args = [x.decode('utf-8') for x in command]
+    args = [six.ensure_text(x) for x in command]
     Cnf = utils.get_conf()
     d = DBConn()
 
