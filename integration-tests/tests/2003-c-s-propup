@@ -37,9 +37,6 @@ EOF
 setup_debian_like_archive
 import-fixture-signing-key
 
-# Verify that our dinstall works with an empty archive
-dinstall
-
 reset_testing_and_unstable() {
 	# reset and unstable to what they were
 	dak control-suite -f -s testing < /dev/null
