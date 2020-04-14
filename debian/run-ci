@@ -58,7 +58,7 @@ copy_coverage_data() {
     t="$1"
     if [ "$RUN_COVERAGE" = "y" ]; then
         TESTNAME=${t##*/}
-        DESTDIR=${BASEDIR}/output/coveragedata/data_${TESTNAME}
+        DESTDIR=${DAK_CI_OUTPUT_DIR}/coveragedata/data_${TESTNAME}
         echo copy coverage data for $TESTNAME to $DESTDIR
         mkdir -p $DESTDIR
         [ -e .coverage ] && cp .coverage $DESTDIR/.coverage.data.${TESTNAME/}
@@ -91,8 +91,9 @@ fi
 export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
 export DAK_ROOT=$BASEDIR
 
-mkdir -p ${BASEDIR}/output
-LOGFILE=${BASEDIR}/output/log_job${CI_NODE_INDEX}.txt
+export DAK_CI_OUTPUT_DIR=${BASEDIR}/output
+mkdir -p ${DAK_CI_OUTPUT_DIR}
+LOGFILE=${DAK_CI_OUTPUT_DIR}/log_job${CI_NODE_INDEX}.txt
 
 echo `date` installing packages | tee -a $LOGFILE
 
