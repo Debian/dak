@@ -1,0 +1,149 @@
+#! /bin/bash
+#
+# © 2020 Ivo De Decker <ivodd@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+packages=$(fixture-package-dir)
+
+# copy the keyring multiple times, so that we can modify them
+DDRING=${DAKBASE:?}/keyrings/dd/
+DMRING=${DAKBASE:?}/keyrings/dm/
+
+# snowman
+FP_snowman=589E8FA542378066E944B6222F7C63E8F3A2C549
+# Développeur
+FP_dev=22865D3DA7CF3DE67C1AF9A74014AB2D03010AA9
+# A Maintainer
+FP_maint=993C2870F54D83789E55323C13D986C3912E851C
+
+(
+  cp -Ta ${packages:?}/gpg/ $DDRING
+  ln -sf $DDRING/pubring.gpg ${DAKBASE:?}/keyrings/dd.gpg
+  export GNUPGHOME=$DDRING
+  # only keep A Maintainer, delete the other 2
+  gpg --batch --yes --delete-secret-and-public-key $FP_snowman
+  gpg --batch --yes --delete-secret-and-public-key $FP_dev
+)
+
+
+(
+  cp -Ta ${packages:?}/gpg/ $DMRING
+  ln -sf $DMRING/pubring.gpg ${DAKBASE:?}/keyrings/dm.gpg
+  export GNUPGHOME=$DMRING
+  # keep snowman and Développeur
+  gpg --batch --yes --delete-secret-and-public-key $FP_maint
+)
+
+(
+  export GNUPGHOME=${DAKBASE:?}/keyrings/tmp
+  mkdir ${DAKBASE:?}/keyrings/tmp
+  for kr in dd dm; do
+    echo $kr
+    krpath="${DAKBASE}/keyrings/${kr}.gpg"
+    psql -c "INSERT INTO keyrings (name, acl_id)
+                           VALUES ('$krpath',
+                                   (SELECT id FROM acl WHERE name='$kr'))"
+    dak import-keyring -U "%s" $krpath
+  done
+)
+
+cat >> ${DAKBASE}/etc/dak.conf << EOF
+Command::DM {
+  ACL "dm";
+  AdminKeyrings {
+    "${DAKBASE}/keyrings/dd.gpg";
+  };
+  Keyrings {
+    "${DAKBASE}/keyrings/dm.gpg";
+  };
+};
+# commands in the test are processed almost immediately after they are signed,
+# so don't reject them for being too new
+Dinstall::SkipTime 0;
+
+EOF
+
+dm_command() {
+  export GNUPGHOME=$DDRING
+  signer=$1
+  dm=$2
+  action=$3
+  pkg=$4
+
+  dcut --force -k $signer -O $upload_dir/debian-${dm}-${action}-${pkg}-`date +%s`.dak-commands dm --uid $dm --$action $pkg
+}
+
+setup_empty_archive
+setup_unstable
+
+
+(
+  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
+  upload_changes ${packages:?}/package_0.1-1_amd64.changes
+  upload_changes ${packages:?}/pkgnew_0.1-1_amd64.changes
+  process_uploads
+
+  echo a | dak process-new binnmupkg_0.1-1_amd64.changes
+  echo a | dak process-new package_0.1-1_amd64.changes
+  echo a | dak process-new pkgnew_0.1-1_amd64.changes
+
+  do_new
+
+)
+
+(
+  dm_command $FP_maint $FP_snowman allow package
+  dm_command $FP_maint $FP_snowman allow binnmupkg
+  dm_command $FP_maint $FP_snowman allow pkgnew
+  dm_command $FP_maint $FP_dev allow package
+  # not a DM: should fail
+  dm_command $FP_maint $FP_maint allow package
+
+  dak process-commands -d $upload_dir
+
+  check_output dm_1.txt "dak acl export-per-source dm"
+)
+
+(
+  # signed by dev, only allowed by snowman, should fail
+  upload_changes ${packages:?}/binnmupkg_0.1-2_source.changes
+  # signed by snowman, allowed by both, should be accepted
+  upload_changes ${packages:?}/package_0.2-1_amd64.changes
+  # signed by snowman, allowed by snowman, but NEW, should be rejected
+  upload_changes ${packages:?}/pkgnew_0.1-3_amd64.changes
+  # NEW and not allowed should fail
+  upload_changes ${packages:?}/grave_0.1-1_amd64.changes
+  process_uploads
+)
+
+(
+  dm_command $FP_maint $FP_dev deny package
+
+  dak process-commands -d $upload_dir
+
+  check_output dm_2.txt "dak acl export-per-source dm"
+)
+
+
+check_all_suites end
+
