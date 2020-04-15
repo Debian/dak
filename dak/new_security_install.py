@@ -35,6 +35,7 @@ import time
 import apt_pkg
 import errno
 import fcntl
+import six
 import subprocess
 
 from daklib import daklog
@@ -194,7 +195,7 @@ def main():
     if Options["No-Action"]:
         sys.exit(0)
     else:
-        raw_input("Press Enter to continue")
+        six.moves.input("Press Enter to continue")
 
     for acceptfilename in acceptfiles:
         with open(acceptfilename, "w") as accept_file:

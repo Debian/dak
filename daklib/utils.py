@@ -41,6 +41,7 @@ import subprocess
 import ldap
 import errno
 import functools
+import six
 
 import daklib.config as config
 import daklib.daksubprocess
@@ -83,7 +84,7 @@ def our_raw_input(prompt=""):
     # TODO: py3: use `print(..., flush=True)`
     sys.stdout.flush()
     try:
-        ret = raw_input()
+        ret = six.moves.input()
         return ret
     except EOFError:
         print("\nUser interrupt (^D).", file=sys.stderr)
