@@ -40,6 +40,7 @@ import apt_pkg
 from apt_pkg import version_compare
 import datetime
 import os
+import six
 import subprocess
 import textwrap
 import time
@@ -143,7 +144,7 @@ class SignatureAndHashesCheck(Check):
         if not changes.valid_signature:
             raise Reject("Signature for .changes not valid.")
         self.check_replay(upload)
-        self._check_hashes(upload, changes.filename, changes.files.itervalues())
+        self._check_hashes(upload, changes.filename, six.itervalues(changes.files))
 
         source = None
         try:
@@ -156,7 +157,7 @@ class SignatureAndHashesCheck(Check):
                     raise Reject("Signature for .dsc not valid.")
                 if source.primary_fingerprint != changes.primary_fingerprint:
                     raise Reject(".changes and .dsc not signed by the same key.")
-            self._check_hashes(upload, source.filename, source.files.itervalues())
+            self._check_hashes(upload, source.filename, six.itervalues(source.files))
 
         if upload.fingerprint is None or upload.fingerprint.uid is None:
             raise Reject(".changes signed by unknown key.")
@@ -357,11 +358,11 @@ class ExternalHashesCheck(Check):
         session = upload.session
         changes = upload.changes
 
-        for f in changes.files.itervalues():
+        for f in six.itervalues(changes.files):
             self.check_single(session, f)
         source = changes.source
         if source is not None:
-            for f in source.files.itervalues():
+            for f in six.itervalues(source.files):
                 self.check_single(session, f)
 
 
@@ -518,7 +519,7 @@ class BinaryTimestampCheck(Check):
 
         def format_reason(filename, direction, files):
             reason = "{0}: has {1} file(s) with a timestamp too far in the {2}:\n".format(filename, len(files), direction)
-            for fn, ts in files.iteritems():
+            for fn, ts in six.iteritems(files):
                 reason += "  {0} ({1})".format(fn, time.ctime(ts))
             return reason
 
@@ -589,7 +590,7 @@ class SourceCheck(Check):
 
         # check filenames
         self.check_filename(control, dsc_fn, re_file_dsc)
-        for f in source.files.itervalues():
+        for f in six.itervalues(source.files):
             self.check_filename(control, f.filename, re_file_source)
 
         # check dependency field syntax
@@ -646,7 +647,7 @@ class ACLCheck(Check):
         if not acl.allow_new:
             if upload.new:
                 return False, "NEW uploads are not allowed"
-            for f in upload.changes.files.itervalues():
+            for f in six.itervalues(upload.changes.files):
                 if f.section == 'byhand' or f.section.startswith("raw-"):
                     return False, "BYHAND uploads are not allowed"
         if not acl.allow_source and upload.changes.source is not None:
@@ -904,7 +905,7 @@ class LintianCheck(Check):
 
         fd, temp_filename = utils.temp_filename(mode=0o644)
         temptagfile = os.fdopen(fd, 'w')
-        for tags in lintiantags.itervalues():
+        for tags in six.itervalues(lintiantags):
             for tag in tags:
                 print(tag, file=temptagfile)
         temptagfile.close()

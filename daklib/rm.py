@@ -44,6 +44,7 @@ from __future__ import absolute_import, print_function
 import apt_pkg
 import fcntl
 import functools
+import six
 import sqlalchemy.sql as sql
 import subprocess
 from re import sub
@@ -219,7 +220,7 @@ class ReverseDependencyChecker(object):
         arch_all_removals = set()
 
         if isinstance(removal_requests, dict):
-            removal_requests = removal_requests.iteritems()
+            removal_requests = six.iteritems(removal_requests)
 
         for pkg, arch_list in removal_requests:
             if not arch_list:
@@ -248,10 +249,10 @@ class ReverseDependencyChecker(object):
             # Nothing to remove => no problems
             return dep_problems
 
-        for arch, removed_providers in affected_virtual_by_arch.iteritems():
+        for arch, removed_providers in six.iteritems(affected_virtual_by_arch):
             provides2removal = arch_provides2removal[arch]
             removals = removals_by_arch[arch]
-            for virtual_pkg, virtual_providers in arch_provided_by[arch].iteritems():
+            for virtual_pkg, virtual_providers in six.iteritems(arch_provided_by[arch]):
                 v = virtual_providers & removed_providers
                 if len(v) == len(virtual_providers):
                     # We removed all the providers of virtual_pkg
@@ -261,12 +262,12 @@ class ReverseDependencyChecker(object):
                     #   to minimise the number of blamed packages.
                     provides2removal[virtual_pkg] = sorted(v)[0]
 
-        for arch, removals in removals_by_arch.iteritems():
+        for arch, removals in six.iteritems(removals_by_arch):
             deps = package_dependencies[arch]
             provides2removal = arch_provides2removal[arch]
 
             # Check binary dependencies (Depends)
-            for package, dependencies in deps.iteritems():
+            for package, dependencies in six.iteritems(deps):
                 if package in removals:
                     continue
                 for clause in dependencies:
@@ -281,7 +282,7 @@ class ReverseDependencyChecker(object):
                             removal = provides2removal[dep_package]
                         dep_problems[(removal, arch)].add((package, arch))
 
-            for source, build_dependencies in src_deps.iteritems():
+            for source, build_dependencies in six.iteritems(src_deps):
                 if source in src_removals:
                     continue
                 for clause in build_dependencies:
