@@ -34,6 +34,7 @@ pkgnew_0.2~exp_F \
 pkgnew_0.2_S \
 pkgnew_0.2_A \
 pkgnew_0.2_B \
+pkgnew_0.3_F \
 snowman_0.1_F \
 grave_0.1_F \
 
