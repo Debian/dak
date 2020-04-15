@@ -237,7 +237,7 @@ SELECT s.source FROM source s
                                      'component_id': component_id, 'priority_id': source_priority_id,
                                      'section_id': i[2], 'type_id': dsc_type_id, 'maintainer': i[3]})
 
-        for package, hasoverride in src_packages.items():
+        for package, hasoverride in list(src_packages.items()):
             if not hasoverride:
                 utils.warn("%s has no override!" % package)
 
@@ -310,7 +310,7 @@ SELECT s.source FROM source s
                                      'component_id': component_id, 'priority_id': i[1],
                                      'section_id': i[2], 'type_id': type_id, 'maintainer': i[3]})
 
-        for package, hasoverride in packages.items():
+        for package, hasoverride in list(packages.items()):
             if not hasoverride:
                 utils.warn("%s has no override!" % package)
 
@@ -343,11 +343,11 @@ def main():
 
     # We need forward and reverse
     sections = get_sections(session)
-    for name, entry in sections.items():
+    for name, entry in list(sections.items()):
         sections[entry] = name
 
     priorities = get_priorities(session)
-    for name, entry in priorities.items():
+    for name, entry in list(priorities.items()):
         priorities[entry] = name
 
     if not Options["No-Action"]:

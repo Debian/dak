@@ -262,7 +262,7 @@ def read_control(filename):
             print(formatted_text("can't parse control info"))
             raise
 
-    control_keys = control.keys()
+    control_keys = list(control.keys())
 
     if "Pre-Depends" in control:
         predepends_str = control["Pre-Depends"]
@@ -323,7 +323,7 @@ def read_changes_or_dsc(suite, filename, session=None):
         if m:
             keysinorder.append(m.group(1))
 
-    for k in dsc.keys():
+    for k in list(dsc.keys()):
         if k in ("build-depends", "build-depends-indep"):
             dsc[k] = create_depends_string(suite, split_depends(dsc[k]), session)
         elif k == "architecture":

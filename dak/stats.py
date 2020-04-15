@@ -174,7 +174,7 @@ def number_of_packages():
         d[suite_id][arch_id] = d[suite_id][arch_id] + count
     ## Print the results
     # Setup
-    suite_list = suites.values()
+    suite_list = list(suites.values())
     suite_id_list = []
     suite_arches = {}
     for suite in suite_list:

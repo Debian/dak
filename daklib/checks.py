@@ -387,7 +387,7 @@ class BinaryCheck(Check):
         binaries = {binary.control['Package']: binary
                         for binary in upload.changes.binaries}
 
-        for name, binary in binaries.items():
+        for name, binary in list(binaries.items()):
             if name in upload.changes.binary_names:
                 # Package is listed in Binary field. Everything is good.
                 pass
@@ -604,7 +604,7 @@ class SourceCheck(Check):
                 except Exception as e:
                     raise Reject('{0}: APT could not parse {1} field: {2}'.format(dsc_fn, field, e))
 
-        rejects = utils.check_dsc_files(dsc_fn, control, source.files.keys())
+        rejects = utils.check_dsc_files(dsc_fn, control, list(source.files.keys()))
         if len(rejects) > 0:
             raise Reject("\n".join(rejects))
 

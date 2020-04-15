@@ -857,7 +857,7 @@ class ArchiveUpload(object):
                 new = True
 
         # Check if we reference a file only in a tainted archive
-        files = self.changes.files.values()
+        files = list(self.changes.files.values())
         if self.changes.source is not None:
             files.extend(self.changes.source.files.values())
         for f in files:

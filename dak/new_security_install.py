@@ -154,7 +154,7 @@ def main():
         if not a.endswith(".changes"):
             utils.fubar("not a .changes file: %s" % (a))
         changesfiles[a] = 1
-    changes = changesfiles.keys()
+    changes = list(changesfiles.keys())
 
     username = utils.getusername()
     if username != "dak":
@@ -191,7 +191,7 @@ def main():
         acceptfilename = "%s/COMMENTS/ACCEPT.%s_%s" % (os.path.dirname(os.path.abspath(changes[0])), source, version)
         acceptfiles[acceptfilename] = 1
 
-    print("Would create %s now and then go on to accept this package, if you allow me to." % (acceptfiles.keys()))
+    print("Would create %s now and then go on to accept this package, if you allow me to." % (list(acceptfiles.keys())))
     if Options["No-Action"]:
         sys.exit(0)
     else:

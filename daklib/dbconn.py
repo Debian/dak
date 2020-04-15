@@ -983,7 +983,7 @@ class Keyring(object):
         byuid = {}
         byname = {}
         any_invalid = False
-        for x in self.keys.keys():
+        for x in list(self.keys.keys()):
             if "email" not in self.keys[x]:
                 any_invalid = True
                 self.keys[x]["uid"] = format % "invalid-uid"
