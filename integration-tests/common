@@ -85,6 +85,32 @@ check_all_suites() {
     fi
 }
 
+check_output() {
+    # run a command and compare the output to the reference output from the
+    # repo
+    checkname=$1
+    command="$2"
+    if [ -z "$command" ]
+    then
+        echo "E: $testname: check_output called without command"
+        exit 1
+    fi
+    ofile="${DAKBASE}/testoutput/$testname/commands/$checkname"
+    reffile="${DAK_ROOT}/integration-tests/test-output/$testname/commands/$checkname"
+    if [ ! -f "$reffile" ]
+    then
+        echo "E: $testname: file $reffile missing"
+        exit 1
+    fi
+    mkdir -p `dirname $ofile`
+    $command > $ofile
+    if ! diff -Nur "$reffile" "$ofile"
+    then
+        echo "E: $testname $checkname: output different"
+        exit 1
+    fi
+}
+
 save_ci_artifact() {
     filename="$1"
 
