@@ -70,7 +70,7 @@ class CommandFile(object):
         session.rollback()
         try:
             while True:
-                sections.next()
+                next(sections)
                 section = sections.section
                 self.result.append(self._quote_section(section))
 
@@ -155,7 +155,7 @@ class CommandFile(object):
             self.uploader = addresses[0]
 
         try:
-            sections.next()
+            next(sections)
             section = sections.section
             if 'Uploader' in section:
                 self.uploader = section['Uploader']
