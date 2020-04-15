@@ -120,7 +120,7 @@ def html_header(name, missing):
       <p><a href="#source-lintian" onclick="show('source-lintian-body')">source lintian</a></p>
 
 """
-    for binarytype, packagename in filter(lambda m: m[0] in ('deb', 'udeb'), missing):
+    for binarytype, packagename in [m for m in missing if m[0] in ('deb', 'udeb')]:
         result += """
         <p class="subtitle">%(pkg)s</p>
         <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
@@ -263,7 +263,7 @@ def main():
             fd.write(timeout_str)
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
-    to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
+    to_delete = [x for x in files.difference(set(sources)) if x.endswith(".html")]
     for f in to_delete:
         os.remove(os.path.join(cnf["Show-New::HTMLPath"], f))
 
