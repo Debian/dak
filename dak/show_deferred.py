@@ -114,7 +114,7 @@ def table_row(changesname, delay, changed_by, closes, fingerprint):
     res += (2 * '<td valign="top">%s</td>') % tuple(map(html_escape, (changesname, delay)))
     res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html_escape(changed_by), fingerprint)
     res += ('<td valign="top">%s</td>' %
-             ''.join(map(lambda close:  '<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close), closes)))
+             ''.join(['<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close) for close in closes]))
     res += '</tr>\n'
     row_number += 1
     return res
@@ -201,7 +201,7 @@ def get_upload_data(changesfn):
         if not isnew:
             # we don't link .changes because we don't want other people to
             # upload it with the existing signature.
-            for afn in map(lambda x: x['name'], achanges['files']):
+            for afn in [x['name'] for x in achanges['files']]:
                 lfn = os.path.join(Cnf["Show-Deferred::LinkPath"], afn)
                 qfn = os.path.join(os.path.dirname(changesfn), afn)
                 if os.path.islink(lfn):
