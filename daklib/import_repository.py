@@ -198,7 +198,7 @@ def import_package_to_suite(base, entry, transaction, suite, component):
     filename = entry['Filename']
     tmp = obtain_file(base, filename)
     directory, fn = os.path.split(tmp.fh().name)
-    hashedfile = daklib.upload.HashedFile(os.path.basename(filename), long(entry['Size']), entry['MD5sum'], entry['SHA1'], entry['SHA256'], input_filename=fn)
+    hashedfile = daklib.upload.HashedFile(os.path.basename(filename), int(entry['Size']), entry['MD5sum'], entry['SHA1'], entry['SHA256'], input_filename=fn)
     hashedfile.check_fh(tmp.fh())
 
     # Inject file into archive

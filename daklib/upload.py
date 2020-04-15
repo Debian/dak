@@ -218,10 +218,10 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
 
         if has_priority_and_section:
             (md5sum, size, section, priority, filename) = line.split()
-            entry = dict(md5sum=md5sum, size=long(size), section=section, priority=priority, filename=filename)
+            entry = dict(md5sum=md5sum, size=int(size), section=section, priority=priority, filename=filename)
         else:
             (md5sum, size, filename) = line.split()
-            entry = dict(md5sum=md5sum, size=long(size), filename=filename)
+            entry = dict(md5sum=md5sum, size=int(size), filename=filename)
 
         entries[filename] = entry
 
@@ -232,7 +232,7 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
         entry = entries.get(filename, None)
         if entry is None:
             raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[1], fields[0]))
-        if entry is not None and entry.get('size', None) != long(size):
+        if entry is not None and entry.get('size', None) != int(size):
             raise InvalidChangesException('Size for {0} in {1} and {2} fields differ.'.format(filename, fields[0], fields[1]))
         entry['sha1sum'] = sha1sum
 
@@ -243,7 +243,7 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
         entry = entries.get(filename, None)
         if entry is None:
             raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[2], fields[0]))
-        if entry is not None and entry.get('size', None) != long(size):
+        if entry is not None and entry.get('size', None) != int(size):
             raise InvalidChangesException('Size for {0} in {1} and {2} fields differ.'.format(filename, fields[0], fields[2]))
         entry['sha256sum'] = sha256sum
 
