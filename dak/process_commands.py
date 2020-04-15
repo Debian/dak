@@ -61,7 +61,8 @@ def main(argv=None):
     rejectdir = cnf['Dir::Reject']
 
     if len(filenames) == 0:
-        filenames = [fn for fn in os.listdir(options['Directory']) if fn.endswith('.dak-commands')]
+        cdir = options['Directory']
+        filenames = [os.path.join(cdir, fn) for fn in os.listdir(cdir) if fn.endswith('.dak-commands')]
 
     for fn in filenames:
         basename = os.path.basename(fn)
