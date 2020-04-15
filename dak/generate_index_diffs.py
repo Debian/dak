@@ -114,7 +114,7 @@ def smartopen(file):
 
 def pipe_file(f, t):
     f.seek(0)
-    while 1:
+    while True:
         l = f.read(65536)
         if not l:
             break
@@ -137,7 +137,7 @@ class Updates:
                 x = f.readline()
 
                 def read_hashs(ind, hashind, f, self, x=x):
-                    while 1:
+                    while True:
                         x = f.readline()
                         if not x or x[0] != " ":
                             break
@@ -254,7 +254,7 @@ class Updates:
 
 def create_temp_file(r):
     f = tempfile.TemporaryFile("w+t")
-    while 1:
+    while True:
         x = r.read(65536)
         if not x:
             break
