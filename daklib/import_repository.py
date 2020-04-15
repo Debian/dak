@@ -25,7 +25,9 @@ import apt_pkg
 import os
 import shutil
 import tempfile
-import urllib2
+import six.moves.urllib.request
+import six.moves.urllib.error
+import six.moves.urllib.parse
 
 from daklib.dbconn import DBSource, PoolFile
 from sqlalchemy.orm import object_session
@@ -90,7 +92,7 @@ def obtain_file(base, path):
     fn = '{0}/{1}'.format(base, path)
     tmp = File()
     if fn.startswith('http://'):
-        fh = urllib2.urlopen(fn, timeout=300)
+        fh = six.moves.urllib.request.urlopen(fn, timeout=300)
         shutil.copyfileobj(fh, tmp._tmp)
         fh.close()
     else:
@@ -170,7 +172,7 @@ def import_source_to_archive(base, entry, transaction, archive, component):
         directory, f.input_filename = os.path.split(tmp.fh().name)
 
     # Inject files into archive
-    source = daklib.upload.Source(directory, hashed_files.values(), [], require_signature=False)
+    source = daklib.upload.Source(directory, list(hashed_files.values()), [], require_signature=False)
     # TODO: ugly hack!
     for f in hashed_files.keys():
         if f.endswith('.dsc'):
