@@ -111,6 +111,7 @@ if [ "x$DAK_PYTHON3" != "x" ]; then
         python3-pytest \
         python3-pytest-cov \
         python3-rrdtool \
+        python3-six \
         python3-sqlalchemy \
         python3-tabulate \
         python3-yaml \
