@@ -42,6 +42,7 @@ lintian:
     - preinst-interpreter-without-predepends
     - python-module-has-overly-generic-name
     - quilt-series-without-trailing-newline
+    - shipped-file-without-utf8-name
     - source-contains-prebuilt-ms-help-file
     - source-contains-prebuilt-silverlight-object
     - source-contains-waf-binary
