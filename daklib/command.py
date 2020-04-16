@@ -21,6 +21,7 @@
 
 import apt_pkg
 import os
+import six
 import tempfile
 
 from daklib.config import Config
@@ -131,7 +132,7 @@ class CommandFile(object):
         keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
         keyring_files = [k.keyring_name for k in keyrings]
 
-        signed_file = SignedFile(self.data, keyring_files)
+        signed_file = SignedFile(six.ensure_binary(self.data), keyring_files)
         if not signed_file.valid:
             self.log.log(['invalid signature', self.filename])
             return False
