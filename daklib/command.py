@@ -203,7 +203,7 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr_hash = section['Fingerprint'].translate(None, ' ')
+        fpr_hash = section['Fingerprint'].replace(' ', '')
         fpr = session.query(Fingerprint).filter_by(fingerprint=fpr_hash).first()
         if fpr is None:
             raise CommandError('Unknown fingerprint {0}'.format(fpr_hash))
@@ -268,7 +268,7 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr_hash = section['Fingerprint'].translate(None, ' ')
+        fpr_hash = section['Fingerprint'].replace(' ', '')
         fpr = session.query(Fingerprint).filter_by(fingerprint=fpr_hash).first()
         if fpr is None:
             self.result.append('Unknown fingerprint: {0}\nNo action taken.'.format(fpr_hash))
@@ -292,13 +292,13 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr_hash_from = section['From'].translate(None, ' ')
+        fpr_hash_from = section['From'].replace(' ', '')
         fpr_from = session.query(Fingerprint).filter_by(fingerprint=fpr_hash_from).first()
         if fpr_from is None:
             self.result.append('Unknown fingerprint (From): {0}\nNo action taken.'.format(fpr_hash_from))
             return
 
-        fpr_hash_to = section['To'].translate(None, ' ')
+        fpr_hash_to = section['To'].replace(' ', '')
         fpr_to = session.query(Fingerprint).filter_by(fingerprint=fpr_hash_to).first()
         if fpr_to is None:
             self.result.append('Unknown fingerprint (To): {0}\nNo action taken.'.format(fpr_hash_to))
