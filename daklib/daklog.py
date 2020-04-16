@@ -30,6 +30,7 @@ import fcntl
 import os
 import time
 import sys
+import traceback
 from . import utils
 
 ################################################################################
@@ -89,6 +90,12 @@ class Logger(object):
         # Flush the output to enable tail-ing
         self.logfile.flush()
         fcntl.lockf(self.logfile, fcntl.LOCK_UN)
+
+    def log_traceback(self, info, ex):
+        "Log an exception with a traceback"
+        self.log([info, repr(ex)])
+        for line in traceback.format_exc().split('\n')[:-1]:
+            self.log(['traceback', line])
 
     def close(self):
         "Close a Logger object"
