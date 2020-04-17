@@ -181,9 +181,9 @@ class SignatureAndHashesCheck(Check):
         except daklib.upload.FileDoesNotExist as e:
             raise Reject('{0}: {1}\n'
                          'Perhaps you need to include the file in your upload?'
-                         .format(filename, unicode(e)))
+                         .format(filename, six.text_type(e)))
         except daklib.upload.UploadException as e:
-            raise Reject('{0}: {1}'.format(filename, unicode(e)))
+            raise Reject('{0}: {1}'.format(filename, six.text_type(e)))
 
 
 class WeakSignatureCheck(Check):

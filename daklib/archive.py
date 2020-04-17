@@ -1052,7 +1052,7 @@ class ArchiveUpload(object):
             self._checked = True
             return True
         except checks.Reject as e:
-            self.reject_reasons.append(unicode(e))
+            self.reject_reasons.append(six.text_type(e))
         except Exception as e:
             self.reject_reasons.append("Processing raised an exception: {0}.\n{1}".format(e, traceback.format_exc()))
         return False

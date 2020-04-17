@@ -28,6 +28,7 @@ import re
 import time
 import apt_pkg
 import rrdtool
+import six
 
 from debian import deb822
 
@@ -238,7 +239,7 @@ Delay-Remaining: %s
 Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])), u[2], u[5])
                 fields = fields.encode('utf-8')
                 print(fields, file=f)
-                encoded = unicode(u[6]).encode('utf-8')
+                encoded = six.text_type(u[6]).encode('utf-8')
                 print(encoded.rstrip(), file=f)
                 open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "w").write(encoded + fields + '\n')
                 print(file=f)
