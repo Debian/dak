@@ -47,6 +47,7 @@ import functools
 import six
 import sqlalchemy.sql as sql
 import subprocess
+import email.utils
 from re import sub
 from collections import defaultdict
 from .regexes import re_build_dep_arch
@@ -376,7 +377,7 @@ def remove(session, reason, suites, removals,
         whoami = utils.whoami()
 
     if date is None:
-        date = subprocess.check_output(["date", "-R"]).rstrip()
+        date = email.utils.formatdate()
 
     if partial and components:
 
