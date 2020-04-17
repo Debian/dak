@@ -376,8 +376,8 @@ def send_mail(message, filename="", whitelists=None):
     # If we've been passed a string dump it into a temporary file
     if message:
         (fd, filename) = tempfile.mkstemp()
-        os.write(fd, message)
-        os.close(fd)
+        with os.fdopen(fd, 'wt') as f:
+            f.write(message)
 
     if whitelists is None or None in whitelists:
         whitelists = []
@@ -438,8 +438,8 @@ def send_mail(message, filename="", whitelists=None):
                 return
 
         fd = os.open(filename, os.O_RDWR | os.O_EXCL, 0o700)
-        os.write(fd, message_raw.as_string(True))
-        os.close(fd)
+        with os.fdopen(fd, 'wt') as f:
+            f.write(message_raw.as_string(True))
 
     # Invoke sendmail
     try:
