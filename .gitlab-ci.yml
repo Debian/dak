@@ -3,12 +3,6 @@
   except:
     - deploy@ftp-team/dak
 
-test stretch:
-  <<: *template
-  image: debian:stretch
-  parallel: 5
-  script: debian/run-ci
-
 test buster:
   <<: *template
   image: debian:buster
