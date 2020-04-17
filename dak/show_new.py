@@ -36,7 +36,7 @@ import dak.examine_package
 from daklib import policy
 from daklib.dbconn import *
 from daklib.config import Config
-from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_EXCEPTION
 from multiprocessing import Manager
 
 # Globals
@@ -45,7 +45,7 @@ Options = None
 manager = Manager()
 sources = manager.list()
 htmlfiles_to_process = manager.list()
-timeout_str = "Timed out while processing"
+timeout_str = "Error or timeout while processing"
 
 
 ################################################################################
@@ -241,6 +241,14 @@ def init(session):
     return uploads
 
 
+def result_callback(r):
+    code, msg = r
+    if code == PROC_STATUS_EXCEPTION:
+        print("Job raised exception: %s" % (msg))
+    elif code != PROC_STATUS_SUCCESS:
+        print("Job failed: %s" % (msg))
+
+
 ################################################################################
 ################################################################################
 
@@ -253,14 +261,18 @@ def main():
     session.close()
 
     for upload_id in upload_ids:
-        pool.apply_async(do_pkg, [upload_id])
+        pool.apply_async(do_pkg, [upload_id], callback=result_callback)
     pool.close()
 
     #p.wait(timeout=600)
     pool.join()
+
     for htmlfile in htmlfiles_to_process:
         with open(htmlfile, "w") as fd:
             fd.write(timeout_str)
+
+    if pool.overall_status() != PROC_STATUS_SUCCESS:
+        raise Exception("Processing failed (code %s)" % (pool.overall_status()))
 
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
     to_delete = [x for x in files.difference(set(sources)) if x.endswith(".html")]
