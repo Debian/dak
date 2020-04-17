@@ -179,5 +179,6 @@ if [ "$RUN_COVERAGE" = "y" ]; then
     ${COVERAGE_CMD} report -m
     echo
     ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
+    ${COVERAGE_CMD} annotate -d ${BASEDIR}/coverage/annotated
 fi
 echo `date` all done | tee -a $LOGFILE
