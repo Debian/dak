@@ -741,7 +741,7 @@ def gpg_get_key_addresses(fingerprint):
     except subprocess.CalledProcessError:
         pass
     else:
-        for l in output.split('\n'):
+        for l in six.ensure_str(output).split('\n'):
             parts = l.split(':')
             if parts[0] not in ("uid", "pub"):
                 continue
@@ -753,15 +753,14 @@ def gpg_get_key_addresses(fingerprint):
             except IndexError:
                 continue
             try:
-                # Do not use unicode_escape, because it is locale-specific
-                uid = codecs.decode(uid, "string_escape").decode("utf-8")
+                uid = six.ensure_text(uid)
             except UnicodeDecodeError:
                 uid = uid.decode("latin1") # does not fail
             m = re_parse_maintainer.match(uid)
             if not m:
                 continue
             address = m.group(2)
-            address = address.encode("utf8") # dak still uses bytes
+            address = six.ensure_str(address)
             if address.endswith('@debian.org'):
                 # prefer @debian.org addresses
                 # TODO: maybe not hardcode the domain
