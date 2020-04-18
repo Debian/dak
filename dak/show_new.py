@@ -179,19 +179,19 @@ def do_pkg(upload_id):
         missing = [(o['type'], o['package']) for o in handler.missing_overrides()]
         distribution = changes.distribution
 
-        print(html_header(changes.source, missing), file=outfile)
-        print(dak.examine_package.display_changes(distribution, origchanges), file=outfile)
+        outfile.write(html_header(changes.source, missing))
+        outfile.write(dak.examine_package.display_changes(distribution, origchanges))
 
         if upload.source is not None and ('dsc', upload.source.source) in missing:
             fn = os.path.join(upload_copy.directory, upload.source.poolfile.basename)
-            print(dak.examine_package.check_dsc(distribution, fn, session), file=outfile)
+            outfile.write(dak.examine_package.check_dsc(distribution, fn, session))
         for binary in upload.binaries:
             if (binary.binarytype, binary.package) not in missing:
                 continue
             fn = os.path.join(upload_copy.directory, binary.poolfile.basename)
-            print(dak.examine_package.check_deb(distribution, fn, session), file=outfile)
+            outfile.write(dak.examine_package.check_deb(distribution, fn, session))
 
-        print(html_footer(), file=outfile)
+        outfile.write(html_footer())
 
     session.close()
     htmlfiles_to_process.remove(htmlfile)

@@ -55,6 +55,7 @@ import subprocess
 import tarfile
 import tempfile
 import threading
+import six
 
 from daklib import utils
 from daklib.config import Config
@@ -316,7 +317,7 @@ def read_changes_or_dsc(suite, filename, session=None):
         except:
             return formatted_text("can't parse .dsc control info")
 
-    filecontents = strip_pgp_signature(filename).decode('utf-8')
+    filecontents = six.ensure_str(strip_pgp_signature(filename))
     keysinorder = []
     for l in filecontents.split('\n'):
         m = re.match(r'([-a-zA-Z0-9]*):', l)
@@ -425,15 +426,16 @@ def output_package_relations():
     if len(package_relations) < 2:
         # Only list something if we have more than one binary to compare
         package_relations.clear()
-        return
+        result = ""
+    else:
+        to_print = ""
+        for package in package_relations:
+            for relation in package_relations[package]:
+                to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
 
-    to_print = ""
-    for package in package_relations:
-        for relation in package_relations[package]:
-            to_print += "%-15s: (%s) %s\n" % (package, relation, package_relations[package][relation])
-
-    package_relations.clear()
-    return foldable_output("Package relations", "relations", to_print)
+        package_relations.clear()
+        result = foldable_output("Package relations", "relations", to_print)
+    return six.ensure_str(result)
 
 
 def output_deb_info(suite, filename, packagename, session=None):
@@ -487,10 +489,11 @@ def do_command(command, escaped=False):
     process = daklib.daksubprocess.Popen(command, stdout=subprocess.PIPE)
     o = process.stdout
     try:
+        data = six.ensure_str(o.read())
         if escaped:
-            return escaped_text(o.read())
+            return escaped_text(data)
         else:
-            return formatted_text(o.read())
+            return formatted_text(data)
     finally:
         process.wait()
 
@@ -598,18 +601,19 @@ def get_readme_source(dsc_filename):
 def check_dsc(suite, dsc_filename, session=None):
     dsc = read_changes_or_dsc(suite, dsc_filename, session)
     dsc_basename = os.path.basename(dsc_filename)
-    return foldable_output(dsc_filename, "dsc", dsc, norow=True).encode('utf8') + \
+    cdsc = foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
            "\n" + \
            foldable_output("lintian {} check for {}".format(
                 get_lintian_version(), dsc_basename),
-               "source-lintian", do_lintian(dsc_filename)).encode('utf8') + \
+               "source-lintian", do_lintian(dsc_filename)) + \
            "\n" + \
            foldable_output("README.source for %s" % dsc_basename,
                "source-readmesource", get_readme_source(dsc_filename))
+    return six.ensure_str(cdsc)
 
 
 def check_deb(suite, deb_filename, session=None):
-    filename = os.path.basename(deb_filename)
+    filename = six.ensure_str(os.path.basename(deb_filename))
     packagename = filename.split('_')[0]
 
     if filename.endswith(".udeb"):
@@ -638,14 +642,14 @@ def check_deb(suite, deb_filename, session=None):
         result += foldable_output("copyright of %s" % (filename),
             "binary-%s-copyright" % packagename, get_copyright(deb_filename)) + "\n"
 
-    return result
+    return six.ensure_str(result)
 
 # Read a file, strip the signature and return the modified contents as
 # a string.
 
 
 def strip_pgp_signature(filename):
-    with open(filename) as f:
+    with open(filename, 'rb') as f:
         data = f.read()
         signedfile = SignedFile(data, keyrings=(), require_signature=False)
         return signedfile.contents
@@ -655,7 +659,7 @@ def display_changes(suite, changes_filename):
     global printed
     changes = read_changes_or_dsc(suite, changes_filename)
     printed.copyrights = {}
-    return foldable_output(changes_filename, "changes", changes, norow=True).encode('utf8')
+    return six.ensure_str(foldable_output(changes_filename, "changes", changes, norow=True))
 
 
 def check_changes(changes_filename):
@@ -663,15 +667,16 @@ def check_changes(changes_filename):
         changes = utils.parse_changes(changes_filename)
     except UnicodeDecodeError:
         utils.warn("Encoding problem with changes file %s" % (changes_filename))
-    print(display_changes(changes['distribution'], changes_filename).encode('utf-8'))
+    output = display_changes(changes['distribution'], changes_filename)
 
     files = utils.build_file_list(changes)
     for f in files.keys():
         if f.endswith(".deb") or f.endswith(".udeb"):
-            print(check_deb(changes['distribution'], f))
+            output += check_deb(changes['distribution'], f)
         if f.endswith(".dsc"):
-            print(check_dsc(changes['distribution'], f))
+            output += check_dsc(changes['distribution'], f)
         # else: => byhand
+    return six.ensure_str(output)
 
 
 def main():
@@ -697,35 +702,35 @@ def main():
         global use_html
         use_html = True
 
-    stdout_fd = sys.stdout
-
     for f in args:
         try:
             if not Options["Html-Output"]:
                 # Pipe output for each argument through less
-                less_cmd = ("less", "-R", "-")
+                less_cmd = ("less", "-r", "-")
                 less_process = daklib.daksubprocess.Popen(less_cmd, stdin=subprocess.PIPE, bufsize=0)
                 less_fd = less_process.stdin
                 # -R added to display raw control chars for colour
-                sys.stdout = less_fd
+                my_fd = less_fd
+            else:
+                my_fd = sys.stdout
+
             try:
                 if f.endswith(".changes"):
-                    check_changes(f)
+                    my_fd.write(six.ensure_binary(check_changes(f)))
                 elif f.endswith(".deb") or f.endswith(".udeb"):
                     # default to unstable when we don't have a .changes file
                     # perhaps this should be a command line option?
-                    print(check_deb('unstable', f))
+                    my_fd.write(six.ensure_binary(check_deb('unstable', f)))
                 elif f.endswith(".dsc"):
-                    print(check_dsc('unstable', f))
+                    my_fd.write(six.ensure_binary(check_dsc('unstable', f)))
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:
-                print(output_package_relations())
+                my_fd.write(six.ensure_binary(output_package_relations()))
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()
                     less_process.wait()
-                    sys.stdout = stdout_fd
         except IOError as e:
             if e.errno == errno.EPIPE:
                 utils.warn("[examine-package] Caught EPIPE; skipping.")
@@ -741,7 +746,7 @@ def get_lintian_version():
     if not hasattr(get_lintian_version, '_version'):
         # eg. "Lintian v2.5.100"
         val = daklib.daksubprocess.check_output(('lintian', '--version'))
-        get_lintian_version._version = val.split(' v')[-1].strip()
+        get_lintian_version._version = six.ensure_str(val).split(' v')[-1].strip()
 
     return get_lintian_version._version
 
