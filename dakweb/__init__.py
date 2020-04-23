@@ -11,12 +11,10 @@ General
   B{NOTE}: B{The api} is still new and we are adding new features
   whenever someone asks for them. Or better yet, provides a patch.
   B{The api}s code lives in the C{dak} codebase, if you want to provide
-  a patch with a new feature, or fix a bug, feel free to clone it::
-   git clone https://ftp-master.debian.org/git/dak.git
+  a patch with a new feature, or fix a bug, feel free to fork it on
+  Salsa and send us a merge request::
 
-  Patches, Feature requests, bug reports go to the
-  U{debian-dak<mailto:debian-dak@lists.debian.org>}
-  mailing list.
+  https://salsa.debian.org/ftp-team/dak/
 
 Usage
 =====
