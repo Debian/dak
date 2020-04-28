@@ -287,7 +287,6 @@ def main():
                          JOIN files_archive_map af ON b.file = af.file_id AND af.archive_id = archive.id
                          JOIN component c ON af.component_id = c.id
                          JOIN source s ON b.source = s.id
-                         JOIN src_associations sa ON s.id = sa.source AND sa.suite = su.id
                          JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
                     WHERE %s %s %s %s %s
             """ % (q_outdated, con_packages, con_suites, con_components, con_architectures))
