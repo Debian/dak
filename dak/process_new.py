@@ -55,6 +55,7 @@ import apt_pkg
 import dak.examine_package
 import subprocess
 import daklib.daksubprocess
+import six
 from sqlalchemy import or_
 
 from daklib.dbconn import *
@@ -358,7 +359,6 @@ def edit_overrides(new, upload, session):
 
 def check_pkg(upload, upload_copy, session):
     missing = []
-    save_stdout = sys.stdout
     changes = os.path.join(upload_copy.directory, upload.changes.changesname)
     suite_name = upload.target_suite.suite_name
     handler = PolicyQueueUploadHandler(upload, session)
@@ -367,13 +367,13 @@ def check_pkg(upload, upload_copy, session):
     less_cmd = ("less", "-r", "-")
     less_process = daklib.daksubprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
     try:
-        sys.stdout = less_process.stdin
-        print(dak.examine_package.display_changes(suite_name, changes))
+        less_fd = less_process.stdin
+        less_fd.write(six.ensure_binary(dak.examine_package.display_changes(suite_name, changes)))
 
         source = upload.source
         if source is not None:
             source_file = os.path.join(upload_copy.directory, os.path.basename(source.poolfile.filename))
-            print(dak.examine_package.check_dsc(suite_name, source_file))
+            less_fd.write(six.ensure_binary(dak.examine_package.check_dsc(suite_name, source_file)))
 
         for binary in upload.binaries:
             binary_file = os.path.join(upload_copy.directory, os.path.basename(binary.poolfile.filename))
@@ -381,9 +381,9 @@ def check_pkg(upload, upload_copy, session):
             # We always need to call check_deb to display package relations for every binary,
             # but we print its output only if new overrides are being added.
             if ("deb", binary.package) in missing:
-                print(examined)
+                less_fd.write(six.ensure_binary(examined))
 
-        print(dak.examine_package.output_package_relations())
+        less_fd.write(six.ensure_binary(dak.examine_package.output_package_relations()))
         less_process.stdin.close()
     except IOError as e:
         if e.errno == errno.EPIPE:
@@ -394,7 +394,6 @@ def check_pkg(upload, upload_copy, session):
         utils.warn("[examine_package] Caught C-c; skipping.")
     finally:
         less_process.communicate()
-        sys.stdout = save_stdout
 
 ################################################################################
 

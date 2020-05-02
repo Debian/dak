@@ -2,14 +2,14 @@ pkgnew (0.1-2) unstable; urgency=medium
 
   * Upload to unstable
 
- -- A Maintainer <maint@example.com>  Thu, 08 Aug 2019 12:29:30 +0000
+ -- Snowman ☃ <snowman@example.com>  Thu, 08 Aug 2019 12:29:30 +0000
 
 pkgnew (0.1-2~exp) experimental; urgency=medium
 
   * Add binaries
   * Upload to experimental to go through new
 
- -- A Maintainer <maint@example.com>  Thu, 08 Aug 2019 12:28:21 +0000
+ -- Snowman ☃ <snowman@example.com>  Thu, 08 Aug 2019 12:28:21 +0000
 
 pkgnew (0.1-1) unstable; urgency=low
 

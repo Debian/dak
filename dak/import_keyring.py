@@ -24,6 +24,7 @@ from __future__ import print_function
 
 import sys
 import apt_pkg
+import six
 
 from daklib.config import Config
 from daklib.dbconn import *
@@ -175,7 +176,7 @@ def main():
     # We don't change the uid, leaving that for historical info; if
     # the id should change, it'll be set when importing another keyring.
 
-    for f, (u, fid, kr) in db_fin_info.iteritems():
+    for f, (u, fid, kr) in six.iteritems(db_fin_info):
         if kr != keyring.keyring_id:
             continue
 

@@ -152,7 +152,7 @@ def load_transitions(trans_file):
     checkkeys = ["source", "reason", "packages", "new", "rm"]
 
     # If we get an empty definition - we just have nothing to check, no transitions defined
-    if type(trans) != dict:
+    if not isinstance(trans, dict):
         # This can be anything. We could have no transitions defined. Or someone totally fucked up the
         # file, adding stuff in a way we dont know or want. Then we set it empty - and simply have no
         # transitions anymore. User will see it in the information display after he quit the editor and
@@ -173,12 +173,12 @@ def load_transitions(trans_file):
                     failure = True
 
                 if key == "packages":
-                    if type(t[key]) != list:
+                    if not isinstance(t[key], list):
                         print("ERROR: Unknown type %s for packages in transition %s." % (type(t[key]), test))
                         failure = True
                     try:
                         for package in t["packages"]:
-                            if type(package) != str:
+                            if not isinstance(package, str):
                                 print("ERROR: Packages list contains invalid type %s (as %s) in transition %s" % (type(package), package, test))
                                 failure = True
                             if re_broken_package.match(package):
@@ -192,8 +192,8 @@ def load_transitions(trans_file):
                         failure = True
                         continue
 
-                elif type(t[key]) != str:
-                    if key == "new" and type(t[key]) == int:
+                elif not isinstance(t[key], str):
+                    if key == "new" and isinstance(t[key], int):
                         # Ok, debian native version
                         continue
                     else:

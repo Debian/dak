@@ -23,6 +23,7 @@ from __future__ import print_function
 
 import collections
 import json
+import six
 import sys
 
 import apt_pkg
@@ -293,7 +294,7 @@ def component_add(args):
     session = DBConn().session()
 
     component = Component()
-    for key, value in attributes.iteritems():
+    for key, value in six.iteritems(attributes):
         setattr(component, key, value)
 
     session.add(component)
@@ -980,7 +981,7 @@ def __suite_config_list(d, args, json_format=False):
 
 
 def suite_config(command):
-    args = [x.decode('utf-8') for x in command]
+    args = [six.ensure_text(x) for x in command]
     Cnf = utils.get_conf()
     d = DBConn()
 
@@ -1040,7 +1041,7 @@ def archive_add(args):
     session = DBConn().session()
 
     archive = Archive()
-    for key, value in attributes.iteritems():
+    for key, value in six.iteritems(attributes):
         setattr(archive, key, value)
 
     session.add(archive)

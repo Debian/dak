@@ -1,4 +1,17 @@
 .
+./changelogs
+./changelogs/filelist.yaml
+./changelogs/main
+./changelogs/main/m
+./changelogs/main/m/main-contrib-with-debug
+./changelogs/main/m/main-contrib-with-debug/main-contrib-with-debug_0.2-1_changelog
+./changelogs/main/m/main-contrib-with-debug/testing_changelog
+./changelogs/main/m/main-contrib-with-debug/unstable_changelog
+./changelogs/main/p
+./changelogs/main/p/package
+./changelogs/main/p/package/package_0.1-1_changelog
+./changelogs/main/p/package/testing_changelog
+./changelogs/main/p/package/unstable_changelog
 ./dists
 ./dists/experimental
 ./dists/experimental/InRelease

@@ -169,6 +169,7 @@ import sys
 import traceback
 import apt_pkg
 import time
+import six
 
 from daklib import daklog
 from daklib.dbconn import *
@@ -214,7 +215,7 @@ def try_or_reject(function):
         try:
             return function(directory, upload, *args, **kwargs)
         except (daklib.archive.ArchiveException, daklib.checks.Reject) as e:
-            reason = unicode(e)
+            reason = six.text_type(e)
         except Exception as e:
             reason = "There was an uncaught exception when processing your upload:\n{0}\nAny original reject reason follows below.".format(traceback.format_exc())
 
@@ -335,7 +336,7 @@ def real_reject(directory, upload, reason=None, notify=True):
     fs = upload.transaction.fs
     rejectdir = cnf['Dir::Reject']
 
-    files = [f.filename for f in upload.changes.files.itervalues()]
+    files = [f.filename for f in six.itervalues(upload.changes.files)]
     files.append(upload.changes.filename)
 
     for fn in files:

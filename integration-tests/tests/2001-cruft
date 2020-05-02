@@ -105,3 +105,11 @@ dinstall
 
 check_all_suites end
 
+(
+  # doesn't have pkg-any4 and pkg-all4
+  upload_changes ${packages:?}/pkgnew_0.1-3_amd64.changes
+  process_uploads
+
+  check_output cruft_report.txt "dak cruft-report"
+)
+

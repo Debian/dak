@@ -36,6 +36,7 @@ Check for obsolete binary packages
 from __future__ import print_function
 
 import sqlalchemy.sql as sql
+import six
 import sys
 import apt_pkg
 from itertools import chain, product
@@ -243,7 +244,7 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
 
     for group_name in group_order:
         removal_request = groups[group_name]["removal_request"]
-        full_removal_request.extend(removal_request.iteritems())
+        full_removal_request.extend(six.iteritems(removal_request))
 
     if not groups:
         if debug:
@@ -310,13 +311,13 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
             return
 
         if debug:
-            print("N: Now considering to remove: %s" % str(", ".join(sorted(groups.iterkeys()))))
+            print("N: Now considering to remove: %s" % str(", ".join(sorted(six.iterkeys(groups)))))
 
         # Rebuild the removal request with the remaining groups and off
         # we go to (not) break the world once more time
         full_removal_request = []
-        for group_info in groups.itervalues():
-            full_removal_request.extend(group_info["removal_request"].iteritems())
+        for group_info in six.itervalues(groups):
+            full_removal_request.extend(six.iteritems(group_info["removal_request"]))
         breakage = rdc.check_reverse_depends(full_removal_request)
 
     if debug:
@@ -342,7 +343,7 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
         print("Note: The removals may be interdependent.  A non-breaking result may require the execution of all")
         print("of the removals")
     else:
-        remove_groups(groups.itervalues(), suite_id, suite_name, session)
+        remove_groups(six.itervalues(groups), suite_id, suite_name, session)
 
 
 def sources2removals(source_list, suite_id, session):

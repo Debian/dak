@@ -87,6 +87,10 @@ EOF
 
 )
 
+# we put the changelogs withing the ftp-master dir, so they will be checked by check_all_suites below
+psql -c "update archive set changelog='$DAKBASE/ftp-master/changelogs' where name='ftp-master';"
+dak make-changelog -e -a ftp-master
+
 # After running dinstall, the package should now be present in the pool
 dinstall
 ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc

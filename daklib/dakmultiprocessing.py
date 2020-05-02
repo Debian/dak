@@ -27,6 +27,7 @@ multiprocessing for DAK
 
 from multiprocessing.pool import Pool
 from signal import signal, SIGHUP, SIGTERM, SIGPIPE, SIGALRM
+import traceback
 
 import sqlalchemy.orm.session
 
@@ -73,7 +74,7 @@ def _func_wrapper(func, *args, **kwds):
     except SignalException as e:
         return (PROC_STATUS_SIGNALRAISED, e.signum)
     except Exception as e:
-        return (PROC_STATUS_EXCEPTION, str(e))
+        return (PROC_STATUS_EXCEPTION, "Exception: %s\n%s" % (e, traceback.format_exc()))
     finally:
         # Make sure connections are closed. We might die otherwise.
         sqlalchemy.orm.session.Session.close_all()

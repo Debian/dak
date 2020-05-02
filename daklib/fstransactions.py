@@ -19,6 +19,7 @@
 
 import os
 import shutil
+import six
 
 
 class _FilesystemAction(object):
@@ -145,7 +146,7 @@ class FilesystemTransaction(object):
         @type  mode: int
         @param mode: permissions to change C{destination} to
         """
-        if isinstance(mode, str) or isinstance(mode, unicode):
+        if isinstance(mode, six.string_types):
             mode = int(mode, 8)
 
         self.actions.append(_FilesystemCopyAction(source, destination, link=link, symlink=symlink, mode=mode))
@@ -184,7 +185,7 @@ class FilesystemTransaction(object):
 
         @return: file handle of the new file
         """
-        if isinstance(mode, str) or isinstance(mode, unicode):
+        if isinstance(mode, six.string_types):
             mode = int(mode, 8)
 
         destdir = os.path.dirname(path)

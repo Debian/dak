@@ -47,7 +47,7 @@ class DakProcessPoolTestCase(DakTestCase):
         expected = [(PROC_STATUS_SUCCESS,      'blah, 0, 0'),
                     (PROC_STATUS_MISCFAILURE,  'Test custom error return'),
                     (PROC_STATUS_SUCCESS,      'blah, 0, 2'),
-                    (PROC_STATUS_EXCEPTION,    'Test uncaught exception handling'),
+                    (PROC_STATUS_EXCEPTION,    'Exception: Test uncaught exception handling'),
                     (PROC_STATUS_SIGNALRAISED, 15),
                     (PROC_STATUS_SIGNALRAISED, 13),
                     (PROC_STATUS_SIGNALRAISED, 14),
@@ -55,9 +55,13 @@ class DakProcessPoolTestCase(DakTestCase):
                     (PROC_STATUS_SUCCESS,      'blah, 2, 0'),
                     (PROC_STATUS_SUCCESS,      'blah, 2, 1'),
                     (PROC_STATUS_SUCCESS,      'blah, 2, 2'),
-                    (PROC_STATUS_EXCEPTION,    'Test uncaught exception handling')]
+                    (PROC_STATUS_EXCEPTION,    'Exception: Test uncaught exception handling')]
 
         self.assertEqual(len(p.results), len(expected))
 
         for r in range(len(p.results)):
-            self.assertEqual(p.results[r], expected[r])
+            if p.results[r] != expected[r]:
+                code, info = p.results[r]
+                line1 = info.splitlines()[0]
+                self.assertEqual(code, expected[r][0])
+                self.assertEqual(line1, expected[r][1])

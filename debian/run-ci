@@ -58,7 +58,7 @@ copy_coverage_data() {
     t="$1"
     if [ "$RUN_COVERAGE" = "y" ]; then
         TESTNAME=${t##*/}
-        DESTDIR=${BASEDIR}/output/coveragedata/data_${TESTNAME}
+        DESTDIR=${DAK_CI_OUTPUT_DIR}/coveragedata/data_${TESTNAME}
         echo copy coverage data for $TESTNAME to $DESTDIR
         mkdir -p $DESTDIR
         [ -e .coverage ] && cp .coverage $DESTDIR/.coverage.data.${TESTNAME/}
@@ -91,8 +91,9 @@ fi
 export BASEDIR="$(cd $(dirname "${BASH_SOURCE}")/..; pwd)"
 export DAK_ROOT=$BASEDIR
 
-mkdir -p ${BASEDIR}/output
-LOGFILE=${BASEDIR}/output/log_job${CI_NODE_INDEX}.txt
+export DAK_CI_OUTPUT_DIR=${BASEDIR}/output
+mkdir -p ${DAK_CI_OUTPUT_DIR}
+LOGFILE=${DAK_CI_OUTPUT_DIR}/log_job${CI_NODE_INDEX}.txt
 
 echo `date` installing packages | tee -a $LOGFILE
 
@@ -111,31 +112,12 @@ if [ "x$DAK_PYTHON3" != "x" ]; then
         python3-pytest \
         python3-pytest-cov \
         python3-rrdtool \
+        python3-six \
         python3-sqlalchemy \
         python3-tabulate \
         python3-yaml \
         python3-apt \
 
-
-cleanup-newroot() {
-  if [[ -v DAK_NEWROOT ]]; then
-    rm -rf -- "${DAK_NEWROOT}"
-  fi
-}
-
-    echo `date` setting up python3 code with 2to3 | tee -a $LOGFILE
-    export DAK_NEWROOT=$(mktemp -d)
-    trap cleanup-newroot EXIT
-    DAK_ROOT=$DAK_NEWROOT
-    for dir in dak daklib
-    do
-        cp -a ${BASEDIR}/${dir}/ ${DAK_ROOT}/${dir}
-        2to3 -wn -x future -x import ${DAK_ROOT}/${dir}
-    done
-    for filename in tests integration-tests setup templates .coveragerc
-    do
-        ln -s ${BASEDIR}/${filename} ${DAK_ROOT}/${filename}
-    done
 
 fi
 
@@ -177,5 +159,6 @@ if [ "$RUN_COVERAGE" = "y" ]; then
     ${COVERAGE_CMD} report -m
     echo
     ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
+    ${COVERAGE_CMD} annotate -d ${BASEDIR}/coverage/annotated
 fi
 echo `date` all done | tee -a $LOGFILE

@@ -41,6 +41,7 @@ import subprocess
 import ldap
 import errno
 import functools
+import six
 
 import daklib.config as config
 import daklib.daksubprocess
@@ -83,7 +84,7 @@ def our_raw_input(prompt=""):
     # TODO: py3: use `print(..., flush=True)`
     sys.stdout.flush()
     try:
-        ret = raw_input()
+        ret = six.moves.input()
         return ret
     except EOFError:
         print("\nUser interrupt (^D).", file=sys.stderr)
@@ -375,8 +376,8 @@ def send_mail(message, filename="", whitelists=None):
     # If we've been passed a string dump it into a temporary file
     if message:
         (fd, filename) = tempfile.mkstemp()
-        os.write(fd, message)
-        os.close(fd)
+        with os.fdopen(fd, 'wt') as f:
+            f.write(message)
 
     if whitelists is None or None in whitelists:
         whitelists = []
@@ -437,8 +438,8 @@ def send_mail(message, filename="", whitelists=None):
                 return
 
         fd = os.open(filename, os.O_RDWR | os.O_EXCL, 0o700)
-        os.write(fd, message_raw.as_string(True))
-        os.close(fd)
+        with os.fdopen(fd, 'wt') as f:
+            f.write(message_raw.as_string(True))
 
     # Invoke sendmail
     try:
@@ -494,7 +495,7 @@ def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     with open(filename) as templatefile:
         template = templatefile.read()
-    for k, v in subst_map.iteritems():
+    for k, v in six.iteritems(subst_map):
         template = template.replace(k, str(v))
     return template
 
@@ -740,7 +741,7 @@ def gpg_get_key_addresses(fingerprint):
     except subprocess.CalledProcessError:
         pass
     else:
-        for l in output.split('\n'):
+        for l in six.ensure_str(output).split('\n'):
             parts = l.split(':')
             if parts[0] not in ("uid", "pub"):
                 continue
@@ -752,15 +753,14 @@ def gpg_get_key_addresses(fingerprint):
             except IndexError:
                 continue
             try:
-                # Do not use unicode_escape, because it is locale-specific
-                uid = codecs.decode(uid, "string_escape").decode("utf-8")
+                uid = six.ensure_text(uid)
             except UnicodeDecodeError:
                 uid = uid.decode("latin1") # does not fail
             m = re_parse_maintainer.match(uid)
             if not m:
                 continue
             address = m.group(2)
-            address = address.encode("utf8") # dak still uses bytes
+            address = six.ensure_str(address)
             if address.endswith('@debian.org'):
                 # prefer @debian.org addresses
                 # TODO: maybe not hardcode the domain

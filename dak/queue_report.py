@@ -407,7 +407,7 @@ def process_queue(queue, log, rrd_dir):
         per_source[source]["list"].append(upload)
         per_source[source]["list"].sort(key=lambda x: x.changes.created, reverse=True)
     # Determine oldest time and have note status for each source group
-    for source in per_source.keys():
+    for source in list(per_source.keys()):
         source_list = per_source[source]["list"]
         first = source_list[0]
         oldest = time.mktime(first.changes.created.timetuple())
@@ -428,7 +428,7 @@ def process_queue(queue, log, rrd_dir):
             per_source[source]["note_state"] = 1 # some
         else:
             per_source[source]["note_state"] = 2 # all
-    per_source_items = per_source.items()
+    per_source_items = list(per_source.items())
     per_source_items.sort(key=functools.cmp_to_key(sg_compare))
 
     update_graph_database(rrd_dir, type, len(per_source_items), len(queue.uploads))

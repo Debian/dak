@@ -42,6 +42,7 @@ import functools
 import os
 from os.path import normpath
 import re
+import six
 import subprocess
 
 from debian.debfile import Deb822
@@ -65,7 +66,7 @@ from .aptversion import AptVersion
 # Only import Config until Queue stuff is changed to store its config
 # in the database
 from .config import Config
-from .textutils import fix_maintainer
+from .textutils import fix_maintainer, force_to_utf8
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 import warnings
@@ -432,11 +433,7 @@ class DBBinary(ORMObject):
         for member in tar.getmembers():
             if not member.isdir():
                 name = normpath(member.name)
-                # enforce proper utf-8 encoding
-                try:
-                    name.decode('utf-8')
-                except UnicodeDecodeError:
-                    name = name.decode('iso8859-1').encode('utf-8')
+                name = force_to_utf8(name)
                 yield name
         tar.close()
         dpkg.stdout.close()
@@ -748,7 +745,7 @@ class PoolFile(ORMObject):
         return os.path.basename(self.filename)
 
     def is_valid(self, filesize=-1, md5sum=None):
-        return self.filesize == long(filesize) and self.md5sum == md5sum
+        return self.filesize == int(filesize) and self.md5sum == md5sum
 
     def properties(self):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum',
@@ -908,7 +905,8 @@ class Keyring(object):
         key = None
         need_fingerprint = False
 
-        for line in p.stdout:
+        for line_raw in p.stdout:
+            line = six.ensure_str(line_raw)
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
@@ -983,7 +981,7 @@ class Keyring(object):
         byuid = {}
         byname = {}
         any_invalid = False
-        for x in self.keys.keys():
+        for x in list(self.keys.keys()):
             if "email" not in self.keys[x]:
                 any_invalid = True
                 self.keys[x]["uid"] = format % "invalid-uid"
@@ -1647,11 +1645,7 @@ class DBSource(ORMObject):
         unpacked = UnpackedSource(fullpath)
         fileset = set()
         for name in unpacked.get_all_filenames():
-            # enforce proper utf-8 encoding
-            try:
-                name.decode('utf-8')
-            except UnicodeDecodeError:
-                name = name.decode('iso8859-1').encode('utf-8')
+            name = force_to_utf8(name)
             fileset.add(name)
         return fileset
 
@@ -2535,8 +2529,14 @@ class DBConn(object):
             engine_args['pool_size'] = int(cnf['DB::PoolSize'])
         if 'DB::MaxOverflow' in cnf:
             engine_args['max_overflow'] = int(cnf['DB::MaxOverflow'])
-        if cnf.get('DB::Unicode') == 'false':
-            engine_args['use_native_unicode'] = False
+        if six.PY2:
+            # in python2, we want to get str() from the database
+            # if we use the native unicode, we get unicode()
+            if cnf.get('DB::Unicode') == 'false':
+                engine_args['use_native_unicode'] = False
+        else:
+            # in python3, we don't support non-utf-8 connections
+            engine_args['client_encoding'] = 'utf-8'
 
         # Monkey patch a new dialect in in order to support service= syntax
         import sqlalchemy.dialects.postgresql

@@ -1,0 +1,15 @@
+NBS packages (from metadata) in suite unstable
+----------------------------------------------
+
+* source package pkgnew version 0.1-3 no longer builds
+  binary package(s): pkg-all4
+  on all
+  - suggested command:
+    dak rm -o -m "[auto-cruft] NBS (no longer built by pkgnew - based on source metadata)" -s unstable -a all -p -R -b pkg-all4
+
+* source package pkgnew version 0.1-3 no longer builds
+  binary package(s): pkg-any4
+  on amd64
+  - suggested command:
+    dak rm -o -m "[auto-cruft] NBS (no longer built by pkgnew - based on source metadata)" -s unstable -a amd64 -p -R -b pkg-any4
+

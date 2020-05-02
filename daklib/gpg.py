@@ -199,7 +199,7 @@ class SignedFile(object):
 
         if b'T' in timestamp:
             raise Exception('No support for ISO 8601 timestamps.')
-        return datetime.datetime.utcfromtimestamp(long(timestamp))
+        return datetime.datetime.utcfromtimestamp(int(timestamp))
 
     def _parse_status(self, line):
         fields = line.split()

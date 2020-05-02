@@ -139,7 +139,7 @@ def import_dump(log, transaction, suite, component, fh,
                 print('W: {0}: unknown fingerprint {1}'.format(filename, fpr))
 
         directory, filename = os.path.split(os.path.abspath(path))
-        hashed_file = daklib.upload.HashedFile(filename, long(size), md5, sha1, sha256)
+        hashed_file = daklib.upload.HashedFile(filename, int(size), md5, sha1, sha256)
         hashed_file.check(directory)
 
         import_file(log, transaction, suite, component, directory, hashed_file,

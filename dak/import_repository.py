@@ -165,7 +165,7 @@ def main(argv=None):
         raise Exception('Not implemented.')
 
     if 'MaxPackages' in options:
-        max_packages = long(options['MaxPackages'])
+        max_packages = int(options['MaxPackages'])
     else:
         max_packages = None
 

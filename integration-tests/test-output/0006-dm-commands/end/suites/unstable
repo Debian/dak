@@ -1,0 +1,11 @@
+binnmupkg 0.1-1 amd64
+binnmupkg 0.1-1 source
+package 0.1-1 all
+package 0.1-1 source
+package 0.2-1 all
+package 0.2-1 source
+pkg-all1 0.1-1 all
+pkg-all2 0.1-1 all
+pkg-any1 0.1-1 amd64
+pkg-any2 0.1-1 amd64
+pkgnew 0.1-1 source

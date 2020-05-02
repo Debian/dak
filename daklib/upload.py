@@ -26,6 +26,7 @@ import apt_pkg
 import errno
 import functools
 import os
+import six
 
 from daklib.aptversion import AptVersion
 from daklib.gpg import SignedFile
@@ -218,10 +219,10 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
 
         if has_priority_and_section:
             (md5sum, size, section, priority, filename) = line.split()
-            entry = dict(md5sum=md5sum, size=long(size), section=section, priority=priority, filename=filename)
+            entry = dict(md5sum=md5sum, size=int(size), section=section, priority=priority, filename=filename)
         else:
             (md5sum, size, filename) = line.split()
-            entry = dict(md5sum=md5sum, size=long(size), filename=filename)
+            entry = dict(md5sum=md5sum, size=int(size), filename=filename)
 
         entries[filename] = entry
 
@@ -232,7 +233,7 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
         entry = entries.get(filename, None)
         if entry is None:
             raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[1], fields[0]))
-        if entry is not None and entry.get('size', None) != long(size):
+        if entry is not None and entry.get('size', None) != int(size):
             raise InvalidChangesException('Size for {0} in {1} and {2} fields differ.'.format(filename, fields[0], fields[1]))
         entry['sha1sum'] = sha1sum
 
@@ -243,12 +244,12 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
         entry = entries.get(filename, None)
         if entry is None:
             raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[2], fields[0]))
-        if entry is not None and entry.get('size', None) != long(size):
+        if entry is not None and entry.get('size', None) != int(size):
             raise InvalidChangesException('Size for {0} in {1} and {2} fields differ.'.format(filename, fields[0], fields[2]))
         entry['sha256sum'] = sha256sum
 
     files = {}
-    for entry in entries.itervalues():
+    for entry in six.itervalues(entries):
         filename = entry['filename']
         if 'size' not in entry:
             raise InvalidChangesException('No size for {0}.'.format(filename))
@@ -355,7 +356,7 @@ class Changes(object):
         """
         if self._source is None:
             source_files = []
-            for f in self.files.itervalues():
+            for f in six.itervalues(self.files):
                 if re_file_dsc.match(f.filename) or re_file_source.match(f.filename):
                     source_files.append(f)
             if len(source_files) > 0:
@@ -383,7 +384,7 @@ class Changes(object):
         """
         if self._binaries is None:
             binaries = []
-            for f in self.files.itervalues():
+            for f in six.itervalues(self.files):
                 if re_file_binary.match(f.filename):
                     binaries.append(Binary(self.directory, f))
             self._binaries = binaries
@@ -396,7 +397,7 @@ class Changes(object):
         """
         byhand = []
 
-        for f in self.files.itervalues():
+        for f in six.itervalues(self.files):
             if f.section == 'byhand' or f.section[:4] == 'raw-':
                 byhand.append(f)
                 continue
@@ -416,7 +417,7 @@ class Changes(object):
         """
         buildinfo = []
 
-        for f in self.files.itervalues():
+        for f in six.itervalues(self.files):
             if re_file_buildinfo.match(f.filename):
                 buildinfo.append(f)
 
@@ -451,7 +452,7 @@ class Changes(object):
         @type: number
         """
         count = 0
-        for f in self.files.itervalues():
+        for f in six.itervalues(self.files):
             count += f.size
         return count
 

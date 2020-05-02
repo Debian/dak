@@ -36,7 +36,7 @@ import dak.examine_package
 from daklib import policy
 from daklib.dbconn import *
 from daklib.config import Config
-from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS
+from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS, PROC_STATUS_EXCEPTION
 from multiprocessing import Manager
 
 # Globals
@@ -45,7 +45,7 @@ Options = None
 manager = Manager()
 sources = manager.list()
 htmlfiles_to_process = manager.list()
-timeout_str = "Timed out while processing"
+timeout_str = "Error or timeout while processing"
 
 
 ################################################################################
@@ -120,7 +120,7 @@ def html_header(name, missing):
       <p><a href="#source-lintian" onclick="show('source-lintian-body')">source lintian</a></p>
 
 """
-    for binarytype, packagename in filter(lambda m: m[0] in ('deb', 'udeb'), missing):
+    for binarytype, packagename in [m for m in missing if m[0] in ('deb', 'udeb')]:
         result += """
         <p class="subtitle">%(pkg)s</p>
         <p><a href="#binary-%(pkg)s-control" onclick="show('binary-%(pkg)s-control-body')">control file</a></p>
@@ -179,19 +179,19 @@ def do_pkg(upload_id):
         missing = [(o['type'], o['package']) for o in handler.missing_overrides()]
         distribution = changes.distribution
 
-        print(html_header(changes.source, missing), file=outfile)
-        print(dak.examine_package.display_changes(distribution, origchanges), file=outfile)
+        outfile.write(html_header(changes.source, missing))
+        outfile.write(dak.examine_package.display_changes(distribution, origchanges))
 
         if upload.source is not None and ('dsc', upload.source.source) in missing:
             fn = os.path.join(upload_copy.directory, upload.source.poolfile.basename)
-            print(dak.examine_package.check_dsc(distribution, fn, session), file=outfile)
+            outfile.write(dak.examine_package.check_dsc(distribution, fn, session))
         for binary in upload.binaries:
             if (binary.binarytype, binary.package) not in missing:
                 continue
             fn = os.path.join(upload_copy.directory, binary.poolfile.basename)
-            print(dak.examine_package.check_deb(distribution, fn, session), file=outfile)
+            outfile.write(dak.examine_package.check_deb(distribution, fn, session))
 
-        print(html_footer(), file=outfile)
+        outfile.write(html_footer())
 
     session.close()
     htmlfiles_to_process.remove(htmlfile)
@@ -241,6 +241,14 @@ def init(session):
     return uploads
 
 
+def result_callback(r):
+    code, msg = r
+    if code == PROC_STATUS_EXCEPTION:
+        print("Job raised exception: %s" % (msg))
+    elif code != PROC_STATUS_SUCCESS:
+        print("Job failed: %s" % (msg))
+
+
 ################################################################################
 ################################################################################
 
@@ -253,17 +261,21 @@ def main():
     session.close()
 
     for upload_id in upload_ids:
-        pool.apply_async(do_pkg, [upload_id])
+        pool.apply_async(do_pkg, [upload_id], callback=result_callback)
     pool.close()
 
     #p.wait(timeout=600)
     pool.join()
+
     for htmlfile in htmlfiles_to_process:
         with open(htmlfile, "w") as fd:
             fd.write(timeout_str)
 
+    if pool.overall_status() != PROC_STATUS_SUCCESS:
+        raise Exception("Processing failed (code %s)" % (pool.overall_status()))
+
     files = set(os.listdir(cnf["Show-New::HTMLPath"]))
-    to_delete = filter(lambda x: x.endswith(".html"), files.difference(set(sources)))
+    to_delete = [x for x in files.difference(set(sources)) if x.endswith(".html")]
     for f in to_delete:
         os.remove(os.path.join(cnf["Show-New::HTMLPath"], f))
 

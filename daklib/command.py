@@ -21,6 +21,7 @@
 
 import apt_pkg
 import os
+import six
 import tempfile
 
 from daklib.config import Config
@@ -70,7 +71,7 @@ class CommandFile(object):
         session.rollback()
         try:
             while True:
-                sections.next()
+                next(sections)
                 section = sections.section
                 self.result.append(self._quote_section(section))
 
@@ -131,7 +132,7 @@ class CommandFile(object):
         keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
         keyring_files = [k.keyring_name for k in keyrings]
 
-        signed_file = SignedFile(self.data, keyring_files)
+        signed_file = SignedFile(six.ensure_binary(self.data), keyring_files)
         if not signed_file.valid:
             self.log.log(['invalid signature', self.filename])
             return False
@@ -155,7 +156,7 @@ class CommandFile(object):
             self.uploader = addresses[0]
 
         try:
-            sections.next()
+            next(sections)
             section = sections.section
             if 'Uploader' in section:
                 self.uploader = section['Uploader']
@@ -203,7 +204,7 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr_hash = section['Fingerprint'].translate(None, ' ')
+        fpr_hash = section['Fingerprint'].replace(' ', '')
         fpr = session.query(Fingerprint).filter_by(fingerprint=fpr_hash).first()
         if fpr is None:
             raise CommandError('Unknown fingerprint {0}'.format(fpr_hash))
@@ -268,7 +269,7 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr_hash = section['Fingerprint'].translate(None, ' ')
+        fpr_hash = section['Fingerprint'].replace(' ', '')
         fpr = session.query(Fingerprint).filter_by(fingerprint=fpr_hash).first()
         if fpr is None:
             self.result.append('Unknown fingerprint: {0}\nNo action taken.'.format(fpr_hash))
@@ -292,13 +293,13 @@ class CommandFile(object):
         acl_name = cnf.get('Command::DM::ACL', 'dm')
         acl = session.query(ACL).filter_by(name=acl_name).one()
 
-        fpr_hash_from = section['From'].translate(None, ' ')
+        fpr_hash_from = section['From'].replace(' ', '')
         fpr_from = session.query(Fingerprint).filter_by(fingerprint=fpr_hash_from).first()
         if fpr_from is None:
             self.result.append('Unknown fingerprint (From): {0}\nNo action taken.'.format(fpr_hash_from))
             return
 
-        fpr_hash_to = section['To'].translate(None, ' ')
+        fpr_hash_to = section['To'].replace(' ', '')
         fpr_to = session.query(Fingerprint).filter_by(fingerprint=fpr_hash_to).first()
         if fpr_to is None:
             self.result.append('Unknown fingerprint (To): {0}\nNo action taken.'.format(fpr_hash_to))

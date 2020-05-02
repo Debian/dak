@@ -25,7 +25,7 @@ import sys
 import time
 
 from daklib.config import Config
-from daklib.command import CommandFile
+from daklib.command import CommandFile, CommandError
 from daklib.daklog import Logger
 from daklib.fstransactions import FilesystemTransaction
 from daklib.utils import find_next_free
@@ -61,7 +61,8 @@ def main(argv=None):
     rejectdir = cnf['Dir::Reject']
 
     if len(filenames) == 0:
-        filenames = [fn for fn in os.listdir(options['Directory']) if fn.endswith('.dak-commands')]
+        cdir = options['Directory']
+        filenames = [os.path.join(cdir, fn) for fn in os.listdir(cdir) if fn.endswith('.dak-commands')]
 
     for fn in filenames:
         basename = os.path.basename(fn)
@@ -75,14 +76,16 @@ def main(argv=None):
         try:
             command = CommandFile(basename, data, log)
             command.evaluate()
-        except:
+        except CommandError as e:
             created = os.stat(fn).st_mtime
             now = time.time()
             too_new = (now - created < int(cnf.get('Dinstall::SkipTime', '60')))
             if too_new:
                 log.log(['skipped (too new)'])
                 continue
-            log.log(['reject', basename])
+            log.log(['reject', basename, e])
+        except Exception as e:
+            log.log_traceback('Exception while processing %s:' % (basename), e)
             dst = find_next_free(os.path.join(rejectdir, basename))
         else:
             log.log(['done', basename])
