@@ -32,6 +32,7 @@ flake8:
     - python -mflake8
 
 get coverage:
+  <<: *template
   image: debian:buster
   stage: coverage
   dependencies:
