@@ -17,6 +17,10 @@
   </Directory>
   WSGIDaemonProcess api.ftp-master.debian.org user=dak-web group=dak-web processes=1 threads=5
   WSGIScriptAlias / /srv/ftp-master.debian.org/dak/dakweb/dakweb.wsgi
+
+  <IfModule mod_headers.c>
+    Header always add Access-Control-Allow-Origin "*"
+  </IfModule>
 </Macro>
 
 Use common-debian-service-https-redirect * api.ftp-master.debian.org
