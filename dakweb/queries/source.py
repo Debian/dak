@@ -176,6 +176,7 @@ def sources_in_suite(suite=None):
 
     s.close()
 
+    bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
 
@@ -241,6 +242,7 @@ def source_by_metadata(key=None):
                     'metadata_value': p.value})
     s.close()
 
+    bottle.response.content_type = 'application/json; charset=UTF-8'
     return json.dumps(ret)
 
 
