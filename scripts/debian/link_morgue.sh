@@ -114,7 +114,7 @@ ${scriptsdir}/link_morgue \
              --morguedir "${PROCESSDIR}"
 
 # And now, maybe, transfer stuff over to stabile...
-if [[ "$(hostname -s)" != "stabile" && "$(hostname -s)" != "fasolo" ]]; then
+if [ "$(hostname -s)" != "stabile" ]; then
     cd "${PROCESSDIR}"
     LISTFILE=$(mktemp -p ${TMPDIR} )
 
