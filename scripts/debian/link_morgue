@@ -104,7 +104,8 @@ def scan_directory(path: bytes):
             filenames.append(entry.path)
     yield from (fn for fn in filenames
                 if fn + b".nosnapshot" not in filenames
-                and not fn.endswith(b".nosnapshot"))
+                and not fn.endswith(b".nosnapshot")
+                and not fn.endswith(b"/.nobackup"))
     for path in directories:
         yield from scan_directory(path)
 
