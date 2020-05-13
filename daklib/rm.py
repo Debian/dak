@@ -366,6 +366,7 @@ def remove(session, reason, suites, removals,
 
     if not reason:
         raise ValueError("Empty removal reason not permitted")
+    reason = reason.strip()
 
     if not removals:
         raise ValueError("Nothing to remove!?")
