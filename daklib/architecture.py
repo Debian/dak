@@ -110,7 +110,7 @@ def match_architecture(arch, wildcard):
     # 'all' has no valid tuple
     if arch == 'all' or wildcard == 'all':
         return arch == wildcard
-    if wildcard is 'any' or arch == wildcard:
+    if wildcard == 'any' or arch == wildcard:
         return True
 
     tuple_arch = Debian_arch_to_Debian_tuple(arch)
