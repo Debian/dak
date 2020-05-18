@@ -46,7 +46,6 @@ import fcntl
 import functools
 import six
 import sqlalchemy.sql as sql
-import subprocess
 import email.utils
 from re import sub
 from collections import defaultdict
