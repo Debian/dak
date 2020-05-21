@@ -13,5 +13,5 @@ if [ "$RUN_COVERAGE" = "y" ]
 then
 	exec python-coverage run --rcfile "${DAK_ROOT}/.coveragerc" --source "${DAK_ROOT}" --parallel-mode "${DAK_ROOT}/dak/dak.py" "$@"
 else
-	exec "${DAK_ROOT}/dak/dak.py" "$@"
+	exec python "${DAK_ROOT}/dak/dak.py" "$@"
 fi
