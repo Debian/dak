@@ -161,6 +161,7 @@ def escaped_text(s, strip=False):
 
 
 def formatted_text(s, strip=False):
+    s = six.ensure_str(s)
     if use_html:
         if strip:
             s = s.strip()
@@ -177,6 +178,8 @@ def output_row(s):
 
 
 def format_field(k, v):
+    k = six.ensure_str(k)
+    v = six.ensure_str(v)
     if use_html:
         return """<tr><td class="key">%s:</td><td class="val">%s</td></tr>""" % (k, v)
     else:
@@ -198,7 +201,7 @@ def foldable_output(title, elementnameprefix, content, norow=False):
         result += output_row(content) + "\n"
     if use_html:
         result += """</tbody></table></div>"""
-    return result
+    return six.ensure_str(result)
 
 ################################################################################
 
@@ -595,10 +598,11 @@ def get_readme_source(dsc_filename):
         if e.errno != errno.EACCES:
             res += "%s: couldn't remove tmp dir %s for source tree." % (dsc_filename, tempdir)
 
-    return res
+    return six.ensure_str(res)
 
 
 def check_dsc(suite, dsc_filename, session=None):
+    dsc_filename = six.ensure_str(dsc_filename)
     dsc = read_changes_or_dsc(suite, dsc_filename, session)
     dsc_basename = os.path.basename(dsc_filename)
     cdsc = foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
