@@ -91,7 +91,7 @@ NEW processing
 
     cronoff
     CHANGES=FILENAME.changes
-    dak process-new
+    dak process-new ${CHANGES}
     cd /srv/security-master.debian.org/queue/new/COMMENTS
     echo $'NOTOK\n\nMoving back to unchecked' > "REJECT.${CHANGES%.changes}"
     rm "ACCEPT.${CHANGES%.changes}"
