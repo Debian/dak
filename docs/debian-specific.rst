@@ -84,6 +84,54 @@ owned by) the seperate user dak-code
 security archive
 ~~~~~~~~~~~~~~~~
 
+Switch suite to Long Term Support (LTS)
+---------------------------------------
+
+::
+    cronoff
+
+::
+    \set codename 'stretch'
+
+    begin;
+    update suite set
+      policy_queue_id = null,
+      announce = array['debian-lts-changes@lists.debian.org', 'dispatch@tracker.debian.org']
+    where codename = :'codename';
+    commit;
+
+::
+    suite=oldstable
+    codename=stretch
+
+    mkdir ~/${codename}-lts
+    cd ~/${codename}-lts
+    dak control-suite -l ${suite} > ${codename}.list
+    awk '$3 !~ "^source|all|amd64|arm64|armel|armhf|i386$"' < ${codename}.list > ${codename}-remove-for-lts.list
+    dak control-suite --remove ${suite} < ${codename}-remove-for-lts.list
+    dak control-suite --remove buildd-${suite} < ${codename}-remove-for-lts.list
+    for arch in mips mips64el mipsel ppc64el s390x; do
+      dak admin suite-architecture rm ${suite} ${arch}
+      dak admin suite-architecture rm buildd-${suite} ${arch}
+    done
+    cd ${ftpdir}/dists/${suite}/updates
+    for arch in mips mips64el mipsel ppc64el s390x; do
+      rm -r \
+        main/binary-${arch} main/debian-installer/binary-${arch} \
+        main/Contents-${arch}.gz main/Contents-udeb-${arch}.gz \
+        contrib/binary-${arch} contrib/debian-installer/binary-${arch} \
+        contrib/Contents-${arch}.gz contrib/Contents-udeb-${arch}.gz \
+        non-free/binary-${arch} non-free/debian-installer/binary-${arch} \
+        non-free/Contents-${arch}.gz non-free/Contents-udeb-${arch}.gz
+    done
+    cd ${base}/build-queues/dists/buildd-${suite}/updates
+    rm -r main contrib non-free
+    dak generate-packages-sources2 -s ${suite},buildd-${suite}
+    dak generate-releases -s ${suite} buildd-${suite}
+
+::
+    cronon
+
 NEW processing
 --------------
 
