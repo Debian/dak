@@ -81,6 +81,78 @@ machines: coccia fasolo respighi seger suchon usper
 Also, to seperate code and actual runtime, the code is deployed (and
 owned by) the seperate user dak-code
 
+General
+~~~~~~~
+
+Rotating Secure Boot Keys
+-------------------------
+
+Four keys are used: dak signs a JSON file used by the signing service
+(one key for main archive and security archive), the code-signing
+service signs files trusted by Debian's Secure Boot CA and uploads
+using a key trusted by dak.
+
+To rotate keys used by dak:
+
+- Generate new key::
+
+    export GNUPGHOME=${base}/s4kr1t/dot-gnupg
+    gpg --list-secret-keys
+    gpg --homedir --full-generate-key
+    gpg --keyring /srv/keyring.debian.org/keyrings/debian-keyring.gpg \
+      --local-user ${OLD_FINGERPRINT} --edit-key ${NEW_FINGERPRINT}
+    gpg -a --export ${NEW_FINGERPRINT}
+
+  When editing key, run `sign` command and `addrevoker` to add current
+  FTP masters as designated revokers.
+
+- Tell dak to use new key.  Edit dak.conf, update fingerprint used in
+  `ExportSigningKeys`.
+
+- Tell code-signing to use new key (in `code-signing` project)::
+
+    gpg --no-default-keyring --keyring etc/external-signature-requests.kbx \
+      --import
+
+To rotate Secure Boot key (in `code-signing` project):
+
+- Get new key installed in YubiKey and `etc/debian-prod-cert.pem`
+
+- Update `trusted_keys` in `etc/debian-prod.yaml` using::
+
+    openssl x509 -in etc/debian-prod-cert.pem -noout -text
+    openssl x509 -in etc/debian-prod-cert.pem -outform der | openssl dgst -sha256
+
+- Update certificate comman name in `etc/debian-prod.yaml`; there are
+  two occurances in the `efi` group: `token` and part of `pkcs11_uri`.
+
+To rotate upload key for code-signing service:
+
+- Generate new key (as above for dak keys).
+
+- Update `maintainer.key_id` in `etc/debian-prod.yaml` (in `code-signing`
+  project).
+
+- Tell dak about new key::
+
+    gpg --no-default-keyring \
+      --keyring config/debian-common/keyrings/automatic-source-uploads.kbx \
+      --import
+
+  and update fingerprint `AllowSourceOnlyNewKeys` setting in
+  `config/debian/external-signatures.conf`
+
+- Import key on `ftp-master` and `security-master`::
+
+    dak import-keyring -U "%s" \
+      ${base}/config/debian-common/keyrings/automatic-source-uploads.kbx
+
+- Update ACL on `ftp-master` and `security-master`::
+
+    dak acl export-per-source automatic-source-uploads
+    dak acl allow automatic-source-uploads ${NEW_FINGERPRINT} ${SOURCES}
+    dak acl deny automatic-source-uploads ${OLD_FINGERPRINT} ${SOURCES}
+
 security archive
 ~~~~~~~~~~~~~~~~
 
