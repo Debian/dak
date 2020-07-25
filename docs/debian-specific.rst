@@ -96,7 +96,7 @@ To rotate keys used by dak:
 
 - Generate new key::
 
-    export GNUPGHOME=${base}/s4kr1t/dot-gnupg
+    export GNUPGHOME=${base}/s3kr1t/dot-gnupg
     gpg --list-secret-keys
     gpg --homedir --full-generate-key
     gpg --keyring /srv/keyring.debian.org/keyrings/debian-keyring.gpg \
@@ -128,7 +128,9 @@ To rotate Secure Boot key (in `code-signing` project):
 
 To rotate upload key for code-signing service:
 
-- Generate new key (as above for dak keys).
+- Generate new key (as above for dak keys), except::
+
+    export GNUPGHOME=$HOME/secret/gnupg
 
 - Update `maintainer.key_id` in `etc/debian-prod.yaml` (in `code-signing`
   project).
