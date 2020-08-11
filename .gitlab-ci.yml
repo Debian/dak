@@ -44,6 +44,16 @@ get coverage:
       - coverage
       - logs
 
+contributors:
+  image: debian:buster
+  stage: deploy
+  script:
+    - apt update && apt install -y git python3-debiancontributors
+    - dc-tool --mine config/debian/contributor.patch --auth-token "@$DC_TOKEN" --source ftp.debian.org --post
+  allow_failure: true
+  only:
+    - master@ftp-team/dak
+
 pages:
   image: debian:9
   script:

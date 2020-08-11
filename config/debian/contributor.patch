@@ -1,0 +1,3 @@
+contribution: patch_contributor
+method: gitlogs
+dirs: ".git"
