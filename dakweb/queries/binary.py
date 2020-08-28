@@ -39,13 +39,14 @@ QueryRegister().register_path('/metadata_keys', binary_metadata_keys)
 def binary_by_metadata(key=None):
     """
 
-    Finds all Debian binary packages which have the specified metadata set.
+    Finds all Debian binary packages which have the specified metadata set
+    in their correspondig source package.
 
     E.g., to find out the Go import paths of all Debian Go packages, query
     /binary/by_metadata/Go-Import-Path.
 
     @type key: string
-    @param key: Metadata key to search for.
+    @param key: Metadata key of the source package to search for.
 
     @rtype: dictionary
     @return: A list of dictionaries of
