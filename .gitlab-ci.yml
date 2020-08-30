@@ -33,6 +33,7 @@ tests bullseye python3:
     paths:
       - coverage
       - output
+  allow_failure: true
 
 flake8:
   <<: *template
