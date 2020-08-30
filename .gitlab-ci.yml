@@ -6,7 +6,7 @@
 test buster:
   <<: *template
   image: debian:buster
-  parallel: 5
+  parallel: 2
   script: debian/run-ci --with-coverage
   artifacts:
     expire_in: 1 day
@@ -17,6 +17,7 @@ test buster:
 tests buster python3:
   <<: *template
   image: debian:buster
+  parallel: 2
   script: debian/run-ci --python3
   artifacts:
     paths:
@@ -26,6 +27,7 @@ tests buster python3:
 tests bullseye python3:
   <<: *template
   image: debian:bullseye
+  parallel: 2
   script: debian/run-ci --python3
   artifacts:
     paths:
