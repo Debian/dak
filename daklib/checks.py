@@ -476,7 +476,7 @@ class BinaryCheck(Check):
                     raise Reject('{0}: APT could not parse {1} field'.format(fn, field))
                 for group in depends:
                     if not allow_alternatives and len(group) != 1:
-                        raise Reject('{0}: {1}: alternatives are not allowed'.format(fn))
+                        raise Reject('{0}: {1}: alternatives are not allowed'.format(fn, field))
                     for dep_pkg, dep_ver, dep_rel in group:
                         if dep_rel not in allow_relations:
                             raise Reject('{}: {}: depends on {}, but only relations {} are allowed for this field'.format(fn, field, " ".join(dep_pkg, dep_rel, dep_ver), allow_relations))
@@ -557,7 +557,7 @@ class SourceCheck(Check):
         if is_orig:
             upstream_match = re_field_version_upstream.match(version)
             if not upstream_match:
-                raise Reject('{0}: Source package includes upstream tarball, but {0} has no Debian revision.'.format(filename, version))
+                raise Reject('{0}: Source package includes upstream tarball, but {1} has no Debian revision.'.format(filename, version))
             version = upstream_match.group('upstream')
         version_match = re_field_version.match(version)
         version_without_epoch = version_match.group('without_epoch')

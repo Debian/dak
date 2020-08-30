@@ -177,7 +177,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
         source_component = source_component_func(upload.source)
         if upload.target_suite.suite_name in cnf.value_list('Dinstall::ThrowAwayNewBinarySuites') and \
            source_component.component_name in cnf.value_list('Dinstall::ThrowAwayNewBinaryComponents'):
-                throw_away_binaries = True
+            throw_away_binaries = True
 
     for suite in all_target_suites:
         debug_suite = suite.debug_suite
