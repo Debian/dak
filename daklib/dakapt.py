@@ -22,10 +22,11 @@ interfaces around python-apt
 
 import apt_pkg
 
-"""
-wrapper around `apt_pkg.Hashes`
-"""
+
 class DakHashes(object):
+    """
+    wrapper around `apt_pkg.Hashes`
+    """
     def __init__(self, *args, **kwargs):
         self._apt_hashes = apt_pkg.Hashes(*args, **kwargs)
 

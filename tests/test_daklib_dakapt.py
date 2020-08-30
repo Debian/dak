@@ -23,6 +23,7 @@ from base_test import DakTestCase
 
 import daklib.dakapt
 
+
 class TestDakHashes(DakTestCase):
     def testDakHashes(self):
         hashes = daklib.dakapt.DakHashes("/dev/null")
