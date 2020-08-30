@@ -23,6 +23,15 @@ tests buster python3:
       - coverage
       - output
 
+tests bullseye python3:
+  <<: *template
+  image: debian:bullseye
+  script: debian/run-ci --python3
+  artifacts:
+    paths:
+      - coverage
+      - output
+
 flake8:
   <<: *template
   image: debian:9
