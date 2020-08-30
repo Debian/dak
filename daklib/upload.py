@@ -31,6 +31,7 @@ import six
 from daklib.aptversion import AptVersion
 from daklib.gpg import SignedFile
 from daklib.regexes import *
+import daklib.dakapt
 import daklib.packagelist
 
 
@@ -156,7 +157,7 @@ class HashedFile(object):
         path = os.path.join(directory, filename)
         with open(path, 'r') as fh:
             size = os.fstat(fh.fileno()).st_size
-            hashes = apt_pkg.Hashes(fh)
+            hashes = daklib.dakapt.DakHashes(fh)
         return cls(filename, size, hashes.md5, hashes.sha1, hashes.sha256, section, priority)
 
     def check(self, directory):
@@ -181,7 +182,7 @@ class HashedFile(object):
     def check_fh(self, fh):
         size = os.fstat(fh.fileno()).st_size
         fh.seek(0)
-        hashes = apt_pkg.Hashes(fh)
+        hashes = daklib.dakapt.DakHashes(fh)
 
         if size != self.size:
             raise InvalidHashException(self.filename, 'size', self.size, size)

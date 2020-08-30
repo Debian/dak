@@ -16,6 +16,7 @@
 
 import daklib.compress
 import daklib.config
+import daklib.dakapt
 import daklib.dbconn
 import daklib.gpg
 import daklib.upload
@@ -79,7 +80,7 @@ class File(object):
         return self._tmp
 
     def hashes(self):
-        return apt_pkg.Hashes(self.fh())
+        return daklib.dakapt.DakHashes(self.fh())
 
 
 def obtain_file(base, path):
