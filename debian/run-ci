@@ -17,6 +17,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+# start/end collapsible sections in GitLab's CI
+# Reference: https://docs.gitlab.com/ee/ci/pipelines/#custom-collapsible-sections
+section_start() {
+    local name header
+    name="${1:?}"
+    header="${2:-}"
+    echo -e "section_start:$(date +%s):${name}\r\e[0K${header}"
+}
+
+section_end() {
+    local name
+    name="${1:?}"
+    echo -e "section_end:$(date +%s):${name}\r\e[0K"
+}
+
 run_apt-get() {
     if [ "$UID" = 0 ]
     then
@@ -95,6 +110,7 @@ export DAK_CI_OUTPUT_DIR=${BASEDIR}/output
 mkdir -p ${DAK_CI_OUTPUT_DIR}
 LOGFILE=${DAK_CI_OUTPUT_DIR}/log_job${CI_NODE_INDEX}.txt
 
+section_start install_dep "Install Dependencies"
 echo `date` installing packages | tee -a $LOGFILE
 
 run_apt-get update
@@ -121,10 +137,14 @@ if [ "x$DAK_PYTHON3" != "x" ]; then
 
 fi
 
+section_end install_dep
+
 mkdir -p $DAK_ROOT/test-gnupghome
 export GNUPGHOME=${DAK_ROOT}/test-gnupghome
 
 cd ${DAK_ROOT}
+
+section_start unit_tests "Unit Tests"
 
 if run_this_test; then
     echo `date` running unit tests | tee -a $LOGFILE
@@ -135,9 +155,17 @@ else
     echo "not running unit tests in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
 fi
 
+section_end unit_tests
+
+section_start fixtures "Creating Fixtures"
+
 echo `date` making fixtures | tee -a $LOGFILE
 make -C tests/fixtures/packages
 echo `date` making fixtures done | tee -a $LOGFILE
+
+section_end fixtures
+
+section_start integration_tests "Integration Tests"
 
 TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
     ${DAK_ROOT}/tests/run-dbtests"
@@ -152,13 +180,17 @@ do
     else
         echo "not running test $t in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
     fi
-
 done
+
+section_end integration_tests
+
 if [ "$RUN_COVERAGE" = "y" ]; then
+    section_start coverage "Coverage Report"
     ${COVERAGE_CMD} combine --append
     ${COVERAGE_CMD} report -m
     echo
     ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
     ${COVERAGE_CMD} annotate -d ${BASEDIR}/coverage/annotated
+    section_end coverage
 fi
 echo `date` all done | tee -a $LOGFILE
