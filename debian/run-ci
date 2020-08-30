@@ -117,24 +117,29 @@ run_apt-get update
 run_apt-get install -y build-essential
 run_apt-get build-dep -y .
 
+python_deps=(
+    python3-all-dev
+    python3-apt
+    python3-coverage
+    python3-debian
+    python3-debianbts
+    python3-ldap
+    python3-psycopg2
+    python3-pytest
+    python3-pytest-cov
+    python3-rrdtool
+    python3-six
+    python3-sqlalchemy
+    python3-tabulate
+    python3-yaml
+)
+
 if [ "x$DAK_PYTHON3" != "x" ]; then
     run_apt-get install -y --no-install-recommends \
-        2to3 \
-        python3-coverage \
-        python3-debian \
-        python3-debianbts \
-        python3-ldap \
-        python3-psycopg2 \
-        python3-pytest \
-        python3-pytest-cov \
-        python3-rrdtool \
-        python3-six \
-        python3-sqlalchemy \
-        python3-tabulate \
-        python3-yaml \
-        python3-apt \
-
-
+        2to3 ${python_deps[@]}
+else
+    run_apt-get install -y --no-install-recommends \
+        ${python_deps[@]/#python3-/python-}
 fi
 
 section_end install_dep
