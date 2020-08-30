@@ -96,7 +96,7 @@ class Check(object):
 
         @raise daklib.checks.Reject: upload should be rejected
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def per_suite_check(self, upload, suite):
         """do per-suite checks
@@ -109,7 +109,7 @@ class Check(object):
 
         @raise daklib.checks.Reject: upload should be rejected
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @property
     def forcable(self):
