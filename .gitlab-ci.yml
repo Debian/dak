@@ -37,11 +37,11 @@ tests bullseye python3:
 
 flake8:
   <<: *template
-  image: debian:9
+  image: debian:buster
   script:
     - apt-get update
-    - apt-get install -y python-flake8
-    - python -mflake8
+    - apt-get install -y flake8
+    - flake8
 
 get coverage:
   <<: *template
@@ -68,7 +68,7 @@ contributors:
     - master@ftp-team/dak
 
 pages:
-  image: debian:9
+  image: debian:buster
   script:
     - apt-get update
     - apt-get install -y python-epydoc
