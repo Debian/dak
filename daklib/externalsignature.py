@@ -21,8 +21,7 @@
 
 import json
 import sqlalchemy.sql as sql
-# TODO [sqlalchemy >= 1.1]: use `ON CONFLICT DO NOTHING`
-# import sqlalchemy.dialects.postgresql as pgsql
+import sqlalchemy.dialects.postgresql as pgsql
 
 import daklib.gpg
 
@@ -68,16 +67,9 @@ def add_external_signature_request(session, target_suite, suite, binary):
     tbl_ba = DBConn().tbl_bin_associations
     tbl_esr = DBConn().tbl_external_signature_requests
 
-    # TODO [sqlalchemy >= 1.1]: use `ON CONFLICT DO NOTHING`
-    #select = sql.select([tbl_ba.c.id, target_suite.suite_id]).where((tbl_ba.c.suite == suite.suite_id) & (tbl_ba.c.bin == binary.binary_id))
-    #insert = pgsql.insert(tbl_esr).from_select([tbl_esr.c.association_id, tbl_esr.c.suite_id], select).on_conflict_do_nothing()
-    #session.execute(insert)
-
-    ba_id = session.execute(sql.select([tbl_ba.c.id]).where((tbl_ba.c.suite == suite.suite_id) & (tbl_ba.c.bin == binary.binary_id))).scalar()
-    exists = session.execute(sql.select([tbl_esr]).where(tbl_esr.c.association_id == ba_id).where(tbl_esr.c.suite_id == target_suite.suite_id)).first()
-    if exists is None:
-        insert = sql.insert(tbl_esr).values(association_id=ba_id, suite_id=target_suite.suite_id)
-        session.execute(insert)
+    select = sql.select([tbl_ba.c.id, target_suite.suite_id]).where((tbl_ba.c.suite == suite.suite_id) & (tbl_ba.c.bin == binary.binary_id))
+    insert = pgsql.insert(tbl_esr).from_select([tbl_esr.c.association_id, tbl_esr.c.suite_id], select).on_conflict_do_nothing()
+    session.execute(insert)
 
 
 def check_upload_for_external_signature_request(session, target_suite, suite, binary):
