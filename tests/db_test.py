@@ -90,7 +90,7 @@ class DBDakTestCase(DakTestCase):
             if not self.arch[arch_string]:
                 self.arch[arch_string] = Architecture(arch_string)
             if arch_string != 'kfreebsd-i386':
-                self.arch[arch_string].suites = self.suite.values()
+                self.arch[arch_string].suites = list(self.suite.values())
             else:
                 filtered = list(self.suite.values())
                 if 'lenny' in self.suite:
