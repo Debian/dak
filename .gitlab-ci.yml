@@ -6,7 +6,7 @@
 test buster:
   <<: *template
   image: debian:buster
-  parallel: 2
+  parallel: 3
   script: debian/run-ci --with-coverage
   artifacts:
     expire_in: 1 day
