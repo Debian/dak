@@ -65,6 +65,7 @@ def clean(build_queue, transaction, now=None):
 
     delete_before = now - timedelta(seconds=build_queue.stay_of_execution)
     suite = build_queue.suite
+    suite_was_changed = False
 
     # Remove binaries subject to the following conditions:
     # 1. Keep binaries that are in policy queues.
@@ -93,6 +94,7 @@ def clean(build_queue, transaction, now=None):
     for binary in binaries:
         Logger.log(["removed binary from build queue", build_queue.queue_name, binary.package, binary.version])
         transaction.remove_binary(binary, suite)
+        suite_was_changed = True
 
     # Remove sources
     # Conditions are similar as for binaries, but we also keep sources
@@ -125,8 +127,9 @@ def clean(build_queue, transaction, now=None):
     for source in sources:
         Logger.log(["removed source from build queue", build_queue.queue_name, source.source, source.version])
         transaction.remove_source(source, suite)
+        suite_was_changed = True
 
-    if binaries or sources:
+    if suite_was_changed:
         suite.update_last_changed()
 
 
