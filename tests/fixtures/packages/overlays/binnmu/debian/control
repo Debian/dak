@@ -3,7 +3,7 @@ Section: misc
 Priority: extra
 Maintainer: A Maintainer <maint@example.com>
 Uploaders: An Uploader <uploader@example.com>
-Build-Depends: debhelper (>= 9)
+Build-Depends: debhelper-compat (= 12)
 Rules-Requires-Root: no
 
 Package: binnmupkg
