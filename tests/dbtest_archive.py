@@ -70,7 +70,7 @@ class ArchiveTestCase(DBDakTestCase):
         with self.attempt_upload(changes) as attempt:
             result = attempt.check()
             self.assertFalse(result)
-            self.assertEquals(attempt.reject_reasons,
+            self.assertEqual(attempt.reject_reasons,
                               [u'.changes signed by unknown key.'])
 
         # Import the keyring
@@ -80,7 +80,7 @@ class ArchiveTestCase(DBDakTestCase):
         with self.attempt_upload(changes) as attempt:
             result = attempt.check()
             self.assertFalse(result)
-            self.assertEquals(attempt.reject_reasons,
+            self.assertEqual(attempt.reject_reasons,
                               [u'No target suite found. Please check your target distribution and that you uploaded to the right archive.'])
 
         # Add the missing suite
@@ -91,7 +91,7 @@ class ArchiveTestCase(DBDakTestCase):
         with self.attempt_upload(changes) as attempt:
             result = attempt.check()
             self.assertFalse(result)
-            self.assertEquals(attempt.reject_reasons,
+            self.assertEqual(attempt.reject_reasons,
                               [u'source format 3.0 (quilt) is not allowed in suite unstable'])
 
         # Add the missing format
@@ -101,7 +101,7 @@ class ArchiveTestCase(DBDakTestCase):
         with self.attempt_upload(changes) as attempt:
             result = attempt.check()
             self.assertFalse(result)
-            self.assertEquals(attempt.reject_reasons,
+            self.assertEqual(attempt.reject_reasons,
                               [u'Architecture source is not allowed in suite unstable'])
 
         # Add the missing architecture / suites connection
@@ -113,7 +113,7 @@ class ArchiveTestCase(DBDakTestCase):
             result = attempt.check()
             self.assertTrue(result)
             self.assertTrue(attempt.new)
-            self.assertEquals(attempt.reject_reasons, [])
+            self.assertEqual(attempt.reject_reasons, [])
 
     def test_upload_new(self):
         # Parse the changes file
@@ -137,7 +137,7 @@ class ArchiveTestCase(DBDakTestCase):
             result = attempt.check()
             self.assertTrue(result)
             self.assertTrue(attempt.new)
-            self.assertEquals(attempt.reject_reasons, [])
+            self.assertEqual(attempt.reject_reasons, [])
 
         # Add the override for the source package
         override = {}
@@ -155,7 +155,7 @@ class ArchiveTestCase(DBDakTestCase):
             result = attempt.check()
             self.assertTrue(result)
             self.assertTrue(attempt.new)
-            self.assertEquals(attempt.reject_reasons, [])
+            self.assertEqual(attempt.reject_reasons, [])
 
         # Add the binary overrides
         overrides = []
@@ -175,7 +175,7 @@ class ArchiveTestCase(DBDakTestCase):
             result = attempt.check()
             self.assertTrue(result)
             self.assertFalse(attempt.new)
-            self.assertEquals(attempt.reject_reasons, [])
+            self.assertEqual(attempt.reject_reasons, [])
 
     def classes_to_clean(self):
         for object_ in self.session.query(dbconn.Override):
