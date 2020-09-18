@@ -8,6 +8,8 @@ to provide the list_paths and path_help functions
 @license: GNU General Public License version 2 or later
 """
 
+from __future__ import absolute_import
+
 import bottle
 from bottle import redirect
 from daklib.dbconn import DBConn
@@ -47,11 +49,11 @@ def path_help(path=None):
 QueryRegister().register_path('/path_help', list_paths)
 
 # Import our other methods
-from queries.archive import *
-from queries.madison import *
-from queries.source import *
-from queries.suite import *
-from queries.binary import *
+from .queries.archive import *
+from .queries.madison import *
+from .queries.source import *
+from .queries.suite import *
+from .queries.binary import *
 
 # Set up our initial database connection
 d = DBConn()
