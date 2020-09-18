@@ -1057,7 +1057,7 @@ class ArchiveUpload(object):
             self.reject_reasons.append("Processing raised an exception: {0}.\n{1}".format(e, traceback.format_exc()))
         return False
 
-    def _install_to_suite(self, target_suite, suite, source_component_func, binary_component_func, source_suites=None, extra_source_archives=None, new_upload=False):
+    def _install_to_suite(self, target_suite, suite, source_component_func, binary_component_func, source_suites=None, extra_source_archives=None, policy_upload=False):
         """Install upload to the given suite
 
         @type  target_suite: L{daklib.dbconn.Suite}
@@ -1076,6 +1076,8 @@ class ArchiveUpload(object):
         @param source_suites: see L{daklib.archive.ArchiveTransaction.install_binary}
 
         @param extra_source_archives: see L{daklib.archive.ArchiveTransaction.install_binary}
+
+        @param policy_upload: Boolean indicating upload to policy queue (including NEW)
 
         @return: tuple with two elements. The first is a L{daklib.dbconn.DBSource}
                  object for the install source or C{None} if no source was
@@ -1122,7 +1124,7 @@ class ArchiveUpload(object):
             )
             db_binaries.append(db_binary)
 
-            if not new_upload:
+            if not policy_upload:
                 check_upload_for_external_signature_request(self.session, target_suite, copy_to_suite, db_binary)
 
         if suite.copychanges:
@@ -1338,10 +1340,12 @@ class ArchiveUpload(object):
                 overridesuite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 
             policy_queue = self._policy_queue(suite)
+            policy_upload = False
 
             redirected_suite = suite
             if policy_queue is not None:
                 redirected_suite = policy_queue.suite
+                policy_upload = True
 
             # source can be in the suite we install to or any suite we enhance
             source_suite_ids = set([suite.suite_id, redirected_suite.suite_id])
@@ -1358,7 +1362,7 @@ class ArchiveUpload(object):
             def binary_component_func(binary):
                 return self._binary_component(overridesuite, binary, only_overrides=False)
 
-            (db_source, db_binaries) = self._install_to_suite(suite, redirected_suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive])
+            (db_source, db_binaries) = self._install_to_suite(suite, redirected_suite, source_component_func, binary_component_func, source_suites=source_suites, extra_source_archives=[suite.archive], policy_upload=policy_upload)
 
             if policy_queue is not None:
                 self._install_policy(policy_queue, suite, db_changes, db_source, db_binaries)
@@ -1426,7 +1430,7 @@ class ArchiveUpload(object):
             return source_component
 
         db_changes = self._install_changes()
-        (db_source, db_binaries) = self._install_to_suite(suite, new_suite, source_component_func, binary_component_func, source_suites=True, extra_source_archives=[suite.archive], new_upload=True)
+        (db_source, db_binaries) = self._install_to_suite(suite, new_suite, source_component_func, binary_component_func, source_suites=True, extra_source_archives=[suite.archive], policy_upload=True)
         policy_upload = self._install_policy(new_queue, suite, db_changes, db_source, db_binaries)
 
         for f in byhand:
