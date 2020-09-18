@@ -23,7 +23,7 @@ section_start() {
     local name header
     name="${1:?}"
     header="${2:-}"
-    echo -e "section_start:$(date +%s):${name}\r\e[0K${header}"
+    echo -e "section_start:$(date +%s):${name}\r\e[0K\e[36;1m${header}\e[0;m"
 }
 
 section_end() {
