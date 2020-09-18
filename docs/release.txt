@@ -310,13 +310,13 @@ dak admin v-c add experimental MustBeNewerThan testing
 # copy d-i to new testing (so same d-i in stable, testing, unstable)
 
 # backports
-dak admin suite add ${new_oldstable}-backports-sloppy '' origin="Debian Backports" label='Debian Backports' codename=${new_oldstable}-backports-sloppy description='Debian 9 - Sloppy Backports' archive=ftp-master
-dak admin suite add ${new_oldstable}-backports-sloppy-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_oldstable}-backports-sloppy-debug description='Debian 9 - Sloppy Backports - Debug Information' archive=debian-debug
+dak admin suite add oldstable-backports-sloppy '' origin="Debian Backports" label='Debian Backports' codename=${new_oldstable}-backports-sloppy description='Debian 9 - Sloppy Backports' archive=ftp-master
+dak admin suite add oldstable-backports-sloppy-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_oldstable}-backports-sloppy-debug description='Debian 9 - Sloppy Backports - Debug Information' archive=debian-debug
 
-dak admin suite add ${new_stable}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_stable}-debug description='Debian 10 - Backports - Debug Information' archive=debian-debug
+dak admin suite add stable-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_stable}-debug description='Debian 10 - Backports - Debug Information' archive=debian-debug
 
-dak admin suite add ${new_testing}-backports '' origin="Debian Backports" label='Debian Backports' codename=${new_testing}-backports description='Debian X.Y - Backports' archive=ftp-master
-dak admin suite add ${new_testing}-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_testing}-backports-debug description='Debian X.Y - Backports - Debug Information' archive=debian-debug
+dak admin suite add testing-backports '' origin="Debian Backports" label='Debian Backports' codename=${new_testing}-backports description='Debian X.Y - Backports' archive=ftp-master
+dak admin suite add testing-backports-debug '' origin="Debian Backports" label='Debian Backports debug' codename=${new_testing}-backports-debug description='Debian X.Y - Backports - Debug Information' archive=debian-debug
 
 configure-backports-suite() {
   local suite=${1:?}
@@ -326,13 +326,13 @@ configure-backports-suite() {
   dak admin suite-config set ${suite} notautomatic=true butautomaticupgrades=true accept_source_uploads=false accept_binary_uploads=false close_bugs=false
 }
 
-for suite in ${new_oldstable}-backports-sloppy ${new_oldstable}-backports-sloppy-debug; do
+for suite in oldstable-backports-sloppy oldstable-backports-sloppy-debug; do
   configure-backports-suite ${suite} ${new_oldstable}
 done
-for suite in ${new_stable}-backports-debug; do
+for suite in stable-backports-debug; do
   configure-backports-suite ${suite} ${new_stable}
 done
-for suite in ${new_testing}-backports ${new_testing}-backports-debug; do
+for suite in testing-backports testing-backports-debug; do
   configure-backports-suite ${suite} ${new_testing}
 done
 
