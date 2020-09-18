@@ -556,6 +556,8 @@ class Component(ORMObject):
         # This signals to use the normal comparison operator
         return NotImplemented
 
+    __hash__ = ORMObject.__hash__
+
     def properties(self):
         return ['component_name', 'component_id', 'description',
             'meets_dfsg', 'overrides_count']
@@ -1438,6 +1440,8 @@ class Priority(ORMObject):
         # This signals to use the normal comparison operator
         return NotImplemented
 
+    __hash__ = ORMObject.__hash__
+
 
 __all__.append('Priority')
 
@@ -1794,6 +1798,8 @@ class Suite(ORMObject):
         # This signals to use the normal comparison operator
         return NotImplemented
 
+    __hash__ = ORMObject.__hash__
+
     def details(self):
         ret = []
         for disp, field in SUITE_FIELDS:
@@ -1962,6 +1968,8 @@ class Uid(ORMObject):
             return (self.uid != val)
         # This signals to use the normal comparison operator
         return NotImplemented
+
+    __hash__ = ORMObject.__hash__
 
     def properties(self):
         return ['uid', 'name', 'fingerprint']
