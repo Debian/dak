@@ -44,6 +44,7 @@ from os.path import normpath
 import re
 import six
 import subprocess
+import warnings
 
 from debian.debfile import Deb822
 from tarfile import TarFile
@@ -69,7 +70,6 @@ from .config import Config
 from .textutils import fix_maintainer, force_to_utf8
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
-import warnings
 warnings.filterwarnings('ignore',
     "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*",
     SADeprecationWarning)
@@ -546,12 +546,14 @@ class Component(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.component_name == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.component_name != val)
         # This signals to use the normal comparison operator
         return NotImplemented
@@ -1430,12 +1432,14 @@ class Priority(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.priority == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.priority != val)
         # This signals to use the normal comparison operator
         return NotImplemented
@@ -1788,12 +1792,14 @@ class Suite(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.suite_name == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.suite_name != val)
         # This signals to use the normal comparison operator
         return NotImplemented
@@ -1959,12 +1965,14 @@ class Uid(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.uid == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.uid != val)
         # This signals to use the normal comparison operator
         return NotImplemented
