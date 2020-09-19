@@ -169,8 +169,13 @@ def comment_accept(upload, srcqueue, comments, transaction):
             .join(Component)
         return query.one().component
 
-    all_target_suites = [upload.target_suite]
-    all_target_suites.extend([q.suite for q in upload.target_suite.copy_queues])
+    policy_queue = upload.target_suite.policy_queue
+    if policy_queue == srcqueue:
+        policy_queue = None
+
+    all_target_suites = [upload.target_suite if policy_queue is None else policy_queue.suite]
+    if policy_queue is None or policy_queue.send_to_build_queues:
+        all_target_suites.extend([q.suite for q in upload.target_suite.copy_queues])
 
     throw_away_binaries = False
     if upload.source is not None:
@@ -236,7 +241,7 @@ def comment_accept(upload, srcqueue, comments, transaction):
         suite.update_last_changed()
 
     # Copy .changes if needed
-    if upload.target_suite.copychanges:
+    if policy_queue is None and upload.target_suite.copychanges:
         src = os.path.join(upload.policy_queue.path, upload.changes.changesname)
         dst = os.path.join(upload.target_suite.path, upload.changes.changesname)
         fs.copy(src, dst, mode=upload.target_suite.archive.mode)
@@ -246,11 +251,29 @@ def comment_accept(upload, srcqueue, comments, transaction):
     chg = daklib.upload.Changes(upload.policy_queue.path, changesname, keyrings=[], require_signature=False)
     queue_files.extend(f.filename for f in chg.buildinfo_files)
 
+    # TODO: similar code exists in archive.py's `ArchiveUpload._install_policy`
+    if policy_queue is not None:
+        # register upload in policy queue
+        new_upload = PolicyQueueUpload()
+        new_upload.policy_queue = policy_queue
+        new_upload.target_suite = upload.target_suite
+        new_upload.changes = upload.changes
+        new_upload.source = upload.source
+        new_upload.binaries = upload.binaries
+        session.add(new_upload)
+        session.flush()
+
+        # copy .changes & similar to policy queue
+        for fn in queue_files:
+            src = os.path.join(upload.policy_queue.path, fn)
+            dst = os.path.join(policy_queue.path, fn)
+            transaction.fs.copy(src, dst, mode=policy_queue.change_perms)
+
     # Copy upload to Process-Policy::CopyDir
     # Used on security.d.o to sync accepted packages to ftp-master, but this
     # should eventually be replaced by something else.
     copydir = cnf.get('Process-Policy::CopyDir') or None
-    if copydir is not None:
+    if policy_queue is None and copydir is not None:
         mode = upload.target_suite.archive.mode
         if upload.source is not None:
             for f in [df.poolfile for df in upload.source.srcfiles]:
@@ -272,10 +295,11 @@ def comment_accept(upload, srcqueue, comments, transaction):
             if os.path.exists(src) and not os.path.exists(dst):
                 fs.copy(src, dst, mode=mode)
 
-    utils.process_buildinfos(upload.policy_queue.path, chg.buildinfo_files,
-                             fs, Logger)
+    if policy_queue is None:
+        utils.process_buildinfos(upload.policy_queue.path, chg.buildinfo_files,
+                                 fs, Logger)
 
-    if upload.source is not None and not Options['No-Action']:
+    if policy_queue is None and upload.source is not None and not Options['No-Action']:
         urgency = upload.changes.urgency
         # As per policy 5.6.17, the urgency can be followed by a space and a
         # comment.  Extract only the urgency from the string.
@@ -285,23 +309,28 @@ def comment_accept(upload, srcqueue, comments, transaction):
             urgency = cnf['Urgency::Default']
         UrgencyLog().log(upload.source.source, upload.source.version, urgency)
 
-    print("  ACCEPT")
+    if policy_queue is None:
+        print("  ACCEPT")
+    else:
+        print("  ACCEPT-TO-QUEUE")
     if not Options['No-Action']:
         Logger.log(["Policy Queue ACCEPT", srcqueue.queue_name, changesname])
 
-    pu = get_processed_upload(upload)
-    daklib.announce.announce_accept(pu)
+    if policy_queue is None:
+        pu = get_processed_upload(upload)
+        daklib.announce.announce_accept(pu)
 
     # TODO: code duplication. Similar code is in process-upload.
     # Move .changes to done
     now = datetime.datetime.now()
     donedir = os.path.join(cnf['Dir::Done'], now.strftime('%Y/%m/%d'))
-    for fn in queue_files:
-        src = os.path.join(upload.policy_queue.path, fn)
-        if os.path.exists(src):
-            dst = os.path.join(donedir, fn)
-            dst = utils.find_next_free(dst)
-            fs.copy(src, dst, mode=0o644)
+    if policy_queue is None:
+        for fn in queue_files:
+            src = os.path.join(upload.policy_queue.path, fn)
+            if os.path.exists(src):
+                dst = os.path.join(donedir, fn)
+                dst = utils.find_next_free(dst)
+                fs.copy(src, dst, mode=0o644)
 
     if throw_away_binaries and upload.target_suite.archive.use_morgue:
         morguesubdir = cnf.get("New::MorgueSubDir", 'new')

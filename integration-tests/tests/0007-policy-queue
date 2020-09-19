@@ -1,0 +1,88 @@
+#! /bin/bash
+#
+# © 2020, 😸 <😸@43-1.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+
+# setup archive
+(
+  # add unstable with amd64
+  dak admin architecture add amd64 AMD64
+  dak admin suite add unstable "" codename=sid
+  dak admin suite-architecture add unstable source all amd64
+  dak admin suite-component add unstable main contrib non-free
+
+  # add embargoed policy queue
+  dak admin suite add embargoed "" codename=embargoed archive=policy
+
+  psql -1 -d projectb <<-EOT
+	\set ON_ERROR_STEP
+	INSERT INTO policy_queue (queue_name, path, send_to_build_queues, suite_id)
+	VALUES ('embargoed',
+	        '${DAKBASE}/queue/embargoed',
+	        TRUE,
+	        (SELECT id FROM suite WHERE suite_name = 'embargoed'));
+	UPDATE suite
+	SET policy_queue_id = (SELECT id FROM policy_queue WHERE queue_name = 'embargoed')
+	WHERE suite_name = 'unstable';
+	EOT
+)
+
+suite_with_contents="\
+linux-image-all 42.0-1 all
+linux-image-all-signed-template 42.0-1 all
+linux 42.0-1 source"
+
+# upload something to NEW
+(
+  packages=$(fixture-package-dir)
+  import-fixture-signing-key
+
+  dcmd cp -n -t ${DAKBASE}/tmp ${packages:?}/linux_42.0-1_amd64.changes
+  dak process-upload -d ${DAKBASE}/tmp --automatic
+
+  assert-equal "dak control-suite -l embargoed" "$(dak control-suite -l embargoed)" ""
+  assert-equal "dak control-suite -l new" "$(dak control-suite -l new)" "${suite_with_contents}"
+  assert-equal "dak control-suite -l unstable" "$(dak control-suite -l unstable)" ""
+)
+
+# accept upload form NEW into policy queue
+(
+  echo a | dak process-new linux_42.0-1_amd64.changes
+  dak process-policy new
+  dak clean-suites
+
+  assert-equal "dak control-suite -l embargoed" "$(dak control-suite -l embargoed)" "${suite_with_contents}"
+  assert-equal "dak control-suite -l new" "$(dak control-suite -l new)" ""
+  assert-equal "dak control-suite -l unstable" "$(dak control-suite -l unstable)" ""
+)
+
+# accept upload from policy queue into target suite
+(
+  mkdir ${DAKBASE}/queue/embargoed/COMMENTS
+  echo OK > ${DAKBASE}/queue/embargoed/COMMENTS/ACCEPT.linux_42.0-1
+  dak process-policy embargoed
+  dak clean-suites
+
+  assert-equal "dak control-suite -l embargoed" "$(dak control-suite -l embargoed)" ""
+  assert-equal "dak control-suite -l new" "$(dak control-suite -l new)" ""
+  assert-equal "dak control-suite -l unstable" "$(dak control-suite -l unstable)" "${suite_with_contents}"
+)
