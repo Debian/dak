@@ -178,10 +178,12 @@ TESTS="${DAK_ROOT}/integration-tests/tests/[0-9]*[^~] \
 for t in $TESTS
 do
     if run_this_test; then
+        section_start "${t}" "Running test ${t}"
         echo `date` running $t | tee -a $LOGFILE
         ./integration-tests/run-tests $t
         copy_coverage_data $t
         echo `date` running $t done | tee -a $LOGFILE
+        section_end "${t}"
     else
         echo "not running test $t in this job ($CI_NODE_INDEX/$CI_NODE_TOTAL)"
     fi
