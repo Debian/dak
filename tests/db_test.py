@@ -38,13 +38,13 @@ class DBDakTestCase(DakTestCase):
                     cnf["DB::Name"])
         if cnf["DB::Host"]:
             # TCP/IP
-            connstr = "postgres://%s" % cnf["DB::Host"]
+            connstr = "postgresql://%s" % cnf["DB::Host"]
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += ":%s" % cnf["DB::Port"]
             connstr += "/%s" % cnf["DB::Name"]
         else:
             # Unix Socket
-            connstr = "postgres:///%s" % cnf["DB::Name"]
+            connstr = "postgresql:///%s" % cnf["DB::Name"]
             if cnf["DB::Port"] and cnf["DB::Port"] != "-1":
                 connstr += "?port=%s" % cnf["DB::Port"]
 

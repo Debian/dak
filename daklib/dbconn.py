@@ -71,9 +71,6 @@ from .textutils import fix_maintainer, force_to_utf8
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 warnings.filterwarnings('ignore',
-    "The SQLAlchemy PostgreSQL dialect has been renamed from 'postgres' to 'postgresql'.*",
-    SADeprecationWarning)
-warnings.filterwarnings('ignore',
     "Predicate of partial index .* ignored during reflection",
     SAWarning)
 
@@ -96,8 +93,8 @@ class DebVersion(sqlalchemy.types.UserDefinedType):
         return None
 
 
-from sqlalchemy.databases import postgres
-postgres.ischema_names['debversion'] = DebVersion
+from sqlalchemy.databases import postgresql
+postgresql.ischema_names['debversion'] = DebVersion
 
 ################################################################################
 
