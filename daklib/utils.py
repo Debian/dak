@@ -722,7 +722,7 @@ def gpg_keyring_args(keyrings=None):
     if not keyrings:
         keyrings = get_active_keyring_paths()
 
-    return " ".join(["--keyring %s" % x for x in keyrings])
+    return ["--keyring={}".format(path) for path in keyrings]
 
 ################################################################################
 
@@ -735,9 +735,10 @@ def gpg_get_key_addresses(fingerprint):
     addresses = list()
     try:
         with open(os.devnull, "wb") as devnull:
-            output = daklib.daksubprocess.check_output(
-                ["gpg", "--no-default-keyring"] + gpg_keyring_args().split()
-                + ["--with-colons", "--list-keys", fingerprint], stderr=devnull)
+            cmd = ["gpg", "--no-default-keyring"]
+            cmd.extend(gpg_keyring_args())
+            cmd.extend(["--with-colons", "--list-keys", "--", fingerprint])
+            output = daklib.daksubprocess.check_output(cmd, stderr=devnull)
     except subprocess.CalledProcessError:
         pass
     else:

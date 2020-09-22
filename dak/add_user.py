@@ -76,7 +76,7 @@ def main():
     cmd = ["gpg", "--with-colons", "--no-secmem-warning",
            "--no-auto-check-trustdb", "--with-fingerprint",
            "--no-default-keyring"]
-    cmd.extend(utils.gpg_keyring_args(keyrings).split())
+    cmd.extend(utils.gpg_keyring_args(keyrings))
     cmd.extend(["--list-key", "--", Cnf["Add-User::Options::Key"]])
     output = subprocess.check_output(cmd).rstrip()
     m = re_gpg_fingerprint_colon.search(output)
