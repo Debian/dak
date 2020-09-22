@@ -39,6 +39,8 @@ import tempfile
 import time
 import apt_pkg
 
+import daklib.daksubprocess
+
 from daklib import utils
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
 #from daklib.regexes import re_includeinpdiff
@@ -85,41 +87,47 @@ def smartstat(file):
 
 
 def smartlink(f, t):
+    def call_decompressor(cmd, inpath, outpath):
+        return daklib.daksubprocess.check_call(
+            cmd,
+            stdin=open(inpath, "rb"),
+            stdout=open(outpath, "wb"),
+        )
+
     if os.path.isfile(f):
         os.link(f, t)
     elif os.path.isfile("%s.gz" % (f)):
-        os.system("gzip -d < %s.gz > %s" % (f, t))
+        call_decompressor(['gzip', '-d'], '{}.gz'.format(f), t)
     elif os.path.isfile("%s.bz2" % (f)):
-        os.system("bzip2 -d < %s.bz2 > %s" % (f, t))
+        call_decompressor(['bzip2', '-d'], '{}.bz2'.format(f), t)
     elif os.path.isfile("%s.xz" % (f)):
-        os.system("xz -d < %s.xz > %s" % (f, t))
+        call_decompressor(['xz', '-d'], '{}.xz'.format(f), t)
     else:
         print("missing: %s" % (f))
         raise IOError(f)
 
 
 def smartopen(file):
+    def call_decompressor(cmd, inpath):
+        fh = tempfile.TemporaryFile("w+t")
+        daklib.daksubprocess.check_call(
+            cmd,
+            stdin=open(inpath, "rb"),
+            stdout=fh,
+        )
+        fh.seek(0)
+        return fh
+
     if os.path.isfile(file):
-        f = open(file, "r")
+        return open(file, "r")
     elif os.path.isfile("%s.gz" % file):
-        f = create_temp_file(os.popen("zcat %s.gz" % file, "r"))
+        return call_decompressor(['zcat'], '{}.gz'.format(file))
     elif os.path.isfile("%s.bz2" % file):
-        f = create_temp_file(os.popen("bzcat %s.bz2" % file, "r"))
+        return call_decompressor(['bzcat'], '{}.bz2'.format(file))
     elif os.path.isfile("%s.xz" % file):
-        f = create_temp_file(os.popen("xzcat %s.xz" % file, "r"))
+        return call_decompressor(['xzcat'], '{}.xz'.format(file))
     else:
-        f = None
-    return f
-
-
-def pipe_file(f, t):
-    f.seek(0)
-    while True:
-        l = f.read(65536)
-        if not l:
-            break
-        t.write(l)
-    t.close()
+        return None
 
 
 class Updates:
@@ -252,20 +260,6 @@ class Updates:
                 out.write(" %s %7d %s.gz\n" % (hs[h][2][2], hs[h][2][0], h))
 
 
-def create_temp_file(r):
-    f = tempfile.TemporaryFile("w+t")
-    while True:
-        x = r.read(65536)
-        if not x:
-            break
-        f.write(x)
-    r.close()
-    del x, r
-    f.flush()
-    f.seek(0)
-    return f
-
-
 def sizehashes(f):
     size = os.fstat(f.fileno())[6]
     f.seek(0)
@@ -336,9 +330,11 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
-        w = os.popen("diff --ed - %s | gzip --rsyncable  --no-name -c -9 > %s.gz" %
-                     (newfile, difffile), "w")
-        pipe_file(oldf, w)
+        with open("{}.gz".format(difffile), "wb") as fh:
+            daklib.daksubprocess.check_call(
+                "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(newfile), shell=True,
+                stdin=oldf, stdout=fh
+            )
         oldf.close()
 
         difff = smartopen(difffile)
