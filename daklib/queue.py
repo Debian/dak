@@ -90,16 +90,10 @@ def prod_maintainer(notes, upload):
     whitelists = [upload.target_suite.mail_whitelist]
 
     # Here we prepare an editor and get them ready to prod...
-    (fd, temp_filename) = utils.temp_filename()
-    temp_file = os.fdopen(fd, 'w')
-    temp_file.write("\n\n=====\n\n".join([note.comment for note in notes]))
-    temp_file.close()
-    editor = os.environ.get("EDITOR", "vi")
+    prod_message = "\n\n=====\n\n".join([note.comment for note in notes])
     answer = 'E'
     while answer == 'E':
-        os.system("%s %s" % (editor, temp_filename))
-        with open(temp_filename) as temp_fh:
-            prod_message = "".join(temp_fh.readlines())
+        prod_message = utils.call_editor(prod_message)
         print("Prod message:")
         print(utils.prefix_multi_line_string(prod_message, "  ", include_blank_lines=1))
         prompt = "[P]rod, Edit, Abandon, Quit ?"
@@ -110,7 +104,6 @@ def prod_maintainer(notes, upload):
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
-    os.unlink(temp_filename)
     if answer == 'A':
         return
     elif answer == 'Q':
@@ -145,14 +138,10 @@ def prod_maintainer(notes, upload):
 
 
 def edit_note(note, upload, session, trainee=False):
-    # Write the current data to a temporary file
-    (fd, temp_filename) = utils.temp_filename()
-    editor = os.environ.get("EDITOR", "vi")
+    newnote = ""
     answer = 'E'
     while answer == 'E':
-        os.system("%s %s" % (editor, temp_filename))
-        with open(temp_filename) as temp_file:
-            newnote = temp_file.read().rstrip()
+        newnote = utils.call_editor(newnote).rstrip()
         print("New Note:")
         print(utils.prefix_multi_line_string(newnote, "  "))
         empty_note = not newnote.strip()
@@ -167,7 +156,6 @@ def edit_note(note, upload, session, trainee=False):
             if answer == "":
                 answer = m.group(1)
             answer = answer[:1].upper()
-    os.unlink(temp_filename)
     if answer == 'A':
         return
     elif answer == 'Q':

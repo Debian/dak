@@ -201,20 +201,14 @@ def index_range(index):
 
 
 def edit_new(overrides, upload, session):
-    # Write the current data to a temporary file
-    (fd, temp_filename) = utils.temp_filename()
-    temp_file = os.fdopen(fd, 'w')
-    print_new(upload, overrides, indexed=0, session=session, file=temp_file)
-    temp_file.close()
-    # Spawn an editor on that file
-    editor = os.environ.get("EDITOR", "vi")
-    result = os.system("%s %s" % (editor, temp_filename))
-    if result != 0:
-        utils.fubar("%s invocation failed for %s." % (editor, temp_filename), result)
-    # Read the edited data back in
-    with open(temp_filename) as temp_file:
-        lines = temp_file.readlines()
-    os.unlink(temp_filename)
+    with tempfile.NamedTemporaryFile() as fh:
+        # Write the current data to a temporary file
+        print_new(upload, overrides, indexed=0, session=session, file=fh)
+        fh.flush()
+        utils.call_editor_for_file(fh.name)
+        # Read the edited data back in
+        fh.seek(0)
+        lines = fh.readlines()
 
     overrides_map = dict([((o['type'], o['package']), o) for o in overrides])
     new_overrides = []

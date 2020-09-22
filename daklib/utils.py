@@ -1032,6 +1032,13 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 ################################################################################
 
 
+def call_editor_for_file(path):
+    editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'sensible-editor'))
+    daklib.daksubprocess.check_call([editor, path])
+
+################################################################################
+
+
 def call_editor(text="", suffix=".txt"):
     """run editor and return the result as a string
 
@@ -1044,15 +1051,12 @@ def call_editor(text="", suffix=".txt"):
     @rtype:  str
     @return: string with the edited text
     """
-    editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'vi'))
-    tmp = tempfile.NamedTemporaryFile(mode='w+t', suffix=suffix, delete=False)
-    try:
-        print(text, end=' ', file=tmp)
-        tmp.close()
-        daklib.daksubprocess.check_call([editor, tmp.name])
-        return open(tmp.name, 'r').read()
-    finally:
-        os.unlink(tmp.name)
+    with tempfile.NamedTemporaryFile(mode='w+t', suffix=suffix) as fh:
+        print(text, end='', file=fh)
+        fh.flush()
+        call_editor_for_file(fh.name)
+        fh.seek(0)
+        return fh.read()
 
 ################################################################################
 

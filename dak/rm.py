@@ -322,15 +322,7 @@ def main():
     # If we don't have a reason; spawn an editor so the user can add one
     # Write the rejection email out as the <foo>.reason file
     if not Options["Reason"] and not Options["No-Action"]:
-        (fd, temp_filename) = utils.temp_filename()
-        editor = os.environ.get("EDITOR", "vi")
-        result = os.system("%s %s" % (editor, temp_filename))
-        if result != 0:
-            utils.fubar("vi invocation failed for `%s'!" % (temp_filename), result)
-        with open(temp_filename) as temp_file:
-            for line in temp_file.readlines():
-                Options["Reason"] += line
-        os.unlink(temp_filename)
+        Options["Reason"] = utils.call_editor()
 
     # Generate the summary of what's to be removed
     d = {}

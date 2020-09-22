@@ -86,6 +86,7 @@ check_all_suites after_accept
 
 (
   export REASON="not accepted"
+  unset VISUAL
   export EDITOR=integration-tests/reject-editor
   # M: manual reject, R: reject
   printf "M\nR\n" | dak process-new nonfree-package_0.1-1_amd64.changes
