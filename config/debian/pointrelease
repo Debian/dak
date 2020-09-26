@@ -202,7 +202,12 @@ cd ${ftpdir}/dists/${pusuite}
 mv -t "${pumorguedir}" -n -- *.changes
 if [[ -n ${skiplist} ]]; then
     for pack in ${skiplist}; do
-        mv -t "${ftpdir}/dists/${pusuite}" ${pumorguedir}/${pack}_*.changes
+        # In corner cases, we may not have the changes file to move back - don't crash
+        if compgen -G ${pumorguedir}/${pack}_*.changes >/dev/null; then
+            mv -t "${ftpdir}/dists/${pusuite}" ${pumorguedir}/${pack}_*.changes
+        else
+            echo 'W: No changes files for ${pumorguedir}/${pack}_*.changes - check this is expected'
+        fi
     done
 fi
 
@@ -328,7 +333,7 @@ done
 read -e -p "Does the diff look ok? Enter anything if not, empty if yes (if nonempty, I will open an editor for you)" diffcheck
 if [[ -n ${diffcheck} ]]; then
     cd ${ftpdir}/dists/${suite}
-    edit-changelog "" ../README ../../README ../../README.html
+    edit-changelog "Opening changelog" ../README ../../README ../../README.html
     rm -f -- ./*~ ../*~ ../../*~ ./"#"*"#" ../"#"*"#" ../../"#"*"#"
 fi
 
