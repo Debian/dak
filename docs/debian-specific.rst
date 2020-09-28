@@ -206,24 +206,6 @@ Switch suite to Long Term Support (LTS)
 ::
     cronon
 
-NEW processing
---------------
-
-::
-
-    cronoff
-    CHANGES=FILENAME.changes
-    dak process-new ${CHANGES}
-    cd /srv/security-master.debian.org/queue/new/COMMENTS
-    echo $'NOTOK\n\nMoving back to unchecked' > "REJECT.${CHANGES%.changes}"
-    rm "ACCEPT.${CHANGES%.changes}"
-    dak process-policy new; dak clean-suites
-    cd /srv/security-master.debian.org/queue/reject
-    # Careful! This is only correct if there are no previous uploads!
-    dak admin forget-signature ${CHANGES}
-    dcmd mv -nt ../unchecked -- ${CHANGES}
-    /srv/security-master.debian.org/dak/config/debian-security/cronscript unchecked
-    cronon
 
 Built-Using
 -----------
