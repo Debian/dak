@@ -4,6 +4,7 @@ LOCK                           UNCHECKED                         600            
 pg_timestamp                   preunchecked                      none                       true      false
 fetchqueuedpackages            rsync-from-security-upload-master fetchqueuedpackages        false     false
 do_unchecked                   none                              unchecked                  false     false
+process_policy_security        new                               none                       false     false
 process_policy_security        embargoed                         none                       false     false
 process_policy_security        unembargoed                       none                       false     false
 export_policy                  embargoed                         none                       false     false
