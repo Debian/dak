@@ -330,6 +330,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
+        oldf.seek(0)
         with open("{}.gz".format(difffile), "wb") as fh:
             daklib.daksubprocess.check_call(
                 "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(newfile), shell=True,
