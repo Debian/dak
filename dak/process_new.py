@@ -49,6 +49,7 @@ import os
 import readline
 import stat
 import sys
+import tempfile
 import contextlib
 import pwd
 import apt_pkg
