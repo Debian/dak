@@ -113,11 +113,8 @@ class XzFile(object):
         self.filename = filename
 
     def read(self):
-        cmd = ("xz", "-d")
-        with open(self.filename, 'r') as stdin:
-            process = daklib.daksubprocess.Popen(cmd, stdin=stdin, stdout=subprocess.PIPE)
-            (stdout, stderr) = process.communicate()
-            return stdout
+        with open(self.filename, 'rb') as stdin:
+            return daklib.daksubprocess.check_output(['xz', '-d'], stdin=stdin)
 
 
 class HashFunc(object):
