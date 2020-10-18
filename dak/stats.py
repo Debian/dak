@@ -34,16 +34,19 @@
 from __future__ import print_function
 
 import sys
+import tempfile
 import apt_pkg
 
 from datetime import datetime
 from email.utils import mktime_tz, parsedate_tz
 from mailbox import mbox
-from os import listdir, system, unlink
+from os import listdir
 from os.path import isfile, join, splitext
 from re import findall, DOTALL, MULTILINE
 from sys import stderr
 from yaml import safe_load, safe_dump
+
+import daklib.daksubprocess
 
 from daklib import utils
 from daklib.dbconn import DBConn, get_suite_architectures, Suite, Architecture
@@ -296,32 +299,32 @@ def parse_prod(logdate):
                        'mail-%s.xz' % maildate)
     if not isfile(mailarchive):
         return
-    (fd, tmpfile) = utils.temp_filename(utils.get_conf()['Dir::TempPath'])
-    system('xzcat %s > %s' % (mailarchive, tmpfile))
-    for message in mbox(tmpfile):
-        if (message['subject']
-                and message['subject'].startswith('Comments regarding')):
-            try:
-                member = users[' '.join(message['From'].split()[:-1])]
-            except KeyError:
-                continue
-            ts = mktime_tz(parsedate_tz(message['date']))
-            timestamp = datetime.fromtimestamp(ts).strftime("%Y%m%d%H%M%S")
-            date = parse_timestamp(timestamp)
-            if date not in stats:
-                stats[date] = {'stats': {'NEW': 0, 'ACCEPT': 0,
-                                 'REJECT': 0, 'PROD': 0}, 'members': {}}
-            if member not in stats[date]['members']:
-                stats[date]['members'][member] = {'ACCEPT': 0, 'REJECT': 0,
-                                                     'PROD': 0}
-            if member not in stats['history']['members']:
-                stats['history']['members'][member] = {'ACCEPT': 0,
-                                                       'REJECT': 0, 'PROD': 0}
-            stats[date]['stats']['PROD'] += 1
-            stats[date]['members'][member]['PROD'] += 1
-            stats['history']['stats']['PROD'] += 1
-            stats['history']['members'][member]['PROD'] += 1
-    unlink(tmpfile)
+    with tempfile.NamedTemporaryFile(dir=utils.get_conf()['Dir::TempPath']) as tmpfile:
+        with open(mailarchive, 'rb') as fh:
+            daklib.daksubprocess.check_call(['xzcat'], stdin=fh, stdout=tmpfile)
+        for message in mbox(tmpfile.name):
+            if (message['subject']
+                    and message['subject'].startswith('Comments regarding')):
+                try:
+                    member = users[' '.join(message['From'].split()[:-1])]
+                except KeyError:
+                    continue
+                ts = mktime_tz(parsedate_tz(message['date']))
+                timestamp = datetime.fromtimestamp(ts).strftime("%Y%m%d%H%M%S")
+                date = parse_timestamp(timestamp)
+                if date not in stats:
+                    stats[date] = {'stats': {'NEW': 0, 'ACCEPT': 0,
+                                     'REJECT': 0, 'PROD': 0}, 'members': {}}
+                if member not in stats[date]['members']:
+                    stats[date]['members'][member] = {'ACCEPT': 0, 'REJECT': 0,
+                                                         'PROD': 0}
+                if member not in stats['history']['members']:
+                    stats['history']['members'][member] = {'ACCEPT': 0,
+                                                           'REJECT': 0, 'PROD': 0}
+                stats[date]['stats']['PROD'] += 1
+                stats[date]['members'][member]['PROD'] += 1
+                stats['history']['stats']['PROD'] += 1
+                stats['history']['members'][member]['PROD'] += 1
 
 
 def parse_timestamp(timestamp):
@@ -354,11 +357,8 @@ def new_stats(logdir, yaml):
             if fn.endswith('.bz2'):
                 # This hack is required becaue python2 does not support
                 # multi-stream files (http://bugs.python.org/issue1625)
-                (fd, tmpfile) = utils.temp_filename(Cnf['Dir::TempPath'])
-                system('bzcat %s > %s' % (logfile, tmpfile))
-                with open(tmpfile, 'r') as fd:
-                    data = fd.read()
-                unlink(tmpfile)
+                with open(logfile, 'rb') as fh:
+                    data = daklib.daksubprocess.check_output(['bzcat'], stdin=fh)
             else:
                 with open(logfile, 'r') as fd:
                     data = fd.read()
