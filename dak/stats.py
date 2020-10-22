@@ -359,6 +359,9 @@ def new_stats(logdir, yaml):
                 # multi-stream files (http://bugs.python.org/issue1625)
                 with open(logfile, 'rb') as fh:
                     data = daklib.daksubprocess.check_output(['bzcat'], stdin=fh)
+            elif fn.endswith('.xz'):
+                with open(logfile, 'rb') as fh:
+                    data = daklib.daksubprocess.check_output(['xzcat'], stdin=fh)
             else:
                 with open(logfile, 'r') as fd:
                     data = fd.read()
