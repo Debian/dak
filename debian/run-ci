@@ -110,7 +110,7 @@ export DAK_CI_OUTPUT_DIR=${BASEDIR}/output
 mkdir -p ${DAK_CI_OUTPUT_DIR}
 LOGFILE=${DAK_CI_OUTPUT_DIR}/log_job${CI_NODE_INDEX}.txt
 
-section_start install_dep "Install Dependencies"
+section_start "install_dep[collapsed=true]" "Install Dependencies"
 echo `date` installing packages | tee -a $LOGFILE
 
 run_apt-get update
@@ -162,7 +162,7 @@ fi
 
 section_end unit_tests
 
-section_start fixtures "Creating Fixtures"
+section_start "fixtures[collapsed=true]" "Creating Fixtures"
 
 echo `date` making fixtures | tee -a $LOGFILE
 make -C tests/fixtures/packages
