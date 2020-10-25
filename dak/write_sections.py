@@ -35,7 +35,7 @@ from daklib.dbconn import *
 ################################################################################
 
 
-def write_sections(archive, session):
+def write_sections(session):
     query_sections = """
     SELECT
       section,
