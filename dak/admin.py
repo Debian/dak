@@ -957,7 +957,7 @@ def __suite_config_list(d, args, json_format=False):
     else:
         if json_format:
             die("E: suite-config list-json requires a suite name!")
-        print("Valid suite-config options managable by this command:")
+        print("Valid suite-config options manageable by this command:")
         print()
     values = {}
 

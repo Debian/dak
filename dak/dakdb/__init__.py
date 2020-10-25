@@ -25,7 +25,7 @@ Example::
 
      except psycopg2.ProgrammingError, msg:
          self.db.rollback()
-         raise DBUpdateError, "Unable to do whatever, rollback issued. Error message : %s" % (str(msg))
+         raise DBUpdateError("Unable to do whatever, rollback issued. Error message : %s" % (str(msg)))
 
 This function can do whatever it wants and use everything from dak and
 daklib.
