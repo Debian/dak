@@ -827,6 +827,9 @@ ALLOWED_SUITE_CONFIGS = {
     'overridesuite': str,
     'policy_queue': str,
     'priority': int,
+    'separate_contents_architecture_all': utils.parse_boolean_from_user,
+    # We do not support separate Packages-all, so do not let people set it.
+    'separate_packages_architecture_all': SUITE_CONFIG_READ_ONLY,
     'signingkeys': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'suite_name': SUITE_CONFIG_READ_ONLY,
     'untouchable': utils.parse_boolean_from_user,

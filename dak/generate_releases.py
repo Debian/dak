@@ -272,8 +272,6 @@ class ReleaseWriter(object):
         suite = self.suite
         session = object_session(suite)
 
-        architectures = get_suite_architectures(suite.suite_name, skipall=True, skipsrc=True, session=session)
-
         # Attribs contains a tuple of field names and the database names to use to
         # fill them in
         attribs = (('Origin',      'origin'),
@@ -325,7 +323,26 @@ class ReleaseWriter(object):
             if getattr(suite, dbfield, False):
                 out.write("%s: yes\n" % (key))
 
-        out.write("Architectures: %s\n" % (" ".join([a.arch_string for a in architectures])))
+        skip_arch_all = True
+        if suite.separate_contents_architecture_all or suite.separate_packages_architecture_all:
+            # According to the Repository format specification:
+            #   https://wiki.debian.org/DebianRepository/Format#No-Support-for-Architecture-all
+            #
+            # Clients are not expected to support Packages-all without Contents-all.  At the
+            # time of writing, it is not possible to set separate_packages_architecture_all.
+            # However, we add this little assert to stop the bug early.
+            #
+            # If you are here because the assert failed, you probably want to see "update123.py"
+            # and its advice on updating the CHECK constraint.
+            assert suite.separate_contents_architecture_all
+            skip_arch_all = False
+
+            if not suite.separate_packages_architecture_all:
+                out.write("No-Support-for-Architecture-all: Packages\n")
+
+        architectures = get_suite_architectures(suite.suite_name, skipall=skip_arch_all, skipsrc=True, session=session)
+
+        out.write("Architectures: %s\n" % (" ".join(a.arch_string for a in architectures)))
 
         components = [c.component_name for c in suite.components]
 
