@@ -49,7 +49,7 @@ def write_sections(session):
         (section, description, longdesc) = row
         print("Section: {0}".format(section))
         print("Description: {0}".format(description))
-        print(" {0}".format(longdesc))
+        print("Longdesc: {0}".format(longdesc))
         print()
 
 ################################################################################
