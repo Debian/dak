@@ -63,11 +63,16 @@ class BinaryContentsWriter(object):
             'suite':         self.suite.suite_id,
             'overridesuite': overridesuite.suite_id,
             'component':     self.component.component_id,
-            'arch_all':      get_architecture('all', self.session).arch_id,
             'arch':          self.architecture.arch_id,
             'type_id':       self.overridetype.overridetype_id,
             'type':          self.overridetype.overridetype,
         }
+
+        if self.suite.separate_contents_architecture_all:
+            sql_arch_part = 'architecture = :arch'
+        else:
+            sql_arch_part = '(architecture = :arch_all or architecture = :arch)'
+            params['arch_all'] = get_architecture('all', self.session).arch_id
 
         sql_create_temp = '''
 create temp table newest_binaries (
@@ -79,9 +84,9 @@ create index newest_binaries_by_package on newest_binaries (package);
 insert into newest_binaries (id, package)
     select distinct on (package) id, package from binaries
         where type = :type and
-            (architecture = :arch_all or architecture = :arch) and
+            %s and
             id in (select bin from bin_associations where suite = :suite)
-        order by package, version desc;'''
+        order by package, version desc;''' % sql_arch_part
         self.session.execute(sql_create_temp, params=params)
 
         query = sql.text('''
@@ -305,12 +310,17 @@ class ContentsWriter(object):
 
         for suite in suite_query:
             suite_id = suite.suite_id
+
+            skip_arch_all = True
+            if suite.separate_contents_architecture_all:
+                skip_arch_all = False
+
             for component in component_query:
                 component_id = component.component_id
                 # handle source packages
                 pool.apply_async(source_helper, (suite_id, component_id),
                     callback=class_.log_result)
-                for architecture in suite.get_architectures(skipsrc=True, skipall=True):
+                for architecture in suite.get_architectures(skipsrc=True, skipall=skip_arch_all):
                     arch_id = architecture.arch_id
                     # handle 'deb' packages
                     pool.apply_async(binary_helper, (suite_id, arch_id, deb_id, component_id),
