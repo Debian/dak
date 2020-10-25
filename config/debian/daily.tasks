@@ -9,3 +9,4 @@ newstats                    none                       none                     
 contributor                 none                       none                       false   false
 cleanurgencylog             none                       none                       false   false
 update-buildd-admin-keyring none                       none                       false   false
+writesections               none                       none                       false   false

@@ -26,6 +26,12 @@ function wbdump() {
     ${masterdir}/scripts/nfu/get-w-b-db
 }
 
+# Write out sections file
+function writesections() {
+    log "Writing sections.822"
+    dak write-sections > ${exportdir}/sections.822
+}
+
 # Generate stats about the new queue
 function newstats() {
     log "Generating stats about the new queue"
