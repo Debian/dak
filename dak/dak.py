@@ -162,6 +162,8 @@ def init():
          "Copies the installer from one suite to another"),
         ("external-overrides",
          "Modify external overrides"),
+        ("write-sections",
+         "Write out section descriptions"),
         ]
     return functionality
 
