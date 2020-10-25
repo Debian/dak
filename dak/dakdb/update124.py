@@ -105,7 +105,7 @@ def do_update(self):
         c.execute("""
           ALTER TABLE section
             ADD COLUMN description TEXT NOT NULL DEFAULT 'Missing shortdesc',
-            ADD COLUMN longdesc TEXT NOT NULL DEFAULT 'Missing longdesc',
+            ADD COLUMN longdesc TEXT NOT NULL DEFAULT 'Missing longdesc'
         """)
 
         for section in sections:
