@@ -180,8 +180,8 @@ class SignatureAndHashesCheck(Check):
                 f.check(upload.directory)
         except daklib.upload.FileDoesNotExist as e:
             raise Reject('{0}: {1}\n'
-                         'Perhaps you need to include the file in your upload?'
-                         '\nIf the orig tarball is missing, use dpkg-buildpackage -S -sa' if 'orig.tar' in six.text_type(e) else ''
+                         'Perhaps you need to include the file in your upload?\n\n'
+                         'If the orig tarball is missing, the -sa flag for dpkg-buildpackage will be your friend.'
                          .format(filename, six.text_type(e)))
         except daklib.upload.UploadException as e:
             raise Reject('{0}: {1}'.format(filename, six.text_type(e)))
