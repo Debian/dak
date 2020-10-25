@@ -66,12 +66,12 @@ sections = {
     'mail': {'desc': 'Mail', 'longdesc': 'Programs to route, read, and compose E-mail messages.'},
     'math': {'desc': 'Mathematics', 'longdesc': 'Math software.'},
     'metapackages': {'desc': 'Meta Packages', 'longdesc': 'Packages that mainly provide dependencies on other packages.'},
-    'misc': {'desc': 'Miscellaneous', 'longdesc': 'Miscellaneous utilities that didn\'t fit well anywhere else.'},
+    'misc': {'desc': 'Miscellaneous', 'longdesc': 'Miscellaneous utilities that didn''t fit well anywhere else.'},
     'net': {'desc': 'Network', 'longdesc': 'Daemons and clients to connect your system to the world.'},
     'news': {'desc': 'Newsgroups', 'longdesc': 'Software to access Usenet, to set up news servers, etc.'},
     'ocaml': {'desc': 'OCaml', 'longdesc': 'Everything about OCaml, an ML language implementation.'},
     'oldlibs': {'desc': 'Old Libraries', 'longdesc': 'Old versions of libraries, kept for backward compatibility with old applications.'},
-    'otherosfs': {'desc': 'Other OS\'s and file systems', 'longdesc': 'Software to run programs compiled for other operating systems, and to use their filesystems.'},
+    'otherosfs': {'desc': 'Other OS''s and file systems', 'longdesc': 'Software to run programs compiled for other operating systems, and to use their filesystems.'},
     'perl': {'desc': 'Perl', 'longdesc': 'Everything about Perl, an interpreted scripting language.'},
     'php': {'desc': 'PHP', 'longdesc': 'Everything about PHP.'},
     'python': {'desc': 'Python', 'longdesc': 'Everything about Python, an interpreted, interactive object oriented language.'},
@@ -81,7 +81,7 @@ sections = {
     'science': {'desc': 'Science', 'longdesc': 'Basic tools for scientific work'},
     'shells': {'desc': 'Shells', 'longdesc': 'Command shells. Friendly user interfaces for beginners.'},
     'sound': {'desc': 'Sound', 'longdesc': 'Utilities to deal with sound: mixers, players, recorders, CD players, etc.'},
-    'tasks': {'desc': 'Tasks', 'longdesc': 'Packages that are used by \'tasksel\', a simple interface for users who want to configure their system to perform a specific task.'},
+    'tasks': {'desc': 'Tasks', 'longdesc': 'Packages that are used by ''tasksel'', a simple interface for users who want to configure their system to perform a specific task.'},
     'tex': {'desc': 'TeX', 'longdesc': 'The famous typesetting software and related programs.'},
     'text': {'desc': 'Text Processing', 'longdesc': 'Utilities to format and print text documents.'},
     'utils': {'desc': 'Utilities', 'longdesc': 'Utilities for file/disk manipulation, backup and archive tools, system monitoring, input systems, etc.'},
@@ -109,9 +109,9 @@ def do_update(self):
         """)
 
         for section in sections:
-            c.execute("UPDATE section (description, longdesc) VALUES ('{1}', '{2}') WHERE section='{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
-            c.execute("UPDATE section (description, longdesc) VALUES ('{1}', '{2}') WHERE section='contrib/{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
-            c.execute("UPDATE section (description, longdesc) VALUES ('{1}', '{2}') WHERE section='non-free/{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
+            c.execute("UPDATE section SET description='{1}', longdesc='{2}' WHERE section='{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
+            c.execute("UPDATE section SET description='{1}', longdesc='{2}' WHERE section='contrib/{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
+            c.execute("UPDATE section SET description='{1}', longdesc='{2}' WHERE section='non-free{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
 
         c.execute("UPDATE config SET value = '124' WHERE name = 'db_revision'")
         self.db.commit()
