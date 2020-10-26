@@ -372,16 +372,10 @@ def __suite_add(d, args, addallarches=False):
     die_arglen(args, 4, "E: adding a suite requires at least a name and a version")
     suite_name = args[2].lower()
     version = args[3]
-    rest = args[3:]
+    kvpairs = __suite_config_set_confing_args_as_dict(args[4:])
 
     if len(version) == 0:
         version = None
-
-    def get_field(field):
-        for varval in args:
-            if varval.startswith(field + '='):
-                return varval.split('=')[1]
-        return None
 
     print("Adding suite %s" % suite_name)
     if not dryrun:
@@ -391,19 +385,23 @@ def __suite_add(d, args, addallarches=False):
             suite.suite_name = suite_name
             suite.overridecodename = None
             suite.version = version or None
-            suite.label = get_field('label')
-            suite.description = get_field('description')
-            suite.origin = get_field('origin')
-            suite.codename = get_field('codename')
-            signingkey = get_field('signingkey')
+            # Most configurations will be handled by
+            # __suite_config_internal_set.  However, a few are managed
+            # manually here because __suite_config_internal_set cannot
+            # handle them.  Either because they are create-only or
+            # because suite-add handled them different (historically)
+            suite.codename = kvpairs.pop('codename', None)
+            signingkey = kvpairs.pop('signingkey', None)
             if signingkey is not None:
                 suite.signingkeys = [signingkey.upper()]
-            archive_name = get_field('archive')
+            archive_name = kvpairs.pop('archive', None)
             if archive_name is not None:
                 suite.archive = get_archive(archive_name, s)
             else:
                 suite.archive = s.query(Archive).filter(~Archive.archive_name.in_(['build-queues', 'new', 'policy'])).one()
             suite.srcformats = s.query(SrcFormat).all()
+            __suite_config_internal_set(suite, suite_name, kvpairs,
+                                        print_config_set=False)
             s.add(suite)
             s.flush()
         except IntegrityError as e:
@@ -880,18 +878,42 @@ def __suite_config_set(d, args):
     session = d.session()
     suite_name = args[2]
     suite = get_suite_or_die(suite_name, session)
-    for arg in args[3:]:
+    args_as_kvpairs = __suite_config_set_confing_args_as_dict(args[3:])
+    __suite_config_internal_set(suite, suite_name, args_as_kvpairs,
+                                print_config_set=True
+                                )
+    if dryrun:
+        session.rollback()
+        print()
+        print("This was a dryrun; changes have been rolled back")
+    else:
+        session.commit()
+
+
+def __suite_config_set_confing_args_as_dict(args):
+    # Use OrderedDict to preserve order (makes "dak admin suite-config set ..."
+    # less confusing when things are processed in the input order)
+    kvpairs = collections.OrderedDict()
+    for arg in args:
         if '=' not in arg:
             die("Missing value for configuration %s: Use key=value format" % arg)
         conf_name, new_value_str = arg.split('=', 1)
+        kvpairs[conf_name] = new_value_str
+    return kvpairs
+
+
+def __suite_config_internal_set(suite, suite_name, kvpairs, print_config_set=True):
+    for kvpair in kvpairs.items():
+        conf_name, new_value_str = kvpair
         cli_parser = ALLOWED_SUITE_CONFIGS.get(conf_name)
         if cli_parser is None:
             die("Unknown (or unsupported) suite configuration variable")
         if cli_parser in (SUITE_CONFIG_READ_ONLY, SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON):
             if cli_parser == SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON:
-                warn('''Cannot parse value for %s - use echo '{"%s": <...>}' | dak suite-config set-json %s instead''' %
-                     (conf_name, conf_name, suite_name))
-            die("Cannot change %s from the command line" % arg)
+                msg = "Cannot parse value for %s" \
+                      ''' - set via echo '{"%s": <...>}' | dak suite-config set-json %s instead'''
+                warn(msg % (conf_name, conf_name, suite_name))
+            die("Cannot change %s from the command line" % conf_name)
         try:
             new_value = cli_parser(new_value_str)
         except (RuntimeError, ValueError, TypeError) as e:
@@ -902,13 +924,8 @@ def __suite_config_set(d, args):
         except (RuntimeError, ValueError, TypeError) as e:
             warn("Could not set new value for %s (given: %s)" % (conf_name, new_value))
             raise e
-        print("%s=%s" % (conf_name, _get_suite_value(suite, conf_name)))
-    if dryrun:
-        session.rollback()
-        print()
-        print("This was a dryrun; changes have been rolled back")
-    else:
-        session.commit()
+        if print_config_set:
+            print("%s=%s" % (conf_name, _get_suite_value(suite, conf_name)))
 
 
 def __suite_config_set_json(d, args):
