@@ -1,0 +1,130 @@
+#! /bin/bash
+#
+# © 2019 Niels Thykier <niels@thykier.net>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+. ${DAK_ROOT:?}/integration-tests/dinstall
+
+echo "Dinstall::AllowSourceOnlyUploads true;" >> ${DAKBASE}/etc/dak.conf
+
+setup_debian_like_archive
+import-fixture-signing-key
+
+
+dak admin suite-config set unstable separate_contents_architecture_all=no
+
+
+(
+  packages=$(fixture-package-dir)
+
+  upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
+  upload_changes ${packages:?}/package_0.1-1_amd64.changes
+
+  process_uploads
+)
+
+# Accept the package from NEW
+(
+
+  dak control-overrides -s unstable -t deb -a << EOF
+package required admin
+binnmupkg optional misc
+EOF
+  dak control-overrides -s unstable -t dsc -a << EOF
+package admin
+binnmupkg misc
+EOF
+
+echo a | dak process-new binnmupkg_0.1-1_amd64.changes
+echo a | dak process-new package_0.1-1_amd64.changes
+  
+  dak process-new --automatic
+  dak process-policy new
+)
+
+(
+  dak contents scan-binary
+  dak contents scan-source
+)
+
+# After running dinstall, the package should now be present in the pool
+dinstall
+ls -l ${DAKBASE}/ftp-master/pool/main/p/package/package_*.dsc
+ls -l ${DAKBASE}/ftp-master/pool/main/b/binnmupkg/binnmupkg_*.dsc
+
+# Also, they should be listed in the Contents-amd64
+zgrep usr/share/doc/package/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-amd64.gz
+zgrep usr/share/doc/binnmupkg/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-amd64.gz
+
+# The Architectures field in Release must NOT contain all at this point
+if [ ! -f "${DAKBASE}/ftp-master/dists/unstable/Release" ]; then
+  echo "Release file is missing!?"
+  exit 1
+fi
+if grep ^Architectures: ${DAKBASE}/ftp-master/dists/unstable/Release | grep 'all'; then
+  echo "Release should not have arch:all in Architectures at this point"
+  exit 1
+fi
+if grep ^No-Support-for-Architecture-all ${DAKBASE}/ftp-master/dists/unstable/Release; then
+  echo "Release should not have No-Support-for-Architecture-all at this point"
+  exit 1
+fi
+
+
+# Retry with separate arch:all Contents
+echo "Ok; creating separate architecture all Contents"
+dak admin suite-config set unstable separate_contents_architecture_all=yes
+
+
+dak contents generate -a "${public_archives[*]}"
+dak generate-index-diffs -d "${pdiff_tempdir}" -a "${public_archives[*]}"
+dak generate-releases -a "${public_archives[*]}"
+
+
+
+# Also, they should be listed in the Contents-amd64
+echo "Checking that the data in the Contents are cleanly split as expected"
+if zgrep usr/share/doc/package/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-amd64.gz ; then
+  echo "Contents-amd64 should NOT have arch:all contents anymore"
+  exit 1
+fi
+
+zgrep usr/share/doc/binnmupkg/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-amd64.gz
+zgrep usr/share/doc/package/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-all.gz
+
+# The Architectures field in Release must NOT contain all at this point
+if [ ! -f "${DAKBASE}/ftp-master/dists/unstable/Release" ]; then
+  echo "Release file is missing!?"
+  exit 1
+fi
+if grep ^Architectures: ${DAKBASE}/ftp-master/dists/unstable/Release | grep 'all'; then
+  : # ok
+else
+  echo "Release must have arch:all in Architectures at this point"
+  exit 1
+fi
+if ! grep ^No-Support-for-Architecture-all ${DAKBASE}/ftp-master/dists/unstable/Release; then
+  echo "Release must have No-Support-for-Architecture-all at this point"
+  exit 1
+fi
+
+
+echo "Published successfully"
