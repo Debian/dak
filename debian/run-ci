@@ -62,6 +62,7 @@ run_this_test() {
 if [ "x$1" = "x--with-coverage" ]; then
     RUN_COVERAGE=y
     PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
+    shift
 else
     RUN_COVERAGE=
     PYTEST_COV_OPTIONS=""
@@ -88,6 +89,7 @@ if [ "x$1" = "x--python3" ]; then
     # always run coverage when running python3
     RUN_COVERAGE=y
     PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
+    shift
 else
     DAK_PYTHON3=
     PYTEST=py.test
