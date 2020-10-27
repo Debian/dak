@@ -62,6 +62,7 @@ run_this_test() {
 if [ "x$1" = "x--with-coverage" ]; then
     RUN_COVERAGE=y
     PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
+    shift
 else
     RUN_COVERAGE=
     PYTEST_COV_OPTIONS=""
@@ -88,6 +89,7 @@ if [ "x$1" = "x--python3" ]; then
     # always run coverage when running python3
     RUN_COVERAGE=y
     PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
+    shift
 else
     DAK_PYTHON3=
     PYTEST=py.test
@@ -118,7 +120,7 @@ run_apt-get install -y build-essential
 run_apt-get build-dep -y .
 
 python_deps=(
-    python3-all-dev
+    python3
     python3-apt
     python3-coverage
     python3-debian
@@ -136,10 +138,10 @@ python_deps=(
 
 if [ "x$DAK_PYTHON3" != "x" ]; then
     run_apt-get install -y --no-install-recommends \
-        2to3 ${python_deps[@]}
+        ${python_deps[@]}
 else
     run_apt-get install -y --no-install-recommends \
-        ${python_deps[@]/#python3-/python-}
+        ${python_deps[@]/#python3/python}
 fi
 
 section_end install_dep

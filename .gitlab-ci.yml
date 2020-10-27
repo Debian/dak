@@ -18,7 +18,7 @@ tests buster python3:
   <<: *template
   image: debian:buster
   parallel: 2
-  script: debian/run-ci --python3
+  script: debian/run-ci --with-coverage --python3
   artifacts:
     paths:
       - coverage
@@ -28,7 +28,7 @@ tests bullseye python3:
   <<: *template
   image: debian:bullseye
   parallel: 2
-  script: debian/run-ci --python3
+  script: debian/run-ci --with-coverage --python3
   artifacts:
     paths:
       - coverage
