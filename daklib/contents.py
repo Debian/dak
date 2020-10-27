@@ -421,16 +421,6 @@ class UnpackedSource(object):
         '''
         return self.root_directory
 
-    def get_changelog_file(self):
-        '''
-        Returns a file object for debian/changelog or None if no such file exists.
-        '''
-        changelog_name = os.path.join(self.root_directory, 'debian', 'changelog')
-        try:
-            return open(changelog_name)
-        except IOError:
-            return None
-
     def get_all_filenames(self):
         '''
         Returns an iterator over all filenames. The filenames will be relative
