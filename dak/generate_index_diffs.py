@@ -144,26 +144,6 @@ class Updates:
                 f = open(readpath + "/Index")
                 x = f.readline()
 
-                def read_hashs(ind, hashind, f, self, x=x):
-                    while True:
-                        x = f.readline()
-                        if not x or x[0] != " ":
-                            break
-                        l = x.split()
-                        fname = l[2]
-                        if fname.endswith('.gz'):
-                            fname = fname[:-3]
-                        if fname not in self.history:
-                            self.history[fname] = [None, None, None]
-                            self.history_order.append(fname)
-                        if not self.history[fname][ind]:
-                            self.history[fname][ind] = (int(l[1]), None, None)
-                        if hashind == 1:
-                            self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
-                        else:
-                            self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
-                    return x
-
                 while x:
                     l = x.split()
 
@@ -172,27 +152,27 @@ class Updates:
                         continue
 
                     if l[0] == "SHA1-History:":
-                        x = read_hashs(0, 1, f, self)
+                        x = self.read_hashs(0, 1, f)
                         continue
 
                     if l[0] == "SHA256-History:":
-                        x = read_hashs(0, 2, f, self)
+                        x = self.read_hashs(0, 2, f)
                         continue
 
                     if l[0] == "SHA1-Patches:":
-                        x = read_hashs(1, 1, f, self)
+                        x = self.read_hashs(1, 1, f)
                         continue
 
                     if l[0] == "SHA256-Patches:":
-                        x = read_hashs(1, 2, f, self)
+                        x = self.read_hashs(1, 2, f)
                         continue
 
                     if l[0] == "SHA1-Download:":
-                        x = read_hashs(2, 1, f, self)
+                        x = self.read_hashs(2, 1, f)
                         continue
 
                     if l[0] == "SHA256-Download:":
-                        x = read_hashs(2, 2, f, self)
+                        x = self.read_hashs(2, 2, f)
                         continue
 
                     if l[0] == "Canonical-Name:" or l[0] == "Canonical-Path:":
@@ -211,7 +191,27 @@ class Updates:
                     x = f.readline()
 
             except IOError:
-                0
+                pass
+
+    def read_hashs(self, ind, hashind, f):
+        while True:
+            x = f.readline()
+            if not x or x[0] != " ":
+                break
+            l = x.split()
+            fname = l[2]
+            if fname.endswith('.gz'):
+                fname = fname[:-3]
+            if fname not in self.history:
+                self.history[fname] = [None, None, None]
+                self.history_order.append(fname)
+            if not self.history[fname][ind]:
+                self.history[fname][ind] = (int(l[1]), None, None)
+            if hashind == 1:
+                self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
+            else:
+                self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
+        return x
 
     def dump(self, out=sys.stdout):
         if self.can_path:
