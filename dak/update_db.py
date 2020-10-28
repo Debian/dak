@@ -234,6 +234,8 @@ Updates dak's database schema to the lastest version. You should disable crontab
         except IOError as e:
             if e.errno in (errno.EACCES, errno.EAGAIN):
                 utils.fubar("Couldn't obtain lock, looks like archive is doing something, try again later.")
+            else:
+                raise
 
         self.update_db()
 
