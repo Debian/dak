@@ -37,13 +37,14 @@ dak admin suite-config set unstable separate_contents_architecture_all=no
 
   upload_changes ${packages:?}/binnmupkg_0.1-1_amd64.changes
   upload_changes ${packages:?}/package_0.1-1_amd64.changes
+  # Will be accepted later
+  upload_changes ${packages:?}/package-built-using_0.1-1_amd64.changes
 
   process_uploads
 )
 
 # Accept the package from NEW
 (
-
   dak control-overrides -s unstable -t deb -a << EOF
 package required admin
 binnmupkg optional misc
@@ -55,7 +56,8 @@ EOF
 
 echo a | dak process-new binnmupkg_0.1-1_amd64.changes
 echo a | dak process-new package_0.1-1_amd64.changes
-  
+# package-built-using_0.1-1_amd64.changes is for later
+
   dak process-new --automatic
   dak process-policy new
 )
@@ -93,11 +95,11 @@ fi
 echo "Ok; creating separate architecture all Contents"
 dak admin suite-config set unstable separate_contents_architecture_all=yes
 
-
+# Regenerate to move things around
+dak generate-packages-sources2 -a "${public_archives[*]}"
 dak contents generate -a "${public_archives[*]}"
 dak generate-index-diffs -d "${pdiff_tempdir}" -a "${public_archives[*]}"
 dak generate-releases -a "${public_archives[*]}"
-
 
 
 # Also, they should be listed in the Contents-amd64
@@ -126,5 +128,59 @@ if ! grep ^No-Support-for-Architecture-all ${DAKBASE}/ftp-master/dists/unstable/
   exit 1
 fi
 
+
+
+# Upload another arch:all packages to ensure the change also causes a PDiff
+(
+  dak control-overrides -s unstable -t deb -a << EOF
+package-built-using optional misc
+EOF
+  dak control-overrides -s unstable -t dsc -a << EOF
+package-built-using misc
+EOF
+
+echo a | dak process-new package-built-using_0.1-1_amd64.changes
+
+  dak process-new --automatic
+  dak process-policy new
+
+  dak contents scan-binary
+  dak contents scan-source
+)
+
+# Regenerate to create PDiffs
+dak generate-packages-sources2 -a "${public_archives[*]}"
+dak contents generate -a "${public_archives[*]}"
+dak generate-index-diffs -d "${pdiff_tempdir}" -a "${public_archives[*]}"
+dak generate-releases -a "${public_archives[*]}"
+
+echo "There should be a PDiff for Contents-all"
+ls -l ${DAKBASE}/ftp-master/dists/unstable/main/Contents-all.diff
+
+echo "Checking that the data in the Contents are cleanly split as expected"
+if zgrep usr/share/doc/package/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-amd64.gz ; then
+  echo "Contents-amd64 should NOT have arch:all contents anymore"
+  exit 1
+fi
+
+zgrep usr/share/doc/binnmupkg/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-amd64.gz
+zgrep usr/share/doc/package/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-all.gz
+zgrep usr/share/doc/package/changelog.Debian.gz ${DAKBASE}/ftp-master/dists/unstable/main/Contents-all.gz
+
+# The Architectures field in Release must NOT contain all at this point
+if [ ! -f "${DAKBASE}/ftp-master/dists/unstable/Release" ]; then
+  echo "Release file is missing!?"
+  exit 1
+fi
+if grep ^Architectures: ${DAKBASE}/ftp-master/dists/unstable/Release | grep 'all'; then
+  : # ok
+else
+  echo "Release must have arch:all in Architectures at this point"
+  exit 1
+fi
+if ! grep ^No-Support-for-Architecture-all ${DAKBASE}/ftp-master/dists/unstable/Release; then
+  echo "Release must have No-Support-for-Architecture-all at this point"
+  exit 1
+fi
 
 echo "Published successfully"

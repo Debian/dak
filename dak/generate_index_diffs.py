@@ -130,6 +130,18 @@ def smartopen(file):
         return None
 
 
+HASH_FIELDS = [
+    ('SHA1-History', 0, 1),
+    ('SHA256-History', 0, 2),
+    ('SHA1-Patches', 1, 1),
+    ('SHA256-Patches', 1, 2),
+    ('SHA1-Download', 2, 1),
+    ('SHA256-Download', 2, 2),
+]
+
+HASH_FIELDS_TABLE = {x[0]: (x[1], x[2]) for x in HASH_FIELDS}
+
+
 class Updates:
     def __init__(self, readpath=None, max=56):
         self.can_path = None
@@ -144,26 +156,6 @@ class Updates:
                 f = open(readpath + "/Index")
                 x = f.readline()
 
-                def read_hashs(ind, hashind, f, self, x=x):
-                    while True:
-                        x = f.readline()
-                        if not x or x[0] != " ":
-                            break
-                        l = x.split()
-                        fname = l[2]
-                        if fname.endswith('.gz'):
-                            fname = fname[:-3]
-                        if fname not in self.history:
-                            self.history[fname] = [None, None, None]
-                            self.history_order.append(fname)
-                        if not self.history[fname][ind]:
-                            self.history[fname][ind] = (int(l[1]), None, None)
-                        if hashind == 1:
-                            self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
-                        else:
-                            self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
-                    return x
-
                 while x:
                     l = x.split()
 
@@ -171,28 +163,9 @@ class Updates:
                         x = f.readline()
                         continue
 
-                    if l[0] == "SHA1-History:":
-                        x = read_hashs(0, 1, f, self)
-                        continue
-
-                    if l[0] == "SHA256-History:":
-                        x = read_hashs(0, 2, f, self)
-                        continue
-
-                    if l[0] == "SHA1-Patches:":
-                        x = read_hashs(1, 1, f, self)
-                        continue
-
-                    if l[0] == "SHA256-Patches:":
-                        x = read_hashs(1, 2, f, self)
-                        continue
-
-                    if l[0] == "SHA1-Download:":
-                        x = read_hashs(2, 1, f, self)
-                        continue
-
-                    if l[0] == "SHA256-Download:":
-                        x = read_hashs(2, 2, f, self)
+                    if l[0] in HASH_FIELDS_TABLE:
+                        ind, hashind = HASH_FIELDS_TABLE[l[0]]
+                        x = self.read_hashs(ind, hashind, f)
                         continue
 
                     if l[0] == "Canonical-Name:" or l[0] == "Canonical-Path:":
@@ -211,7 +184,27 @@ class Updates:
                     x = f.readline()
 
             except IOError:
-                0
+                pass
+
+    def read_hashs(self, ind, hashind, f):
+        while True:
+            x = f.readline()
+            if not x or x[0] != " ":
+                break
+            l = x.split()
+            fname = l[2]
+            if fname.endswith('.gz'):
+                fname = fname[:-3]
+            if fname not in self.history:
+                self.history[fname] = [None, None, None]
+                self.history_order.append(fname)
+            if not self.history[fname][ind]:
+                self.history[fname][ind] = (int(l[1]), None, None)
+            if hashind == 1:
+                self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
+            else:
+                self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
+        return x
 
     def dump(self, out=sys.stdout):
         if self.can_path:
@@ -234,30 +227,11 @@ class Updates:
             l = l[cnt - self.max:]
             self.history_order = l[:]
 
-        out.write("SHA1-History:\n")
-        for h in l:
-            if hs[h][0] and hs[h][0][1]:
-                out.write(" %s %7d %s\n" % (hs[h][0][1], hs[h][0][0], h))
-        out.write("SHA256-History:\n")
-        for h in l:
-            if hs[h][0] and hs[h][0][2]:
-                out.write(" %s %7d %s\n" % (hs[h][0][2], hs[h][0][0], h))
-        out.write("SHA1-Patches:\n")
-        for h in l:
-            if hs[h][1] and hs[h][1][1]:
-                out.write(" %s %7d %s\n" % (hs[h][1][1], hs[h][1][0], h))
-        out.write("SHA256-Patches:\n")
-        for h in l:
-            if hs[h][1] and hs[h][1][2]:
-                out.write(" %s %7d %s\n" % (hs[h][1][2], hs[h][1][0], h))
-        out.write("SHA1-Download:\n")
-        for h in l:
-            if hs[h][2] and hs[h][2][1]:
-                out.write(" %s %7d %s.gz\n" % (hs[h][2][1], hs[h][2][0], h))
-        out.write("SHA256-Download:\n")
-        for h in l:
-            if hs[h][2] and hs[h][2][2]:
-                out.write(" %s %7d %s.gz\n" % (hs[h][2][2], hs[h][2][0], h))
+        for fieldname, ind, hashind in HASH_FIELDS:
+            out.write("%s:\n" % fieldname)
+            for h in l:
+                if hs[h][ind] and hs[h][ind][hashind]:
+                    out.write(" %s %7d %s\n" % (hs[h][ind][hashind], hs[h][ind][0], h))
 
 
 def sizehashes(f):
@@ -318,9 +292,8 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if os.path.exists(newfile):
         os.unlink(newfile)
     smartlink(origfile, newfile)
-    newf = open(newfile, "r")
-    newsizehashes = sizehashes(newf)
-    newf.close()
+    with open(newfile, "r") as newf:
+        newsizehashes = sizehashes(newf)
 
     if newsizehashes == oldsizehashes:
         os.unlink(newfile)
@@ -338,13 +311,11 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
             )
         oldf.close()
 
-        difff = smartopen(difffile)
-        difsizehashes = sizehashes(difff)
-        difff.close()
+        with smartopen(difffile) as difff:
+            difsizehashes = sizehashes(difff)
 
-        difffgz = open(difffile + ".gz", "r")
-        difgzsizehashes = sizehashes(difffgz)
-        difffgz.close()
+        with open(difffile + ".gz", "r") as difffgz:
+            difgzsizehashes = sizehashes(difffgz)
 
         upd.history[patchname] = (oldsizehashes, difsizehashes, difgzsizehashes)
         upd.history_order.append(patchname)
@@ -410,7 +381,11 @@ def main():
             print("Skipping: " + suite + " (untouchable)")
             continue
 
-        architectures = get_suite_architectures(suite, skipall=True, session=session)
+        skip_all = True
+        if suiteobj.separate_contents_architecture_all or suiteobj.separate_packages_architecture_all:
+            skip_all = False
+
+        architectures = get_suite_architectures(suite, skipall=skip_all, session=session)
         components = [c.component_name for c in session.query(Component.component_name)]
 
         suite_suffix = utils.suite_suffix(suitename)
