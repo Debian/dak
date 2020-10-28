@@ -410,7 +410,11 @@ def main():
             print("Skipping: " + suite + " (untouchable)")
             continue
 
-        architectures = get_suite_architectures(suite, skipall=True, session=session)
+        skip_all = True
+        if suiteobj.separate_contents_architecture_all or suiteobj.separate_packages_architecture_all:
+            skip_all = False
+
+        architectures = get_suite_architectures(suite, skipall=skip_all, session=session)
         components = [c.component_name for c in session.query(Component.component_name)]
 
         suite_suffix = utils.suite_suffix(suitename)
