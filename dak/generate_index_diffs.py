@@ -130,6 +130,18 @@ def smartopen(file):
         return None
 
 
+HASH_FIELDS = [
+    ('SHA1-History', 0, 1),
+    ('SHA256-History', 0, 2),
+    ('SHA1-Patches', 1, 1),
+    ('SHA256-Patches', 1, 2),
+    ('SHA1-Download', 2, 1),
+    ('SHA256-Download', 2, 2),
+]
+
+HASH_FIELDS_TABLE = {x[0]: (x[1], x[2]) for x in HASH_FIELDS}
+
+
 class Updates:
     def __init__(self, readpath=None, max=56):
         self.can_path = None
@@ -151,28 +163,9 @@ class Updates:
                         x = f.readline()
                         continue
 
-                    if l[0] == "SHA1-History:":
-                        x = self.read_hashs(0, 1, f)
-                        continue
-
-                    if l[0] == "SHA256-History:":
-                        x = self.read_hashs(0, 2, f)
-                        continue
-
-                    if l[0] == "SHA1-Patches:":
-                        x = self.read_hashs(1, 1, f)
-                        continue
-
-                    if l[0] == "SHA256-Patches:":
-                        x = self.read_hashs(1, 2, f)
-                        continue
-
-                    if l[0] == "SHA1-Download:":
-                        x = self.read_hashs(2, 1, f)
-                        continue
-
-                    if l[0] == "SHA256-Download:":
-                        x = self.read_hashs(2, 2, f)
+                    if l[0] in HASH_FIELDS_TABLE:
+                        ind, hashind = HASH_FIELDS_TABLE[l[0]]
+                        x = self.read_hashs(ind, hashind, f)
                         continue
 
                     if l[0] == "Canonical-Name:" or l[0] == "Canonical-Path:":
@@ -234,30 +227,11 @@ class Updates:
             l = l[cnt - self.max:]
             self.history_order = l[:]
 
-        out.write("SHA1-History:\n")
-        for h in l:
-            if hs[h][0] and hs[h][0][1]:
-                out.write(" %s %7d %s\n" % (hs[h][0][1], hs[h][0][0], h))
-        out.write("SHA256-History:\n")
-        for h in l:
-            if hs[h][0] and hs[h][0][2]:
-                out.write(" %s %7d %s\n" % (hs[h][0][2], hs[h][0][0], h))
-        out.write("SHA1-Patches:\n")
-        for h in l:
-            if hs[h][1] and hs[h][1][1]:
-                out.write(" %s %7d %s\n" % (hs[h][1][1], hs[h][1][0], h))
-        out.write("SHA256-Patches:\n")
-        for h in l:
-            if hs[h][1] and hs[h][1][2]:
-                out.write(" %s %7d %s\n" % (hs[h][1][2], hs[h][1][0], h))
-        out.write("SHA1-Download:\n")
-        for h in l:
-            if hs[h][2] and hs[h][2][1]:
-                out.write(" %s %7d %s.gz\n" % (hs[h][2][1], hs[h][2][0], h))
-        out.write("SHA256-Download:\n")
-        for h in l:
-            if hs[h][2] and hs[h][2][2]:
-                out.write(" %s %7d %s.gz\n" % (hs[h][2][2], hs[h][2][0], h))
+        for fieldname, ind, hashind in HASH_FIELDS:
+            out.write("%s:\n" % fieldname)
+            for h in l:
+                if hs[h][ind] and hs[h][ind][hashind]:
+                    out.write(" %s %7d %s\n" % (hs[h][ind][hashind], hs[h][ind][0], h))
 
 
 def sizehashes(f):
