@@ -109,9 +109,9 @@ def do_update(self):
         """)
 
         for section in sections:
-            c.execute("UPDATE section SET description='{1}', longdesc='{2}' WHERE section='{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
-            c.execute("UPDATE section SET description='{1}', longdesc='{2}' WHERE section='contrib/{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
-            c.execute("UPDATE section SET description='{1}', longdesc='{2}' WHERE section='non-free/{0}'".format(section, sections[section]["desc"], sections[section]["longdesc"]))
+            c.execute("UPDATE section SET description=%s, longdesc=%s WHERE section=%s", (section, sections[section]["desc"], sections[section]["longdesc"]))
+            c.execute("UPDATE section SET description=%s, longdesc=%s WHERE section=CONCAT('contrib/', %s)", (section, sections[section]["desc"], sections[section]["longdesc"]))
+            c.execute("UPDATE section SET description=%s, longdesc=%s WHERE section=CONCAT('non-free/', %s)", (section, sections[section]["desc"], sections[section]["longdesc"]))
 
         c.execute("UPDATE config SET value = '124' WHERE name = 'db_revision'")
         self.db.commit()
