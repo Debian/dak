@@ -292,9 +292,8 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if os.path.exists(newfile):
         os.unlink(newfile)
     smartlink(origfile, newfile)
-    newf = open(newfile, "r")
-    newsizehashes = sizehashes(newf)
-    newf.close()
+    with open(newfile, "r") as newf:
+        newsizehashes = sizehashes(newf)
 
     if newsizehashes == oldsizehashes:
         os.unlink(newfile)
@@ -312,13 +311,11 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
             )
         oldf.close()
 
-        difff = smartopen(difffile)
-        difsizehashes = sizehashes(difff)
-        difff.close()
+        with smartopen(difffile) as difff:
+            difsizehashes = sizehashes(difff)
 
-        difffgz = open(difffile + ".gz", "r")
-        difgzsizehashes = sizehashes(difffgz)
-        difffgz.close()
+        with open(difffile + ".gz", "r") as difffgz:
+            difgzsizehashes = sizehashes(difffgz)
 
         upd.history[patchname] = (oldsizehashes, difsizehashes, difgzsizehashes)
         upd.history_order.append(patchname)
