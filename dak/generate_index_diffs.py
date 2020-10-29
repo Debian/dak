@@ -261,7 +261,6 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     newfile = oldfile + ".new"
     difffile = "%s/%s" % (outdir, patchname)
 
-    upd = Updates(outdir, int(maxdiffs))
     (oldext, oldstat) = smartstat(oldfile)
     (origext, origstat) = smartstat(origfile)
     if not origstat:
@@ -286,9 +285,6 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     #    if upd.filesizesha1 != oldsizesha1:
     #        print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
 
-    if "CanonicalPath" in Options:
-        upd.can_path = Options["CanonicalPath"]
-
     if os.path.exists(newfile):
         os.unlink(newfile)
     smartlink(origfile, newfile)
@@ -300,6 +296,11 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         oldf.close()
         #print "%s: unchanged" % (origfile)
     else:
+        upd = Updates(outdir, int(maxdiffs))
+
+        if "CanonicalPath" in Options:
+            upd.can_path = Options["CanonicalPath"]
+
         if not os.path.isdir(outdir):
             os.mkdir(outdir)
 
