@@ -42,6 +42,7 @@ import apt_pkg
 import daklib.daksubprocess
 
 from daklib import utils
+from daklib.dakapt import DakHashes
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
 #from daklib.regexes import re_includeinpdiff
 import re
@@ -236,11 +237,8 @@ class Updates:
 
 def sizehashes(f):
     size = os.fstat(f.fileno())[6]
-    f.seek(0)
-    sha1sum = apt_pkg.sha1sum(f)
-    f.seek(0)
-    sha256sum = apt_pkg.sha256sum(f)
-    return (size, sha1sum, sha256sum)
+    hashes = DakHashes(f)
+    return (size, hashes.sha1, hashes.sha256)
 
 
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
