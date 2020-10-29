@@ -419,16 +419,16 @@ def main():
         for archobj in architectures:
             architecture = archobj.arch_string
 
-            for component in components:
-                if architecture == "source":
-                    longarch = architecture
-                    packages = "Sources"
-                    maxsuite = maxsources
-                else:
-                    longarch = "binary-%s" % (architecture)
-                    packages = "Packages"
-                    maxsuite = maxpackages
+            if architecture == "source":
+                longarch = architecture
+                packages = "Sources"
+                maxsuite = maxsources
+            else:
+                longarch = "binary-%s" % architecture
+                packages = "Packages"
+                maxsuite = maxpackages
 
+            for component in components:
                 # Process Contents
                 file = "%s/%s/Contents-%s" % (tree, component, architecture)
                 if "Verbose" in Options:
