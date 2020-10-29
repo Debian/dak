@@ -1,3 +1,4 @@
+import asyncio
 import collections
 import os
 import subprocess
@@ -28,32 +29,51 @@ HASH_FIELDS_TABLE = {x[0]: (x[1], x[2], x[4]) for x in HASH_FIELDS}
 _PDiffHashes = collections.namedtuple('_PDiffHashes', ['size', 'sha1', 'sha256'])
 
 
-def open_decompressed(path, named_temp_file=False):
-    def call_decompressor(cmd, inpath):
+async def asyncio_check_call(*args, **kwargs):
+    """async variant of subprocess.check_call
+
+    Parameters reflect that of asyncio.create_subprocess_exec or
+    (if "shell=True") that of asyncio.create_subprocess_shell
+    with restore_signals=True being the default.
+    """
+    kwargs.setdefault('restore_signals', True)
+    shell = kwargs.pop('shell', False)
+    if shell:
+        proc = await asyncio.create_subprocess_shell(*args, **kwargs)
+    else:
+        proc = await asyncio.create_subprocess_exec(*args, **kwargs)
+    retcode = await proc.wait()
+    if retcode != 0:
+        raise subprocess.CalledProcessError(retcode, args[0])
+    return 0
+
+
+async def open_decompressed(file, named_temp_file=False):
+    async def call_decompressor(cmd, inpath):
         fh = tempfile.NamedTemporaryFile("w+") if named_temp_file \
             else tempfile.TemporaryFile("w+")
-        with open(inpath) as rfh:
-            subprocess.check_call(
-                cmd,
-                stdin=rfh,
+        with open(inpath, "rb") as rfd:
+            await asyncio_check_call(
+                *cmd,
+                stdin=rfd,
                 stdout=fh,
             )
         fh.seek(0)
         return fh
 
-    if os.path.isfile(path):
-        return open(path, "r")
-    elif os.path.isfile("%s.gz" % path):
-        return call_decompressor(['zcat'], '{}.gz'.format(path))
-    elif os.path.isfile("%s.bz2" % path):
-        return call_decompressor(['bzcat'], '{}.bz2'.format(path))
-    elif os.path.isfile("%s.xz" % path):
-        return call_decompressor(['xzcat'], '{}.xz'.format(path))
+    if os.path.isfile(file):
+        return open(file, "r")
+    elif os.path.isfile("%s.gz" % file):
+        return await call_decompressor(['zcat'], '{}.gz'.format(file))
+    elif os.path.isfile("%s.bz2" % file):
+        return await call_decompressor(['bzcat'], '{}.bz2'.format(file))
+    elif os.path.isfile("%s.xz" % file):
+        return await call_decompressor(['xzcat'], '{}.xz'.format(file))
     else:
         return None
 
 
-def _merge_pdiffs(patch_a, patch_b, resulting_patch_without_extension):
+async def _merge_pdiffs(patch_a, patch_b, resulting_patch_without_extension):
     """Merge two pdiff in to a merged pdiff
 
     While rred support merging more than 2, we only need support for merging two.
@@ -68,9 +88,9 @@ def _merge_pdiffs(patch_a, patch_b, resulting_patch_without_extension):
 
     Combined, supporting pairwise merges is sufficient for our use case.
     """
-    with open_decompressed(patch_a, named_temp_file=True) as fd_a, \
-            open_decompressed(patch_b, named_temp_file=True) as fd_b:
-        subprocess.check_call(
+    with await open_decompressed(patch_a, named_temp_file=True) as fd_a, \
+            await open_decompressed(patch_b, named_temp_file=True) as fd_b:
+        await asyncio_check_call(
             '/usr/lib/apt/methods/rred %s %s | gzip -9n > %s' % (fd_a.name, fd_b.name,
                                                                  resulting_patch_without_extension + ".gz"),
             shell=True,
@@ -86,8 +106,8 @@ class PDiffHashes(_PDiffHashes):
         return cls(size, hashes.sha1, hashes.sha256)
 
 
-def _pdiff_hashes_from_patch(path_without_extension):
-    with open_decompressed(path_without_extension) as difff:
+async def _pdiff_hashes_from_patch(path_without_extension):
+    with await open_decompressed(path_without_extension) as difff:
         hashes_decompressed = PDiffHashes.from_file(difff)
 
     with open(path_without_extension + ".gz", "r") as difffgz:
@@ -173,9 +193,9 @@ class PDiffIndex(object):
         self.index_path = os.path.join(patches_dir, 'Index')
         self.read_index_file(self.index_path)
 
-    def generate_and_add_patch_file(self, original_file, new_file_uncompressed, patch_name):
+    async def generate_and_add_patch_file(self, original_file, new_file_uncompressed, patch_name):
 
-        with open_decompressed(original_file) as oldf:
+        with await open_decompressed(original_file) as oldf:
             oldsizehashes = PDiffHashes.from_file(oldf)
 
             with open(new_file_uncompressed, "r") as newf:
@@ -190,14 +210,14 @@ class PDiffIndex(object):
             oldf.seek(0)
             patch_path = os.path.join(self.patches_dir, patch_name)
             with open("{}.gz".format(patch_path), "wb") as fh:
-                subprocess.check_call(
+                await asyncio_check_call(
                     "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(new_file_uncompressed),
                     shell=True,
                     stdin=oldf,
                     stdout=fh
                 )
 
-            difsizehashes, difgzsizehashes = _pdiff_hashes_from_patch(patch_path)
+            difsizehashes, difgzsizehashes = await _pdiff_hashes_from_patch(patch_path)
 
         self.filesizehashes = newsizehashes
         self._unmerged_history[patch_name] = [oldsizehashes,
@@ -209,7 +229,7 @@ class PDiffIndex(object):
         if self.has_merged_pdiffs != self.wants_merged_pdiffs:
             # Convert patches
             if self.wants_merged_pdiffs:
-                self._convert_to_merged_patches()
+                await self._convert_to_merged_patches()
             else:
                 self._convert_to_unmerged()
             # Conversion also covers the newly added patch.  Accordingly,
@@ -217,7 +237,7 @@ class PDiffIndex(object):
         else:
             second_patch_name = patch_name
             if self.wants_merged_pdiffs:
-                self._bump_merged_patches()
+                await self._bump_merged_patches()
                 second_patch_name = "T-%s-F-%s" % (patch_name, patch_name)
                 os.link(os.path.join(self.patches_dir, patch_name + ".gz"),
                         os.path.join(self.patches_dir, second_patch_name + ".gz"))
@@ -229,7 +249,7 @@ class PDiffIndex(object):
                                                 ]
             self._history_order.append(second_patch_name)
 
-    def _bump_merged_patches(self):
+    async def _bump_merged_patches(self):
         # When bumping patches, we need to "rewrite" all merged patches.  As
         # neither apt nor dak supports by-hash for pdiffs, we leave the old
         # versions of merged pdiffs behind.
@@ -246,9 +266,9 @@ class PDiffIndex(object):
             new_merged_patch_name = "T-%s-F-%s" % (target_name, old_orig_name)
             old_merged_patch_path = os.path.join(self.patches_dir, old_merged_patch_name)
             new_merged_patch_path = os.path.join(self.patches_dir, new_merged_patch_name)
-            _merge_pdiffs(old_merged_patch_path, target_path, new_merged_patch_path)
+            await _merge_pdiffs(old_merged_patch_path, target_path, new_merged_patch_path)
 
-            hashes_decompressed, hashes_compressed = _pdiff_hashes_from_patch(new_merged_patch_path)
+            hashes_decompressed, hashes_compressed = await _pdiff_hashes_from_patch(new_merged_patch_path)
 
             new_merged_history[new_merged_patch_name] = [self._history[old_merged_patch_name][0],
                                                          hashes_decompressed,
@@ -271,7 +291,7 @@ class PDiffIndex(object):
         self._old_merged_patches_prefix = []
         self.has_merged_pdiffs = False
 
-    def _convert_to_merged_patches(self):
+    async def _convert_to_merged_patches(self):
         if self.has_merged_pdiffs:
             return
 
@@ -315,9 +335,9 @@ class PDiffIndex(object):
             if new_patches:
                 oldest_patch = os.path.join(self.patches_dir, patch_name)
                 previous_merged_patch = os.path.join(self.patches_dir, new_patches[-1])
-                _merge_pdiffs(oldest_patch, previous_merged_patch, merged_patch_path)
+                await _merge_pdiffs(oldest_patch, previous_merged_patch, merged_patch_path)
 
-                hashes_decompressed, hashes_compressed = _pdiff_hashes_from_patch(merged_patch_path)
+                hashes_decompressed, hashes_compressed = await _pdiff_hashes_from_patch(merged_patch_path)
 
                 self._history[merged_patch] = [self._unmerged_history[patch_name][0],
                                                hashes_decompressed,

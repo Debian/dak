@@ -12,6 +12,10 @@ class DakTestCase(unittest.TestCase):
         pass
 
 
+class DakAsyncCase(unittest.IsolatedAsyncioTestCase):
+    pass
+
+
 def fixture(*dirs):
     return join(DAK_ROOT_DIR, 'tests', 'fixtures', *dirs)
 

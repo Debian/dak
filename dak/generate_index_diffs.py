@@ -31,16 +31,17 @@
 
 ################################################################################
 
-import sys
+import asyncio
 import os
-import subprocess
+import re
+import sys
 import time
+import traceback
+
 import apt_pkg
 
-from daklib import utils
+from daklib import utils, pdiff
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
-
-import re
 from daklib.pdiff import PDiffIndex
 
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
@@ -84,25 +85,29 @@ def smartstat(file):
     return (None, None)
 
 
-def smartlink(f, t):
-    def call_decompressor(cmd, inpath, outpath):
-        with open(inpath, "rb") as stdin, open(outpath, "wb") as stdout:
-            return subprocess.check_call(cmd, stdin=stdin, stdout=stdout)
+async def smartlink(f, t):
+    async def call_decompressor(cmd, inpath, outpath):
+        with open(inpath, "rb") as rfd, open(outpath, "wb") as wfd:
+            await pdiff.asyncio_check_call(
+                *cmd,
+                stdin=rfd,
+                stdout=wfd,
+            )
 
     if os.path.isfile(f):
         os.link(f, t)
     elif os.path.isfile("%s.gz" % (f)):
-        call_decompressor(['gzip', '-d'], '{}.gz'.format(f), t)
+        await call_decompressor(['gzip', '-d'], '{}.gz'.format(f), t)
     elif os.path.isfile("%s.bz2" % (f)):
-        call_decompressor(['bzip2', '-d'], '{}.bz2'.format(f), t)
+        await call_decompressor(['bzip2', '-d'], '{}.bz2'.format(f), t)
     elif os.path.isfile("%s.xz" % (f)):
-        call_decompressor(['xz', '-d'], '{}.xz'.format(f), t)
+        await call_decompressor(['xz', '-d'], '{}.xz'.format(f), t)
     else:
         print("missing: %s" % (f))
         raise IOError(f)
 
 
-def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56, merged_pdiffs=False):
+async def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56, merged_pdiffs=False):
     if "NoAct" in Options:
         print("Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs))
         return
@@ -147,10 +152,11 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56, merged_pdiffs=Fa
     newfile = oldfile + ".new"
     if os.path.exists(newfile):
         os.unlink(newfile)
-    smartlink(origfile, newfile)
+
+    await smartlink(origfile, newfile)
 
     try:
-        upd.generate_and_add_patch_file(oldfile, newfile, patchname)
+        await upd.generate_and_add_patch_file(oldfile, newfile, patchname)
     finally:
         os.unlink(newfile)
 
@@ -195,11 +201,15 @@ def main():
     maxcontents = Options.get("MaxDiffs::Contents", maxdiffs)
     maxsources = Options.get("MaxDiffs::Sources", maxdiffs)
 
+    # can only be set via config at the moment
+    max_parallel = int(Options.get("MaxParallel", "8"))
+
     if "PatchName" not in Options:
         format = "%Y-%m-%d-%H%M.%S"
         Options["PatchName"] = time.strftime(format)
 
     session = DBConn().session()
+    pending_tasks = []
 
     if not suites:
         query = session.query(Suite.suite_name)
@@ -250,7 +260,8 @@ def main():
                         (fname, fext) = os.path.splitext(entry)
                         processfile = os.path.join(workpath, fname)
                         storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, fname)
-                        genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs, merged_pdiffs)
+                        coroutine = genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs, merged_pdiffs)
+                        pending_tasks.append(coroutine)
         os.chdir(cwd)
 
         for archobj in architectures:
@@ -268,16 +279,50 @@ def main():
             for component in components:
                 # Process Contents
                 file = "%s/%s/Contents-%s" % (tree, component, architecture)
-                if "Verbose" in Options:
-                    print(file)
+
                 storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
-                genchanges(Options, file + ".diff", storename, file, maxcontents, merged_pdiffs)
+                coroutine = genchanges(Options, file + ".diff", storename, file, maxcontents, merged_pdiffs)
+                pending_tasks.append(coroutine)
 
                 file = "%s/%s/%s/%s" % (tree, component, longarch, packages)
-                if "Verbose" in Options:
-                    print(file)
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
-                genchanges(Options, file + ".diff", storename, file, maxsuite, merged_pdiffs)
+                coroutine = genchanges(Options, file + ".diff", storename, file, maxsuite, merged_pdiffs)
+                pending_tasks.append(coroutine)
+
+    asyncio.run(process_pdiff_tasks(pending_tasks, max_parallel))
+
+
+async def process_pdiff_tasks(pending_coroutines, limit):
+    if limit is not None:
+        # If there is a limit, wrap the tasks with a semaphore to handle the limit
+        semaphore = asyncio.Semaphore(limit)
+
+        async def bounded_task(task):
+            async with semaphore:
+                return await task
+
+        pending_coroutines = [bounded_task(task) for task in pending_coroutines]
+
+    print(f"Processing {len(pending_coroutines)} PDiff generation tasks (parallel limit {limit})")
+    start = time.time()
+    pending_tasks = [asyncio.create_task(coroutine) for coroutine in pending_coroutines]
+    done, pending = await asyncio.wait(pending_tasks)
+    duration = round(time.time() - start, 2)
+
+    errors = False
+
+    for task in done:
+        try:
+            task.result()
+        except Exception:
+            traceback.print_exc()
+            errors = True
+
+    if errors:
+        print(f"Processing failed after {duration} seconds")
+        sys.exit(1)
+
+    print(f"Processing finished {duration} seconds")
 
 ################################################################################
 

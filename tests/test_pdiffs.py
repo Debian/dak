@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 
-from base_test import DakTestCase
+from base_test import DakAsyncCase
 
 from daklib.pdiff import PDiffIndex
 
@@ -17,7 +17,7 @@ def generate_orig(content_dir, initial_content):
             fd.write(initial_content)
 
 
-def generate_patch(index, patch_name, content_dir, new_content):
+async def generate_patch(index, patch_name, content_dir, new_content):
     new_file = os.path.join(content_dir, "data-current")
     orig_file = os.path.join(content_dir, "data-previous")
 
@@ -30,7 +30,7 @@ def generate_patch(index, patch_name, content_dir, new_content):
 
     generate_orig(content_dir, new_content)
 
-    index.generate_and_add_patch_file(orig_file, new_file, patch_name)
+    await index.generate_and_add_patch_file(orig_file, new_file, patch_name)
 
 
 def prune_history(index, known_patch_count_before=None, known_patch_count_after=None, detected_obsolete_patches=None):
@@ -196,9 +196,9 @@ SHA256-Download:
 """
 
 
-class TestPDiffs(DakTestCase):
+class TestPDiffs(DakAsyncCase):
 
-    def test_corrupt_pdiff_index(self):
+    async def test_corrupt_pdiff_index(self):
         with tempdir() as tmpdir:
             pdiff_dir = os.path.join(tmpdir, "pdiffs")
             index_file = os.path.join(pdiff_dir, 'Index')
@@ -220,7 +220,7 @@ class TestPDiffs(DakTestCase):
             assert index._history_order == []
             assert index._unmerged_history_order == []
 
-    def test_pdiff_index_unmerged(self):
+    async def test_pdiff_index_unmerged(self):
         with tempdir() as tmpdir:
             pdiff_dir = os.path.join(tmpdir, "pdiffs")
             index_file = os.path.join(pdiff_dir, 'Index')
@@ -252,7 +252,7 @@ class TestPDiffs(DakTestCase):
             assert not os.path.isdir(pdiff_dir)
 
             # Adding a patch should "just work(tm)"
-            generate_patch(index, "patch-1", tmpdir, data)
+            await generate_patch(index, "patch-1", tmpdir, data)
             assert os.path.isdir(pdiff_dir)
             assert index.filesizehashes is not None
             assert index.filesizehashes.size > 0
@@ -284,7 +284,7 @@ class TestPDiffs(DakTestCase):
 
             data[0] = 'Version 2'
             data[3] = 'over'
-            generate_patch(index, "patch-2", tmpdir, data)
+            await generate_patch(index, "patch-2", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=2,
@@ -294,7 +294,7 @@ class TestPDiffs(DakTestCase):
 
             data[2] = 'Text'
 
-            generate_patch(index, "patch-3", tmpdir, data)
+            await generate_patch(index, "patch-3", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=3,
@@ -304,7 +304,7 @@ class TestPDiffs(DakTestCase):
 
             data[0] = 'Version 3'
 
-            generate_patch(index, "patch-4", tmpdir, data)
+            await generate_patch(index, "patch-4", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -315,7 +315,7 @@ class TestPDiffs(DakTestCase):
             data[0] = 'Version 4'
             data[-1] = 'lines.'
 
-            generate_patch(index, "patch-5", tmpdir, data)
+            await generate_patch(index, "patch-5", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -328,7 +328,7 @@ class TestPDiffs(DakTestCase):
 
             delete_obsolete_patches(index)
 
-    def test_pdiff_index_merged(self):
+    async def test_pdiff_index_merged(self):
         with tempdir() as tmpdir:
             pdiff_dir = os.path.join(tmpdir, "pdiffs")
             index_file = os.path.join(pdiff_dir, 'Index')
@@ -360,7 +360,7 @@ class TestPDiffs(DakTestCase):
             assert not os.path.isdir(pdiff_dir)
 
             # Adding a patch should "just work(tm)"
-            generate_patch(index, "patch-1", tmpdir, data)
+            await generate_patch(index, "patch-1", tmpdir, data)
             assert os.path.isdir(pdiff_dir)
             assert index.filesizehashes is not None
             assert index.filesizehashes.size > 0
@@ -379,7 +379,7 @@ class TestPDiffs(DakTestCase):
 
             data[0] = 'Version 2'
             data[3] = 'over'
-            generate_patch(index, "patch-2", tmpdir, data)
+            await generate_patch(index, "patch-2", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=2,
@@ -389,7 +389,7 @@ class TestPDiffs(DakTestCase):
 
             data[2] = 'Text'
 
-            generate_patch(index, "patch-3", tmpdir, data)
+            await generate_patch(index, "patch-3", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=3,
@@ -399,7 +399,7 @@ class TestPDiffs(DakTestCase):
 
             data[0] = 'Version 3'
 
-            generate_patch(index, "patch-4", tmpdir, data)
+            await generate_patch(index, "patch-4", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -410,7 +410,7 @@ class TestPDiffs(DakTestCase):
             data[0] = 'Version 4'
             data[-1] = 'lines.'
 
-            generate_patch(index, "patch-5", tmpdir, data)
+            await generate_patch(index, "patch-5", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -432,7 +432,7 @@ class TestPDiffs(DakTestCase):
 
             data[0] = 'Version 5'
 
-            generate_patch(index, "patch-6", tmpdir, data)
+            await generate_patch(index, "patch-6", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -456,7 +456,7 @@ class TestPDiffs(DakTestCase):
 
             data[0] = 'Version 6'
 
-            generate_patch(index, "patch-7", tmpdir, data)
+            await generate_patch(index, "patch-7", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -481,7 +481,7 @@ class TestPDiffs(DakTestCase):
             data[0] = 'Version 7'
 
             # We need to add a patch to trigger the conversion
-            generate_patch(index, "patch-8", tmpdir, data)
+            await generate_patch(index, "patch-8", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -516,7 +516,7 @@ class TestPDiffs(DakTestCase):
             data[0] = 'Version 8'
 
             # We need to add a patch to trigger the conversion
-            generate_patch(index, "patch-9", tmpdir, data)
+            await generate_patch(index, "patch-9", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
@@ -535,7 +535,7 @@ class TestPDiffs(DakTestCase):
             data[0] = 'Version 9'
 
             # We need to add a patch to trigger the conversion
-            generate_patch(index, "patch-A", tmpdir, data)
+            await generate_patch(index, "patch-A", tmpdir, data)
 
             prune_history(index,
                           known_patch_count_before=4,
