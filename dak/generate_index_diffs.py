@@ -152,46 +152,48 @@ class Updates:
         self.filesizehashes = None
 
         if readpath:
-            try:
-                f = open(readpath + "/Index")
-                x = f.readline()
+            self.read_index_file(readpath + "/Index")
 
-                while x:
-                    l = x.split()
+    def read_index_file(self, index_file_path):
+        try:
+            with apt_pkg.TagFile(index_file_path) as index:
+                index.step()
+                section = index.section
 
-                    if len(l) == 0:
-                        x = f.readline()
+                for field in section.keys():
+                    value = section[field]
+                    if field in HASH_FIELDS_TABLE:
+                        ind, hashind = HASH_FIELDS_TABLE[field]
+                        self.read_hashs(ind, hashind, value.splitlines())
                         continue
 
-                    if l[0] in HASH_FIELDS_TABLE:
-                        ind, hashind = HASH_FIELDS_TABLE[l[0]]
-                        x = self.read_hashs(ind, hashind, f)
+                    if field in ("Canonical-Name", "Canonical-Path"):
+                        self.can_path = value
                         continue
 
-                    if l[0] == "Canonical-Name:" or l[0] == "Canonical-Path:":
-                        self.can_path = l[1]
+                    if field not in ("SHA1-Current", "SHA256-Current"):
+                        continue
 
-                    if l[0] == "SHA1-Current:" and len(l) == 3:
+                    l = value.split()
+
+                    if field == "SHA1-Current" and len(l) == 2:
                         if not self.filesizehashes:
-                            self.filesizehashes = (int(l[2]), None, None)
-                        self.filesizehashes = (int(self.filesizehashes[0]), l[1], self.filesizehashes[2])
+                            self.filesizehashes = (int(l[1]), None, None)
+                        self.filesizehashes = (int(self.filesizehashes[0]), l[0], self.filesizehashes[2])
 
-                    if l[0] == "SHA256-Current:" and len(l) == 3:
+                    if field == "SHA256-Current" and len(l) == 2:
                         if not self.filesizehashes:
-                            self.filesizehashes = (int(l[2]), None, None)
-                        self.filesizehashes = (int(self.filesizehashes[0]), self.filesizehashes[2], l[1])
+                            self.filesizehashes = (int(l[1]), None, None)
+                        self.filesizehashes = (int(self.filesizehashes[0]), self.filesizehashes[2], l[0])
+        except (IOError, apt_pkg.Error):
+            # On error, we ignore everything.  This causes the file to be regenerated from scratch.
+            # It forces everyone to download the full file for if they are behind.
+            # But it is self-healing providing that we generate valid files from here on.
+            pass
 
-                    x = f.readline()
-
-            except IOError:
-                pass
-
-    def read_hashs(self, ind, hashind, f):
-        while True:
-            x = f.readline()
-            if not x or x[0] != " ":
-                break
-            l = x.split()
+    def read_hashs(self, ind, hashind, lines):
+        for line in lines:
+            l = line.split()
             fname = l[2]
             if fname.endswith('.gz'):
                 fname = fname[:-3]
@@ -204,7 +206,6 @@ class Updates:
                 self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
             else:
                 self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
-        return x
 
     def dump(self, out=sys.stdout):
         if self.can_path:
