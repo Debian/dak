@@ -202,7 +202,7 @@ def index_range(index):
 
 
 def edit_new(overrides, upload, session):
-    with tempfile.NamedTemporaryFile() as fh:
+    with tempfile.NamedTemporaryFile(mode="w+t") as fh:
         # Write the current data to a temporary file
         print_new(upload, overrides, indexed=0, session=session, file=fh)
         fh.flush()
