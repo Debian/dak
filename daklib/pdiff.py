@@ -41,6 +41,16 @@ class PDiffIndex(object):
         if readpath:
             self.read_index_file(readpath + "/Index")
 
+    def add_patch_file(self, patch_name, base_file_hashes, target_file_hashes,
+                       patch_hashes_uncompressed, patch_hashes_compressed,
+                       ):
+        self.history[patch_name] = [base_file_hashes,
+                                    patch_hashes_uncompressed,
+                                    patch_hashes_compressed,
+                                    ]
+        self.history_order.append(patch_name)
+        self.filesizehashes = target_file_hashes
+
     def read_index_file(self, index_file_path):
         try:
             with apt_pkg.TagFile(index_file_path) as index:

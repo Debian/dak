@@ -207,10 +207,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         with open(difffile + ".gz", "r") as difffgz:
             difgzsizehashes = PDiffHashes.from_file(difffgz)
 
-        upd.history[patchname] = (oldsizehashes, difsizehashes, difgzsizehashes)
-        upd.history_order.append(patchname)
-
-        upd.filesizehashes = newsizehashes
+        upd.add_patch_file(patchname, oldsizehashes, newsizehashes, difsizehashes, difgzsizehashes)
 
         os.unlink(oldfile + oldext)
         os.link(origfile + origext, oldfile + origext)
