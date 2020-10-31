@@ -98,16 +98,18 @@ def build_mapping(archive, session):
 ################################################################################
 
 
-def usage():
+def usage(status=0):
     print("usage: dak make-pkg-file-mapping <archive>")
-    sys.exit(0)
+    sys.exit(status)
 
 ################################################################################
 
 
 def main():
     if len(sys.argv) != 2:
-        usage()
+        usage(1)
+    elif sys.argv[1] in ('-h', '--help'):
+        usage(0)
 
     archive_name = sys.argv[1]
 

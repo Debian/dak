@@ -24,7 +24,7 @@ import sys
 from daklib.dbconn import DBConn, Fingerprint, Keyring, Uid, ACL
 
 
-def usage():
+def usage(status=0):
     print("""Usage:
   dak acl set-fingerprints <acl-name>
   dak acl export-per-source <acl-name>
@@ -42,6 +42,7 @@ def usage():
   allow, deny:
     Grant (revoke) per-source upload rights for ACL <acl-name>.
 """)
+    sys.exit(status)
 
 
 def get_fingerprint(entry, session):
@@ -178,9 +179,11 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv
 
+    if len(argv) > 1 and argv[1] in ('-h', '--help'):
+        usage(0)
+
     if len(argv) < 3:
-        usage()
-        sys.exit(1)
+        usage(1)
 
     if argv[1] == 'set-fingerprints':
         acl_set_fingerprints(argv[2], sys.stdin)
@@ -191,5 +194,4 @@ def main(argv=None):
     elif argv[1] == 'deny':
         acl_deny(argv[2], argv[3], argv[4:])
     else:
-        usage()
-        sys.exit(1)
+        usage(1)

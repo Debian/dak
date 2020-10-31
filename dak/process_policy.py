@@ -549,16 +549,15 @@ def main():
 
     queue_name = apt_pkg.parse_commandline(cnf.Cnf, Arguments, sys.argv)
 
+    Options = cnf.subtree("Process-Policy::Options")
+    if Options["Help"]:
+        usage()
+
     if len(queue_name) != 1:
         print("E: Specify exactly one policy queue")
         sys.exit(1)
 
     queue_name = queue_name[0]
-
-    Options = cnf.subtree("Process-Policy::Options")
-
-    if Options["Help"]:
-        usage()
 
     Logger = daklog.Logger("process-policy")
     if not Options["No-Action"]:
