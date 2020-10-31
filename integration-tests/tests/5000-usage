@@ -1,0 +1,49 @@
+#! /bin/bash
+#
+# © 2020 Ansgar <ansgar@debian.org>
+# License: GPL-2+
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+set -e
+set -u
+
+. ${DAK_ROOT:?}/integration-tests/common
+. ${DAK_ROOT:?}/integration-tests/setup
+
+dak --help > /dev/null
+for command in \
+    acl add-user admin archive-dedup-pool auto-decruft \
+    bts-categorize \
+    check-archive check-overrides clean-queues clean-suites contents \
+    control-overrides control-suite copy-installer cruft-report \
+    dominate \
+    examine-package export export-suite external-overrides \
+    generate-index-diffs generate-packages-sources2 generate-releases graph \
+    import import-keyring import-repository import-users-from-passwd init-dirs \
+    ls \
+    make-changelog make-maintainers make-overrides make-pkg-file-mapping \
+    manage-build-queues manage-debug-suites manage-external-signature-requests \
+    new-security-install \
+    override \
+    process-commands process-new process-policy process-upload \
+    queue-report \
+    rm \
+    show-deferred show-new stats \
+    transitions \
+    update-db update-suite \
+    write-sections \
+    ; do
+    dak ${command} --help > /dev/null
+done
