@@ -880,19 +880,16 @@ class LintianCheck(Check):
             temptagfile.flush()
 
             changespath = os.path.join(upload.directory, changes.filename)
-            try:
-                cmd = []
-                result = 0
 
-                user = cnf.get('Dinstall::UnprivUser') or None
-                if user is not None:
-                    cmd.extend(['sudo', '-H', '-u', user])
-
-                cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temptagfile.name, changespath])
-                output = six.ensure_text(daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT))
-            except subprocess.CalledProcessError as e:
-                result = e.returncode
-                output = six.ensure_text(e.output)
+            cmd = []
+            user = cnf.get('Dinstall::UnprivUser') or None
+            if user is not None:
+                cmd.extend(['sudo', '-H', '-u', user])
+            cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temptagfile.name, changespath])
+            process = daklib.daksubprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            output_raw = process.communicate()[0]
+            output = six.ensure_text(output_raw)
+            result = process.returncode
 
         if result == 2:
             utils.warn("lintian failed for %s [return code: %s]." %
