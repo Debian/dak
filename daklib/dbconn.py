@@ -921,6 +921,7 @@ class Keyring(object):
         from .utils import open_ldap_connection
         l = open_ldap_connection()
         cnf = Config()
+        LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
         Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                "(&(keyfingerprint=*)(supplementaryGid=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                ["uid", "keyfingerprint", "cn", "mn", "sn"])
