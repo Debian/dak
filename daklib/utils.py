@@ -833,40 +833,6 @@ def clean_symlink(src, dest, root):
 ################################################################################
 
 
-def temp_filename(directory=None, prefix="dak", suffix="", mode=None, group=None):
-    """
-    Return a secure and unique filename by pre-creating it.
-
-    @type directory: str
-    @param directory: If non-null it will be the directory the file is pre-created in.
-
-    @type prefix: str
-    @param prefix: The filename will be prefixed with this string
-
-    @type suffix: str
-    @param suffix: The filename will end with this string
-
-    @type mode: str
-    @param mode: If set the file will get chmodded to those permissions
-
-    @type group: str
-    @param group: If set the file will get chgrped to the specified group.
-
-    @rtype: list
-    @return: Returns a pair (fd, name)
-    """
-
-    (tfd, tfname) = tempfile.mkstemp(suffix, prefix, directory)
-    if mode:
-        os.chmod(tfname, mode)
-    if group:
-        gid = grp.getgrnam(group).gr_gid
-        os.chown(tfname, -1, gid)
-    return (tfd, tfname)
-
-################################################################################
-
-
 def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
     """
     Return a secure and unique directory by pre-creating it.
