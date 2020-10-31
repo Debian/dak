@@ -786,7 +786,9 @@ def get_logins_from_ldap(fingerprint='*'):
                        ['uid', 'keyfingerprint'])
     login = {}
     for elem in Attrs:
-        login[elem[1]['keyFingerPrint'][0]] = elem[1]['uid'][0]
+        fpr = six.ensure_str(elem[1]['keyFingerPrint'][0])
+        uid = six.ensure_str(elem[1]['uid'][0])
+        login[fpr] = uid
     return login
 
 ################################################################################
@@ -807,8 +809,9 @@ def get_users_from_ldap():
         name = []
         for k in ('cn', 'mn', 'sn'):
             try:
-                if elem[k][0] != '-':
-                    name.append(elem[k][0])
+                value = six.ensure_str(elem[k][0])
+                if value and value[0] != '-':
+                    name.append(value)
             except KeyError:
                 pass
         users[' '.join(name)] = elem['uid'][0]

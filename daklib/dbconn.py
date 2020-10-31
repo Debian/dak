@@ -861,7 +861,7 @@ __all__.append('get_or_set_fingerprint')
 def get_ldap_name(entry):
     name = []
     for k in ["cn", "mn", "sn"]:
-        ret = entry.get(k)
+        ret = six.ensure_str(entry.get(k))
         if ret and ret[0] != "" and ret[0] != "-":
             name.append(ret[0])
     return " ".join(name)
@@ -965,11 +965,12 @@ class Keyring(object):
 
         for i in Attrs:
             entry = i[1]
-            uid = entry["uid"][0]
+            uid = six.ensure_str(entry["uid"][0])
             name = get_ldap_name(entry)
             fingerprints = entry["keyFingerPrint"]
             keyid = None
             for f in fingerprints:
+                f = six.ensure_str(f)
                 key = self.fpr_lookup.get(f, None)
                 if key not in self.keys:
                     continue
