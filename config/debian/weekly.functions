@@ -15,16 +15,6 @@ function purgeempty() {
     done
 }
 
-function gitcleanup() {
-    log "Doing git stuff"
-    cd ${public}/git/dak.git
-    git gc --prune
-    git update-server-info
-    # now workaround a git bug not honoring the setup in logs/*
-    # (fix in development, but until it reached backports.org.......)
-    chmod -R g+w logs/
-}
-
 function fixsymlinks() {
     log "Fixing symlinks"
     local archiveroot

@@ -1,6 +1,5 @@
 # FUNC                 ARGS                       TIME                       ERR     BG
 INCLUDE                lock                       none                       true    false
 purgeempty             none                       none                       false   true
-gitcleanup             none                       none                       false   true
 fixsymlinks            none                       none                       false   true
 linkmorgue             none                       none                       false   true
