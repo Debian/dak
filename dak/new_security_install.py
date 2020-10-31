@@ -43,6 +43,7 @@ from daklib import utils
 from daklib.dbconn import *
 from daklib.regexes import re_taint_free
 from daklib.config import Config
+import daklib.daksubprocess
 
 Options = None
 Logger = None
@@ -84,8 +85,9 @@ def spawn(command):
 
 def sudo(arg, fn, exit):
     if Options["Sudo"]:
-        os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
-                  "/usr/local/bin/dak", "new-security-install", "-" + arg)
+        daklib.daksubprocess.check_call(
+            ["/usr/bin/sudo", "-u", "dak", "-H",
+             "/usr/local/bin/dak", "new-security-install", "-" + arg])
     else:
         fn()
     if exit:

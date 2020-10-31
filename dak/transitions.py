@@ -42,6 +42,7 @@ from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
 from daklib.regexes import re_broken_package
+import daklib.daksubprocess
 import yaml
 
 # Globals
@@ -304,8 +305,9 @@ def write_transitions_from_file(from_file):
         sys.exit(3)
 
     if Options["sudo"]:
-        os.spawnl(os.P_WAIT, "/usr/bin/sudo", "/usr/bin/sudo", "-u", "dak", "-H",
-              "/usr/local/bin/dak", "transitions", "--import", from_file)
+        daklib.daksubprocess.check_call(
+            ["/usr/bin/sudo", "-u", "dak", "-H",
+             "/usr/local/bin/dak", "transitions", "--import", from_file])
     else:
         trans = load_transitions(from_file)
         if trans is None:
