@@ -11,7 +11,6 @@ test buster:
   artifacts:
     expire_in: 1 day
     paths:
-      - coverage
       - output
 
 tests buster python3:
@@ -21,7 +20,6 @@ tests buster python3:
   script: debian/run-ci --with-coverage --python3
   artifacts:
     paths:
-      - coverage
       - output
 
 tests bullseye python3:
@@ -31,7 +29,6 @@ tests bullseye python3:
   script: debian/run-ci --with-coverage --python3
   artifacts:
     paths:
-      - coverage
       - output
   allow_failure: true
 
