@@ -907,7 +907,12 @@ class Keyring(object):
         need_fingerprint = False
 
         for line_raw in p.stdout:
-            line = six.ensure_str(line_raw)
+            try:
+                line = six.ensure_str(line_raw)
+            except UnicodeDecodeError:
+                # Some old UIDs might not use UTF-8 encoding. We assume they
+                # use latin1.
+                line = six.ensure_str(line_raw, encoding='latin1')
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
