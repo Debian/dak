@@ -16,7 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+if [[ -v testname ]]; then
+    return
+fi
+
 declare -r testname=`basename $0`
+
+section_start() {
+    local name header
+    name="${1:?}"
+    header="${2:-} (${testname})"
+    echo -e "section_start:$(date +%s):${testname}_${name}\r\e[0K\e[36;1m${header}\e[0;m"
+}
+
+section_end() {
+    local name
+    name="${1:?}"
+    echo -e "section_end:$(date +%s):${testname}_${name}\r\e[0K"
+}
 
 _escape_newline() {
     echo "$1" | perl -pe 's/\n/\\n/g'

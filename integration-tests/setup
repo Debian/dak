@@ -21,8 +21,11 @@ if [[ ! -v DAK_INTEGRATION_TEST || ! -v DAK_ROOT ]]; then
 fi
 
 test-setup() {
-
   local setupdir="${DAK_ROOT}/setup"
+
+  . ${DAK_ROOT:?}/integration-tests/common
+
+  section_start "setup_dak_installation[collapsed=true]" "Prepare DAK"
 
   export DAKBASE=$(mktemp -d)
   export HOME="${DAKBASE}/home"
@@ -38,6 +41,8 @@ test-setup() {
   cp -a "${DAK_ROOT}/tests/fixtures/packages/gpg" "${GNUPGHOME}"
   chmod 0700 "${GNUPGHOME}"
   echo "Dinstall::SigningHomedir \"${GNUPGHOME}\";" >> "${DAK_CONFIG}"
+
+  section_end setup_dak_installation
 }
 
 test-cleanup() {
