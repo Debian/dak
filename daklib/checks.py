@@ -921,10 +921,10 @@ class LintianCheck(Check):
                 cmd.extend(['sudo', '-H', '-u', user])
 
             cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
-            output = daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            output = six.ensure_text(daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT))
         except subprocess.CalledProcessError as e:
             result = e.returncode
-            output = e.output
+            output = six.ensure_text(e.output)
         finally:
             os.unlink(temp_filename)
 
