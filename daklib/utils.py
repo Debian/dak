@@ -37,7 +37,6 @@ import apt_pkg
 import re
 import email as modemail
 import subprocess
-import ldap
 import errno
 import functools
 import six
@@ -773,13 +772,32 @@ def gpg_get_key_addresses(fingerprint):
 ################################################################################
 
 
+def open_ldap_connection():
+    """open connection to the configured LDAP server"""
+    import ldap
+
+    LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
+    LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
+    ca_cert_file = Cnf.get('Import-LDAP-Fingerprints::CACertFile')
+
+    l = ldap.initialize(LDAPServer)
+
+    if ca_cert_file:
+        l.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
+        l.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_file)
+        l.set_option(ldap.OPT_X_TLS_NEWCTX, True)
+        l.start_tls_s()
+
+    l.simple_bind_s("", "")
+
+    return l
+
+################################################################################
+
+
 def get_logins_from_ldap(fingerprint='*'):
     """retrieve login from LDAP linked to a given fingerprint"""
-
-    LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
-    LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
-    l = ldap.initialize(LDAPServer)
-    l.simple_bind_s('', '')
+    l = open_ldap_connection()
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(keyfingerprint=%s)' % fingerprint,
                        ['uid', 'keyfingerprint'])
@@ -795,11 +813,7 @@ def get_logins_from_ldap(fingerprint='*'):
 
 def get_users_from_ldap():
     """retrieve login and user names from LDAP"""
-
-    LDAPDn = Cnf['Import-LDAP-Fingerprints::LDAPDn']
-    LDAPServer = Cnf['Import-LDAP-Fingerprints::LDAPServer']
-    l = ldap.initialize(LDAPServer)
-    l.simple_bind_s('', '')
+    l = open_ldap_connection()
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(uid=*)', ['uid', 'cn', 'mn', 'sn'])
     users = {}

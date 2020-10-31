@@ -918,22 +918,9 @@ class Keyring(object):
             raise GpgException("command failed: %s\nstdout: %s\nstderr: %s\n" % (cmd, out, err))
 
     def import_users_from_ldap(self, session):
-        import ldap
+        from .utils import open_ldap_connection
+        l = open_ldap_connection()
         cnf = Config()
-
-        LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
-        LDAPServer = cnf["Import-LDAP-Fingerprints::LDAPServer"]
-        ca_cert_file = cnf.get('Import-LDAP-Fingerprints::CACertFile')
-
-        l = ldap.initialize(LDAPServer)
-
-        if ca_cert_file:
-            l.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_HARD)
-            l.set_option(ldap.OPT_X_TLS_CACERTFILE, ca_cert_file)
-            l.set_option(ldap.OPT_X_TLS_NEWCTX, True)
-            l.start_tls_s()
-
-        l.simple_bind_s("", "")
         Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                "(&(keyfingerprint=*)(supplementaryGid=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                ["uid", "keyfingerprint", "cn", "mn", "sn"])
