@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Helper code for file writing with optional compression.
 

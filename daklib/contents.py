@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Helper code for contents generation.
 

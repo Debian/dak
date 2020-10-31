@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """ Utility functions for lintian checks in dak
 
 @contact: Debian FTPMaster <ftpmaster@debian.org>

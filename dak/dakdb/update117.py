@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # coding=utf8
 
 """list of external signature requests

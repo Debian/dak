@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """ DB access class
 
 @contact: Debian FTPMaster <ftpmaster@debian.org>

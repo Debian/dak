@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 """ Helper functions for the various source formats
 
 @contact: Debian FTPMaster <ftpmaster@debian.org>

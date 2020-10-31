@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Config access class
 

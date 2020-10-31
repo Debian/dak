@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Exception classes used in dak
 
