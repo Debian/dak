@@ -42,6 +42,7 @@ import datetime
 import os
 import six
 import subprocess
+import tempfile
 import textwrap
 import time
 import yaml
@@ -871,29 +872,27 @@ class LintianCheck(Check):
         except yaml.YAMLError as msg:
             raise Exception('Could not read lintian tags file {0}, YAML error: {1}'.format(tagfile, msg))
 
-        fd, temp_filename = utils.temp_filename(mode=0o644)
-        temptagfile = os.fdopen(fd, 'w')
-        for tags in six.itervalues(lintiantags):
-            for tag in tags:
-                print(tag, file=temptagfile)
-        temptagfile.close()
+        with tempfile.NamedTemporaryFile() as temptagfile:
+            os.fchmod(temptagfile.fileno(), 0o644)
+            for tags in six.itervalues(lintiantags):
+                for tag in tags:
+                    print(tag, file=temptagfile)
+            temptagfile.flush()
 
-        changespath = os.path.join(upload.directory, changes.filename)
-        try:
-            cmd = []
-            result = 0
+            changespath = os.path.join(upload.directory, changes.filename)
+            try:
+                cmd = []
+                result = 0
 
-            user = cnf.get('Dinstall::UnprivUser') or None
-            if user is not None:
-                cmd.extend(['sudo', '-H', '-u', user])
+                user = cnf.get('Dinstall::UnprivUser') or None
+                if user is not None:
+                    cmd.extend(['sudo', '-H', '-u', user])
 
-            cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temp_filename, changespath])
-            output = six.ensure_text(daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT))
-        except subprocess.CalledProcessError as e:
-            result = e.returncode
-            output = six.ensure_text(e.output)
-        finally:
-            os.unlink(temp_filename)
+                    cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temptagfile.name, changespath])
+                    output = six.ensure_text(daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT))
+            except subprocess.CalledProcessError as e:
+                result = e.returncode
+                output = six.ensure_text(e.output)
 
         if result == 2:
             utils.warn("lintian failed for %s [return code: %s]." %
