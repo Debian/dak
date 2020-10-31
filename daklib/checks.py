@@ -872,7 +872,7 @@ class LintianCheck(Check):
         except yaml.YAMLError as msg:
             raise Exception('Could not read lintian tags file {0}, YAML error: {1}'.format(tagfile, msg))
 
-        with tempfile.NamedTemporaryFile() as temptagfile:
+        with tempfile.NamedTemporaryFile(mode="w+t") as temptagfile:
             os.fchmod(temptagfile.fileno(), 0o644)
             for tags in six.itervalues(lintiantags):
                 for tag in tags:
