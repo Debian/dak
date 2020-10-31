@@ -745,30 +745,9 @@ class PoolFile(ORMObject):
     def basename(self):
         return os.path.basename(self.filename)
 
-    def is_valid(self, filesize=-1, md5sum=None):
-        return self.filesize == int(filesize) and self.md5sum == md5sum
-
     def properties(self):
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum',
             'sha256sum', 'source', 'binary', 'last_used']
-
-    def identical_to(self, filename):
-        """
-        compare size and hash with the given file
-
-        @rtype: bool
-        @return: true if the given file has the same size and hash as this object; false otherwise
-        """
-        st = os.stat(filename)
-        if self.filesize != st.st_size:
-            return False
-
-        with open(filename, "r") as f:
-            sha256sum = apt_pkg.sha256sum(f)
-        if sha256sum != self.sha256sum:
-            return False
-
-        return True
 
 
 __all__.append('PoolFile')
