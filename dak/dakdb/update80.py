@@ -45,9 +45,9 @@ def do_update(self):
         c.execute("UPDATE suite set suite_name='stable-new' where    suite_name='proposedupdates'")
         c.execute("UPDATE suite set suite_name='oldstable-new' where suite_name='oldproposedupdates'")
 
-        c.execute("UPDATE config SET value = '79' WHERE name = 'db_revision'")
+        c.execute("UPDATE config SET value = '80' WHERE name = 'db_revision'")
         self.db.commit()
 
     except psycopg2.ProgrammingError as msg:
         self.db.rollback()
-        raise DBUpdateError('Unable to apply sick update 79, rollback issued. Error message: {0}'.format(msg))
+        raise DBUpdateError('Unable to apply sick update 80, rollback issued. Error message: {0}'.format(msg))
