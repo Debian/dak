@@ -99,6 +99,17 @@ setup_debian_like_archive() {
     dak admin v-c add testing-proposed-updates MustBeNewerThan testing
     # unstable
     dak admin v-c add unstable MustBeNewerThan testing
+
+    # Lintian check
+    cat > ${DAKBASE}/etc/lintian.tags <<-EOF
+	lintian:
+	  nonfatal:
+	    - wrong-file-owner-uid-or-gid
+	  fatal:
+	    - binary-in-etc
+	EOF
+
+    echo "Dinstall::LintianTags \"${DAKBASE}/etc/lintian.tags\";" >> ${DAKBASE}/etc/dak.conf
 }
 
 upload_changes() {
