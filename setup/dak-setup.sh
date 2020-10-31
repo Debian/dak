@@ -39,7 +39,7 @@ dak-setup() {
     PG_CMD=""
     SYS_CMD=""
     USER_CMD=""
-    if [ "$RUN_COVERAGE" = "y" ]; then
+    if [ "${RUN_COVERAGE:-n}" = "y" ]; then
       if [ "${DAK_PYTHON3:-n}" = "y" ]; then
         COVERAGE_CMD=python3-coverage
       else
