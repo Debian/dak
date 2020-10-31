@@ -241,7 +241,7 @@ Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time()
                 print(fields, file=f)
                 encoded = six.text_type(u[6]).encode('utf-8')
                 print(encoded.rstrip(), file=f)
-                open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "w").write(encoded + fields + '\n')
+                open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "wb").write(encoded + fields + b'\n')
                 print(file=f)
             f.close()
             os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"], '.status.tmp'),
