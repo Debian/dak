@@ -71,7 +71,7 @@ def spawn(command):
         print("[%s]" % (command))
     else:
         try:
-            subprocess.check_output(command.split(), stderr=subprocess.STDOUT)
+            daklib.daksubprocess.check_output(command.split(), stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, e.output.rstrip()), e.returncode)
 
