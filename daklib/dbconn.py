@@ -840,9 +840,12 @@ __all__.append('get_or_set_fingerprint')
 def get_ldap_name(entry):
     name = []
     for k in ["cn", "mn", "sn"]:
-        ret = six.ensure_str(entry.get(k))
-        if ret and ret[0] != "" and ret[0] != "-":
-            name.append(ret[0])
+        ret = entry.get(k)
+        if not ret:
+            continue
+        value = six.ensure_str(ret[0])
+        if value and value[0] != "-":
+            name.append(value)
     return " ".join(name)
 
 ################################################################################
