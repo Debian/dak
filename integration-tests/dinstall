@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+. ${DAK_ROOT:?}/integration-tests/common
+
 declare public_archives=(ftp-master debian-debug)
 declare -r scriptdir=${DAKBASE}/scripts
 declare -r overridedir=${scriptdir}/override # debian
@@ -23,18 +25,26 @@ echo "Dir::Override \"${overridedir}\";" >> "${DAK_CONFIG}"
 declare -r pdiff_tempdir="${DAKBASE}/_dinstall-pdiff-temp"
 declare -r upload_dir="${DAKBASE}/uploads"
 
+DINSTALL_COUNTER=0
+
 mkdir -p $upload_dir
 
 setup_empty_archive() {
+    section_start "setup_empty_archive[collapsed=true]" "Setup empty archive"
+
     dak admin archive add ftp-master "${DAKBASE}/ftp-master" "main archive"
     dak admin archive add debian-debug "${DAKBASE}/debian-debug" "debug archive"
     dak admin architecture add amd64 AMD64
     dak admin architecture add i386 "Intel ia32"
     HAVE_EXPERIMENTAL=
     HAVE_TPU=
+
+    section_start setup_empty_archive
 }
 
 setup_unstable() {
+    section_start "setup_debian_unstable[collapsed=true]" "Debian-like unstable"
+
     # unstable-debug + unstable
     dak admin suite add-all-arches unstable-debug "" codename=sid-debug archive=debian-debug \
         allowcsset=no byhash=yes accept_binary_uploads=False accept_source_uploads=False
@@ -46,9 +56,12 @@ setup_unstable() {
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
     dak admin suite-component add unstable main contrib non-free
     dak admin suite add-build-queue unstable buildd-unstable buildd-sid build-queues
+
+    section_end setup_debian_unstable
 }
 
 setup_debian_like_archive() {
+    section_start "setup_debian_archive[collapsed=true]" "Debian-like Archive setup"
     setup_empty_archive
     setup_unstable
 
@@ -110,6 +123,7 @@ setup_debian_like_archive() {
 	EOF
 
     echo "Dinstall::LintianTags \"${DAKBASE}/etc/lintian.tags\";" >> ${DAKBASE}/etc/dak.conf
+    section_end setup_debian_archive
 }
 
 upload_changes() {
@@ -126,6 +140,11 @@ process_uploads() {
 }
 
 dinstall() {
+    DINSTALL_COUNTER=$(( DINSTALL_COUNTER + 1 ))
+    dinstall_name="dinstall_${DINSTALL_COUNTER}"
+
+    section_start "${dinstall_name}[collapsed=true]" "dinstall #${DINSTALL_COUNTER}"
+
     echo "STARTING dinstall"
     dinstall_stage_start_up
     dinstall_stage_indices
@@ -145,6 +164,7 @@ dinstall() {
 # UNLOCK UNCHECKED
 # UNLOCK DAILY
     echo "FINISHED dinstall"
+    section_end  "${dinstall_name}"
 }
 
 dinstall_stage_start_up() {

@@ -49,6 +49,9 @@ fi
 if [[ ! -v CI_NODE_INDEX ]]; then
     export CI_NODE_INDEX=1
 fi
+if [[ ! -v CI ]]; then
+    CI=false
+fi
 
 MY_CI_COUNTER=0
 
@@ -193,7 +196,12 @@ done
 
 section_end integration_tests
 
-if [ "$RUN_COVERAGE" = "y" ]; then
+# On the gitlab CI, there is a separate job for generating the
+# coverage report.  That provides the total coverage.  Unfortunately,
+# these partial coverage reports causes Gitlab to compute an average
+# of all totals, which gives a weird coverage percentage that does not
+# reflect the true coverage rating.
+if [ "$RUN_COVERAGE" = "y" ] && [ "${CI}" = "false" ]; then
     section_start coverage "Coverage Report"
     ${COVERAGE_CMD} combine --append
     ${COVERAGE_CMD} report -m
