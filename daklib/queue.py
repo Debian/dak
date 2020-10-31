@@ -83,7 +83,7 @@ def check_valid(overrides, session):
 ###############################################################################
 
 
-def prod_maintainer(notes, upload):
+def prod_maintainer(notes, upload, session, trainee=False):
     cnf = Config()
     changes = upload.changes
     whitelists = [upload.target_suite.mail_whitelist]
@@ -132,6 +132,18 @@ def prod_maintainer(notes, upload):
     utils.send_mail(prod_mail_message, whitelists=whitelists)
 
     print("Sent prodding message")
+
+    answer = utils.our_raw_input("Store prod message as note? (Y/n)?").lower()
+    if answer != "n":
+        comment = NewComment()
+        comment.policy_queue = upload.policy_queue
+        comment.package = upload.changes.source
+        comment.version = upload.changes.version
+        comment.comment = prod_mail_message
+        comment.author = utils.whoami()
+        comment.trainee = trainee
+        session.add(comment)
+        session.commit()
 
 ################################################################################
 
