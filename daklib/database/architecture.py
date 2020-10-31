@@ -14,6 +14,8 @@
 
 ################################################################################
 
+import warnings
+
 from sqlalchemy import Column, Integer, Text
 from sqlalchemy.schema import Index
 
@@ -45,12 +47,14 @@ class Architecture(BaseTimestamp):
 
     def __eq__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.arch_string == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
             return (self.arch_string != val)
         # This signals to use the normal comparison operator
         return NotImplemented
