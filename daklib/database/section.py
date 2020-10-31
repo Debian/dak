@@ -52,3 +52,5 @@ class Section(BaseTimestamp):
             return (self.section != val)
         # This signals to use the normal comparison operator
         return NotImplemented
+
+    __hash__ = BaseTimestamp.__hash__

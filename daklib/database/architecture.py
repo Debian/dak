@@ -54,3 +54,5 @@ class Architecture(BaseTimestamp):
             return (self.arch_string != val)
         # This signals to use the normal comparison operator
         return NotImplemented
+
+    __hash__ = BaseTimestamp.__hash__
