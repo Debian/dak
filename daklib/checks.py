@@ -888,8 +888,8 @@ class LintianCheck(Check):
                 if user is not None:
                     cmd.extend(['sudo', '-H', '-u', user])
 
-                    cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temptagfile.name, changespath])
-                    output = six.ensure_text(daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT))
+                cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temptagfile.name, changespath])
+                output = six.ensure_text(daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT))
             except subprocess.CalledProcessError as e:
                 result = e.returncode
                 output = six.ensure_text(e.output)
