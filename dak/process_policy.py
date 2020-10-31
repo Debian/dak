@@ -533,6 +533,13 @@ def remove_unreferenced_sources(policy_queue, transaction):
 ################################################################################
 
 
+def usage(status=0):
+    print("""Usage: dak process-policy QUEUE""")
+    sys.exit(status)
+
+################################################################################
+
+
 def main():
     global Options, Logger
 
