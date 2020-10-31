@@ -1,7 +1,10 @@
+import collections
+import os
 import sys
 
 import apt_pkg
 
+from daklib.dakapt import DakHashes
 
 HASH_FIELDS = [
     ('SHA1-History', 0, 1),
@@ -13,6 +16,17 @@ HASH_FIELDS = [
 ]
 
 HASH_FIELDS_TABLE = {x[0]: (x[1], x[2]) for x in HASH_FIELDS}
+
+_PDiffHashes = collections.namedtuple('_PDiffHashes', ['size', 'sha1', 'sha256'])
+
+
+class PDiffHashes(_PDiffHashes):
+
+    @classmethod
+    def from_file(cls, fd):
+        size = os.fstat(fd.fileno())[6]
+        hashes = DakHashes(fd)
+        return cls(size, hashes.sha1, hashes.sha256)
 
 
 class PDiffIndex(object):
@@ -51,13 +65,14 @@ class PDiffIndex(object):
 
                     if field == "SHA1-Current" and len(l) == 2:
                         if not self.filesizehashes:
-                            self.filesizehashes = (int(l[1]), None, None)
-                        self.filesizehashes = (int(self.filesizehashes[0]), l[0], self.filesizehashes[2])
+                            self.filesizehashes = PDiffHashes(int(l[1]), None, None)
+                        self.filesizehashes = PDiffHashes(self.filesizehashes.size, l[0], self.filesizehashes.sha256)
 
                     if field == "SHA256-Current" and len(l) == 2:
                         if not self.filesizehashes:
-                            self.filesizehashes = (int(l[1]), None, None)
-                        self.filesizehashes = (int(self.filesizehashes[0]), self.filesizehashes[2], l[0])
+                            self.filesizehashes = PDiffHashes(int(l[1]), None, None)
+                        self.filesizehashes = PDiffHashes(self.filesizehashes.size, self.filesizehashes.sha1, l[0])
+
         except (IOError, apt_pkg.Error):
             # On error, we ignore everything.  This causes the file to be regenerated from scratch.
             # It forces everyone to download the full file for if they are behind.
@@ -74,11 +89,17 @@ class PDiffIndex(object):
                 self.history[fname] = [None, None, None]
                 self.history_order.append(fname)
             if not self.history[fname][ind]:
-                self.history[fname][ind] = (int(l[1]), None, None)
+                self.history[fname][ind] = PDiffHashes(int(l[1]), None, None)
             if hashind == 1:
-                self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
+                self.history[fname][ind] = PDiffHashes(self.history[fname][ind].size,
+                                                       l[0],
+                                                       self.history[fname][ind].sha256,
+                                                       )
             else:
-                self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
+                self.history[fname][ind] = PDiffHashes(self.history[fname][ind].size,
+                                                       self.history[fname][ind].sha1,
+                                                       l[0],
+                                                       )
 
     def prune_obsolete_pdiffs(self):
         hs = self.history
@@ -97,10 +118,10 @@ class PDiffIndex(object):
             out.write("Canonical-Path: %s\n" % self.can_path)
 
         if self.filesizehashes:
-            if self.filesizehashes[1]:
-                out.write("SHA1-Current: %s %7d\n" % (self.filesizehashes[1], self.filesizehashes[0]))
-            if self.filesizehashes[2]:
-                out.write("SHA256-Current: %s %7d\n" % (self.filesizehashes[2], self.filesizehashes[0]))
+            if self.filesizehashes.sha1:
+                out.write("SHA1-Current: %s %7d\n" % (self.filesizehashes.sha1, self.filesizehashes.size))
+            if self.filesizehashes.sha256:
+                out.write("SHA256-Current: %s %7d\n" % (self.filesizehashes.sha256, self.filesizehashes.size))
 
         hs = self.history
         order = self.history_order
@@ -109,5 +130,5 @@ class PDiffIndex(object):
             out.write("%s:\n" % fieldname)
             for h in order:
                 if hs[h][ind] and hs[h][ind][hashind]:
-                    out.write(" %s %7d %s\n" % (hs[h][ind][hashind], hs[h][ind][0], h))
+                    out.write(" %s %7d %s\n" % (hs[h][ind][hashind], hs[h][ind].size, h))
 

@@ -42,11 +42,10 @@ import apt_pkg
 import daklib.daksubprocess
 
 from daklib import utils
-from daklib.dakapt import DakHashes
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
-#from daklib.regexes import re_includeinpdiff
+
 import re
-from daklib.pdiff import PDiffIndex
+from daklib.pdiff import PDiffIndex, PDiffHashes
 
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
 
@@ -133,12 +132,6 @@ def smartopen(file):
         return None
 
 
-def sizehashes(f):
-    size = os.fstat(f.fileno())[6]
-    hashes = DakHashes(f)
-    return (size, hashes.sha1, hashes.sha256)
-
-
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if "NoAct" in Options:
         print("Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs))
@@ -172,7 +165,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         return
 
     oldf = smartopen(oldfile)
-    oldsizehashes = sizehashes(oldf)
+    oldsizehashes = PDiffHashes.from_fd(oldf)
 
     # should probably early exit if either of these checks fail
     # alternatively (optionally?) could just trim the patch history
@@ -185,7 +178,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         os.unlink(newfile)
     smartlink(origfile, newfile)
     with open(newfile, "r") as newf:
-        newsizehashes = sizehashes(newf)
+        newsizehashes = PDiffHashes.from_file(newf)
 
     if newsizehashes == oldsizehashes:
         os.unlink(newfile)
@@ -209,10 +202,10 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         oldf.close()
 
         with smartopen(difffile) as difff:
-            difsizehashes = sizehashes(difff)
+            difsizehashes = PDiffHashes.from_file(difff)
 
         with open(difffile + ".gz", "r") as difffgz:
-            difgzsizehashes = sizehashes(difffgz)
+            difgzsizehashes = PDiffHashes.from_file(difffgz)
 
         upd.history[patchname] = (oldsizehashes, difsizehashes, difgzsizehashes)
         upd.history_order.append(patchname)
