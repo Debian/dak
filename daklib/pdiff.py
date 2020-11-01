@@ -1,9 +1,11 @@
 import collections
 import os
 import sys
+import tempfile
 
 import apt_pkg
 
+from daklib import daksubprocess
 from daklib.dakapt import DakHashes
 
 HASH_FIELDS = [
@@ -18,6 +20,30 @@ HASH_FIELDS = [
 HASH_FIELDS_TABLE = {x[0]: (x[1], x[2]) for x in HASH_FIELDS}
 
 _PDiffHashes = collections.namedtuple('_PDiffHashes', ['size', 'sha1', 'sha256'])
+
+
+def open_decompressed(path):
+    def call_decompressor(cmd, inpath):
+        fh = tempfile.TemporaryFile("w+")
+        with open(inpath) as rfh:
+            daksubprocess.check_call(
+                cmd,
+                stdin=rfh,
+                stdout=fh,
+            )
+        fh.seek(0)
+        return fh
+
+    if os.path.isfile(path):
+        return open(path, "r")
+    elif os.path.isfile("%s.gz" % path):
+        return call_decompressor(['zcat'], '{}.gz'.format(path))
+    elif os.path.isfile("%s.bz2" % path):
+        return call_decompressor(['bzcat'], '{}.bz2'.format(path))
+    elif os.path.isfile("%s.xz" % path):
+        return call_decompressor(['xzcat'], '{}.xz'.format(path))
+    else:
+        return None
 
 
 class PDiffHashes(_PDiffHashes):
@@ -49,6 +75,38 @@ class PDiffIndex(object):
                                     ]
         self.history_order.append(patch_name)
         self.filesizehashes = target_file_hashes
+
+    def generate_and_add_patch_file(self, original_file, new_file_uncompressed, patch_name):
+
+        with open_decompressed(original_file) as oldf:
+            oldsizehashes = PDiffHashes.from_file(oldf)
+
+            with open(new_file_uncompressed, "r") as newf:
+                newsizehashes = PDiffHashes.from_file(newf)
+
+            if newsizehashes == oldsizehashes:
+                return
+
+            if not os.path.isdir(self.readpath):
+                os.mkdir(self.readpath)
+
+            oldf.seek(0)
+            patch_path = os.path.join(self.readpath, patch_name)
+            with open("{}.gz".format(patch_path), "wb") as fh:
+                daksubprocess.check_call(
+                    "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(new_file_uncompressed),
+                    shell=True,
+                    stdin=oldf,
+                    stdout=fh
+                )
+
+        with open_decompressed(patch_path) as difff:
+            difsizehashes = PDiffHashes.from_file(difff)
+
+        with open(patch_path + ".gz", "r") as difffgz:
+            difgzsizehashes = PDiffHashes.from_file(difffgz)
+
+        self.add_patch_file(patch_name, oldsizehashes, newsizehashes, difsizehashes, difgzsizehashes)
 
     def read_index_file(self, index_file_path):
         try:

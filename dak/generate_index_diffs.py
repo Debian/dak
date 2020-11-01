@@ -35,7 +35,6 @@ from __future__ import print_function
 
 import sys
 import os
-import tempfile
 import time
 import apt_pkg
 
@@ -45,7 +44,7 @@ from daklib import utils
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
 
 import re
-from daklib.pdiff import PDiffIndex, PDiffHashes
+from daklib.pdiff import PDiffIndex
 
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
 
@@ -109,29 +108,6 @@ def smartlink(f, t):
         raise IOError(f)
 
 
-def smartopen(file):
-    def call_decompressor(cmd, inpath):
-        fh = tempfile.TemporaryFile("w+t")
-        daklib.daksubprocess.check_call(
-            cmd,
-            stdin=open(inpath, "rb"),
-            stdout=fh,
-        )
-        fh.seek(0)
-        return fh
-
-    if os.path.isfile(file):
-        return open(file, "r")
-    elif os.path.isfile("%s.gz" % file):
-        return call_decompressor(['zcat'], '{}.gz'.format(file))
-    elif os.path.isfile("%s.bz2" % file):
-        return call_decompressor(['bzcat'], '{}.bz2'.format(file))
-    elif os.path.isfile("%s.xz" % file):
-        return call_decompressor(['xzcat'], '{}.xz'.format(file))
-    else:
-        return None
-
-
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if "NoAct" in Options:
         print("Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs))
@@ -142,13 +118,8 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     # origfile = /path/to/Packages
     # oldfile  = ./Packages
     # newfile  = ./Packages.tmp
-    # difffile = outdir/patchname
-    # index   => outdir/Index
 
     # (outdir, oldfile, origfile) = argv
-
-    newfile = oldfile + ".new"
-    difffile = "%s/%s" % (outdir, patchname)
 
     (oldext, oldstat) = smartstat(oldfile)
     (origext, origstat) = smartstat(origfile)
@@ -161,62 +132,33 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         return
 
     if oldstat[1:3] == origstat[1:3]:
-        #print "%s: hardlink unbroken, assuming unchanged" % (origfile)
         return
 
-    oldf = smartopen(oldfile)
-    oldsizehashes = PDiffHashes.from_fd(oldf)
+    upd = PDiffIndex(outdir, int(maxdiffs))
 
-    # should probably early exit if either of these checks fail
-    # alternatively (optionally?) could just trim the patch history
+    if "CanonicalPath" in Options:
+        upd.can_path = Options["CanonicalPath"]
 
-    #if upd.filesizesha1:
-    #    if upd.filesizesha1 != oldsizesha1:
-    #        print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
-
+    # generate_and_add_patch_file needs an uncompressed file
+    # The `newfile` variable is our uncompressed copy of 'oldfile` thanks to
+    # smartlink
+    newfile = oldfile + ".new"
     if os.path.exists(newfile):
         os.unlink(newfile)
     smartlink(origfile, newfile)
-    with open(newfile, "r") as newf:
-        newsizehashes = PDiffHashes.from_file(newf)
 
-    if newsizehashes == oldsizehashes:
-        os.unlink(newfile)
-        oldf.close()
-        #print "%s: unchanged" % (origfile)
-    else:
-        upd = PDiffIndex(outdir, int(maxdiffs))
-
-        if "CanonicalPath" in Options:
-            upd.can_path = Options["CanonicalPath"]
-
-        if not os.path.isdir(outdir):
-            os.mkdir(outdir)
-
-        oldf.seek(0)
-        with open("{}.gz".format(difffile), "wb") as fh:
-            daklib.daksubprocess.check_call(
-                "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(newfile), shell=True,
-                stdin=oldf, stdout=fh
-            )
-        oldf.close()
-
-        with smartopen(difffile) as difff:
-            difsizehashes = PDiffHashes.from_file(difff)
-
-        with open(difffile + ".gz", "r") as difffgz:
-            difgzsizehashes = PDiffHashes.from_file(difffgz)
-
-        upd.add_patch_file(patchname, oldsizehashes, newsizehashes, difsizehashes, difgzsizehashes)
-
-        os.unlink(oldfile + oldext)
-        os.link(origfile + origext, oldfile + origext)
+    try:
+        upd.generate_and_add_patch_file(oldfile, newfile, patchname)
+    finally:
         os.unlink(newfile)
 
-        for obsolete_patch in upd.prune_obsolete_pdiffs():
-            tryunlink(obsolete_patch)
+    for obsolete_patch in upd.prune_obsolete_pdiffs():
+        tryunlink(obsolete_patch)
 
-        upd.update_index()
+    upd.update_index()
+
+    os.unlink(oldfile + oldext)
+    os.link(origfile + origext, oldfile + origext)
 
 
 def main():
