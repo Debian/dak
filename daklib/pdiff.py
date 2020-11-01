@@ -30,16 +30,15 @@ class PDiffHashes(_PDiffHashes):
 
 
 class PDiffIndex(object):
-    def __init__(self, readpath=None, max=56):
+    def __init__(self, readpath, max=56):
         self.can_path = None
         self.history = {}
         self.history_order = []
         self.max = max
         self.readpath = readpath
         self.filesizehashes = None
-
-        if readpath:
-            self.read_index_file(readpath + "/Index")
+        self.index_path = os.path.join(readpath, 'Index')
+        self.read_index_file(self.index_path)
 
     def add_patch_file(self, patch_name, base_file_hashes, target_file_hashes,
                        patch_hashes_uncompressed, patch_hashes_compressed,
@@ -142,3 +141,13 @@ class PDiffIndex(object):
                 if hs[h][ind] and hs[h][ind][hashind]:
                     out.write(" %s %7d %s\n" % (hs[h][ind][hashind], hs[h][ind].size, h))
 
+    def update_index(self, tmp_suffix=".new"):
+        if not os.path.isdir(self.patches_dir):
+            # If there is no patch directory, then we have no patches.
+            # It seems weird to have an Index of patches when we know there are
+            # none.
+            return
+        tmp_path = self.index_path + tmp_suffix
+        with open(tmp_path, "w") as f:
+            self.dump(f)
+        os.rename(tmp_path, self.index_path)

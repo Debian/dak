@@ -216,9 +216,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         for obsolete_patch in upd.prune_obsolete_pdiffs():
             tryunlink(obsolete_patch)
 
-        with open(outdir + "/Index.new", "w") as f:
-            upd.dump(f)
-        os.rename(outdir + "/Index.new", outdir + "/Index")
+        upd.update_index()
 
 
 def main():
