@@ -438,6 +438,7 @@ def output_package_relations():
 
         package_relations.clear()
         result = foldable_output("Package relations", "relations", to_print)
+        package_relations.clear()
     return six.ensure_str(result)
 
 
