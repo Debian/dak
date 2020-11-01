@@ -919,6 +919,7 @@ class Keyring(object):
 
     def import_users_from_ldap(self, session):
         from .utils import open_ldap_connection
+        import ldap
         l = open_ldap_connection()
         cnf = Config()
         LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]

@@ -797,6 +797,7 @@ def open_ldap_connection():
 
 def get_logins_from_ldap(fingerprint='*'):
     """retrieve login from LDAP linked to a given fingerprint"""
+    import ldap
     l = open_ldap_connection()
     LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
@@ -814,6 +815,7 @@ def get_logins_from_ldap(fingerprint='*'):
 
 def get_users_from_ldap():
     """retrieve login and user names from LDAP"""
+    import ldap
     l = open_ldap_connection()
     LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
