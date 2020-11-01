@@ -237,11 +237,11 @@ def list_uploads(filelist, rrd_dir):
 Delayed-Until: %s
 Delay-Remaining: %s
 Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])), u[2], u[5])
-                fields = fields.encode('utf-8')
+                fields = six.ensure_str(fields)
                 print(fields, file=f)
-                encoded = six.text_type(u[6]).encode('utf-8')
+                encoded = six.ensure_str(u[6].dump())
                 print(encoded.rstrip(), file=f)
-                open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "wb").write(encoded + fields + b'\n')
+                open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "w").write(encoded + fields + '\n')
                 print(file=f)
             f.close()
             os.rename(os.path.join(Cnf["Show-Deferred::LinkPath"], '.status.tmp'),
