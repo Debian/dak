@@ -56,14 +56,14 @@ class PDiffHashes(_PDiffHashes):
 
 
 class PDiffIndex(object):
-    def __init__(self, readpath, max=56):
+    def __init__(self, patches_dir, max=56):
         self.can_path = None
         self.history = {}
         self.history_order = []
         self.max = max
-        self.readpath = readpath
+        self.patches_dir = patches_dir
         self.filesizehashes = None
-        self.index_path = os.path.join(readpath, 'Index')
+        self.index_path = os.path.join(patches_dir, 'Index')
         self.read_index_file(self.index_path)
 
     def add_patch_file(self, patch_name, base_file_hashes, target_file_hashes,
@@ -87,11 +87,11 @@ class PDiffIndex(object):
             if newsizehashes == oldsizehashes:
                 return
 
-            if not os.path.isdir(self.readpath):
-                os.mkdir(self.readpath)
+            if not os.path.isdir(self.patches_dir):
+                os.mkdir(self.patches_dir)
 
             oldf.seek(0)
-            patch_path = os.path.join(self.readpath, patch_name)
+            patch_path = os.path.join(self.patches_dir, patch_name)
             with open("{}.gz".format(patch_path), "wb") as fh:
                 daksubprocess.check_call(
                     "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(new_file_uncompressed),
@@ -175,7 +175,7 @@ class PDiffIndex(object):
         cnt = len(order)
         if cnt > self.max:
             for h in order[:cnt - self.max]:
-                yield "%s/%s.gz" % (self.readpath, h)
+                yield "%s/%s.gz" % (self.patches_dir, h)
                 del hs[h]
             order = order[cnt - self.max:]
             self.history_order = order
