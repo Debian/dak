@@ -89,7 +89,7 @@ def footer():
     res = "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     res += "<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>"
     res += "</body></html>"
-    return res.encode('utf-8')
+    return six.ensure_str(res)
 
 
 def table_header():
@@ -219,7 +219,7 @@ def list_uploads(filelist, rrd_dir):
     print(header())
     if uploads:
         print(table_header())
-        print(''.join(table_row(*x[1:6]) for x in uploads).encode('utf-8'))
+        print(six.ensure_str(''.join(table_row(*x[1:6]) for x in uploads)))
         print(table_footer())
     else:
         print('<h1>Currently no deferred uploads to Debian</h1>')
