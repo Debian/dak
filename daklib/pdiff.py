@@ -168,17 +168,40 @@ class PDiffIndex(object):
                                                        l[0],
                                                        )
 
-    def prune_obsolete_pdiffs(self):
+    def prune_patch_history(self):
         hs = self.history
         order = self.history_order[:]
 
+        # Truncate our history if necessary
         cnt = len(order)
         if cnt > self.max:
             for h in order[:cnt - self.max]:
-                yield "%s/%s.gz" % (self.patches_dir, h)
                 del hs[h]
             order = order[cnt - self.max:]
             self.history_order = order
+
+    def find_obsolete_patches(self):
+        if not os.path.isdir(self.patches_dir):
+            return
+
+        hs = self.history
+        # Scan for obsolete patches.  While we could have computed these
+        # from the history, this method has the advantage of cleaning up
+        # old patches left that we failed to remove previously (e.g. if
+        # we had an index corruption, which happened in fed7ada36b609 and
+        # was later fixed in a36f867acf029)
+        for name in os.listdir(self.patches_dir):
+            if name in ('Index', 'by-hash'):
+                continue
+            basename, ext = os.path.splitext(name)
+            if basename in hs and ext in ('', '.gz'):
+                continue
+            path = os.path.join(self.patches_dir, name)
+            if not os.path.isfile(path):
+                # Non-files are probably not patches.
+                continue
+            # Unknown patch file; flag it as obsolete
+            yield path
 
     def dump(self, out=sys.stdout):
         if self.can_path:

@@ -152,7 +152,9 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     finally:
         os.unlink(newfile)
 
-    for obsolete_patch in upd.prune_obsolete_pdiffs():
+    upd.prune_patch_history()
+
+    for obsolete_patch in upd.find_obsolete_patches():
         tryunlink(obsolete_patch)
 
     upd.update_index()
