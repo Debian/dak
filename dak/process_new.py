@@ -582,7 +582,7 @@ def do_new(upload, upload_copy, handler, session):
                 sys.exit(0)
         elif answer == 'P' and not Options["Trainee"]:
             if prod_maintainer(get_new_comments(upload.policy_queue, upload.changes.source, session=session),
-                               upload) == 0:
+                               upload, session, bool(Options["Trainee"])) == 0:
                 end()
                 sys.exit(0)
             Logger.log(["NEW PROD", upload.changes.changesname])
