@@ -491,15 +491,11 @@ def output_deb_info(suite, filename, packagename, session=None):
 
 def do_command(command, escaped=False):
     process = daklib.daksubprocess.Popen(command, stdout=subprocess.PIPE)
-    o = process.stdout
-    try:
-        data = six.ensure_str(o.read())
-        if escaped:
-            return escaped_text(data)
-        else:
-            return formatted_text(data)
-    finally:
-        process.wait()
+    data = six.ensure_str(process.communicate()[0])
+    if escaped:
+        return escaped_text(data)
+    else:
+        return formatted_text(data)
 
 
 def do_lintian(filename):
