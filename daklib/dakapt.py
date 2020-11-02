@@ -39,7 +39,7 @@ class DakHashes(object):
         try:
             return h.hashvalue
         except AttributeError:
-            return str(h)[len(name)+1:]
+            return str(h)[len(name) + 1:]
 
     @property
     def md5(self):
