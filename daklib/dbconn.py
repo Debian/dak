@@ -2236,7 +2236,7 @@ class DBConn(object):
     def __setuptables(self):
         for table_name in self.tables:
             table = Table(table_name, self.db_meta,
-                autoload=True, useexisting=True)
+                autoload=True, extend_existing=True)
             setattr(self, 'tbl_%s' % table_name, table)
 
         for view_name in self.views:
