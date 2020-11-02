@@ -34,20 +34,21 @@ class DakHashes(object):
     #   `apt_pkg.Hashes(...).md5`
     # but in Debian bullseye it switched to
     #   `apt_pkg.Hashes(...).find('md5sum').hashvalue`
-    def _hashvalue(self, attr, name):
-        if hasattr(self._apt_hashes, attr):
-            return getattr(self._apt_hashes, attr)
-        else:
-            return self._apt_hashes.hashes.find(name).hashvalue
+    def _hashvalue(self, name):
+        h = self._apt_hashes.hashes.find(name)
+        try:
+            return h.hashvalue
+        except AttributeError:
+            return str(h)[len(name)+1:]
 
     @property
     def md5(self):
-        return self._hashvalue('md5', 'md5sum')
+        return self._hashvalue('md5sum')
 
     @property
     def sha1(self):
-        return self._hashvalue('sha1', 'sha1')
+        return self._hashvalue('sha1')
 
     @property
     def sha256(self):
-        return self._hashvalue('sha256', 'sha256')
+        return self._hashvalue('sha256')
