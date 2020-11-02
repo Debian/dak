@@ -35,17 +35,17 @@ from __future__ import print_function
 
 import sys
 import os
-import tempfile
 import time
 import apt_pkg
 
 import daklib.daksubprocess
 
 from daklib import utils
-from daklib.dakapt import DakHashes
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
-#from daklib.regexes import re_includeinpdiff
+
 import re
+from daklib.pdiff import PDiffIndex
+
 re_includeinpdiff = re.compile(r"(Translation-[a-zA-Z_]+\.(?:bz2|xz))")
 
 ################################################################################
@@ -108,140 +108,6 @@ def smartlink(f, t):
         raise IOError(f)
 
 
-def smartopen(file):
-    def call_decompressor(cmd, inpath):
-        fh = tempfile.TemporaryFile("w+t")
-        daklib.daksubprocess.check_call(
-            cmd,
-            stdin=open(inpath, "rb"),
-            stdout=fh,
-        )
-        fh.seek(0)
-        return fh
-
-    if os.path.isfile(file):
-        return open(file, "r")
-    elif os.path.isfile("%s.gz" % file):
-        return call_decompressor(['zcat'], '{}.gz'.format(file))
-    elif os.path.isfile("%s.bz2" % file):
-        return call_decompressor(['bzcat'], '{}.bz2'.format(file))
-    elif os.path.isfile("%s.xz" % file):
-        return call_decompressor(['xzcat'], '{}.xz'.format(file))
-    else:
-        return None
-
-
-HASH_FIELDS = [
-    ('SHA1-History', 0, 1),
-    ('SHA256-History', 0, 2),
-    ('SHA1-Patches', 1, 1),
-    ('SHA256-Patches', 1, 2),
-    ('SHA1-Download', 2, 1),
-    ('SHA256-Download', 2, 2),
-]
-
-HASH_FIELDS_TABLE = {x[0]: (x[1], x[2]) for x in HASH_FIELDS}
-
-
-class Updates:
-    def __init__(self, readpath=None, max=56):
-        self.can_path = None
-        self.history = {}
-        self.history_order = []
-        self.max = max
-        self.readpath = readpath
-        self.filesizehashes = None
-
-        if readpath:
-            self.read_index_file(readpath + "/Index")
-
-    def read_index_file(self, index_file_path):
-        try:
-            with apt_pkg.TagFile(index_file_path) as index:
-                index.step()
-                section = index.section
-
-                for field in section.keys():
-                    value = section[field]
-                    if field in HASH_FIELDS_TABLE:
-                        ind, hashind = HASH_FIELDS_TABLE[field]
-                        self.read_hashs(ind, hashind, value.splitlines())
-                        continue
-
-                    if field in ("Canonical-Name", "Canonical-Path"):
-                        self.can_path = value
-                        continue
-
-                    if field not in ("SHA1-Current", "SHA256-Current"):
-                        continue
-
-                    l = value.split()
-
-                    if field == "SHA1-Current" and len(l) == 2:
-                        if not self.filesizehashes:
-                            self.filesizehashes = (int(l[1]), None, None)
-                        self.filesizehashes = (int(self.filesizehashes[0]), l[0], self.filesizehashes[2])
-
-                    if field == "SHA256-Current" and len(l) == 2:
-                        if not self.filesizehashes:
-                            self.filesizehashes = (int(l[1]), None, None)
-                        self.filesizehashes = (int(self.filesizehashes[0]), self.filesizehashes[2], l[0])
-        except (IOError, apt_pkg.Error):
-            # On error, we ignore everything.  This causes the file to be regenerated from scratch.
-            # It forces everyone to download the full file for if they are behind.
-            # But it is self-healing providing that we generate valid files from here on.
-            pass
-
-    def read_hashs(self, ind, hashind, lines):
-        for line in lines:
-            l = line.split()
-            fname = l[2]
-            if fname.endswith('.gz'):
-                fname = fname[:-3]
-            if fname not in self.history:
-                self.history[fname] = [None, None, None]
-                self.history_order.append(fname)
-            if not self.history[fname][ind]:
-                self.history[fname][ind] = (int(l[1]), None, None)
-            if hashind == 1:
-                self.history[fname][ind] = (int(self.history[fname][ind][0]), l[0], self.history[fname][ind][2])
-            else:
-                self.history[fname][ind] = (int(self.history[fname][ind][0]), self.history[fname][ind][1], l[0])
-
-    def dump(self, out=sys.stdout):
-        if self.can_path:
-            out.write("Canonical-Path: %s\n" % (self.can_path))
-
-        if self.filesizehashes:
-            if self.filesizehashes[1]:
-                out.write("SHA1-Current: %s %7d\n" % (self.filesizehashes[1], self.filesizehashes[0]))
-            if self.filesizehashes[2]:
-                out.write("SHA256-Current: %s %7d\n" % (self.filesizehashes[2], self.filesizehashes[0]))
-
-        hs = self.history
-        l = self.history_order[:]
-
-        cnt = len(l)
-        if cnt > self.max:
-            for h in l[:cnt - self.max]:
-                tryunlink("%s/%s.gz" % (self.readpath, h))
-                del hs[h]
-            l = l[cnt - self.max:]
-            self.history_order = l[:]
-
-        for fieldname, ind, hashind in HASH_FIELDS:
-            out.write("%s:\n" % fieldname)
-            for h in l:
-                if hs[h][ind] and hs[h][ind][hashind]:
-                    out.write(" %s %7d %s\n" % (hs[h][ind][hashind], hs[h][ind][0], h))
-
-
-def sizehashes(f):
-    size = os.fstat(f.fileno())[6]
-    hashes = DakHashes(f)
-    return (size, hashes.sha1, hashes.sha256)
-
-
 def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if "NoAct" in Options:
         print("Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs))
@@ -252,13 +118,8 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     # origfile = /path/to/Packages
     # oldfile  = ./Packages
     # newfile  = ./Packages.tmp
-    # difffile = outdir/patchname
-    # index   => outdir/Index
 
     # (outdir, oldfile, origfile) = argv
-
-    newfile = oldfile + ".new"
-    difffile = "%s/%s" % (outdir, patchname)
 
     (oldext, oldstat) = smartstat(oldfile)
     (origext, origstat) = smartstat(origfile)
@@ -271,64 +132,35 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
         return
 
     if oldstat[1:3] == origstat[1:3]:
-        #print "%s: hardlink unbroken, assuming unchanged" % (origfile)
         return
 
-    oldf = smartopen(oldfile)
-    oldsizehashes = sizehashes(oldf)
+    upd = PDiffIndex(outdir, int(maxdiffs))
 
-    # should probably early exit if either of these checks fail
-    # alternatively (optionally?) could just trim the patch history
+    if "CanonicalPath" in Options:
+        upd.can_path = Options["CanonicalPath"]
 
-    #if upd.filesizesha1:
-    #    if upd.filesizesha1 != oldsizesha1:
-    #        print "info: old file " + oldfile + " changed! %s %s => %s %s" % (upd.filesizesha1 + oldsizesha1)
-
+    # generate_and_add_patch_file needs an uncompressed file
+    # The `newfile` variable is our uncompressed copy of 'oldfile` thanks to
+    # smartlink
+    newfile = oldfile + ".new"
     if os.path.exists(newfile):
         os.unlink(newfile)
     smartlink(origfile, newfile)
-    with open(newfile, "r") as newf:
-        newsizehashes = sizehashes(newf)
 
-    if newsizehashes == oldsizehashes:
-        os.unlink(newfile)
-        oldf.close()
-        #print "%s: unchanged" % (origfile)
-    else:
-        upd = Updates(outdir, int(maxdiffs))
-
-        if "CanonicalPath" in Options:
-            upd.can_path = Options["CanonicalPath"]
-
-        if not os.path.isdir(outdir):
-            os.mkdir(outdir)
-
-        oldf.seek(0)
-        with open("{}.gz".format(difffile), "wb") as fh:
-            daklib.daksubprocess.check_call(
-                "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(newfile), shell=True,
-                stdin=oldf, stdout=fh
-            )
-        oldf.close()
-
-        with smartopen(difffile) as difff:
-            difsizehashes = sizehashes(difff)
-
-        with open(difffile + ".gz", "r") as difffgz:
-            difgzsizehashes = sizehashes(difffgz)
-
-        upd.history[patchname] = (oldsizehashes, difsizehashes, difgzsizehashes)
-        upd.history_order.append(patchname)
-
-        upd.filesizehashes = newsizehashes
-
-        os.unlink(oldfile + oldext)
-        os.link(origfile + origext, oldfile + origext)
+    try:
+        upd.generate_and_add_patch_file(oldfile, newfile, patchname)
+    finally:
         os.unlink(newfile)
 
-        with open(outdir + "/Index.new", "w") as f:
-            upd.dump(f)
-        os.rename(outdir + "/Index.new", outdir + "/Index")
+    upd.prune_patch_history()
+
+    for obsolete_patch in upd.find_obsolete_patches():
+        tryunlink(obsolete_patch)
+
+    upd.update_index()
+
+    os.unlink(oldfile + oldext)
+    os.link(origfile + origext, oldfile + origext)
 
 
 def main():

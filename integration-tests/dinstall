@@ -39,7 +39,7 @@ setup_empty_archive() {
     HAVE_EXPERIMENTAL=
     HAVE_TPU=
 
-    section_start setup_empty_archive
+    section_end setup_empty_archive
 }
 
 setup_unstable() {
