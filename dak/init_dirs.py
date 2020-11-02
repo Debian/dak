@@ -103,11 +103,11 @@ def process_keyring(fullpath, secret=False):
 
     # Touch the file
     print("Creating {} ...".format(fullpath))
-    open(fullpath, 'w')
-    if secret:
-        os.chmod(fullpath, 0o600)
-    else:
-        os.chmod(fullpath, 0o644)
+    with open(fullpath, 'w') as fh:
+        if secret:
+            os.fchmod(fh.fileno(), 0o600)
+        else:
+            os.fchmod(fh.fileno(), 0o644)
 
 ######################################################################
 
