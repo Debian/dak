@@ -89,11 +89,8 @@ def smartstat(file):
 
 def smartlink(f, t):
     def call_decompressor(cmd, inpath, outpath):
-        return daklib.daksubprocess.check_call(
-            cmd,
-            stdin=open(inpath, "rb"),
-            stdout=open(outpath, "wb"),
-        )
+        with open(inpath, "rb") as stdin, open(outpath, "wb") as stdout):
+            return daklib.daksubprocess.check_call(cmd, stdin=stdin, stdout=stdout)
 
     if os.path.isfile(f):
         os.link(f, t)
