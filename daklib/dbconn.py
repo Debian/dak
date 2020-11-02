@@ -541,14 +541,14 @@ class Component(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.component_name == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.component_name != val)
         # This signals to use the normal comparison operator
         return NotImplemented
@@ -1404,14 +1404,14 @@ class Priority(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.priority == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.priority != val)
         # This signals to use the normal comparison operator
         return NotImplemented
@@ -1764,14 +1764,14 @@ class Suite(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.suite_name == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.suite_name != val)
         # This signals to use the normal comparison operator
         return NotImplemented
@@ -1937,14 +1937,14 @@ class Uid(ORMObject):
 
     def __eq__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.uid == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.uid != val)
         # This signals to use the normal comparison operator
         return NotImplemented

@@ -45,14 +45,14 @@ class Section(BaseTimestamp):
 
     def __eq__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.section == val)
         # This signals to use the normal comparison operator
         return NotImplemented
 
     def __ne__(self, val):
         if isinstance(val, str):
-            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning)
+            warnings.warn("comparison with a `str` is deprecated", DeprecationWarning, stacklevel=2)
             return (self.section != val)
         # This signals to use the normal comparison operator
         return NotImplemented
