@@ -220,7 +220,7 @@ class PDiffIndex(object):
             out.write("%s:\n" % fieldname)
             for h in order:
                 if hs[h][ind] and hs[h][ind][hashind]:
-                    out.write(" %s %7d %s\n" % (hs[h][ind][hashind], hs[h][ind].size, h))
+                    out.write(" %s %7d %s.gz\n" % (hs[h][ind][hashind], hs[h][ind].size, h))
 
     def update_index(self, tmp_suffix=".new"):
         if not os.path.isdir(self.patches_dir):
