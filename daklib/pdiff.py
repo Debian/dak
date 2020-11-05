@@ -9,12 +9,12 @@ from daklib import daksubprocess
 from daklib.dakapt import DakHashes
 
 HASH_FIELDS = [
-    ('SHA1-History', 0, 1),
-    ('SHA256-History', 0, 2),
-    ('SHA1-Patches', 1, 1),
-    ('SHA256-Patches', 1, 2),
-    ('SHA1-Download', 2, 1),
-    ('SHA256-Download', 2, 2),
+    ('SHA1-History', 0, 1, ""),
+    ('SHA256-History', 0, 2, ""),
+    ('SHA1-Patches', 1, 1, ""),
+    ('SHA256-Patches', 1, 2, ""),
+    ('SHA1-Download', 2, 1, ".gz"),
+    ('SHA256-Download', 2, 2, ".gz"),
 ]
 
 HASH_FIELDS_TABLE = {x[0]: (x[1], x[2]) for x in HASH_FIELDS}
@@ -216,11 +216,11 @@ class PDiffIndex(object):
         hs = self.history
         order = self.history_order
 
-        for fieldname, ind, hashind in HASH_FIELDS:
+        for fieldname, ind, hashind, ext in HASH_FIELDS:
             out.write("%s:\n" % fieldname)
             for h in order:
                 if hs[h][ind] and hs[h][ind][hashind]:
-                    out.write(" %s %7d %s.gz\n" % (hs[h][ind][hashind], hs[h][ind].size, h))
+                    out.write(" %s %7d %s%s\n" % (hs[h][ind][hashind], hs[h][ind].size, h, ext))
 
     def update_index(self, tmp_suffix=".new"):
         if not os.path.isdir(self.patches_dir):
