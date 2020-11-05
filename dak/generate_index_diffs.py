@@ -123,9 +123,17 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if not origstat:
         print("%s: doesn't exist" % (origfile))
         return
+    # orig file with the (new) compression extension in case it changed
+    old_full_path = oldfile + origext
+    resolved_orig_path = os.path.realpath(origfile + origext)
+
     if not oldstat:
-        print("%s: initial run" % (origfile))
-        os.link(origfile + origext, oldfile + origext)
+        print("%s: initial run" % origfile)
+        # The target file might have been copying over the symlink as an accident
+        # in a previous run.
+        if os.path.islink(old_full_path):
+            os.unlink(old_full_path)
+        os.link(resolved_orig_path, old_full_path)
         return
 
     if oldstat[1:3] == origstat[1:3]:
@@ -156,8 +164,13 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
 
     upd.update_index()
 
+    if oldfile + oldext != old_full_path and os.path.islink(old_full_path):
+        # The target file might have been copying over the symlink as an accident
+        # in a previous run.
+        os.unlink(old_full_path)
+
     os.unlink(oldfile + oldext)
-    os.link(origfile + origext, oldfile + origext)
+    os.link(resolved_orig_path, old_full_path)
 
 
 def main():
