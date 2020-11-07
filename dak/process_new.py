@@ -671,6 +671,7 @@ def lock_package(package):
             except KeyError:
                 user = "TotallyUnknown"
             raise AlreadyLockedError(user)
+        raise
 
     try:
         yield fd
