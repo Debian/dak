@@ -9,22 +9,29 @@ from daklib import daksubprocess
 from daklib.dakapt import DakHashes
 
 HASH_FIELDS = [
-    ('SHA1-History', 0, 1, ""),
-    ('SHA256-History', 0, 2, ""),
-    ('SHA1-Patches', 1, 1, ""),
-    ('SHA256-Patches', 1, 2, ""),
-    ('SHA1-Download', 2, 1, ".gz"),
-    ('SHA256-Download', 2, 2, ".gz"),
+    ('SHA1-History', 0, 1, "", True),
+    ('SHA256-History', 0, 2, "", True),
+    ('SHA1-Patches', 1, 1, "", True),
+    ('SHA256-Patches', 1, 2, "", True),
+    ('SHA1-Download', 2, 1, ".gz", True),
+    ('SHA256-Download', 2, 2, ".gz", True),
+    ('X-Unmerged-SHA1-History', 0, 1, "", False),
+    ('X-Unmerged-SHA256-History', 0, 2, "", False),
+    ('X-Unmerged-SHA1-Patches', 1, 1, "", True),
+    ('X-Unmerged-SHA256-Patches', 1, 2, "", True),
+    ('X-Unmerged-SHA1-Download', 2, 2, ".gz", False),
+    ('X-Unmerged-SHA256-Download', 2, 2, ".gz", False),
 ]
 
-HASH_FIELDS_TABLE = {x[0]: (x[1], x[2]) for x in HASH_FIELDS}
+HASH_FIELDS_TABLE = {x[0]: (x[1], x[2], x[4]) for x in HASH_FIELDS}
 
 _PDiffHashes = collections.namedtuple('_PDiffHashes', ['size', 'sha1', 'sha256'])
 
 
-def open_decompressed(path):
+def open_decompressed(path, named_temp_file=False):
     def call_decompressor(cmd, inpath):
-        fh = tempfile.TemporaryFile("w+")
+        fh = tempfile.NamedTemporaryFile("w+") if named_temp_file \
+            else tempfile.TemporaryFile("w+")
         with open(inpath) as rfh:
             daksubprocess.check_call(
                 cmd,
@@ -46,6 +53,30 @@ def open_decompressed(path):
         return None
 
 
+def _merge_pdiffs(patch_a, patch_b, resulting_patch_without_extension):
+    """Merge two pdiff in to a merged pdiff
+
+    While rred support merging more than 2, we only need support for merging two.
+    In the steady state, we will have N merged patches plus 1 new patch.  Here
+    we need to do N pairwise merges (i.e. merge two patches N times).
+    Therefore, supporting merging of 3+ patches does not help at all.
+
+    The setup state looks like it could do with a bulk merging. However, if you
+    merge from "latest to earliest" then you will be building in optimal order
+    and still only need to do N-1 pairwise merges (rather than N-1 merges
+    between N, N-1, N-2, ... 3, 2 patches).
+
+    Combined, supporting pairwise merges is sufficient for our use case.
+    """
+    with open_decompressed(patch_a, named_temp_file=True) as fd_a, \
+            open_decompressed(patch_b, named_temp_file=True) as fd_b:
+        daksubprocess.check_call(
+            '/usr/lib/apt/methods/rred %s %s | gzip -9n > %s' % (fd_a.name, fd_b.name,
+                                                                 resulting_patch_without_extension + ".gz"),
+            shell=True,
+        )
+
+
 class PDiffHashes(_PDiffHashes):
 
     @classmethod
@@ -55,26 +86,63 @@ class PDiffHashes(_PDiffHashes):
         return cls(size, hashes.sha1, hashes.sha256)
 
 
+def _pdiff_hashes_from_patch(path_without_extension):
+    with open_decompressed(path_without_extension) as difff:
+        hashes_decompressed = PDiffHashes.from_file(difff)
+
+    with open(path_without_extension + ".gz", "r") as difffgz:
+        hashes_compressed = PDiffHashes.from_file(difffgz)
+
+    return hashes_decompressed, hashes_compressed
+
+
+def _prune_history(order, history, maximum):
+    cnt = len(order)
+    if cnt <= maximum:
+        return order
+    for h in order[:cnt - maximum]:
+        del history[h]
+    return order[cnt - maximum:]
+
+
+def _read_hashes(history, history_order, ind, hashind, lines):
+    for line in lines:
+        parts = line.split()
+        fname = parts[2]
+        if fname.endswith('.gz'):
+            fname = fname[:-3]
+        if fname not in history:
+            history[fname] = [None, None, None]
+            history_order.append(fname)
+        if not history[fname][ind]:
+            history[fname][ind] = PDiffHashes(int(parts[1]), None, None)
+        if hashind == 1:
+            history[fname][ind] = PDiffHashes(history[fname][ind].size,
+                                              parts[0],
+                                              history[fname][ind].sha256,
+                                              )
+        else:
+            history[fname][ind] = PDiffHashes(history[fname][ind].size,
+                                              history[fname][ind].sha1,
+                                              parts[0],
+                                              )
+
+
 class PDiffIndex(object):
-    def __init__(self, patches_dir, max=56):
+    def __init__(self, patches_dir, max=56, merge_pdiffs=False):
         self.can_path = None
-        self.history = {}
-        self.history_order = []
+        self._history = {}
+        self._history_order = []
+        self._unmerged_history = {}
+        self._unmerged_history_order = []
+        self._old_merged_patches_prefix = []
         self.max = max
         self.patches_dir = patches_dir
         self.filesizehashes = None
+        self.wants_merged_pdiffs = merge_pdiffs
+        self.has_merged_pdiffs = False
         self.index_path = os.path.join(patches_dir, 'Index')
         self.read_index_file(self.index_path)
-
-    def add_patch_file(self, patch_name, base_file_hashes, target_file_hashes,
-                       patch_hashes_uncompressed, patch_hashes_compressed,
-                       ):
-        self.history[patch_name] = [base_file_hashes,
-                                    patch_hashes_uncompressed,
-                                    patch_hashes_compressed,
-                                    ]
-        self.history_order.append(patch_name)
-        self.filesizehashes = target_file_hashes
 
     def generate_and_add_patch_file(self, original_file, new_file_uncompressed, patch_name):
 
@@ -100,25 +168,162 @@ class PDiffIndex(object):
                     stdout=fh
                 )
 
-        with open_decompressed(patch_path) as difff:
-            difsizehashes = PDiffHashes.from_file(difff)
+            difsizehashes, difgzsizehashes = _pdiff_hashes_from_patch(patch_path)
 
-        with open(patch_path + ".gz", "r") as difffgz:
-            difgzsizehashes = PDiffHashes.from_file(difffgz)
+        self.filesizehashes = newsizehashes
+        self._unmerged_history[patch_name] = [oldsizehashes,
+                                              difsizehashes,
+                                              difgzsizehashes,
+                                              ]
+        self._unmerged_history_order.append(patch_name)
 
-        self.add_patch_file(patch_name, oldsizehashes, newsizehashes, difsizehashes, difgzsizehashes)
+        if self.has_merged_pdiffs != self.wants_merged_pdiffs:
+            # Convert patches
+            if self.wants_merged_pdiffs:
+                self._convert_to_merged_patches()
+            else:
+                self._convert_to_unmerged()
+            # Conversion also covers the newly added patch.  Accordingly,
+            # the elif here.
+        else:
+            second_patch_name = patch_name
+            if self.wants_merged_pdiffs:
+                self._bump_merged_patches()
+                second_patch_name = "T-%s-F-%s" % (patch_name, patch_name)
+                os.link(os.path.join(self.patches_dir, patch_name + ".gz"),
+                        os.path.join(self.patches_dir, second_patch_name + ".gz"))
+
+            # Without merged PDiffs, keep _history and _unmerged_history aligned
+            self._history[second_patch_name] = [oldsizehashes,
+                                                difsizehashes,
+                                                difgzsizehashes,
+                                                ]
+            self._history_order.append(second_patch_name)
+
+    def _bump_merged_patches(self):
+        # When bumping patches, we need to "rewrite" all merged patches.  As
+        # neither apt nor dak supports by-hash for pdiffs, we leave the old
+        # versions of merged pdiffs behind.
+        target_name = self._unmerged_history_order[-1]
+        target_path = os.path.join(self.patches_dir, target_name)
+
+        new_merged_order = []
+        new_merged_history = {}
+        for old_merged_patch_name in self._history_order:
+            try:
+                old_orig_name = old_merged_patch_name.split("-F-", 1)[1]
+            except IndexError:
+                old_orig_name = old_merged_patch_name
+            new_merged_patch_name = "T-%s-F-%s" % (target_name, old_orig_name)
+            old_merged_patch_path = os.path.join(self.patches_dir, old_merged_patch_name)
+            new_merged_patch_path = os.path.join(self.patches_dir, new_merged_patch_name)
+            _merge_pdiffs(old_merged_patch_path, target_path, new_merged_patch_path)
+
+            hashes_decompressed, hashes_compressed = _pdiff_hashes_from_patch(new_merged_patch_path)
+
+            new_merged_history[new_merged_patch_name] = [self._history[old_merged_patch_name][0],
+                                                         hashes_decompressed,
+                                                         hashes_compressed,
+                                                         ]
+            new_merged_order.append(new_merged_patch_name)
+
+        self._history_order = new_merged_order
+        self._history = new_merged_history
+
+        self._old_merged_patches_prefix.append(self._unmerged_history_order[-1])
+
+    def _convert_to_unmerged(self):
+        if not self.has_merged_pdiffs:
+            return
+        # Converting from merged patches to unmerged patches is simply.  Discard the merged
+        # patches.  Cleanup will be handled by find_obsolete_patches
+        self._history = {k: v for k, v in self._unmerged_history.items()}
+        self._history_order = list(self._unmerged_history_order)
+        self._old_merged_patches_prefix = []
+        self.has_merged_pdiffs = False
+
+    def _convert_to_merged_patches(self):
+        if self.has_merged_pdiffs:
+            return
+
+        target_name = self._unmerged_history_order[-1]
+
+        self._history = {}
+        self._history_order = []
+
+        new_patches = []
+
+        # We merge from newest to oldest
+        #
+        # Assume we got N unmerged patches (u1 - uN) where given s1 then
+        # you can apply u1 to get to s2. From s2 you use u2 to move to s3
+        # and so on until you reach your target T (= sN+1).
+        #
+        # In the merged patch world, we want N merged patches called m1-N,
+        # m2-N, m3-N ... m(N-1)-N.  Here, the you use sX + mX-N to go to
+        # T directly regardless of where you start.
+        #
+        # A note worthy special case is that m(N-1)-N is identical uN
+        # content-wise.  This will be important in a moment.  For now,
+        # lets start with looking at creating merged patches.
+        #
+        # We can get m1-N by merging u1 with m2-N because u1 will take s1
+        # to s2 and m2-N will take s2 to T.  By the same argument, we get
+        # generate m2-N by combing u2 with m3-N.  Rinse-and-repeat until
+        # we get to the base-case m(N-1)-N - which is uN.
+        #
+        # From this, we can conclude that generating the patches in
+        # reverse order (i.e. m2-N is generated before m1-N) will get
+        # us the desired result in N-1 pair-wise merges without having
+        # to use all patches in one go.  (This is also optimal in the
+        # sense that we need to update N-1 patches to preserve the
+        # entire history).
+        #
+        for patch_name in reversed(self._unmerged_history_order):
+            merged_patch = "T-%s-F-%s" % (target_name, patch_name)
+            merged_patch_path = os.path.join(self.patches_dir, merged_patch)
+
+            if new_patches:
+                oldest_patch = os.path.join(self.patches_dir, patch_name)
+                previous_merged_patch = os.path.join(self.patches_dir, new_patches[-1])
+                _merge_pdiffs(oldest_patch, previous_merged_patch, merged_patch_path)
+
+                hashes_decompressed, hashes_compressed = _pdiff_hashes_from_patch(merged_patch_path)
+
+                self._history[merged_patch] = [self._unmerged_history[patch_name][0],
+                                               hashes_decompressed,
+                                               hashes_compressed,
+                                               ]
+            else:
+                # Special_case; the latest patch is its own "merged" variant.
+                os.link(os.path.join(self.patches_dir, patch_name + ".gz"), merged_patch_path + ".gz")
+                self._history[merged_patch] = self._unmerged_history[patch_name]
+
+            new_patches.append(merged_patch)
+
+        self._history_order = list(reversed(new_patches))
+        self._old_merged_patches_prefix.append(target_name)
+        self.has_merged_pdiffs = True
 
     def read_index_file(self, index_file_path):
         try:
             with apt_pkg.TagFile(index_file_path) as index:
                 index.step()
                 section = index.section
+                self.has_merged_pdiffs = section.get('X-Patch-Precedence') == 'merged'
+                self._old_merged_patches_prefix = section.get('X-DAK-Older-Patches', '').split()
 
                 for field in section.keys():
                     value = section[field]
                     if field in HASH_FIELDS_TABLE:
-                        ind, hashind = HASH_FIELDS_TABLE[field]
-                        self.read_hashes(ind, hashind, value.splitlines())
+                        ind, hashind, primary_history = HASH_FIELDS_TABLE[field]
+                        if primary_history:
+                            history = self._history
+                            history_order = self._history_order
+                        else:
+                            history = self._unmerged_history
+                            history_order = self._unmerged_history_order
+                        _read_hashes(history, history_order, ind, hashind, value.splitlines())
                         continue
 
                     if field in ("Canonical-Name", "Canonical-Path"):
@@ -142,51 +347,40 @@ class PDiffIndex(object):
                     if field == "SHA256-Current":
                         self.filesizehashes = PDiffHashes(self.filesizehashes.size, self.filesizehashes.sha1, l[0])
 
+            if not self.has_merged_pdiffs:
+                # When X-Patch-Precedence != merged, then the two histories are the same.
+                self._unmerged_history = {k: v for k, v in self._history.items()}
+                self._unmerged_history_order = list(self._history_order)
+                self._old_merged_patches_prefix = []
+
         except (IOError, apt_pkg.Error):
             # On error, we ignore everything.  This causes the file to be regenerated from scratch.
             # It forces everyone to download the full file for if they are behind.
             # But it is self-healing providing that we generate valid files from here on.
             pass
 
-    def read_hashes(self, ind, hashind, lines):
-        for line in lines:
-            l = line.split()
-            fname = l[2]
-            if fname.endswith('.gz'):
-                fname = fname[:-3]
-            if fname not in self.history:
-                self.history[fname] = [None, None, None]
-                self.history_order.append(fname)
-            if not self.history[fname][ind]:
-                self.history[fname][ind] = PDiffHashes(int(l[1]), None, None)
-            if hashind == 1:
-                self.history[fname][ind] = PDiffHashes(self.history[fname][ind].size,
-                                                       l[0],
-                                                       self.history[fname][ind].sha256,
-                                                       )
-            else:
-                self.history[fname][ind] = PDiffHashes(self.history[fname][ind].size,
-                                                       self.history[fname][ind].sha1,
-                                                       l[0],
-                                                       )
-
     def prune_patch_history(self):
-        hs = self.history
-        order = self.history_order[:]
-
         # Truncate our history if necessary
-        cnt = len(order)
-        if cnt > self.max:
-            for h in order[:cnt - self.max]:
-                del hs[h]
-            order = order[cnt - self.max:]
-            self.history_order = order
+        hs = self._history
+        order = self._history_order
+        unmerged_hs = self._unmerged_history
+        unmerged_order = self._unmerged_history_order
+        self._history_order = _prune_history(order, hs, self.max)
+        self._unmerged_history_order = _prune_history(unmerged_order, unmerged_hs, self.max)
+
+        prefix_cnt = len(self._old_merged_patches_prefix)
+        if prefix_cnt > 3:
+            self._old_merged_patches_prefix = self._old_merged_patches_prefix[prefix_cnt - 3:]
 
     def find_obsolete_patches(self):
         if not os.path.isdir(self.patches_dir):
             return
 
-        hs = self.history
+        hs = self._history
+        unmerged_hs = self._unmerged_history
+
+        keep_prefixes = tuple("T-%s-F-" % x for x in self._old_merged_patches_prefix)
+
         # Scan for obsolete patches.  While we could have computed these
         # from the history, this method has the advantage of cleaning up
         # old patches left that we failed to remove previously (e.g. if
@@ -195,8 +389,12 @@ class PDiffIndex(object):
         for name in os.listdir(self.patches_dir):
             if name in ('Index', 'by-hash'):
                 continue
+            # We keep some old merged patches around (as neither apt nor
+            # dak supports by-hash for pdiffs)
+            if keep_prefixes and name.startswith(keep_prefixes):
+                continue
             basename, ext = os.path.splitext(name)
-            if basename in hs and ext in ('', '.gz'):
+            if ext in ('', '.gz') and (basename in hs or basename in unmerged_hs):
                 continue
             path = os.path.join(self.patches_dir, name)
             if not os.path.isfile(path):
@@ -215,14 +413,26 @@ class PDiffIndex(object):
             if self.filesizehashes.sha256:
                 out.write("SHA256-Current: %s %7d\n" % (self.filesizehashes.sha256, self.filesizehashes.size))
 
-        hs = self.history
-        order = self.history_order
+        for fieldname, ind, hashind, ext, primary_history in HASH_FIELDS:
 
-        for fieldname, ind, hashind, ext in HASH_FIELDS:
+            if primary_history:
+                hs = self._history
+                order = self._history_order
+            elif self.has_merged_pdiffs:
+                hs = self._unmerged_history
+                order = self._unmerged_history_order
+            else:
+                continue
+
             out.write("%s:\n" % fieldname)
             for h in order:
                 if hs[h][ind] and hs[h][ind][hashind]:
                     out.write(" %s %7d %s%s\n" % (hs[h][ind][hashind], hs[h][ind].size, h, ext))
+
+        if self.has_merged_pdiffs:
+            out.write("X-Patch-Precedence: merged\n")
+            if self._old_merged_patches_prefix:
+                out.write("X-DAK-Older-Patches: %s\n" % " ".join(self._old_merged_patches_prefix))
 
     def update_index(self, tmp_suffix=".new"):
         if not os.path.isdir(self.patches_dir):
