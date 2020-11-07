@@ -281,7 +281,7 @@ class ContentsWriter(object):
         class_.logger.log(list(result))
 
     @classmethod
-    def write_all(class_, logger, archive_names=[], suite_names=[], component_names=[], force=False):
+    def write_all(class_, logger, archive_names=None, suite_names=None, component_names=None, force=False):
         '''
         Writes all Contents files for suites in list suite_names which defaults
         to all 'touchable' suites if not specified explicitely. Untouchable
@@ -291,12 +291,12 @@ class ContentsWriter(object):
         class_.logger = logger
         session = DBConn().session()
         suite_query = session.query(Suite)
-        if len(archive_names) > 0:
+        if archive_names:
             suite_query = suite_query.join(Suite.archive).filter(Archive.archive_name.in_(archive_names))
-        if len(suite_names) > 0:
+        if suite_names:
             suite_query = suite_query.filter(Suite.suite_name.in_(suite_names))
         component_query = session.query(Component)
-        if len(component_names) > 0:
+        if component_names:
             component_query = component_query.filter(Component.component_name.in_(component_names))
         if not force:
             suite_query = suite_query.filter(Suite.untouchable == False)  # noqa:E712

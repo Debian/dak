@@ -486,7 +486,7 @@ __all__.append('get_suites_binary_in')
 
 
 @session_wrapper
-def get_component_by_package_suite(package, suite_list, arch_list=[], session=None):
+def get_component_by_package_suite(package, suite_list, arch_list=None, session=None):
     '''
     Returns the component name of the newest binary package in suite_list or
     None if no package is found. The result can be optionally filtered by a list
@@ -507,7 +507,7 @@ def get_component_by_package_suite(package, suite_list, arch_list=[], session=No
 
     q = session.query(DBBinary).filter_by(package=package). \
         join(DBBinary.suites).filter(Suite.suite_name.in_(suite_list))
-    if len(arch_list) > 0:
+    if arch_list:
         q = q.join(DBBinary.architecture). \
             filter(Architecture.arch_string.in_(arch_list))
     binary = q.order_by(desc(DBBinary.version)).first()
