@@ -481,8 +481,6 @@ def get_reject_reason(reason=''):
 
 
 def do_new(upload, upload_copy, handler, session):
-    cnf = Config()
-
     run_user_inspect_command(upload, upload_copy)
 
     # The main NEW processing loop

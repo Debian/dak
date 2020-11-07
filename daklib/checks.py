@@ -52,8 +52,8 @@ def check_fields_for_valid_utf8(filename, control):
     """Check all fields of a control file for valid UTF-8"""
     for field in control.keys():
         try:
-            a = six.ensure_text(field)
-            b = six.ensure_text(control[field])
+            six.ensure_text(field)
+            six.ensure_text(control[field])
         except UnicodeDecodeError:
             raise Reject('{0}: The {1} field is not valid UTF-8'.format(filename, field))
 

@@ -921,11 +921,10 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
     bugs (Yes, there might be more than one)
     """
 
-    line = []
     try:
         with open(file) as f:
             lines = f.readlines()
-    except IOError as e:
+    except IOError:
         print("Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file)
         lines = []
     wnpp = {}

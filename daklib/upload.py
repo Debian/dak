@@ -262,7 +262,7 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
             raise InvalidChangesException('No sha256sum for {0}.'.format(filename))
         if safe_file_regexp is not None and not safe_file_regexp.match(filename):
             raise InvalidChangesException("{0}: References file with unsafe filename {1}.".format(self.filename, filename))
-        f = files[filename] = HashedFile(**entry)
+        files[filename] = HashedFile(**entry)
 
     return files
 

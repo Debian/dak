@@ -345,7 +345,7 @@ class BinaryContentsScanner(object):
         '''
         self.binary_id = binary_id
 
-    def scan(self, dummy_arg=None):
+    def scan(self):
         '''
         This method does the actual scan and fills in the associated BinContents
         property. It commits any changes to the database. The argument dummy_arg

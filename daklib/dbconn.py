@@ -208,7 +208,7 @@ class ORMObject(object):
         '''
         return session.query(cls).get(primary_key)
 
-    def session(self, replace=False):
+    def session(self):
         '''
         Returns the current session that is associated with the object. May
         return None is object is in detached state.
@@ -927,8 +927,6 @@ class Keyring(object):
                "(&(keyfingerprint=*)(supplementaryGid=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                ["uid", "keyfingerprint", "cn", "mn", "sn"])
 
-        ldap_fin_uid_id = {}
-
         byuid = {}
         byname = {}
 
@@ -1607,7 +1605,6 @@ class DBSource(ORMObject):
         @rtype: tuple
         @return: fields is the dsc information in a dictionary form
         '''
-        fullpath = self.poolfile.fullpath
         with open(self.poolfile.fullpath, 'r') as fd:
             fields = Deb822(fd)
         return fields
