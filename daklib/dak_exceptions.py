@@ -58,11 +58,6 @@ class CantOverwriteError(DakError):
     pass
 
 
-class FileExistsError(DakError):
-    "Exception raised when destination file exists."
-    pass
-
-
 class SendmailFailedError(DakError):
     "Exception raised when Sendmail invocation failed."
     pass
