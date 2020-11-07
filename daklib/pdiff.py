@@ -130,14 +130,16 @@ class PDiffIndex(object):
 
                     l = value.split()
 
-                    if field == "SHA1-Current" and len(l) == 2:
-                        if not self.filesizehashes:
-                            self.filesizehashes = PDiffHashes(int(l[1]), None, None)
+                    if len(l) != 2:
+                        continue
+
+                    if not self.filesizehashes:
+                        self.filesizehashes = PDiffHashes(int(l[1]), None, None)
+
+                    if field == "SHA1-Current":
                         self.filesizehashes = PDiffHashes(self.filesizehashes.size, l[0], self.filesizehashes.sha256)
 
-                    if field == "SHA256-Current" and len(l) == 2:
-                        if not self.filesizehashes:
-                            self.filesizehashes = PDiffHashes(int(l[1]), None, None)
+                    if field == "SHA256-Current":
                         self.filesizehashes = PDiffHashes(self.filesizehashes.size, self.filesizehashes.sha1, l[0])
 
         except (IOError, apt_pkg.Error):
