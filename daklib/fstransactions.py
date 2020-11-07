@@ -177,8 +177,8 @@ class FilesystemTransaction(object):
     def create(self, path, mode=None):
         """create C{filename} and return file handle
 
-        @type  filename: str
-        @param filename: file to create
+        @type  path: str
+        @param path: file to create
 
         @type  mode: int
         @param mode: permissions for the new file

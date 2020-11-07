@@ -1669,7 +1669,7 @@ def get_source_in_suite(source, suite_name, session=None):
     @param source: source package name
 
     @type suite_name: string
-    @param suite: the suite name
+    @param suite_name: the suite name
 
     @rtype: string
     @return: the version for I{source} in I{suite}
@@ -2025,8 +2025,8 @@ def get_or_set_metadatakey(keyname, session=None):
 
     If no matching keyname is found, a row is inserted.
 
-    @type uidname: string
-    @param uidname: The keyname to add
+    @type keyname: string
+    @param keyname: The keyname to add
 
     @type session: SQLAlchemy
     @param session: Optional SQL session object (a temporary one will be

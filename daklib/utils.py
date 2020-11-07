@@ -1370,8 +1370,8 @@ def move_to_morgue(morguesubdir, filenames, fs_transaction, logger):
     @type morguesubdir: string
     @param morguesubdir: subdirectory of morgue where this file needs to go
 
-    @type filename: list of str
-    @param filename: names of files
+    @type filenames: list of str
+    @param filenames: names of files
 
     @type fs_transaction: L{daklib.fstransactions.FilesystemTransaction}
     @param fs_transaction: FilesystemTransaction instance
