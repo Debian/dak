@@ -23,7 +23,6 @@
 
 from __future__ import absolute_import, print_function
 
-import codecs
 import datetime
 import os
 import pwd

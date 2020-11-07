@@ -27,11 +27,8 @@ Queue utility functions for dak
 
 from __future__ import absolute_import, print_function
 
-import os
 from . import utils
-from types import *
 
-from .dak_exceptions import *
 from .regexes import *
 from .config import Config
 from .dbconn import *

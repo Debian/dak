@@ -59,7 +59,6 @@ import daklib.daksubprocess
 import six
 from sqlalchemy import or_
 
-from daklib.dbconn import *
 from daklib.queue import *
 from daklib import daklog
 from daklib import utils
