@@ -105,7 +105,7 @@ def smartlink(f, t):
         raise IOError(f)
 
 
-def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
+def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56, merged_pdiffs=False):
     if "NoAct" in Options:
         print("Not acting on: od: %s, oldf: %s, origf: %s, md: %s" % (outdir, oldfile, origfile, maxdiffs))
         return
@@ -139,7 +139,7 @@ def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56):
     if oldstat[1:3] == origstat[1:3]:
         return
 
-    upd = PDiffIndex(outdir, int(maxdiffs))
+    upd = PDiffIndex(outdir, int(maxdiffs), merged_pdiffs)
 
     if "CanonicalPath" in Options:
         upd.can_path = Options["CanonicalPath"]
@@ -236,6 +236,8 @@ def main():
         else:
             longsuite = suite
 
+        merged_pdiffs = suiteobj.merged_pdiffs
+
         tree = os.path.join(suiteobj.archive.path, 'dists', longsuite)
 
         # See if there are Translations which might need a new pdiff
@@ -255,7 +257,7 @@ def main():
                         #print "Working: %s" % (processfile)
                         storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, fname)
                         #print "Storefile: %s" % (storename)
-                        genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs)
+                        genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs, merged_pdiffs)
         os.chdir(cwd)
 
         for archobj in architectures:
@@ -276,13 +278,13 @@ def main():
                 if "Verbose" in Options:
                     print(file)
                 storename = "%s/%s_%s_contents_%s" % (Options["TempDir"], suite, component, architecture)
-                genchanges(Options, file + ".diff", storename, file, maxcontents)
+                genchanges(Options, file + ".diff", storename, file, maxcontents, merged_pdiffs)
 
                 file = "%s/%s/%s/%s" % (tree, component, longarch, packages)
                 if "Verbose" in Options:
                     print(file)
                 storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, architecture)
-                genchanges(Options, file + ".diff", storename, file, maxsuite)
+                genchanges(Options, file + ".diff", storename, file, maxsuite, merged_pdiffs)
 
 ################################################################################
 

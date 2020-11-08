@@ -816,6 +816,7 @@ ALLOWED_SUITE_CONFIGS = {
     'indices_compression': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
     'label': str,
     'mail_whitelist': str,
+    'merged_pdiffs': utils.parse_boolean_from_user,
     'new_queue': str,
     'notautomatic': utils.parse_boolean_from_user,
     'origin': str,
