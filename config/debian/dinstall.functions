@@ -413,12 +413,6 @@ function mirror() {
     write_project_trace "${tracepaths[@]}"
 }
 
-function expire() {
-    log "Expiring old database dumps..."
-    cd ${base}/backup
-    ${scriptsdir}/expire_dumps -d . -p -f "dump_*"
-}
-
 function transitionsclean() {
     log "Removing out of date transitions..."
     cd ${base}

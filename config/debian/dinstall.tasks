@@ -44,7 +44,6 @@ ddaccess               none                       ddaccessible\ sync         fal
 LOCK                   CHANGELOG                  300                        exclusive false
 changelogs             none                       changelogs                 false     true
 pg_timestamp           postdinstall               pg_dump2                   true      false
-expire                 none                       expire_dumps               false     true
 transitionsclean       none                       transitionsclean           false     true
 dm                     none                       none                       false     true
 bts                    none                       none                       false     true
