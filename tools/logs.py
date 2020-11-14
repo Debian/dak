@@ -68,15 +68,13 @@ if args:
             kl.append(k)
 
 if (wantkeys - ks):
-    print("warning, requested keys not found in any log: " + ' '.join(wantkeys - ks), file=sys.stderr)
+    print("warning, requested keys not found in any log:", *(wantkeys - ks), file=sys.stderr)
 
 datakeys = sorted(d.keys())
 
-f = open(CACHE_FILE + ".tmp", "w")
-for dk in datakeys:
-    print(dk + '\t' + '\t'.join(
-        ["%s:%s" % (k, str(d[dk][k])) for k in kl if k in d[dk]]), file=f)
-f.close()
+with open(CACHE_FILE + ".tmp", "w") as f:
+    for dk in datakeys:
+        print(dk, *("%s:%s" % (k, str(d[dk][k])) for k in kl if k in d[dk]), sep='\t', file=f)
 os.rename(CACHE_FILE + ".tmp", CACHE_FILE)
 datakeys = datakeys[-ITEMS_TO_KEEP:]
 
@@ -92,7 +90,6 @@ def dump_file(outfn, keystolist, showothers):
         others = sum(v.get(x, 0) for x in otherkeys)
         print(k + '\t' + '\t'.join([str(v.get(x, 0)) for x in keystolist] + showothers * [str(others)]), file=f)
     f.flush()
-    n = f.name
 
     p = os.popen("R --vanilla --slave > /dev/null", "w")
     p.write("""
@@ -117,7 +114,7 @@ def dump_file(outfn, keystolist, showothers):
 
   dev.off()
   q()
-  """ % {'datafile': n, 'outfile': outfn,
+  """ % {'datafile': f.name, 'outfile': outfn,
        'title': ((not showothers) * "partial ") + "dinstall times"})
     p.flush()
     assert not p.close()
