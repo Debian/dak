@@ -1,9 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # (c) 2008 Thomas Viehmann
 # Free software licensed under the GPL version 2 or later
-
-
-from __future__ import print_function
 
 import os
 import re
@@ -55,7 +52,7 @@ if args:
         m = LINE.match(l)
         if not m:
             raise Exception("woops '%s'" % l)
-        g = map(lambda x: (not x.isdigit() and x) or int(x), m.groups())
+        g = [int(x) if x.isdigit() else x for x in m.groups()]
         dt = datetime.datetime(*g[:6])
         if olddt != dt:
             oldsecs = 0
@@ -73,8 +70,7 @@ if args:
 if (wantkeys - ks):
     print("warning, requested keys not found in any log: " + ' '.join(wantkeys - ks), file=sys.stderr)
 
-datakeys = d.keys()
-datakeys.sort()
+datakeys = sorted(d.keys())
 
 f = open(CACHE_FILE + ".tmp", "w")
 for dk in datakeys:
@@ -88,13 +84,13 @@ datakeys = datakeys[-ITEMS_TO_KEEP:]
 def dump_file(outfn, keystolist, showothers):
     showothers = (showothers and 1) or 0
     # careful, outfn is NOT ESCAPED
-    f = tempfile.NamedTemporaryFile()
+    f = tempfile.NamedTemporaryFile("w+t")
     otherkeys = ks - set(keystolist)
     print('\t'.join(keystolist + showothers * ['other']), file=f)
     for k in datakeys:
         v = d[k]
-        others = sum(map(lambda x: v.get(x, 0), otherkeys))
-        print(k + '\t' + '\t'.join(map(lambda x: str(v.get(x, 0)), keystolist) + showothers * [str(others)]), file=f)
+        others = sum(v.get(x, 0) for x in otherkeys)
+        print(k + '\t' + '\t'.join([str(v.get(x, 0)) for x in keystolist] + showothers * [str(others)]), file=f)
     f.flush()
     n = f.name
 
