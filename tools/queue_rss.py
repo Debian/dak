@@ -1,16 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Generate two rss feeds for a directory with .changes file
 
 # License: GPL v2 or later
 # Author: Filippo Giunchedi <filippo@debian.org>
 # Version: 0.5
 
-from __future__ import print_function
-
 import cgi
 import os
 import os.path
-import cPickle
+import pickle
 import re
 import sys
 import time
@@ -209,7 +207,12 @@ if __name__ == "__main__":
     status_db = os.path.join(settings.datadir, db_filename)
 
     try:
-        status = cPickle.load(open(status_db))
+        with open(status_db, 'rb') as fh:
+            try:
+                status = pickle.load(fh, encoding="utf-8")
+            except UnicodeDecodeError:
+                fh.seek(0)
+                status = pickle.load(fh, encoding="latin-1")
     except IOError:
         status = Status()
 
@@ -233,7 +236,8 @@ if __name__ == "__main__":
     status.queue = current_queue
 
     try:
-        cPickle.dump(status, open(status_db, "w+"))
+        with open(status_db, 'wb+') as fh:
+            pickle.dump(status, fh)
     except IOError as why:
         print("Unable to save status:", why, file=sys.stderr)
         sys.exit(1)
