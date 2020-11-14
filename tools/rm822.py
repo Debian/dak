@@ -1,8 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # (c) 2010 Luca Falavigna <dktrkranz@debian.org>
 # Free software licensed under the GPL version 2 or later
-
-from __future__ import print_function
 
 import re
 from sys import argv
@@ -10,9 +8,8 @@ from sys import argv
 if len(argv) < 2:
     print('Usage:\t./%s removal-file' % argv[0])
     exit()
-fd = open(argv[1], 'r')
-data = fd.read()
-fd.close()
+with open(argv[1]) as fh:
+    data = fh.read()
 removals = re.split('=\n=', data)
 for removal in removals:
     removal = re.sub('\n\n', '\n', removal)
@@ -22,9 +19,9 @@ for removal in removals:
     packages = re.split(r'from [\S\s]+:\n', removal)[1].split('\n---')[0]
     reason = re.split('---\n', removal)[1].split('\n---')[0]
     bug = re.search(r'Closed bugs: (\d+)', removal)
-    print('Date: %s' % date)
-    print('Ftpmaster: %s' % ftpmaster)
-    print('Suite: %s' % suite)
+    print(f'Date: {date}')
+    print(f'Ftpmaster: {ftpmaster}')
+    print(f'Suite: {suite}')
     sources = []
     binaries = []
     for package in packages.split('\n'):
@@ -37,14 +34,10 @@ for removal in removals:
                 if element[2]:
                     binaries.append(' %s_%s [%s]' % tuple(elem.strip(' ') for elem in element))
     if sources:
-        print('Sources:')
-        for source in sources:
-            print(source)
+        print('Sources:', *sources, sep='\n')
     if binaries:
-        print('Binaries:')
-        for binary in binaries:
-            print(binary)
-    print('Reason: %s' % reason.replace('\n', '\n '))
+        print('Binaries:', *binaries, sep='\n')
+    print('Reason: {}'.format(reason.replace('\n', '\n ')))
     if bug:
-        print('Bug: %s' % bug.group(1))
+        print(f'Bug: {bug.group(1)}')
     print()
