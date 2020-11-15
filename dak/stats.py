@@ -33,6 +33,7 @@
 
 from __future__ import print_function
 
+import six
 import sys
 import tempfile
 import apt_pkg
@@ -363,8 +364,12 @@ def new_stats(logdir, yaml):
                 with open(logfile, 'rb') as fh:
                     data = daklib.daksubprocess.check_output(['xzcat'], stdin=fh)
             else:
-                with open(logfile, 'r') as fd:
+                with open(logfile, 'rb') as fd:
                     data = fd.read()
+            try:
+                data = six.ensure_str(data)
+            except UnicodeDecodeError:
+                data = six.ensure_str(data, encoding='latin1')
             ts = parse_new_uploads(data)
             if ts > latest_timestamp:
                 latest_timestamp = ts
