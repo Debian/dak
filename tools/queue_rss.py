@@ -5,7 +5,7 @@
 # Author: Filippo Giunchedi <filippo@debian.org>
 # Version: 0.5
 
-import cgi
+import html
 import os
 import os.path
 import pickle
@@ -141,8 +141,8 @@ def add_rss_item(status, msg, direction):
         return False
 
     description = "<pre>Description: %s\nChanges: %s\n</pre>" % \
-            (cgi.escape(msg['Description']),
-             cgi.escape(msg['Changes']))
+            (html.escape(msg['Description']),
+             html.escape(msg['Changes']))
 
     link = "https://ftp-master.debian.org/new/%s_%s.html" % \
             (msg['Source'], msg['Version'])
@@ -159,7 +159,7 @@ def add_rss_item(status, msg, direction):
             title,
             pubDate=pubdate,
             description=description,
-            author=cgi.escape(author),
+            author=html.escape(author),
             link=link,
             guid=guid
         )
