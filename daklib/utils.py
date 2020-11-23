@@ -49,7 +49,7 @@ from .dbconn import DBConn, get_architecture, get_component, get_suite, \
 from .dak_exceptions import *
 from .gpg import SignedFile
 from .textutils import fix_maintainer
-from .regexes import re_html_escaping, html_escaping, re_single_line_field, \
+from .regexes import re_single_line_field, \
                     re_multi_line_field, re_srchasver, \
                     re_re_mark, re_whitespace_comment, re_issource, \
                     re_build_dep_arch, re_parse_maintainer
@@ -64,13 +64,6 @@ default_config = "/etc/dak/dak.conf"     #: default dak config, defines host pro
 
 alias_cache = None        #: Cache for email alias checks
 key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
-
-################################################################################
-
-
-def html_escape(s):
-    """ Escape html chars """
-    return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 
 ################################################################################
 

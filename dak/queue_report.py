@@ -36,6 +36,7 @@
 
 from __future__ import print_function
 
+import html
 import os
 import sys
 import time
@@ -316,7 +317,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
         print("<td class=\"package\"><a href=\"https://tracker.debian.org/pkg/%(source)s\">%(source)s</a></td>" % {'source': source})
     print("<td class=\"version\">")
     for vers in version.split():
-        print("<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, utils.html_escape(vers), utils.html_escape(vers)))
+        print("<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, html.escape(vers), html.escape(vers, quote=False)))
     print("</td>")
     print("<td class=\"arch\">%s</td>" % (arch))
     print("<td class=\"distribution\">")
@@ -330,19 +331,19 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     (name, mail) = maint.split(":", 1)
 
     print("<td class=\"upload-data\">")
-    print("<span class=\"maintainer\">Maintainer: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name)))
+    print("<span class=\"maintainer\">Maintainer: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (html.escape(mail), html.escape(name, quote=False)))
     (name, mail) = changedby.split(":", 1)
-    print("<span class=\"changed-by\">Changed-By: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (utils.html_escape(mail), utils.html_escape(name)))
+    print("<span class=\"changed-by\">Changed-By: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (html.escape(mail), html.escape(name, quote=False)))
 
     if sponsor:
-        print("<span class=\"sponsor\">Sponsor: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (utils.html_escape(sponsor), utils.html_escape(sponsor)))
+        print("<span class=\"sponsor\">Sponsor: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (html.escape(sponsor), html.escape(sponsor, quote=False)))
 
     print("<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint))
     print("</td>")
 
     print("<td class=\"closes\">")
     for close in closes:
-        print("<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (utils.html_escape(close), utils.html_escape(close)))
+        print("<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (html.escape(close), html.escape(close, quote=False)))
     print("</td></tr>")
     row_number += 1
 
