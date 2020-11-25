@@ -913,10 +913,7 @@ class ArchiveUpload(object):
                 .join(Component).filter(Component.component_name == mapped_component.component_name) \
                 .join(OverrideType).filter(OverrideType.overridetype == binary.type)
 
-        try:
-            return query.one()
-        except NoResultFound:
-            return None
+        return query.one_or_none()
 
     def _source_override(self, suite, source):
         """Get override entry for a source
@@ -940,10 +937,7 @@ class ArchiveUpload(object):
         if component is not None:
             query = query.filter(Override.component == component)
 
-        try:
-            return query.one()
-        except NoResultFound:
-            return None
+        return query.one_or_none()
 
     def _binary_component(self, suite, binary, only_overrides=True):
         """get component for a binary

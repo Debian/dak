@@ -298,11 +298,7 @@ def get_architecture(architecture, session=None):
     """
 
     q = session.query(Architecture).filter_by(arch_string=architecture)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_architecture')
@@ -340,11 +336,7 @@ def get_archive(archive, session=None):
     archive = archive.lower()
 
     q = session.query(Archive).filter_by(archive_name=archive)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_archive')
@@ -579,10 +571,7 @@ def get_component(component, session=None):
 
     q = session.query(Component).filter_by(component_name=component)
 
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_component')
@@ -782,13 +771,7 @@ def get_fingerprint(fpr, session=None):
     """
 
     q = session.query(Fingerprint).filter_by(fingerprint=fpr)
-
-    try:
-        ret = q.one()
-    except NoResultFound:
-        ret = None
-
-    return ret
+    return q.one_or_none()
 
 
 __all__.append('get_fingerprint')
@@ -992,11 +975,7 @@ def get_keyring(keyring, session=None):
     """
 
     q = session.query(Keyring).filter_by(keyring_name=keyring)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_keyring')
@@ -1044,11 +1023,7 @@ def get_dbchange(filename, session=None):
 
     """
     q = session.query(DBChange).filter_by(changesname=filename)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_dbchange')
@@ -1309,11 +1284,7 @@ def get_override_type(override_type, session=None):
     """
 
     q = session.query(OverrideType).filter_by(overridetype=override_type)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_override_type')
@@ -1349,11 +1320,7 @@ def get_policy_queue(queuename, session=None):
     """
 
     q = session.query(PolicyQueue).filter_by(queue_name=queuename)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_policy_queue')
@@ -1437,11 +1404,7 @@ def get_priority(priority, session=None):
     """
 
     q = session.query(Priority).filter_by(priority=priority)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_priority')
@@ -1495,11 +1458,7 @@ def get_section(section, session=None):
     """
 
     q = session.query(Section).filter_by(section=section)
-
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_section')
@@ -1678,10 +1637,7 @@ def get_source_in_suite(source, suite_name, session=None):
     suite = get_suite(suite_name, session)
     if suite is None:
         return None
-    try:
-        return suite.get_sources(source).one()
-    except NoResultFound:
-        return None
+    return suite.get_sources(source).one_or_none()
 
 
 __all__.append('get_source_in_suite')
@@ -1880,10 +1836,7 @@ def get_suite(suite, session=None):
 
     # Finally give release_suite a try
     q = session.query(Suite).filter_by(release_suite=suite)
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_suite')
@@ -1996,10 +1949,7 @@ def get_uid_from_fingerprint(fpr, session=None):
     q = session.query(Uid)
     q = q.join(Fingerprint).filter_by(fingerprint=fpr)
 
-    try:
-        return q.one()
-    except NoResultFound:
-        return None
+    return q.one_or_none()
 
 
 __all__.append('get_uid_from_fingerprint')
