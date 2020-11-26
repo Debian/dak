@@ -90,20 +90,20 @@ def html_header(name, missing):
     <div id="logo">
       <a href="https://www.debian.org/">
         <img src="https://www.debian.org/logos/openlogo-nd-50.png"
-        alt="debian logo" /></a>
+        alt="" /></a>
       <a href="https://www.debian.org/">
         <img src="https://www.debian.org/Pics/debian.png"
         alt="Debian Project" /></a>
     </div>
     <div id="titleblock">
       <img src="https://www.debian.org/Pics/red-upperleft.png"
-      id="red-upperleft" alt="corner image"/>
+      id="red-upperleft" alt=""/>
       <img src="https://www.debian.org/Pics/red-lowerleft.png"
-      id="red-lowerleft" alt="corner image"/>
+      id="red-lowerleft" alt=""/>
       <img src="https://www.debian.org/Pics/red-upperright.png"
-      id="red-upperright" alt="corner image"/>
+      id="red-upperright" alt=""/>
       <img src="https://www.debian.org/Pics/red-lowerright.png"
-      id="red-lowerright" alt="corner image"/>
+      id="red-lowerright" alt=""/>
       <span class="title">
         Debian NEW package overview for %(name)s
       </span>
