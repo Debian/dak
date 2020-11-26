@@ -488,8 +488,9 @@ def process_queue(queue, log, rrd_dir):
                 closes = dbc.closes
 
                 fingerprint = dbc.fingerprint
-                sponsor_name = get_uid_from_fingerprint(fingerprint).name
-                sponsor_login = get_uid_from_fingerprint(fingerprint).uid
+                sponsor_uid = get_uid_from_fingerprint(fingerprint, session)
+                sponsor_name = sponsor_uid.name
+                sponsor_login = sponsor_uid.uid
                 if '@' in sponsor_login:
                     if fingerprint in logins:
                         sponsor_login = logins[fingerprint]
