@@ -43,7 +43,7 @@ function removalstxt() {
 
 function rss() {
     log "NEW RSS feed"
-    ${base}/dak/tools/queue_rss.py -q ${queuedir}/new -o ${webdir}/rss/ -d ${base}/misc -l ${base}/log/
+    PYTHONHASHSEED=0 ${base}/dak/tools/queue_rss.py -q ${queuedir}/new -o ${webdir}/rss/ -d ${base}/misc -l ${base}/log/
     log "Removals RSS feed"
     ${base}/dak/tools/removals.pl ${configdir}/removalsrss.rc > ${webdir}/rss/removals.rss
 }
