@@ -245,7 +245,7 @@ def header():
 
 def footer():
     print("<p class=\"timestamp\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime())))
-    print("<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>")
+    print("<p>There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>")
 
     print("""
     <div class="footer">
