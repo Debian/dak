@@ -116,6 +116,9 @@ def validate_data(data):
             ret = False
             continue
         if not pkgname:
+            if doc.get('Merge'):
+                # merge instructions to not need a package name
+                continue
             if cpttype not in ['web-application', 'operating-system', 'repository']:
                 add_issue('[%s]: %s' % (cptid, 'Component is missing a \'Package\' key.'))
                 ret = False
