@@ -43,11 +43,6 @@ import apt_pkg
 import datetime
 import functools
 
-try:
-    import rrdtool
-except ImportError:
-    pass
-
 from daklib import utils
 from daklib.utils import get_logins_from_ldap
 from daklib.dbconn import DBConn, has_new_comment, PolicyQueue, get_uid_from_fingerprint
@@ -352,6 +347,8 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
 def update_graph_database(rrd_dir, type, n_source, n_binary):
     if not rrd_dir:
         return
+
+    import rrdtool
 
     rrd_file = os.path.join(rrd_dir, type.lower() + '.rrd')
     update = [rrd_file, "N:%s:%s" % (n_source, n_binary)]
