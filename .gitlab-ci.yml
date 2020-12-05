@@ -6,7 +6,7 @@
 test buster:
   <<: *template
   image: debian:buster
-  parallel: 2
+  parallel: 3
   script: debian/run-ci --with-coverage
   artifacts:
     paths:
@@ -15,7 +15,7 @@ test buster:
 test bullseye:
   <<: *template
   image: debian:bullseye
-  parallel: 2
+  parallel: 3
   script: debian/run-ci --with-coverage
   artifacts:
     paths:
