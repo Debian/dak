@@ -53,7 +53,6 @@ import contextlib
 import pwd
 import apt_pkg
 import dak.examine_package
-import subprocess
 import six
 from sqlalchemy import or_
 
