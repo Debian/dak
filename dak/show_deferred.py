@@ -20,6 +20,7 @@
 
 ################################################################################
 
+import html
 import sys
 import os
 import re
@@ -33,15 +34,11 @@ from debian import deb822
 from daklib.dbconn import *
 from daklib.gpg import SignedFile
 from daklib import utils
-from daklib.regexes import re_html_escaping, html_escaping
 
 ################################################################################
 
 row_number = 1
 
-
-def html_escape(s):
-    return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
 
 ################################################################################
 
@@ -110,8 +107,8 @@ def table_row(changesname, delay, changed_by, closes, fingerprint):
     global row_number
 
     res = '<tr class="%s">' % ((row_number % 2) and 'odd' or 'even')
-    res += (2 * '<td valign="top">%s</td>') % tuple(map(html_escape, (changesname, delay)))
-    res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html_escape(changed_by), fingerprint)
+    res += (2 * '<td valign="top">%s</td>') % (html.escape(x, quote=False) for x in (changesname, delay))
+    res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html.escape(changed_by, quote=False), fingerprint)
     res += ('<td valign="top">%s</td>' %
              ''.join(['<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close) for close in closes]))
     res += '</tr>\n'

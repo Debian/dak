@@ -44,6 +44,7 @@ to stdout. Those functions can be used in multithreaded parts of dak.
 
 import errno
 import hashlib
+import html
 import os
 import re
 import sys
@@ -59,7 +60,7 @@ from daklib import utils
 from daklib.config import Config
 from daklib.dbconn import DBConn, get_component_by_package_suite
 from daklib.gpg import SignedFile
-from daklib.regexes import html_escaping, re_html_escaping, re_version, re_spacestrip, \
+from daklib.regexes import re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory, re_file_binary
 import daklib.daksubprocess
@@ -97,7 +98,7 @@ PACKAGE can be a .changes, .dsc, .deb or .udeb filename.""")
 
 def escape_if_needed(s):
     if use_html:
-        return re_html_escaping.sub(lambda x: html_escaping.get(x.group(0)), s)
+        return html.escape(s)
     else:
         return s
 
@@ -107,9 +108,9 @@ def headline(s, level=2, bodyelement=None):
         if bodyelement:
             return """<thead>
                 <tr><th colspan="2" class="title" onclick="toggle('%(bodyelement)s', 'table-row-group', 'table-row-group')">%(title)s <span class="toggle-msg">(click to toggle)</span></th></tr>
-              </thead>\n""" % {"bodyelement": bodyelement, "title": utils.html_escape(os.path.basename(s))}
+              </thead>\n""" % {"bodyelement": bodyelement, "title": html.escape(os.path.basename(s), quote=False)}
         else:
-            return "<h%d>%s</h%d>\n" % (level, utils.html_escape(s), level)
+            return "<h%d>%s</h%d>\n" % (level, html.escape(s, quote=False), level)
     else:
         return "---- %s ----\n" % (s)
 
@@ -144,7 +145,7 @@ html_colours = {
 
 def colour_output(s, colour):
     if use_html:
-        return ("%s%s%s" % (html_colours[colour][0], utils.html_escape(s), html_colours[colour][1]))
+        return ("%s%s%s" % (html_colours[colour][0], html.escape(s, quote=False), html_colours[colour][1]))
     else:
         return ("%s%s%s" % (ansi_colours[colour], s, ansi_colours['end']))
 
@@ -163,7 +164,7 @@ def formatted_text(s, strip=False):
     if use_html:
         if strip:
             s = s.strip()
-        return "<pre>%s</pre>" % (utils.html_escape(s))
+        return "<pre>%s</pre>" % (html.escape(s, quote=False))
     else:
         return s
 
