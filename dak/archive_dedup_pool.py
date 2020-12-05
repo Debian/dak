@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 # vim:set et ts=4 sw=4:
 
 """ De-duplicates files in the pool directory

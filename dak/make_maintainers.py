@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """
 Generate Maintainers file used by e.g. the Debian Bug Tracking System

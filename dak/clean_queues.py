@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """ Clean incoming of old unused files """
 # Copyright (C) 2000, 2001, 2002, 2006  James Troup <james@nocrew.org>

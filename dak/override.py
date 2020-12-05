@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """ Microscopic modification and query tool for overrides in projectb """
 # Copyright (C) 2004, 2006  Daniel Silverstone <dsilvers@digital-scurf.org>

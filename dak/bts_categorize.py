@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python3
 
 """
 bts -- manage bugs filed against ftp.debian.org

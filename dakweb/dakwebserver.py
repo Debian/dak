@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python3
 
 """ Main script to run the dakweb server and also
 to provide the list_paths and path_help functions

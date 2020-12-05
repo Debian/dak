@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """
 Add a user to to the uid/maintainer/fingerprint table and

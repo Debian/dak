@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """
 Writes out a rfc2822-formatted list of sections and their descriptions.

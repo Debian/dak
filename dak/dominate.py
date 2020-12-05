@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#! /usr/bin/env python3
 
 """
 Remove obsolete source and binary associations from suites.

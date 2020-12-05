@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """ Produces a set of graphs of NEW/BYHAND/DEFERRED
 

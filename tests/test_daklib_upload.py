@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/env python3
 #
 # Copyright (C) 2018, Ansgar Burchardt <ansgar@debian.org>
 # License: GPL-2+

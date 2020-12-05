@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """ Produces a report on NEW and BYHAND packages """
 # Copyright (C) 2001, 2002, 2003, 2005, 2006  James Troup <james@nocrew.org>

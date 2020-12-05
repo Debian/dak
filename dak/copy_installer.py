@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """ Copies the installer from one suite to another """
 # Copyright (C) 2011  Torsten Werner <twerner@debian.org>

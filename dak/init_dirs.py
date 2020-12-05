@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """Initial setup of an archive."""
 # Copyright (C) 2002, 2004, 2006  James Troup <james@nocrew.org>

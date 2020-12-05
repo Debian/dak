@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """Configure dak parameters in the database"""
 # Copyright (C) 2009  Mark Hymers <mhy@debian.org>

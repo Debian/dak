@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """ Output html for packages in NEW """
 # Copyright (C) 2007, 2009 Joerg Jaspert <joerg@debian.org>

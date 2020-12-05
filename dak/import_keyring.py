@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#! /usr/bin/env python3
 
 """ Imports a keyring into the database """
 # Copyright (C) 2007  Anthony Towns <aj@erisian.com.au>
