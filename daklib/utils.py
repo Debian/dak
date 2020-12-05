@@ -191,10 +191,8 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
         "-----BEGIN PGP SIGNATURE-----".
     """
 
-    # TODO: py3: use open(..., encoding="utf-8")
-    with open(filename, 'rb') as changes_in:
-        content_bin = changes_in.read()
-    content = content_bin.decode('utf-8')
+    with open(filename, 'r', encoding='utf-8') as changes_in:
+        content = changes_in.read()
     changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
     if not dsc_file:
