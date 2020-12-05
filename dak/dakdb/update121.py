@@ -24,8 +24,6 @@ Update changes table to not require a value for the Binary column
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 

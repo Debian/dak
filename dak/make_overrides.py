@@ -29,8 +29,6 @@ Output override files for apt-ftparchive and indices/
 
 ################################################################################
 
-from __future__ import print_function
-
 import os
 import sys
 import apt_pkg

@@ -24,8 +24,6 @@ switch to new ACL implementation and add pre-suite NEW
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

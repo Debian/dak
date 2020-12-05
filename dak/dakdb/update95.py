@@ -24,8 +24,6 @@ Require SHA-1 and SHA-256 checksums in "files" table.
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

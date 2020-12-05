@@ -6,8 +6,6 @@ Add support for by-hash with a new table and per-suite boolean
 @license: GNU General Public License version 2 or later
 """
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 

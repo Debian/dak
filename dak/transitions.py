@@ -28,8 +28,6 @@ Display, edit and check the release manager's transition file.
 
 ################################################################################
 
-from __future__ import print_function
-
 import os
 import sys
 import time

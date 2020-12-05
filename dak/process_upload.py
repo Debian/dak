@@ -159,8 +159,6 @@ Checks Debian packages from Incoming
 
 ## Queue builds
 
-from __future__ import print_function
-
 import datetime
 import errno
 import fcntl

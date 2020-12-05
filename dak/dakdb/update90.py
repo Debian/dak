@@ -24,8 +24,6 @@ add created_by_id and created columns to acl_per_source table
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

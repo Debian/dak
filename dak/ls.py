@@ -31,8 +31,6 @@ Display information about package(s) (suite, version, etc.)
 
 ################################################################################
 
-from __future__ import print_function
-
 import sys
 import apt_pkg
 

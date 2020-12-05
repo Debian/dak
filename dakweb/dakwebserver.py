@@ -8,8 +8,6 @@ to provide the list_paths and path_help functions
 @license: GNU General Public License version 2 or later
 """
 
-from __future__ import absolute_import
-
 import bottle
 from bottle import redirect
 from daklib.dbconn import DBConn

@@ -22,8 +22,6 @@ Remove obsolete source and binary associations from suites.
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from __future__ import print_function
-
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib import daklog, utils

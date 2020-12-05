@@ -33,8 +33,6 @@ Check for obsolete binary packages
 
 ################################################################################
 
-from __future__ import print_function
-
 import sqlalchemy.sql as sql
 import six
 import sys

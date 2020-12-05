@@ -24,8 +24,6 @@ Do not include long description in Packages index by default
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

@@ -24,8 +24,6 @@ Helper code for contents generation.
 
 ################################################################################
 
-from __future__ import absolute_import, print_function
-
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.filewriter import BinaryContentsFileWriter, SourceContentsFileWriter

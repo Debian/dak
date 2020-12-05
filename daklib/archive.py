@@ -19,8 +19,6 @@
 This module provides classes to manipulate the archive.
 """
 
-from __future__ import print_function
-
 from daklib.dbconn import *
 import daklib.checks as checks
 from daklib.config import Config

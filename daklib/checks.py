@@ -23,8 +23,6 @@
 Please read the documentation for the L{Check} class for the interface.
 """
 
-from __future__ import print_function
-
 from daklib.config import Config
 import daklib.daksubprocess
 from daklib.dbconn import *

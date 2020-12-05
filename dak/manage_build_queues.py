@@ -25,8 +25,6 @@
 
 ################################################################################
 
-from __future__ import print_function
-
 import apt_pkg
 from datetime import datetime, timedelta
 import sys

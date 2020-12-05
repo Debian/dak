@@ -31,8 +31,6 @@ Generate Maintainers file used by e.g. the Debian Bug Tracking System
 
 ################################################################################
 
-from __future__ import print_function
-
 from daklib import daklog
 from daklib import utils
 from daklib.config import Config

@@ -33,8 +33,6 @@ G{importgraph}
 
 ################################################################################
 
-from __future__ import print_function
-
 import importlib
 import os
 import sys

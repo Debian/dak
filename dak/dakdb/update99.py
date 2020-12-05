@@ -25,8 +25,6 @@ Add component ordering
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

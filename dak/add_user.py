@@ -16,7 +16,6 @@ add his key to the GPGKeyring
 
 # You don't want to read this script if you know python.
 # I know what I say. I dont know python and I wrote it. So go and read some other stuff.
-from __future__ import print_function
 
 import subprocess
 import sys

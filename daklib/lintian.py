@@ -44,8 +44,6 @@
 
 ################################################################################
 
-from __future__ import absolute_import, print_function
-
 from .regexes import re_parse_lintian
 
 

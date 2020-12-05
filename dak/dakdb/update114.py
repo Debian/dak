@@ -24,8 +24,6 @@ Add column to store checksums we want per suite (Packages/Release files)
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 

@@ -42,8 +42,6 @@
 
 ################################################################################
 
-from __future__ import absolute_import, print_function
-
 import errno
 import os
 import readline

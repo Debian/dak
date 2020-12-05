@@ -26,8 +26,6 @@ Writes out a rfc2822-formatted list of sections and their descriptions.
 
 ################################################################################
 
-from __future__ import print_function
-
 import sys
 
 from daklib.dbconn import *

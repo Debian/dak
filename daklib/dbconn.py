@@ -31,8 +31,6 @@
 
 ################################################################################
 
-from __future__ import absolute_import, print_function
-
 import apt_pkg
 import daklib.daksubprocess
 from daklib.gpg import GpgException

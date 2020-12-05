@@ -21,8 +21,6 @@ helper functions for cruft-report
 
 ################################################################################
 
-from __future__ import print_function
-
 from daklib.dbconn import *
 
 from sqlalchemy import func

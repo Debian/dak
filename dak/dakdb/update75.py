@@ -24,8 +24,6 @@ Multi-archive support; convert policy and build queues to regular suites
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

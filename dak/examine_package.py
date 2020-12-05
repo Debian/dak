@@ -42,8 +42,6 @@ to stdout. Those functions can be used in multithreaded parts of dak.
 
 ################################################################################
 
-from __future__ import print_function
-
 import errno
 import hashlib
 import os

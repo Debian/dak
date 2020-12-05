@@ -24,8 +24,6 @@ Add a new release_suite name which we use in generate_releases
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

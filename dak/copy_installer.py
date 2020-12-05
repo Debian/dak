@@ -19,8 +19,6 @@
 
 ################################################################################
 
-from __future__ import print_function
-
 from daklib.config import Config
 import daklib.daksubprocess
 

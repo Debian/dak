@@ -24,8 +24,6 @@ new views binary_component, source_component and package_list
 
 ################################################################################
 
-from __future__ import print_function
-
 import psycopg2
 from daklib.dak_exceptions import DBUpdateError
 from daklib.config import Config

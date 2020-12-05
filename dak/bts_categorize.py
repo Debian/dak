@@ -27,8 +27,6 @@ bts -- manage bugs filed against ftp.debian.org
 ################################################################################
 ################################################################################
 
-from __future__ import print_function
-
 import sys
 import re
 import logging

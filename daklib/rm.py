@@ -39,8 +39,6 @@
 
 ################################################################################
 
-from __future__ import absolute_import, print_function
-
 import apt_pkg
 import fcntl
 import functools

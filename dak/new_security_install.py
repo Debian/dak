@@ -27,8 +27,6 @@ Do whatever is needed to get a security upload released
 
 ################################################################################
 
-from __future__ import print_function
-
 import os
 import sys
 import time

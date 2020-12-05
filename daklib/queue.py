@@ -25,8 +25,6 @@ Queue utility functions for dak
 
 ###############################################################################
 
-from __future__ import absolute_import, print_function
-
 from . import utils
 
 from .regexes import *

@@ -31,8 +31,6 @@ and binary package version it has in a standard rfc2822-like format.
 
 ################################################################################
 
-from __future__ import print_function
-
 import sys
 
 from daklib.dbconn import *
