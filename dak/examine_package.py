@@ -566,33 +566,26 @@ def get_copyright(deb_filename):
 
 
 def get_readme_source(dsc_filename):
-    # TODO: py3: use tempfile.TemporaryDirectory
-    tempdir = utils.temp_dirname()
-    targetdir = os.path.join(tempdir, "source")
+    with tempfile.TemporaryDirectory(prefix="dak-examine-package") as tempdir:
+        targetdir = os.path.join(tempdir, "source")
 
-    cmd = ('dpkg-source', '--no-check', '--no-copy', '-x', dsc_filename, targetdir)
-    try:
-        daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    except subprocess.CalledProcessError as e:
-        res = "How is education supposed to make me feel smarter? Besides, every time I learn something new, it pushes some\n old stuff out of my brain. Remember when I took that home winemaking course, and I forgot how to drive?\n"
-        res += "Error, couldn't extract source, WTF?\n"
-        res += "'dpkg-source -x' failed. return code: %s.\n\n" % (e.returncode)
-        res += e.output
-        return res
+        cmd = ('dpkg-source', '--no-check', '--no-copy', '-x', dsc_filename, targetdir)
+        try:
+            daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            res = "How is education supposed to make me feel smarter? Besides, every time I learn something new, it pushes some\n old stuff out of my brain. Remember when I took that home winemaking course, and I forgot how to drive?\n"
+            res += "Error, couldn't extract source, WTF?\n"
+            res += "'dpkg-source -x' failed. return code: %s.\n\n" % (e.returncode)
+            res += e.output
+            return res
 
-    path = os.path.join(targetdir, 'debian/README.source')
-    res = ""
-    if os.path.exists(path):
-        with open(path, 'r') as fh:
-            res += formatted_text(fh.read())
-    else:
-        res += "No README.source in this package\n\n"
-
-    try:
-        shutil.rmtree(tempdir)
-    except OSError as e:
-        if e.errno != errno.EACCES:
-            res += "%s: couldn't remove tmp dir %s for source tree." % (dsc_filename, tempdir)
+        path = os.path.join(targetdir, 'debian/README.source')
+        res = ""
+        if os.path.exists(path):
+            with open(path, 'r') as fh:
+                res += formatted_text(fh.read())
+        else:
+            res += "No README.source in this package\n\n"
 
     return six.ensure_str(res)
 
