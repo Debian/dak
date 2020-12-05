@@ -39,7 +39,6 @@ import functools
 import six
 
 import daklib.config as config
-import daklib.daksubprocess
 from .dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_active_keyring_paths, \
                    get_suite_architectures, get_or_set_metadatakey, \
@@ -726,7 +725,7 @@ def gpg_get_key_addresses(fingerprint):
             cmd = ["gpg", "--no-default-keyring"]
             cmd.extend(gpg_keyring_args())
             cmd.extend(["--with-colons", "--list-keys", "--", fingerprint])
-            output = daklib.daksubprocess.check_output(cmd, stderr=devnull)
+            output = subprocess.check_output(cmd, stderr=devnull)
     except subprocess.CalledProcessError:
         pass
     else:
@@ -1009,7 +1008,7 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 
 def call_editor_for_file(path):
     editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'sensible-editor'))
-    daklib.daksubprocess.check_call([editor, path])
+    subprocess.check_call([editor, path])
 
 ################################################################################
 

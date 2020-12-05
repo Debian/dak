@@ -33,10 +33,9 @@
 
 import sys
 import os
+import subprocess
 import time
 import apt_pkg
-
-import daklib.daksubprocess
 
 from daklib import utils
 from daklib.dbconn import Archive, Component, DBConn, Suite, get_suite, get_suite_architectures
@@ -88,7 +87,7 @@ def smartstat(file):
 def smartlink(f, t):
     def call_decompressor(cmd, inpath, outpath):
         with open(inpath, "rb") as stdin, open(outpath, "wb") as stdout:
-            return daklib.daksubprocess.check_call(cmd, stdin=stdin, stdout=stdout)
+            return subprocess.check_call(cmd, stdin=stdin, stdout=stdout)
 
     if os.path.isfile(f):
         os.link(f, t)

@@ -46,7 +46,6 @@ from daklib.regexes import re_gensubrelease, re_includeinrelease_byhash, re_incl
 from daklib.dbconn import *
 from daklib.config import Config
 from daklib.dakmultiprocessing import DakProcessPool, PROC_STATUS_SUCCESS
-import daklib.daksubprocess
 
 ################################################################################
 Logger = None                  #: Our logging object
@@ -112,7 +111,7 @@ class XzFile(object):
 
     def read(self):
         with open(self.filename, 'rb') as stdin:
-            return daklib.daksubprocess.check_output(['xz', '-d'], stdin=stdin)
+            return subprocess.check_output(['xz', '-d'], stdin=stdin)
 
 
 class HashFunc(object):

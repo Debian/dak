@@ -27,13 +27,13 @@ import daklib.upload as upload
 import daklib.utils as utils
 from daklib.fstransactions import FilesystemTransaction
 from daklib.regexes import re_changelog_versions, re_bin_only_nmu
-import daklib.daksubprocess
 
 import os
 import shutil
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import object_session
 import sqlalchemy.exc
+import subprocess
 import traceback
 import six
 
@@ -749,7 +749,7 @@ class ArchiveUpload(object):
         sourcedir = os.path.join(self.directory, 'source')
         if not os.path.exists(sourcedir):
             with open('/dev/null', 'w') as devnull:
-                daklib.daksubprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=devnull)
+                subprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=devnull)
         if not os.path.isdir(sourcedir):
             raise Exception("{0} is not a directory after extracting source package".format(sourcedir))
         return sourcedir
@@ -1243,7 +1243,7 @@ class ArchiveUpload(object):
                 continue
 
             script = rule['Script']
-            retcode = daklib.daksubprocess.call([script, os.path.join(self.directory, f.filename), control['Version'], arch, os.path.join(self.directory, self.changes.filename), suite.suite_name], shell=False)
+            retcode = subprocess.call([script, os.path.join(self.directory, f.filename), control['Version'], arch, os.path.join(self.directory, self.changes.filename), suite.suite_name], shell=False)
             if retcode != 0:
                 print("W: error processing {0}.".format(f.filename))
                 remaining.append(f)

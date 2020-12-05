@@ -32,7 +32,7 @@ from .dakmultiprocessing import DakProcessPool
 from shutil import rmtree
 from tempfile import mkdtemp
 
-import daklib.daksubprocess
+import subprocess
 import os.path
 import sqlalchemy.sql as sql
 
@@ -409,7 +409,7 @@ class UnpackedSource(object):
         self.root_directory = os.path.join(temp_directory, 'root')
         command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
             dscfilename, self.root_directory)
-        daklib.daksubprocess.check_call(command)
+        subprocess.check_call(command)
 
     def get_root_directory(self):
         '''

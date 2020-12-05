@@ -29,6 +29,7 @@ Display, edit and check the release manager's transition file.
 ################################################################################
 
 import os
+import subprocess
 import sys
 import time
 import errno
@@ -40,7 +41,6 @@ from daklib.dbconn import *
 from daklib import utils
 from daklib.dak_exceptions import TransitionsError
 from daklib.regexes import re_broken_package
-import daklib.daksubprocess
 import yaml
 
 # Globals
@@ -303,7 +303,7 @@ def write_transitions_from_file(from_file):
         sys.exit(3)
 
     if Options["sudo"]:
-        daklib.daksubprocess.check_call(
+        subprocess.check_call(
             ["/usr/bin/sudo", "-u", "dak", "-H",
              "/usr/local/bin/dak", "transitions", "--import", from_file])
     else:

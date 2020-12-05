@@ -20,12 +20,12 @@
 ################################################################################
 
 from daklib.config import Config
-import daklib.daksubprocess
 
 import apt_pkg
 import glob
 import os.path
 import re
+import subprocess
 import sys
 
 
@@ -136,7 +136,7 @@ Architectures to skip: %(skip_arch_list)s""" % {
             if not os.path.exists(dest):
                 os.makedirs(dest)
         for source, dest in self.trees_to_copy:
-            daklib.daksubprocess.check_call(['cp', '-al', source, dest])
+            subprocess.check_call(['cp', '-al', source, dest])
         for source, dest in self.symlinks_to_create:
             if os.path.lexists(dest):
                 os.unlink(dest)

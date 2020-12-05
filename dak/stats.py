@@ -32,6 +32,7 @@
 ################################################################################
 
 import six
+import subprocess
 import sys
 import tempfile
 import apt_pkg
@@ -44,8 +45,6 @@ from os.path import isfile, join, splitext
 from re import findall, DOTALL, MULTILINE
 from sys import stderr
 from yaml import safe_load, safe_dump
-
-import daklib.daksubprocess
 
 from daklib import utils
 from daklib.dbconn import DBConn, get_suite_architectures, Suite, Architecture
@@ -300,7 +299,7 @@ def parse_prod(logdate):
         return
     with tempfile.NamedTemporaryFile(dir=utils.get_conf()['Dir::TempPath']) as tmpfile:
         with open(mailarchive, 'rb') as fh:
-            daklib.daksubprocess.check_call(['xzcat'], stdin=fh, stdout=tmpfile)
+            subprocess.check_call(['xzcat'], stdin=fh, stdout=tmpfile)
         for message in mbox(tmpfile.name):
             if (message['subject']
                     and message['subject'].startswith('Comments regarding')):
@@ -357,10 +356,10 @@ def new_stats(logdir, yaml):
                 # This hack is required becaue python2 does not support
                 # multi-stream files (http://bugs.python.org/issue1625)
                 with open(logfile, 'rb') as fh:
-                    data = daklib.daksubprocess.check_output(['bzcat'], stdin=fh)
+                    data = subprocess.check_output(['bzcat'], stdin=fh)
             elif fn.endswith('.xz'):
                 with open(logfile, 'rb') as fh:
-                    data = daklib.daksubprocess.check_output(['xzcat'], stdin=fh)
+                    data = subprocess.check_output(['xzcat'], stdin=fh)
             else:
                 with open(logfile, 'rb') as fd:
                     data = fd.read()

@@ -63,7 +63,6 @@ from daklib.gpg import SignedFile
 from daklib.regexes import re_version, re_spacestrip, \
                            re_contrib, re_nonfree, re_localhost, re_newlinespace, \
                            re_package, re_doc_directory, re_file_binary
-import daklib.daksubprocess
 
 ################################################################################
 
@@ -489,7 +488,7 @@ def output_deb_info(suite, filename, packagename, session=None):
 
 
 def do_command(command, escaped=False):
-    process = daklib.daksubprocess.Popen(command, stdout=subprocess.PIPE)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE)
     data = six.ensure_str(process.communicate()[0])
     if escaped:
         return escaped_text(data)
@@ -520,7 +519,7 @@ def do_lintian(filename):
 def extract_one_file_from_deb(deb_filename, match):
     with tempfile.TemporaryFile() as tmpfh:
         dpkg_cmd = ('dpkg-deb', '--fsys-tarfile', deb_filename)
-        daklib.daksubprocess.check_call(dpkg_cmd, stdout=tmpfh)
+        subprocess.check_call(dpkg_cmd, stdout=tmpfh)
 
         tmpfh.seek(0)
         with tarfile.open(fileobj=tmpfh, mode="r") as tar:
@@ -571,7 +570,7 @@ def get_readme_source(dsc_filename):
 
         cmd = ('dpkg-source', '--no-check', '--no-copy', '-x', dsc_filename, targetdir)
         try:
-            daklib.daksubprocess.check_output(cmd, stderr=subprocess.STDOUT)
+            subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             res = "How is education supposed to make me feel smarter? Besides, every time I learn something new, it pushes some\n old stuff out of my brain. Remember when I took that home winemaking course, and I forgot how to drive?\n"
             res += "Error, couldn't extract source, WTF?\n"
@@ -700,7 +699,7 @@ def main():
             if not Options["Html-Output"]:
                 # Pipe output for each argument through less
                 less_cmd = ("less", "-r", "-")
-                less_process = daklib.daksubprocess.Popen(less_cmd, stdin=subprocess.PIPE, bufsize=0)
+                less_process = subprocess.Popen(less_cmd, stdin=subprocess.PIPE, bufsize=0)
                 less_fd = less_process.stdin
                 # -R added to display raw control chars for colour
                 my_fd = less_fd
@@ -738,7 +737,7 @@ def main():
 def get_lintian_version():
     if not hasattr(get_lintian_version, '_version'):
         # eg. "Lintian v2.5.100"
-        val = daklib.daksubprocess.check_output(('lintian', '--version'))
+        val = subprocess.check_output(('lintian', '--version'))
         get_lintian_version._version = six.ensure_str(val).split(' v')[-1].strip()
 
     return get_lintian_version._version

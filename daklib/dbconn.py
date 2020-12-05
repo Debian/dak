@@ -32,7 +32,6 @@
 ################################################################################
 
 import apt_pkg
-import daklib.daksubprocess
 from daklib.gpg import GpgException
 import functools
 import inspect
@@ -412,7 +411,7 @@ class DBBinary(ORMObject):
         '''
         fullpath = self.poolfile.fullpath
         dpkg_cmd = ('dpkg-deb', '--fsys-tarfile', fullpath)
-        dpkg = daklib.daksubprocess.Popen(dpkg_cmd, stdout=subprocess.PIPE)
+        dpkg = subprocess.Popen(dpkg_cmd, stdout=subprocess.PIPE)
         tar = TarFile.open(fileobj=dpkg.stdout, mode='r|')
         for member in tar.getmembers():
             if not member.isdir():
@@ -861,7 +860,7 @@ class Keyring(object):
 
         cmd = ["gpg", "--no-default-keyring", "--keyring", keyring,
                "--with-colons", "--fingerprint", "--fingerprint"]
-        p = daklib.daksubprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         key = None
         need_fingerprint = False

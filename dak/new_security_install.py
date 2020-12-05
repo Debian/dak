@@ -41,7 +41,6 @@ from daklib import utils
 from daklib.dbconn import *
 from daklib.regexes import re_taint_free
 from daklib.config import Config
-import daklib.daksubprocess
 
 Options = None
 Logger = None
@@ -69,7 +68,7 @@ def spawn(command):
         print("[%s]" % (command))
     else:
         try:
-            daklib.daksubprocess.check_output(command.split(), stderr=subprocess.STDOUT)
+            subprocess.check_output(command.split(), stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
             utils.fubar("Invocation of '%s' failed:\n%s\n" % (command, e.output.rstrip()), e.returncode)
 
@@ -83,7 +82,7 @@ def spawn(command):
 
 def sudo(arg, fn, exit):
     if Options["Sudo"]:
-        daklib.daksubprocess.check_call(
+        subprocess.check_call(
             ["/usr/bin/sudo", "-u", "dak", "-H",
              "/usr/local/bin/dak", "new-security-install", "-" + arg])
     else:

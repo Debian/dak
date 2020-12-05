@@ -46,6 +46,7 @@ import errno
 import os
 import readline
 import stat
+import subprocess
 import sys
 import tempfile
 import contextlib
@@ -53,7 +54,6 @@ import pwd
 import apt_pkg
 import dak.examine_package
 import subprocess
-import daklib.daksubprocess
 import six
 from sqlalchemy import or_
 
@@ -357,7 +357,7 @@ def check_pkg(upload, upload_copy, session):
     missing = [(m['type'], m["package"]) for m in handler.missing_overrides(hints=missing)]
 
     less_cmd = ("less", "-r", "-")
-    less_process = daklib.daksubprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
+    less_process = subprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
     try:
         less_fd = less_process.stdin
         less_fd.write(six.ensure_binary(dak.examine_package.display_changes(suite_name, changes)))
@@ -439,7 +439,7 @@ def run_user_inspect_command(upload, upload_copy):
             changes=changes,
             )
 
-    daklib.daksubprocess.check_call(shell_command, shell=True)
+    subprocess.check_call(shell_command, shell=True)
 
 ################################################################################
 

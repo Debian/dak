@@ -24,8 +24,7 @@ import datetime
 import fcntl
 import os
 import select
-
-import daklib.daksubprocess
+import subprocess
 
 try:
     _MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -316,6 +315,6 @@ def sign(infile, outfile, keyids=[], inline=False, pubring=None, secring=None, h
 
     args.append('--clearsign' if inline else '--detach-sign')
 
-    daklib.daksubprocess.check_call(args, stdin=infile, stdout=outfile)
+    subprocess.check_call(args, stdin=infile, stdout=outfile)
 
 # vim: set sw=4 et:

@@ -1,11 +1,11 @@
 import collections
 import os
+import subprocess
 import sys
 import tempfile
 
 import apt_pkg
 
-from daklib import daksubprocess
 from daklib.dakapt import DakHashes
 
 HASH_FIELDS = [
@@ -33,7 +33,7 @@ def open_decompressed(path, named_temp_file=False):
         fh = tempfile.NamedTemporaryFile("w+") if named_temp_file \
             else tempfile.TemporaryFile("w+")
         with open(inpath) as rfh:
-            daksubprocess.check_call(
+            subprocess.check_call(
                 cmd,
                 stdin=rfh,
                 stdout=fh,
@@ -70,7 +70,7 @@ def _merge_pdiffs(patch_a, patch_b, resulting_patch_without_extension):
     """
     with open_decompressed(patch_a, named_temp_file=True) as fd_a, \
             open_decompressed(patch_b, named_temp_file=True) as fd_b:
-        daksubprocess.check_call(
+        subprocess.check_call(
             '/usr/lib/apt/methods/rred %s %s | gzip -9n > %s' % (fd_a.name, fd_b.name,
                                                                  resulting_patch_without_extension + ".gz"),
             shell=True,
@@ -161,7 +161,7 @@ class PDiffIndex(object):
             oldf.seek(0)
             patch_path = os.path.join(self.patches_dir, patch_name)
             with open("{}.gz".format(patch_path), "wb") as fh:
-                daksubprocess.check_call(
+                subprocess.check_call(
                     "diff --ed - {} | gzip --rsyncable  --no-name -c -9".format(new_file_uncompressed),
                     shell=True,
                     stdin=oldf,

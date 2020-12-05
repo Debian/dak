@@ -24,7 +24,6 @@ Please read the documentation for the L{Check} class for the interface.
 """
 
 from daklib.config import Config
-import daklib.daksubprocess
 from daklib.dbconn import *
 import daklib.dbconn as dbconn
 from daklib.regexes import *
@@ -884,7 +883,7 @@ class LintianCheck(Check):
             if user is not None:
                 cmd.extend(['sudo', '-H', '-u', user])
             cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temptagfile.name, changespath])
-            process = daklib.daksubprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             output_raw = process.communicate()[0]
             output = six.ensure_text(output_raw)
             result = process.returncode
