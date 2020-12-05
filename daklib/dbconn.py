@@ -35,6 +35,7 @@ import apt_pkg
 import daklib.daksubprocess
 from daklib.gpg import GpgException
 import functools
+import inspect
 import os
 from os.path import normpath
 import re
@@ -44,8 +45,6 @@ import warnings
 
 from debian.debfile import Deb822
 from tarfile import TarFile
-
-from inspect import getargspec
 
 import sqlalchemy
 from sqlalchemy import create_engine, Table, desc
@@ -117,7 +116,7 @@ def session_wrapper(fn):
         session = kwargs.get('session')
 
         if session is None:
-            if len(args) <= len(getargspec(fn)[0]) - 1:
+            if len(args) < len(inspect.getfullargspec(fn).args):
                 # No session specified as last argument or in kwargs
                 private_transaction = True
                 session = kwargs['session'] = DBConn().session()
