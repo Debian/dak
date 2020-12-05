@@ -57,7 +57,7 @@ class ParseDscTestCase(ParseChangesTestCase):
 
     def test_8(self):
         # No armored contents
-        with self.assertRaisesRegexp(ParseChangesError, "Empty changes"):
+        with self.assertRaisesRegex(ParseChangesError, "Empty changes"):
             self.assertParse('dsc/8.dsc', -1, 1)
 
     def test_9(self):
