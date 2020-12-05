@@ -41,6 +41,7 @@ import apt_pkg
 import subprocess
 from sqlalchemy.orm import object_session
 
+import daklib.gpg
 from daklib import utils, daklog
 from daklib.regexes import re_gensubrelease, re_includeinrelease_byhash, re_includeinrelease_plain
 from daklib.dbconn import *

@@ -24,7 +24,7 @@ import daklib.checks as checks
 from daklib.config import Config
 from daklib.externalsignature import check_upload_for_external_signature_request
 import daklib.upload as upload
-import daklib.utils as utils
+import daklib.utils
 from daklib.fstransactions import FilesystemTransaction
 from daklib.regexes import re_changelog_versions, re_bin_only_nmu
 
@@ -72,7 +72,7 @@ class ArchiveTransaction(object):
         @rtype:  L{daklib.dbconn.PoolFile}
         @return: database entry for the file
         """
-        poolname = os.path.join(utils.poolify(source_name), hashed_file.filename)
+        poolname = os.path.join(daklib.utils.poolify(source_name), hashed_file.filename)
         try:
             poolfile = self.session.query(PoolFile).filter_by(filename=poolname).one()
             if check_hashes and (poolfile.filesize != hashed_file.size
@@ -94,7 +94,7 @@ class ArchiveTransaction(object):
         """
         session = self.session
 
-        poolname = os.path.join(utils.poolify(source_name), hashed_file.filename)
+        poolname = os.path.join(daklib.utils.poolify(source_name), hashed_file.filename)
         try:
             poolfile = self.get_file(hashed_file, source_name)
         except KeyError:
@@ -683,8 +683,8 @@ class ArchiveUpload(object):
         session = self.transaction.session
 
         group = cnf.get('Dinstall::UnprivGroup') or None
-        self.directory = utils.temp_dirname(parent=cnf.get('Dir::TempPath'),
-                                            mode=0o2750, group=group)
+        self.directory = daklib.utils.temp_dirname(parent=cnf.get('Dir::TempPath'),
+                                                   mode=0o2750, group=group)
         with FilesystemTransaction() as fs:
             src = os.path.join(self.original_directory, self.original_changes.filename)
             dst = os.path.join(self.directory, self.original_changes.filename)
@@ -820,7 +820,7 @@ class ArchiveUpload(object):
         # without a debug suite (which are then considered as NEW).
         binaries = self.changes.binaries
         for b in binaries:
-            if utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
+            if daklib.utils.is_in_debug_section(b.control) and suite.debug_suite is not None:
                 continue
             override = self._binary_override(overridesuite, b)
             if override is None:
@@ -1100,7 +1100,7 @@ class ArchiveUpload(object):
         db_binaries = []
         for binary in sorted(self.changes.binaries, key=lambda x: x.name):
             copy_to_suite = suite
-            if utils.is_in_debug_section(binary.control) and suite.debug_suite is not None:
+            if daklib.utils.is_in_debug_section(binary.control) and suite.debug_suite is not None:
                 copy_to_suite = suite.debug_suite
 
             component = binary_component_func(binary)
