@@ -85,22 +85,6 @@ copy_coverage_data() {
     fi
 }
 
-if [ "x$1" = "x--python3" ]; then
-    DAK_PYTHON3=y
-    PYTEST=py.test-3
-    COVERAGE_CMD=python3-coverage
-    # always run coverage when running python3
-    RUN_COVERAGE=y
-    PYTEST_COV_OPTIONS=" --cov-branch --cov --cov-report= "
-    shift
-else
-    DAK_PYTHON3=
-    PYTEST=py.test
-    COVERAGE_CMD=python-coverage
-fi
-
-export DAK_PYTHON3
-
 set -eu
 
 if [ ! -f dak/dak.py ]; then
@@ -139,13 +123,7 @@ python_deps=(
     python3-yaml
 )
 
-if [ "x$DAK_PYTHON3" != "x" ]; then
-    run_apt-get install -y --no-install-recommends \
-        ${python_deps[@]}
-else
-    run_apt-get install -y --no-install-recommends \
-        ${python_deps[@]/#python3/python}
-fi
+run_apt-get install -y --no-install-recommends ${python_deps[@]}
 
 section_end install_dep
 
@@ -158,7 +136,7 @@ section_start unit_tests "Unit Tests"
 
 if run_this_test; then
     echo `date` running unit tests | tee -a $LOGFILE
-    $PYTEST -v ${PYTEST_COV_OPTIONS} daklib tests
+    py.test-3 -v ${PYTEST_COV_OPTIONS} daklib tests
     copy_coverage_data "unit_tests"
     echo `date` unit tests done | tee -a $LOGFILE
 else
@@ -203,11 +181,11 @@ section_end integration_tests
 # reflect the true coverage rating.
 if [ "$RUN_COVERAGE" = "y" ] && [ "${CI}" = "false" ]; then
     section_start coverage "Coverage Report"
-    ${COVERAGE_CMD} combine --append
-    ${COVERAGE_CMD} report -m
+    python3-coverage combine --append
+    python3-coverage report -m
     echo
-    ${COVERAGE_CMD} html -d ${BASEDIR}/coverage
-    ${COVERAGE_CMD} annotate -d ${BASEDIR}/coverage/annotated
+    python3-coverage html -d ${BASEDIR}/coverage
+    python3-coverage annotate -d ${BASEDIR}/coverage/annotated
     section_end coverage
 fi
 echo `date` all done | tee -a $LOGFILE

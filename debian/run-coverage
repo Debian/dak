@@ -1,11 +1,5 @@
 #! /bin/bash
 
-if [ "x$1" = "x--python3" ]; then
-    COVERAGE_CMD=python3-coverage
-else
-    COVERAGE_CMD=python-coverage
-fi
-
 TESTS="integration-tests/tests/[0-9]*[^~] \
     run-dbtests unit_tests"
 
@@ -22,12 +16,12 @@ do
 done
 
 apt-get update
-apt-get install -y ${COVERAGE_CMD}
+apt-get install -y python3-coverage
 
-${COVERAGE_CMD} combine --append
-${COVERAGE_CMD} report -m
+python3-coverage combine --append
+python3-coverage report -m
 echo
-${COVERAGE_CMD} html -d coverage
+python3-coverage html -d coverage
 
 mkdir -p logs
 cp output/log* logs/

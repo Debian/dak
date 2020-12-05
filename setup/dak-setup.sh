@@ -40,12 +40,7 @@ dak-setup() {
     SYS_CMD=""
     USER_CMD=""
     if [ "${RUN_COVERAGE:-n}" = "y" ]; then
-      if [ "${DAK_PYTHON3:-n}" = "y" ]; then
-        COVERAGE_CMD=python3-coverage
-      else
-        COVERAGE_CMD=python-coverage
-      fi
-      PYTHON_COVERAGE="${COVERAGE_CMD} run --rcfile ${DAK_ROOT}/.coveragerc --parallel-mode"
+      PYTHON_COVERAGE="python3-coverage run --rcfile ${DAK_ROOT}/.coveragerc --parallel-mode"
     else
       PYTHON_COVERAGE=
     fi
