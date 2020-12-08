@@ -19,7 +19,7 @@ HASH_FIELDS = [
     ('X-Unmerged-SHA256-History', 0, 2, "", False),
     ('X-Unmerged-SHA1-Patches', 1, 1, "", False),
     ('X-Unmerged-SHA256-Patches', 1, 2, "", False),
-    ('X-Unmerged-SHA1-Download', 2, 2, ".gz", False),
+    ('X-Unmerged-SHA1-Download', 2, 1, ".gz", False),
     ('X-Unmerged-SHA256-Download', 2, 2, ".gz", False),
 ]
 
