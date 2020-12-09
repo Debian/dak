@@ -934,9 +934,9 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
 ################################################################################
 
 
-def deb_extract_control(fh):
+def deb_extract_control(path):
     """extract DEBIAN/control from a binary package"""
-    return apt_inst.DebFile(fh).control.extractdata("control")
+    return apt_inst.DebFile(path).control.extractdata("control")
 
 ################################################################################
 

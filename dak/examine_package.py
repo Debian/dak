@@ -256,13 +256,12 @@ def read_control(filename):
     maintainer = ''
     arch = ''
 
-    with open(filename) as deb_file:
-        try:
-            extracts = utils.deb_extract_control(deb_file)
-            control = apt_pkg.TagSection(extracts)
-        except:
-            print(formatted_text("can't parse control info"))
-            raise
+    try:
+        extracts = utils.deb_extract_control(filename)
+        control = apt_pkg.TagSection(extracts)
+    except:
+        print(formatted_text("can't parse control info"))
+        raise
 
     control_keys = list(control.keys())
 

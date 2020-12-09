@@ -431,8 +431,7 @@ class DBBinary(ORMObject):
         '''
         from . import utils
         fullpath = self.poolfile.fullpath
-        with open(fullpath, 'r') as deb_file:
-            return utils.deb_extract_control(deb_file)
+        return utils.deb_extract_control(fullpath)
 
     def read_control_fields(self):
         '''
