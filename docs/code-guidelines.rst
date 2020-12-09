@@ -7,8 +7,8 @@ rejection, a few guidelines and expectations need to be established.
 For anything that is not a trivial fix, git trees are strongly preferred over
 simple patch files. These are much easier to import, review, and so on.
 
-Please keep different features in their own branch and keeep the repository in
-an acessible location until merged.
+Please keep different features in their own branch and keep the repository in
+an accessible location until merged.
 
 Code related:
 
