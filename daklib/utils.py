@@ -458,7 +458,7 @@ def move(src, dest, overwrite=0, perms=0o664):
         umask = os.umask(00000)
         os.makedirs(dest_dir, 0o2775)
         os.umask(umask)
-    #print "Moving %s to %s..." % (src, dest)
+    # print "Moving %s to %s..." % (src, dest)
     if os.path.exists(dest) and os.path.isdir(dest):
         dest += '/' + os.path.basename(src)
     # Don't overwrite unless forced to

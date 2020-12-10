@@ -326,4 +326,4 @@ class DBDakTestCase(DakTestCase):
                 self.session.delete(object_)
         self.session.commit()
         # usually there is no need to drop all tables here
-        #self.metadata.drop_all()
+        # self.metadata.drop_all()

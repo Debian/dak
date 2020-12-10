@@ -262,7 +262,6 @@ def main():
         pool.apply_async(do_pkg, [upload_id], callback=result_callback)
     pool.close()
 
-    #p.wait(timeout=600)
     pool.join()
 
     for htmlfile in htmlfiles_to_process:

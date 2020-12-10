@@ -92,7 +92,6 @@ def import_sources(base, sources, transaction, target_suite, component, target_s
             print("Importing {0}={1}".format(entry['Package'], entry['Version']))
             daklib.import_repository.import_source_to_suite(base, entry, transaction, target_suite, component)
             n += 1
-            #transaction.commit()
     return n
 
 
@@ -125,7 +124,6 @@ def import_packages(base, packages, transaction, target_suite, component, archit
             # Import binary:
             daklib.import_repository.import_package_to_suite(base, entry, transaction, target_suite, component)
             n += 1
-            #transaction.commit()
     return n
 
 

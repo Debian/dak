@@ -301,7 +301,7 @@ def read_control(filename):
         maintainer = control["Maintainer"]
         localhost = re_localhost.search(maintainer)
         if localhost:
-            #highlight bad email
+            # highlight bad email
             maintainer = colour_output(maintainer, 'maintainer')
         else:
             maintainer = escape_if_needed(maintainer)

@@ -240,20 +240,20 @@ def main():
         # See if there are Translations which might need a new pdiff
         cwd = os.getcwd()
         for component in components:
-            #print "DEBUG: Working on %s" % (component)
+            # print "DEBUG: Working on %s" % (component)
             workpath = os.path.join(tree, component, "i18n")
             if os.path.isdir(workpath):
                 os.chdir(workpath)
                 for dirpath, dirnames, filenames in os.walk(".", followlinks=True, topdown=True):
                     for entry in filenames:
                         if not re_includeinpdiff.match(entry):
-                            #print "EXCLUDING %s" % (entry)
+                            # print "EXCLUDING %s" % (entry)
                             continue
                         (fname, fext) = os.path.splitext(entry)
                         processfile = os.path.join(workpath, fname)
-                        #print "Working: %s" % (processfile)
+                        # print "Working: %s" % (processfile)
                         storename = "%s/%s_%s_%s" % (Options["TempDir"], suite, component, fname)
-                        #print "Storefile: %s" % (storename)
+                        # print "Storefile: %s" % (storename)
                         genchanges(Options, processfile + ".diff", storename, processfile, maxdiffs, merged_pdiffs)
         os.chdir(cwd)
 

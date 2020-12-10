@@ -61,7 +61,7 @@ def _track_files_per_archive(cnf, c):
 
     # NOTE: The location table would need these changes, but we drop it later
     #       anyway.
-    #c.execute("""UPDATE location l SET path = path || c.name || '/'
+    # c.execute("""UPDATE location l SET path = path || c.name || '/'
     #  FROM component c
     #  WHERE l.component = c.id
     #    AND l.path NOT LIKE '%/' || c.name || '/'""")

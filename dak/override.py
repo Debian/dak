@@ -203,7 +203,7 @@ def main():
 
     if "Done" not in Options:
         pass
-        #utils.warn("No bugs to close have been specified. Noone will know you have done this.")
+        # utils.warn("No bugs to close have been specified. Noone will know you have done this.")
     else:
         print("I: Will close bug(s): %s" % (Options["Done"]))
 
