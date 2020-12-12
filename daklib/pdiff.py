@@ -106,14 +106,15 @@ def _prune_history(order, history, maximum):
 
 
 def _read_hashes(history, history_order, ind, hashind, lines):
+    current_order = []
     for line in lines:
         parts = line.split()
         fname = parts[2]
         if fname.endswith('.gz'):
             fname = fname[:-3]
+        current_order.append(fname)
         if fname not in history:
             history[fname] = [None, None, None]
-            history_order.append(fname)
         if not history[fname][ind]:
             history[fname][ind] = PDiffHashes(int(parts[1]), None, None)
         if hashind == 1:
@@ -126,6 +127,34 @@ def _read_hashes(history, history_order, ind, hashind, lines):
                                               history[fname][ind].sha1,
                                               parts[0],
                                               )
+
+    # Common-case: Either this is the first sequence we read and we
+    # simply adopt that
+    if not history_order:
+        return current_order
+    # Common-case: The current history perfectly matches the existing, so
+    # we just stop here.
+    if current_order == history_order:
+        return history_order
+
+    # Special-case, the histories are not aligned.  This "should not happen"
+    # but has done so in the past due to bugs.  Depending on which field is
+    # out of sync, dak would either self heal or be stuff forever.  We
+    # realign the history to ensure we always end with "self-heal".
+    #
+    # Typically, the patches are aligned from the end as we always add a
+    # patch in the end of the series.
+    patches_from_the_end = 0
+    for p1, p2 in zip(reversed(current_order), reversed(history_order)):
+        if p1 == p2:
+            patches_from_the_end += 1
+        else:
+            break
+
+    if not patches_from_the_end:
+        return None
+
+    return current_order[-patches_from_the_end:]
 
 
 class PDiffIndex(object):
@@ -323,7 +352,16 @@ class PDiffIndex(object):
                         else:
                             history = self._unmerged_history
                             history_order = self._unmerged_history_order
-                        _read_hashes(history, history_order, ind, hashind, value.splitlines())
+
+                        if history_order is None:
+                            # History is already misaligned and we cannot find a common restore point.
+                            continue
+
+                        new_order = _read_hashes(history, history_order, ind, hashind, value.splitlines())
+                        if primary_history:
+                            self._history_order = new_order
+                        else:
+                            self._unmerged_history_order = new_order
                         continue
 
                     if field in ("Canonical-Name", "Canonical-Path"):
@@ -346,6 +384,12 @@ class PDiffIndex(object):
 
                     if field == "SHA256-Current":
                         self.filesizehashes = PDiffHashes(self.filesizehashes.size, self.filesizehashes.sha1, l[0])
+
+            # Ensure that the order lists are defined again.
+            if self._history_order is None:
+                self._history_order = []
+            if self._unmerged_history_order is None:
+                self._unmerged_history_order = []
 
             if not self.has_merged_pdiffs:
                 # When X-Patch-Precedence != merged, then the two histories are the same.
