@@ -62,9 +62,27 @@ def reload_and_compare_pdiff_indices(index):
            [reloaded_index._history[x][2].size for x in reloaded_index._history_order]
     assert [index._history[x][2].sha256 for x in index._history_order] == \
            [reloaded_index._history[x][2].sha256 for x in reloaded_index._history_order]
+
+    if index.wants_merged_pdiffs:
+        assert [index._unmerged_history[x][0] for x in index._unmerged_history_order] == \
+               [reloaded_index._unmerged_history[x][0] for x in reloaded_index._unmerged_history_order]
+        assert [index._unmerged_history[x][2].size for x in index._unmerged_history_order] == \
+               [reloaded_index._unmerged_history[x][2].size for x in reloaded_index._unmerged_history_order]
+        assert [index._unmerged_history[x][2].sha256 for x in index._unmerged_history_order] == \
+               [reloaded_index._unmerged_history[x][2].sha256 for x in reloaded_index._unmerged_history_order]
+        assert len(index._history_order) == len(reloaded_index._unmerged_history_order)
+
+        for unmerged_patch in index._unmerged_history_order:
+            assert unmerged_patch.startswith('patch')
+
+        for merged_patch in index._history_order:
+            assert merged_patch.startswith('T-patch')
+
     assert index.filesizehashes == reloaded_index.filesizehashes
     assert index.can_path == reloaded_index.can_path
     assert index.has_merged_pdiffs == reloaded_index.has_merged_pdiffs
+
+    return reloaded_index
 
 
 @contextlib.contextmanager
@@ -284,6 +302,8 @@ class TestPDiffs(DakTestCase):
                           )
 
             index.update_index()
+            # Swap to the reloaded index.  Assuming everything works as intended
+            # this should not matter.
             reload_and_compare_pdiff_indices(index)
 
             data[0] = 'Version 5'
