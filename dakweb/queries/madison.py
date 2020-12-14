@@ -52,8 +52,6 @@ def madison():
         kwargs['suites'] = suite.split(",")
     if 'S' in r.query:
         kwargs['source_and_binary'] = True
-    #if 'r' in r.query:
-    #    kwargs['regex'] = True
     format = r.query.get('f', None)
     if format is not None:
         kwargs['format'] = 'python'

@@ -75,25 +75,11 @@ def do_list(output_file, suite, component, otype, session):
     # takes 1:45, the 'dumb' tuple-based one takes 0:16 - mhy
 
     if otype.overridetype == "dsc":
-        #q = session.query(Override).filter_by(suite_id = suite.suite_id)
-        #q = q.filter_by(component_id = component.component_id)
-        #q = q.filter_by(overridetype_id = otype.overridetype_id)
-        #q = q.join(Section).order_by(Section.section, Override.package)
-        #for o in q.all():
-        #    dat = (o.package, o.section.section, o.maintainer)
-        #    output_file.write(utils.result_join(dat) + '\n')
         q = session.execute("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite.suite_id, component.component_id, otype.overridetype_id))
         for i in q.fetchall():
             output_file.write(utils.result_join(i) + '\n')
 
     else:
-        #q = session.query(Override).filter_by(suite_id = suite.suite_id)
-        #q = q.filter_by(component_id = component.component_id)
-        #q = q.filter_by(overridetype_id = otype.overridetype_id)
-        #q = q.join(Priority).join(Section).order_by(Section.section, Priority.level, Override.package)
-        #for o in q.all():
-        #    dat = (o.package, o.priority.priority, o.section.section, o.maintainer)
-        #    output_file.write(utils.result_join(dat) + '\n')
         q = session.execute("SELECT o.package, p.priority, s.section, o.maintainer FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite.suite_id, component.component_id, otype.overridetype_id))
         for i in q.fetchall():
             output_file.write(utils.result_join(i) + '\n')

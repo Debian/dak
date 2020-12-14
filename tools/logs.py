@@ -23,8 +23,6 @@ graphs = {"dinstall1": {"keystolist": ["pg_dump1", "i18n 1", "accepted", "domina
                         "showothers": False},
           "totals": {"keystolist": ["apt-ftparchive", "apt-ftparchive cleanup"], "showothers": True}}
 
-#'mirror hardlinks', 'apt-ftparchive', 'logremove', 'startup', 'import-keyring', 'release files', 'accepted', 'stats', 'o-p-u-new', 'i18n 2', 'locked part finished', 'i18n 1', 'cruft', 'pdiff', 'init', 'cleanup', , 'p-u-new', 'run-parts', 'compress', 'scripts', 'expire_dumps', 'removed', 'make-suite-file-list', 'pg_dump1', 'pg_dump2', 'overrides', 'reports', 'merkel projectb push', 'buildd', 'apt-ftparchive cleanup', 'w-b'
-
 wantkeys = set()
 for tmp in graphs.values():
     wantkeys |= set(tmp["keystolist"])

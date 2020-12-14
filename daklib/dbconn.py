@@ -2068,7 +2068,6 @@ class VersionCheck(ORMObject):
         pass
 
     def properties(self):
-        #return ['suite_id', 'check', 'reference_id']
         return ['check']
 
 

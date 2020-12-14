@@ -501,9 +501,6 @@ def do_new(upload, upload_copy, handler, session):
         print("   Date:       {0}".format(upload.changes.date))
         print()
 
-        #if len(byhand) == 0 and len(missing) == 0:
-        #    break
-
         if missing:
             print("NEW\n")
 
@@ -682,12 +679,6 @@ def do_pkg(upload, session):
 
     cnf = Config()
     group = cnf.get('Dinstall::UnprivGroup') or None
-
-    #bcc = "X-DAK: dak process-new"
-    #if "Dinstall::Bcc" in cnf:
-    #    u.Subst["__BCC__"] = bcc + "\nBcc: %s" % (cnf["Dinstall::Bcc"])
-    #else:
-    #    u.Subst["__BCC__"] = bcc
 
     try:
         with lock_package(upload.changes.source), \

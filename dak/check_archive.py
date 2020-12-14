@@ -419,7 +419,6 @@ def validate_sources(suite, component):
                             filename = os.path.normpath(filename)
                             src = utils.clean_symlink(pool_filename, filename, Cnf["Dir::Root"])
                             print("Symlinking: %s -> %s" % (filename, src))
-                            #os.symlink(src, filename)
 
 ########################################
 
