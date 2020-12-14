@@ -33,12 +33,12 @@ def test_Architecture(session):
 def test_Architecture___eq__():
     obj = Architecture('arch')
 
-    assert obj == 'arch'
-    assert 'arch' == obj
+    assert str(obj) == 'arch'
+    assert 'arch' == str(obj)
 
 
 def test_Architecture___ne__():
     obj = Architecture('arch')
 
-    assert obj != 'zzzz'
-    assert 'zzzz' != obj
+    assert str(obj) != 'zzzz'
+    assert 'zzzz' != str(obj)
