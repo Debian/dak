@@ -217,6 +217,12 @@ class TestPackageList(DakTestCase):
             else:
                 self.assertIn(entry.name, not_built_in_default_profile)
 
+        suite_amd64 = FakeSuite('amd64')
+        ps_only_default = pl.packages_for_suite(suite_amd64)
+        ps_all = pl.packages_for_suite(suite_amd64, only_default_profile=False)
+        self.assertSetEqual({p.name for p in ps_only_default}, built_in_default_profile)
+        self.assertSetEqual({p.name for p in ps_all}, built_in_default_profile | not_built_in_default_profile)
+
 
 if __name__ == '__main__':
     unittest.main()

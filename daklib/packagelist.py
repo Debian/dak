@@ -135,9 +135,11 @@ class PackageList(object):
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
             self.package_list.append(entry)
 
-    def packages_for_suite(self, suite):
+    def packages_for_suite(self, suite, only_default_profile=True):
         packages = []
         for entry in self.package_list:
+            if only_default_profile and not entry.built_in_default_profile():
+                continue
             built = entry.built_in_suite(suite)
             if built or built is None:
                 packages.append(entry)
