@@ -65,6 +65,20 @@ source_fallback = {
     'Binary': 'libdune-common-dev\n',
 }
 
+source_profiles = {
+    'Package-List':
+    '\n pkg-a deb misc optional arch=any profile=!stage1'
+    '\n pkg-b deb misc optional arch=any profile=!stage1,!stage2'
+    '\n pkg-c deb misc optional arch=any profile=stage1'
+    '\n pkg-d deb misc optional arch=any profile=stage1,stage2'
+    '\n pkg-e deb misc optional arch=any profile=stage1+stage2'
+    '\n pkg-f deb misc optional arch=any profile=!stage1+!stage2'
+    '\n pkg-g deb misc optional arch=any profile=!stage1+stage2'
+    '\n pkg-h deb misc optional arch=any profile=stage1+!stage2'
+    '\n',
+    'Binary': 'pkg-a, pkg-b, pkg-c, pkg-d, pkg-e, pkg-f, pkg-g, pkg-h\n',
+}
+
 
 class TestPackageList(DakTestCase):
     def testArchAll(self):
@@ -188,6 +202,20 @@ class TestPackageList(DakTestCase):
         suite_amd64 = FakeSuite('amd64')
         p_amd64 = pl.packages_for_suite(suite_amd64)
         self.assertEqual(len(p_amd64), 1)
+
+    def testProfiles(self):
+        pl = PackageList(source_profiles)
+
+        self.assertEqual(len(pl.package_list), 8)
+
+        built_in_default_profile = {'pkg-a', 'pkg-b', 'pkg-f', 'pkg-g', 'pkg-h'}
+        not_built_in_default_profile = {'pkg-c', 'pkg-d', 'pkg-e'}
+
+        for entry in pl.package_list:
+            if entry.built_in_default_profile():
+                self.assertIn(entry.name, built_in_default_profile)
+            else:
+                self.assertIn(entry.name, not_built_in_default_profile)
 
 
 if __name__ == '__main__':

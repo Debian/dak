@@ -64,6 +64,16 @@ class PackageListEntry(object):
                 built = None
         return built
 
+    def built_in_default_profile(self):
+        # See man:dsc(5) and https://bugs.debian.org/913965#77
+        profiles_and = self.other.get('profile')
+        if profiles_and is None:
+            return True
+        return all(
+            any(profile.startswith("!") for profile in profiles_or.split("+"))
+            for profiles_or in profiles_and.split(",")
+        )
+
 
 class PackageList(object):
     def __init__(self, source):
