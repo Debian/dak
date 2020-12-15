@@ -32,12 +32,12 @@ def test_Section(session):
 def test_Section___eq__():
     obj = Section('section')
 
-    assert str(obj) == 'section'
-    assert 'section' == str(obj)
+    assert obj == 'section'
+    assert 'section' == obj
 
 
 def test_Section___ne__():
     obj = Section('section')
 
-    assert str(obj) != 'zzzz'
-    assert 'zzzz' != str(obj)
+    assert obj != 'zzzz'
+    assert 'zzzz' != obj
