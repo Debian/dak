@@ -33,12 +33,16 @@ def test_Architecture(session):
 def test_Architecture___eq__():
     obj = Architecture('arch')
 
-    assert obj == 'arch'
-    assert 'arch' == obj
+    with pytest.warns(DeprecationWarning):
+        assert obj == 'arch'
+    with pytest.warns(DeprecationWarning):
+        assert 'arch' == obj
 
 
 def test_Architecture___ne__():
     obj = Architecture('arch')
 
-    assert obj != 'zzzz'
-    assert 'zzzz' != obj
+    with pytest.warns(DeprecationWarning):
+        assert obj != 'zzzz'
+    with pytest.warns(DeprecationWarning):
+        assert 'zzzz' != obj

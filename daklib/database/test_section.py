@@ -32,12 +32,16 @@ def test_Section(session):
 def test_Section___eq__():
     obj = Section('section')
 
-    assert obj == 'section'
-    assert 'section' == obj
+    with pytest.warns(DeprecationWarning):
+        assert obj == 'section'
+    with pytest.warns(DeprecationWarning):
+        assert 'section' == obj
 
 
 def test_Section___ne__():
     obj = Section('section')
 
-    assert obj != 'zzzz'
-    assert 'zzzz' != obj
+    with pytest.warns(DeprecationWarning):
+        assert obj != 'zzzz'
+    with pytest.warns(DeprecationWarning):
+        assert 'zzzz' != obj
