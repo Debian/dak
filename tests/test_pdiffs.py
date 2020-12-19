@@ -2,10 +2,14 @@ import contextlib
 import os
 import shutil
 import tempfile
-
-from base_test import DakTestCase
+import unittest
 
 from daklib.pdiff import PDiffIndex
+
+try:
+    from unittest import IsolatedAsyncioTestCase
+except ImportError:
+    IsolatedAsyncioTestCase = None
 
 
 def generate_orig(content_dir, initial_content):
@@ -17,7 +21,7 @@ def generate_orig(content_dir, initial_content):
             fd.write(initial_content)
 
 
-def generate_patch(index, patch_name, content_dir, new_content):
+async def generate_patch(index, patch_name, content_dir, new_content):
     new_file = os.path.join(content_dir, "data-current")
     orig_file = os.path.join(content_dir, "data-previous")
 
@@ -30,7 +34,7 @@ def generate_patch(index, patch_name, content_dir, new_content):
 
     generate_orig(content_dir, new_content)
 
-    index.generate_and_add_patch_file(orig_file, new_file, patch_name)
+    await index.generate_and_add_patch_file(orig_file, new_file, patch_name)
 
 
 def prune_history(index, known_patch_count_before=None, known_patch_count_after=None, detected_obsolete_patches=None):
@@ -195,360 +199,364 @@ SHA256-Download:
  acf2997c8ddc7e9e935154ee9807f8777d25c81fa3eb35c53ec0d94d8fb0f21d     271 T-2020-12-12-0800.11-F-2020-12-12-0800.11.gz
 """
 
-
-class TestPDiffs(DakTestCase):
-
-    def test_corrupt_pdiff_index(self):
-        with tempdir() as tmpdir:
-            pdiff_dir = os.path.join(tmpdir, "pdiffs")
-            index_file = os.path.join(pdiff_dir, 'Index')
-            os.mkdir(pdiff_dir)
-            with open(index_file, 'w') as fd:
-                fd.write(MISALIGNED_HISTORY_RESTORABLE)
-
-            index = PDiffIndex(pdiff_dir, 3, False)
-            assert index._history_order == [
-                "T-2020-12-12-0800.11-F-2020-11-26-0822.42",
-                "T-2020-12-12-0800.11-F-2020-12-12-0800.11",
-            ]
-            assert index._unmerged_history_order == ["2020-12-12-0800.11"]
-
-            with open(index_file, 'w') as fd:
-                fd.write(MISALIGNED_HISTORY_BROKEN)
-
-            index = PDiffIndex(pdiff_dir, 3, False)
-            assert index._history_order == []
-            assert index._unmerged_history_order == []
-
-    def test_pdiff_index_unmerged(self):
-        with tempdir() as tmpdir:
-            pdiff_dir = os.path.join(tmpdir, "pdiffs")
-            index_file = os.path.join(pdiff_dir, 'Index')
-            index = PDiffIndex(pdiff_dir, 3, False)
-
-            data = [
-                'Version 0',
-                'Some',
-                'data',
-                'across',
-                '6',
-                'lines',
-            ]
-
-            # The pdiff system assumes we start from a non-empty file
-            generate_orig(tmpdir, data)
-            data[0] = 'Version 1'
-
-            # Non-existing directory => empty history
-            prune_history(index,
-                          known_patch_count_before=0,
-                          known_patch_count_after=0,
-                          detected_obsolete_patches=[]
-                          )
-            # Update should be possible but do nothing
-            # (dak generate-index-diffs relies on this behaviour)
-            index.update_index()
-            # It should not create the directory
-            assert not os.path.isdir(pdiff_dir)
-
-            # Adding a patch should "just work(tm)"
-            generate_patch(index, "patch-1", tmpdir, data)
-            assert os.path.isdir(pdiff_dir)
-            assert index.filesizehashes is not None
-            assert index.filesizehashes.size > 0
-            prune_history(index,
-                          known_patch_count_before=1,
-                          known_patch_count_after=1,
-                          detected_obsolete_patches=[]
-                          )
-            assert not os.path.isfile(index_file)
-            index.update_index()
-            assert os.path.isfile(index_file)
-
-            reload_and_compare_pdiff_indices(index)
-
-            index.can_path = "/some/where"
-
-            # We should detect obsolete files that are not part of the
-            # history.
-            with open(os.path.join(pdiff_dir, "random-patch"), "w"):
-                pass
-
-            prune_history(index,
-                          known_patch_count_before=1,
-                          known_patch_count_after=1,
-                          detected_obsolete_patches=['random-patch']
-                          )
-
-            delete_obsolete_patches(index)
-
-            data[0] = 'Version 2'
-            data[3] = 'over'
-            generate_patch(index, "patch-2", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=2,
-                          known_patch_count_after=2,
-                          detected_obsolete_patches=[]
-                          )
-
-            data[2] = 'Text'
-
-            generate_patch(index, "patch-3", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=3,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=[]
-                          )
-
-            data[0] = 'Version 3'
-
-            generate_patch(index, "patch-4", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=['patch-1.gz']
-                          )
-
-            data[0] = 'Version 4'
-            data[-1] = 'lines.'
-
-            generate_patch(index, "patch-5", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=['patch-1.gz', 'patch-2.gz']
-                          )
-
-            index.update_index()
-            reload_and_compare_pdiff_indices(index)
-
-            delete_obsolete_patches(index)
-
-    def test_pdiff_index_merged(self):
-        with tempdir() as tmpdir:
-            pdiff_dir = os.path.join(tmpdir, "pdiffs")
-            index_file = os.path.join(pdiff_dir, 'Index')
-            index = PDiffIndex(pdiff_dir, 3, True)
-
-            data = [
-                'Version 0',
-                'Some',
-                'data',
-                'across',
-                '6',
-                'lines',
-            ]
-
-            # The pdiff system assumes we start from a non-empty file
-            generate_orig(tmpdir, data)
-            data[0] = 'Version 1'
-
-            # Non-existing directory => empty history
-            prune_history(index,
-                          known_patch_count_before=0,
-                          known_patch_count_after=0,
-                          detected_obsolete_patches=[]
-                          )
-            # Update should be possible but do nothing
-            # (dak generate-index-diffs relies on this behaviour)
-            index.update_index()
-            # It should not create the directory
-            assert not os.path.isdir(pdiff_dir)
-
-            # Adding a patch should "just work(tm)"
-            generate_patch(index, "patch-1", tmpdir, data)
-            assert os.path.isdir(pdiff_dir)
-            assert index.filesizehashes is not None
-            assert index.filesizehashes.size > 0
-            prune_history(index,
-                          known_patch_count_before=1,
-                          known_patch_count_after=1,
-                          detected_obsolete_patches=[]
-                          )
-            assert not os.path.isfile(index_file)
-            index.update_index()
-            assert os.path.isfile(index_file)
-
-            reload_and_compare_pdiff_indices(index)
-
-            index.can_path = "/some/where"
-
-            data[0] = 'Version 2'
-            data[3] = 'over'
-            generate_patch(index, "patch-2", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=2,
-                          known_patch_count_after=2,
-                          detected_obsolete_patches=[]
-                          )
-
-            data[2] = 'Text'
-
-            generate_patch(index, "patch-3", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=3,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=[]
-                          )
-
-            data[0] = 'Version 3'
-
-            generate_patch(index, "patch-4", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=['T-patch-1-F-patch-1.gz', 'patch-1.gz']
-                          )
-
-            data[0] = 'Version 4'
-            data[-1] = 'lines.'
-
-            generate_patch(index, "patch-5", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=['T-patch-1-F-patch-1.gz',
-
-                                                     'T-patch-2-F-patch-1.gz',
-                                                     'T-patch-2-F-patch-2.gz',
-
-                                                     'patch-1.gz',
-                                                     'patch-2.gz'
-                                                     ]
-                          )
-
-            index.update_index()
-            # Swap to the reloaded index.  Assuming everything works as intended
-            # this should not matter.
-            reload_and_compare_pdiff_indices(index)
-
-            data[0] = 'Version 5'
-
-            generate_patch(index, "patch-6", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=['T-patch-1-F-patch-1.gz',
-
-                                                     'T-patch-2-F-patch-1.gz',
-                                                     'T-patch-2-F-patch-2.gz',
-
-                                                     'T-patch-3-F-patch-1.gz',
-                                                     'T-patch-3-F-patch-2.gz',
-                                                     'T-patch-3-F-patch-3.gz',
-
-                                                     'patch-1.gz',
-                                                     'patch-2.gz',
-                                                     'patch-3.gz',
-                                                     ]
-                          )
-
-            delete_obsolete_patches(index)
-
-            data[0] = 'Version 6'
-
-            generate_patch(index, "patch-7", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=[
-                                                     'T-patch-4-F-patch-1.gz',
-                                                     'T-patch-4-F-patch-2.gz',
-                                                     'T-patch-4-F-patch-3.gz',
-                                                     'T-patch-4-F-patch-4.gz',
-
-                                                     'patch-4.gz',
-                                                     ]
-                          )
-
-            delete_obsolete_patches(index)
-            index.update_index()
-            reload_and_compare_pdiff_indices(index)
-
-            # CHANGING TO NON-MERGED INDEX
-            index = PDiffIndex(pdiff_dir, 3, False)
-
-            data[0] = 'Version 7'
-
-            # We need to add a patch to trigger the conversion
-            generate_patch(index, "patch-8", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=[
-                                                     'T-patch-5-F-patch-2.gz',
-                                                     'T-patch-5-F-patch-3.gz',
-                                                     'T-patch-5-F-patch-4.gz',
-                                                     'T-patch-5-F-patch-5.gz',
-
-                                                     'T-patch-6-F-patch-3.gz',
-                                                     'T-patch-6-F-patch-4.gz',
-                                                     'T-patch-6-F-patch-5.gz',
-                                                     'T-patch-6-F-patch-6.gz',
-
-                                                     'T-patch-7-F-patch-4.gz',
-                                                     'T-patch-7-F-patch-5.gz',
-                                                     'T-patch-7-F-patch-6.gz',
-                                                     'T-patch-7-F-patch-7.gz',
-
-                                                     'patch-5.gz',
-                                                     ]
-                          )
-
-            delete_obsolete_patches(index)
-            index.update_index()
-
-            # CHANGING BACK TO MERGED
-
-            index = PDiffIndex(pdiff_dir, 3, True)
-
-            data[0] = 'Version 8'
-
-            # We need to add a patch to trigger the conversion
-            generate_patch(index, "patch-9", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=['patch-6.gz']
-                          )
-
-            delete_obsolete_patches(index)
-            index.update_index()
-
-            # CHANGING TO NON-MERGED INDEX (AGAIN)
-            # This will trip the removal of all the merged patches, proving they
-            # were generated in the first place.
-            index = PDiffIndex(pdiff_dir, 3, False)
-
-            data[0] = 'Version 9'
-
-            # We need to add a patch to trigger the conversion
-            generate_patch(index, "patch-A", tmpdir, data)
-
-            prune_history(index,
-                          known_patch_count_before=4,
-                          known_patch_count_after=3,
-                          detected_obsolete_patches=[
-                                                     'T-patch-9-F-patch-6.gz',
-                                                     'T-patch-9-F-patch-7.gz',
-                                                     'T-patch-9-F-patch-8.gz',
-                                                     'T-patch-9-F-patch-9.gz',
-
-                                                     'patch-7.gz',
-                                                     ]
-                          )
-
-            delete_obsolete_patches(index)
-            index.update_index()
+if IsolatedAsyncioTestCase is not None:
+    class TestPDiffs(IsolatedAsyncioTestCase):
+
+        async def test_corrupt_pdiff_index(self):
+            with tempdir() as tmpdir:
+                pdiff_dir = os.path.join(tmpdir, "pdiffs")
+                index_file = os.path.join(pdiff_dir, 'Index')
+                os.mkdir(pdiff_dir)
+                with open(index_file, 'w') as fd:
+                    fd.write(MISALIGNED_HISTORY_RESTORABLE)
+
+                index = PDiffIndex(pdiff_dir, 3, False)
+                assert index._history_order == [
+                    "T-2020-12-12-0800.11-F-2020-11-26-0822.42",
+                    "T-2020-12-12-0800.11-F-2020-12-12-0800.11",
+                ]
+                assert index._unmerged_history_order == ["2020-12-12-0800.11"]
+
+                with open(index_file, 'w') as fd:
+                    fd.write(MISALIGNED_HISTORY_BROKEN)
+
+                index = PDiffIndex(pdiff_dir, 3, False)
+                assert index._history_order == []
+                assert index._unmerged_history_order == []
+
+        async def test_pdiff_index_unmerged(self):
+            with tempdir() as tmpdir:
+                pdiff_dir = os.path.join(tmpdir, "pdiffs")
+                index_file = os.path.join(pdiff_dir, 'Index')
+                index = PDiffIndex(pdiff_dir, 3, False)
+
+                data = [
+                    'Version 0',
+                    'Some',
+                    'data',
+                    'across',
+                    '6',
+                    'lines',
+                ]
+
+                # The pdiff system assumes we start from a non-empty file
+                generate_orig(tmpdir, data)
+                data[0] = 'Version 1'
+
+                # Non-existing directory => empty history
+                prune_history(index,
+                              known_patch_count_before=0,
+                              known_patch_count_after=0,
+                              detected_obsolete_patches=[]
+                              )
+                # Update should be possible but do nothing
+                # (dak generate-index-diffs relies on this behaviour)
+                index.update_index()
+                # It should not create the directory
+                assert not os.path.isdir(pdiff_dir)
+
+                # Adding a patch should "just work(tm)"
+                await generate_patch(index, "patch-1", tmpdir, data)
+                assert os.path.isdir(pdiff_dir)
+                assert index.filesizehashes is not None
+                assert index.filesizehashes.size > 0
+                prune_history(index,
+                              known_patch_count_before=1,
+                              known_patch_count_after=1,
+                              detected_obsolete_patches=[]
+                              )
+                assert not os.path.isfile(index_file)
+                index.update_index()
+                assert os.path.isfile(index_file)
+
+                reload_and_compare_pdiff_indices(index)
+
+                index.can_path = "/some/where"
+
+                # We should detect obsolete files that are not part of the
+                # history.
+                with open(os.path.join(pdiff_dir, "random-patch"), "w"):
+                    pass
+
+                prune_history(index,
+                              known_patch_count_before=1,
+                              known_patch_count_after=1,
+                              detected_obsolete_patches=['random-patch']
+                              )
+
+                delete_obsolete_patches(index)
+
+                data[0] = 'Version 2'
+                data[3] = 'over'
+                await generate_patch(index, "patch-2", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=2,
+                              known_patch_count_after=2,
+                              detected_obsolete_patches=[]
+                              )
+
+                data[2] = 'Text'
+
+                await generate_patch(index, "patch-3", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=3,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=[]
+                              )
+
+                data[0] = 'Version 3'
+
+                await generate_patch(index, "patch-4", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=['patch-1.gz']
+                              )
+
+                data[0] = 'Version 4'
+                data[-1] = 'lines.'
+
+                await generate_patch(index, "patch-5", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=['patch-1.gz', 'patch-2.gz']
+                              )
+
+                index.update_index()
+                reload_and_compare_pdiff_indices(index)
+
+                delete_obsolete_patches(index)
+
+        async def test_pdiff_index_merged(self):
+            with tempdir() as tmpdir:
+                pdiff_dir = os.path.join(tmpdir, "pdiffs")
+                index_file = os.path.join(pdiff_dir, 'Index')
+                index = PDiffIndex(pdiff_dir, 3, True)
+
+                data = [
+                    'Version 0',
+                    'Some',
+                    'data',
+                    'across',
+                    '6',
+                    'lines',
+                ]
+
+                # The pdiff system assumes we start from a non-empty file
+                generate_orig(tmpdir, data)
+                data[0] = 'Version 1'
+
+                # Non-existing directory => empty history
+                prune_history(index,
+                              known_patch_count_before=0,
+                              known_patch_count_after=0,
+                              detected_obsolete_patches=[]
+                              )
+                # Update should be possible but do nothing
+                # (dak generate-index-diffs relies on this behaviour)
+                index.update_index()
+                # It should not create the directory
+                assert not os.path.isdir(pdiff_dir)
+
+                # Adding a patch should "just work(tm)"
+                await generate_patch(index, "patch-1", tmpdir, data)
+                assert os.path.isdir(pdiff_dir)
+                assert index.filesizehashes is not None
+                assert index.filesizehashes.size > 0
+                prune_history(index,
+                              known_patch_count_before=1,
+                              known_patch_count_after=1,
+                              detected_obsolete_patches=[]
+                              )
+                assert not os.path.isfile(index_file)
+                index.update_index()
+                assert os.path.isfile(index_file)
+
+                reload_and_compare_pdiff_indices(index)
+
+                index.can_path = "/some/where"
+
+                data[0] = 'Version 2'
+                data[3] = 'over'
+                await generate_patch(index, "patch-2", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=2,
+                              known_patch_count_after=2,
+                              detected_obsolete_patches=[]
+                              )
+
+                data[2] = 'Text'
+
+                await generate_patch(index, "patch-3", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=3,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=[]
+                              )
+
+                data[0] = 'Version 3'
+
+                await generate_patch(index, "patch-4", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=['T-patch-1-F-patch-1.gz', 'patch-1.gz']
+                              )
+
+                data[0] = 'Version 4'
+                data[-1] = 'lines.'
+
+                await generate_patch(index, "patch-5", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=['T-patch-1-F-patch-1.gz',
+
+                                                         'T-patch-2-F-patch-1.gz',
+                                                         'T-patch-2-F-patch-2.gz',
+
+                                                         'patch-1.gz',
+                                                         'patch-2.gz'
+                                                         ]
+                              )
+
+                index.update_index()
+                # Swap to the reloaded index.  Assuming everything works as intended
+                # this should not matter.
+                reload_and_compare_pdiff_indices(index)
+
+                data[0] = 'Version 5'
+
+                await generate_patch(index, "patch-6", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=['T-patch-1-F-patch-1.gz',
+
+                                                         'T-patch-2-F-patch-1.gz',
+                                                         'T-patch-2-F-patch-2.gz',
+
+                                                         'T-patch-3-F-patch-1.gz',
+                                                         'T-patch-3-F-patch-2.gz',
+                                                         'T-patch-3-F-patch-3.gz',
+
+                                                         'patch-1.gz',
+                                                         'patch-2.gz',
+                                                         'patch-3.gz',
+                                                         ]
+                              )
+
+                delete_obsolete_patches(index)
+
+                data[0] = 'Version 6'
+
+                await generate_patch(index, "patch-7", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=[
+                                                         'T-patch-4-F-patch-1.gz',
+                                                         'T-patch-4-F-patch-2.gz',
+                                                         'T-patch-4-F-patch-3.gz',
+                                                         'T-patch-4-F-patch-4.gz',
+
+                                                         'patch-4.gz',
+                                                         ]
+                              )
+
+                delete_obsolete_patches(index)
+                index.update_index()
+                reload_and_compare_pdiff_indices(index)
+
+                # CHANGING TO NON-MERGED INDEX
+                index = PDiffIndex(pdiff_dir, 3, False)
+
+                data[0] = 'Version 7'
+
+                # We need to add a patch to trigger the conversion
+                await generate_patch(index, "patch-8", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=[
+                                                         'T-patch-5-F-patch-2.gz',
+                                                         'T-patch-5-F-patch-3.gz',
+                                                         'T-patch-5-F-patch-4.gz',
+                                                         'T-patch-5-F-patch-5.gz',
+
+                                                         'T-patch-6-F-patch-3.gz',
+                                                         'T-patch-6-F-patch-4.gz',
+                                                         'T-patch-6-F-patch-5.gz',
+                                                         'T-patch-6-F-patch-6.gz',
+
+                                                         'T-patch-7-F-patch-4.gz',
+                                                         'T-patch-7-F-patch-5.gz',
+                                                         'T-patch-7-F-patch-6.gz',
+                                                         'T-patch-7-F-patch-7.gz',
+
+                                                         'patch-5.gz',
+                                                         ]
+                              )
+
+                delete_obsolete_patches(index)
+                index.update_index()
+
+                # CHANGING BACK TO MERGED
+
+                index = PDiffIndex(pdiff_dir, 3, True)
+
+                data[0] = 'Version 8'
+
+                # We need to add a patch to trigger the conversion
+                await generate_patch(index, "patch-9", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=['patch-6.gz']
+                              )
+
+                delete_obsolete_patches(index)
+                index.update_index()
+
+                # CHANGING TO NON-MERGED INDEX (AGAIN)
+                # This will trip the removal of all the merged patches, proving they
+                # were generated in the first place.
+                index = PDiffIndex(pdiff_dir, 3, False)
+
+                data[0] = 'Version 9'
+
+                # We need to add a patch to trigger the conversion
+                await generate_patch(index, "patch-A", tmpdir, data)
+
+                prune_history(index,
+                              known_patch_count_before=4,
+                              known_patch_count_after=3,
+                              detected_obsolete_patches=[
+                                                         'T-patch-9-F-patch-6.gz',
+                                                         'T-patch-9-F-patch-7.gz',
+                                                         'T-patch-9-F-patch-8.gz',
+                                                         'T-patch-9-F-patch-9.gz',
+
+                                                         'patch-7.gz',
+                                                         ]
+                              )
+
+                delete_obsolete_patches(index)
+                index.update_index()
+else:
+    @unittest.skip("Needs IsolatedAsyncioTestCase (python3 >= 3.8)")
+    class TestPDiffs(unittest.TestCase):
+        pass

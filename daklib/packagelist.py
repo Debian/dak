@@ -64,6 +64,16 @@ class PackageListEntry(object):
                 built = None
         return built
 
+    def built_in_default_profile(self):
+        # See man:dsc(5) and https://bugs.debian.org/913965#77
+        profiles_and = self.other.get('profile')
+        if profiles_and is None:
+            return True
+        return all(
+            any(profile.startswith("!") for profile in profiles_or.split("+"))
+            for profiles_or in profiles_and.split(",")
+        )
+
 
 class PackageList(object):
     def __init__(self, source):
@@ -125,9 +135,11 @@ class PackageList(object):
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
             self.package_list.append(entry)
 
-    def packages_for_suite(self, suite):
+    def packages_for_suite(self, suite, only_default_profile=True):
         packages = []
         for entry in self.package_list:
+            if only_default_profile and not entry.built_in_default_profile():
+                continue
             built = entry.built_in_suite(suite)
             if built or built is None:
                 packages.append(entry)
