@@ -11,7 +11,7 @@ Subject: Bug#__BUG_NUMBER__: fixed in __SOURCE__ __VERSION__
 
 Source: __SOURCE__
 Source-Version: __VERSION__
-Done: __MAINTAINER_FROM__
+Done: __MAINTAINER__
 
 We believe that the bug you reported is fixed in the latest version of
 __SOURCE__, which is due to be installed in the __DISTRO__ FTP archive.
