@@ -41,7 +41,7 @@ ks = set()
 if os.path.exists(options.cache_file):
     for l in open(options.cache_file):
         dt, l = l.split('\t', 1)
-        l = map(lambda x: (lambda y: (y[0], float(y[1])))(x.split(':', 1)), l.split('\t'))
+        l = list(map(lambda x: (lambda y: (y[0], float(y[1])))(x.split(':', 1)), l.split('\t')))
         newk = [x[0] for x in l if x[0] not in ks]
         kl += newk
         ks |= set(newk)
