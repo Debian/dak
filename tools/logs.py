@@ -2,6 +2,7 @@
 # (c) 2008 Thomas Viehmann
 # Free software licensed under the GPL version 2 or later
 
+import argparse
 import os
 import re
 import datetime
@@ -23,6 +24,13 @@ graphs = {"dinstall1": {"keystolist": ["pg_dump1", "i18n 1", "accepted", "domina
                         "showothers": False},
           "totals": {"keystolist": ["apt-ftparchive", "apt-ftparchive cleanup"], "showothers": True}}
 
+parser = argparse.ArgumentParser(description='plot runtime for dinstall tasks')
+parser.add_argument('--items-to-keep', type=int, default=ITEMS_TO_KEEP, metavar='N')
+parser.add_argument('--cache-file', default=CACHE_FILE, metavar='PATH')
+parser.add_argument('--graph-dir', default=GRAPH_DIR, metavar='PATH')
+parser.add_argument('log', nargs='*')
+options = parser.parse_args()
+
 wantkeys = set()
 for tmp in graphs.values():
     wantkeys |= set(tmp["keystolist"])
@@ -30,8 +38,8 @@ for tmp in graphs.values():
 d = {}
 kl = []
 ks = set()
-if os.path.exists(CACHE_FILE):
-    for l in open(CACHE_FILE):
+if os.path.exists(options.cache_file):
+    for l in open(options.cache_file):
         dt, l = l.split('\t', 1)
         l = map(lambda x: (lambda y: (y[0], float(y[1])))(x.split(':', 1)), l.split('\t'))
         newk = [x[0] for x in l if x[0] not in ks]
@@ -40,13 +48,12 @@ if os.path.exists(CACHE_FILE):
         d[dt] = dict(l)
 
 olddt = None
-args = sys.argv[1:]
-m = UNSAFE.search(' '.join(args))
+m = UNSAFE.search(' '.join(options.log))
 if m:
     raise Exception("I don't like command line arguments including char '%s'" % m.group(0))
 
-if args:
-    for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "' + '" "'.join(args) + '"'):
+if options.log:
+    for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "' + '" "'.join(options.log) + '"'):
         m = LINE.match(l)
         if not m:
             raise Exception("woops '%s'" % l)
@@ -70,11 +77,11 @@ if (wantkeys - ks):
 
 datakeys = sorted(d.keys())
 
-with open(CACHE_FILE + ".tmp", "w") as f:
+with open(options.cache_file + ".tmp", "w") as f:
     for dk in datakeys:
         print(dk, *("%s:%s" % (k, str(d[dk][k])) for k in kl if k in d[dk]), sep='\t', file=f)
-os.rename(CACHE_FILE + ".tmp", CACHE_FILE)
-datakeys = datakeys[-ITEMS_TO_KEEP:]
+os.rename(options.cache_file + ".tmp", options.cache_file)
+datakeys = datakeys[-options.items_to_keep:]
 
 
 def dump_file(outfn, keystolist, showothers):
@@ -119,4 +126,4 @@ def dump_file(outfn, keystolist, showothers):
 
 
 for afn, params in graphs.items():
-    dump_file(os.path.join(GRAPH_DIR, afn + '.png'), **params)
+    dump_file(os.path.join(options.graph_dir, afn + '.png'), **params)
