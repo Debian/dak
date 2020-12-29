@@ -748,8 +748,7 @@ class ArchiveUpload(object):
 
         sourcedir = os.path.join(self.directory, 'source')
         if not os.path.exists(sourcedir):
-            with open('/dev/null', 'w') as devnull:
-                subprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=devnull)
+            subprocess.check_call(["dpkg-source", "--no-copy", "--no-check", "-x", dsc_path, sourcedir], shell=False, stdout=subprocess.DEVNULL)
         if not os.path.isdir(sourcedir):
             raise Exception("{0} is not a directory after extracting source package".format(sourcedir))
         return sourcedir
