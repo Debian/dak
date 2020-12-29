@@ -298,6 +298,7 @@ def clean(now_date, archives, max_delete, session):
             Logger.log(["delete symlink", filename])
             if not Options["No-Action"]:
                 os.unlink(filename)
+                session.delete(af)
         elif stat.S_ISREG(st.st_mode):
             size += st.st_size
             count += 1
@@ -314,13 +315,10 @@ def clean(now_date, archives, max_delete, session):
                 else:
                     Logger.log(["removed file", filename])
                     os.unlink(filename)
+                session.delete(af)
 
         else:
             utils.fubar("%s is neither symlink nor file?!" % (filename))
-
-        if not Options["No-Action"]:
-            session.delete(af)
-            session.commit()
 
     if count > 0:
         Logger.log(["total", count, utils.size_type(size)])
