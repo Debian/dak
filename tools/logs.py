@@ -71,7 +71,7 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     pass
 
-RE_PATH = re.compile(r'dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)')
+RE_PATH = re.compile(r'dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)?')
 for path in options.log:
     m = RE_PATH.search(path)
     if not m:
