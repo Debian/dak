@@ -82,6 +82,16 @@ datakeys = sorted(data.keys())
 datakeys = datakeys[-options.items_to_keep:]
 data = dict((k, data[k]) for k in datakeys)
 
+averages = defaultdict(float)
+for times in data.values():
+    for task, t in times.items():
+        averages[task] += t
+for task in averages.keys():
+    averages[task] /= len(data)
+
+for task, t in sorted(averages.items(), key=lambda xs: xs[1], reverse=True):
+    print(f"{task}: {t:.2f}")
+
 with open(f"{options.cache_file}.tmp", "x") as fh:
     json.dump(data, fh)
 os.rename(f"{options.cache_file}.tmp", options.cache_file)
