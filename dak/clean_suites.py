@@ -286,40 +286,41 @@ def clean(now_date, archives, max_delete, session):
 
     for af in old_files:
         filename = af.path
-        if not os.path.exists(filename):
-            Logger.log(["database referred to non-existing file", af.path])
+        try:
+            st = os.lstat(filename)
+        except FileNotFoundError:
+            Logger.log(["database referred to non-existing file", filename])
             session.delete(af)
             continue
         Logger.log(["delete archive file", filename])
-        if os.path.isfile(filename):
-            if os.path.islink(filename):
-                count += 1
-                Logger.log(["delete symlink", filename])
-                if not Options["No-Action"]:
-                    os.unlink(filename)
-            else:
-                size += os.stat(filename)[stat.ST_SIZE]
-                count += 1
+        if stat.S_ISLNK(st.st_mode):
+            count += 1
+            Logger.log(["delete symlink", filename])
+            if not Options["No-Action"]:
+                os.unlink(filename)
+        elif stat.S_ISREG(st.st_mode):
+            size += st.st_size
+            count += 1
 
-                dest_filename = dest + '/' + os.path.basename(filename)
-                # If the destination file exists; try to find another filename to use
-                if os.path.lexists(dest_filename):
-                    dest_filename = utils.find_next_free(dest_filename)
-
-                if not Options["No-Action"]:
-                    if af.archive.use_morgue:
-                        Logger.log(["move to morgue", filename, dest_filename])
-                        utils.move(filename, dest_filename)
-                    else:
-                        Logger.log(["removed file", filename])
-                        os.unlink(filename)
+            dest_filename = dest + '/' + os.path.basename(filename)
+            # If the destination file exists; try to find another filename to use
+            if os.path.lexists(dest_filename):
+                dest_filename = utils.find_next_free(dest_filename)
 
             if not Options["No-Action"]:
-                session.delete(af)
-                session.commit()
+                if af.archive.use_morgue:
+                    Logger.log(["move to morgue", filename, dest_filename])
+                    utils.move(filename, dest_filename)
+                else:
+                    Logger.log(["removed file", filename])
+                    os.unlink(filename)
 
         else:
             utils.fubar("%s is neither symlink nor file?!" % (filename))
+
+        if not Options["No-Action"]:
+            session.delete(af)
+            session.commit()
 
     if count > 0:
         Logger.log(["total", count, utils.size_type(size)])
