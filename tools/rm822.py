@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#! /usr/bin/env python3
 # (c) 2010 Luca Falavigna <dktrkranz@debian.org>
 # Free software licensed under the GPL version 2 or later
 

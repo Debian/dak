@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#! /usr/bin/env python3
 # Generate two rss feeds for a directory with .changes file
 
 # License: GPL v2 or later

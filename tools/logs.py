@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#! /usr/bin/env python3
 # (c) 2008 Thomas Viehmann
 # Free software licensed under the GPL version 2 or later
 
