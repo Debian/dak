@@ -26,7 +26,7 @@ import daklib.dakapt
 
 class TestDakHashes(DakTestCase):
     def testDakHashes(self):
-        with open("/dev/null") as fh:
+        with open(os.devnull) as fh:
             hashes = daklib.dakapt.DakHashes(fh)
         self.assertEqual(hashes.md5, "d41d8cd98f00b204e9800998ecf8427e")
         self.assertEqual(hashes.sha1, "da39a3ee5e6b4b0d3255bfef95601890afd80709")
