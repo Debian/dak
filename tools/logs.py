@@ -8,6 +8,7 @@ import json
 import os
 import re
 import datetime
+import subprocess
 import sys
 import tempfile
 
@@ -107,8 +108,7 @@ def dump_file(outfn, keystolist, showothers):
         print(t + '\t' + '\t'.join([str(times.get(task, 0)) for task in keystolist] + showothers * [str(others)]), file=f)
     f.flush()
 
-    p = os.popen("R --vanilla --slave > /dev/null", "w")
-    p.write("""
+    script = """
   bitmap(file = "%(outfile)s", type="png16m",width=16.9,height=11.8)
   d = read.table("%(datafile)s",  sep = "\t")
   #d[["ts"]] <- as.POSIXct(d[["timestamp"]])
@@ -131,9 +131,9 @@ def dump_file(outfn, keystolist, showothers):
   dev.off()
   q()
   """ % {'datafile': f.name, 'outfile': outfn,
-       'title': ((not showothers) * "partial ") + "dinstall times"})
-    p.flush()
-    assert not p.close()
+       'title': ((not showothers) * "partial ") + "dinstall times"}
+    subprocess.run(["R", "--vanilla", "--slave"],
+                   input=script, stdout=subprocess.DEVNULL, text=True, check=True)
 
 
 for afn, params in graphs.items():
