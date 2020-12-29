@@ -3,26 +3,58 @@
 # Free software licensed under the GPL version 2 or later
 
 import argparse
+import bz2
+import json
 import os
 import re
 import datetime
 import sys
 import tempfile
 
+from collections import defaultdict
+
 ITEMS_TO_KEEP = 20
 CACHE_FILE = '/srv/ftp-master.debian.org/misc/dinstall_time_cache'
 GRAPH_DIR = '/srv/ftp.debian.org/web/stat'
 
-LINE = re.compile(r'(?:|.*/)dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)?:'
-                  r'Archive maintenance timestamp \(([^\)]*)\): (\d{2}):(\d{2}):(\d{2})$')
-UNSAFE = re.compile(r'[^a-zA-Z/\._:0-9\- ]')
+graphs = {
+    "dinstall": {
+        "keystolist": [
+            "pdiff", "packages", "dakcleanup", "changelogs", "mkfilesindices",
+            "mpfm", "dep11", "release", "ddaccess", "mkchecksums",
+        ],
+        "showothers": True},
+}
 
-graphs = {"dinstall1": {"keystolist": ["pg_dump1", "i18n 1", "accepted", "dominate", "generate-filelist", "apt-ftparchive",
-                                    "pdiff", "release files", "w-b", "i18n 2", "apt-ftparchive cleanup"],
-                        "showothers": True},
-          "dinstall2": {"keystolist": ['External Updates', 'p-u-new', 'o-p-u-new', 'cruft', 'import-keyring', 'overrides', 'cleanup', 'scripts', 'mirror hardlinks', 'stats', 'compress', "pkg-file-mapping"],
-                        "showothers": False},
-          "totals": {"keystolist": ["apt-ftparchive", "apt-ftparchive cleanup"], "showothers": True}}
+RE_LINE = re.compile(
+    rb'\A... .. (\d{2}):(\d{2}):(\d{2}) .*: '
+    rb'########## dinstall (BEGIN|END): ([a-z0-9]+) .*##########')
+
+
+def parse_log(path: str):
+    begin = {}
+    times = {}
+
+    opener = bz2.open if path.endswith(".bz2") else open
+    with opener(path, "rb") as fh:
+        for line in fh:
+            m = RE_LINE.match(line)
+            if not m:
+                continue
+            t = 3600 * int(m[1]) + 60 * int(m[2]) + int(m[3])
+            event = m[4]
+            task = m[5].decode()
+            if event == b"BEGIN":
+                begin[task] = t
+            elif event == b"END":
+                t0 = begin.get(task)
+                if t0 is not None:
+                    times[task] = (t - t0) / 60.0
+                else:
+                    print(f"W: {task} ended, but didn't start", file=sys.stderr)
+
+    return times
+
 
 parser = argparse.ArgumentParser(description='plot runtime for dinstall tasks')
 parser.add_argument('--items-to-keep', type=int, default=ITEMS_TO_KEEP, metavar='N')
@@ -31,69 +63,38 @@ parser.add_argument('--graph-dir', default=GRAPH_DIR, metavar='PATH')
 parser.add_argument('log', nargs='*')
 options = parser.parse_args()
 
-wantkeys = set()
-for tmp in graphs.values():
-    wantkeys |= set(tmp["keystolist"])
+data = {}
+try:
+    with open(options.cache_file) as fh:
+        data = json.load(fh)
+except (FileNotFoundError, json.JSONDecodeError):
+    pass
 
-d = {}
-kl = []
-ks = set()
-if os.path.exists(options.cache_file):
-    for l in open(options.cache_file):
-        dt, l = l.split('\t', 1)
-        l = list(map(lambda x: (lambda y: (y[0], float(y[1])))(x.split(':', 1)), l.split('\t')))
-        newk = [x[0] for x in l if x[0] not in ks]
-        kl += newk
-        ks |= set(newk)
-        d[dt] = dict(l)
+RE_PATH = re.compile(r'dinstall_(\d{4})\.(\d{2})\.(\d{2})-(\d{2}):(\d{2}):(\d{2})\.log(?:\.bz2)')
+for path in options.log:
+    m = RE_PATH.search(path)
+    if not m:
+        raise Exception(f"Unexpected filename '{path}'")
+    t = str(datetime.datetime(*(int(x) for x in m.groups())))
+    data[t] = parse_log(path)
 
-olddt = None
-m = UNSAFE.search(' '.join(options.log))
-if m:
-    raise Exception("I don't like command line arguments including char '%s'" % m.group(0))
-
-if options.log:
-    for l in os.popen('bzgrep -H "^Archive maintenance timestamp" "' + '" "'.join(options.log) + '"'):
-        m = LINE.match(l)
-        if not m:
-            raise Exception("woops '%s'" % l)
-        g = [int(x) if x.isdigit() else x for x in m.groups()]
-        dt = datetime.datetime(*g[:6])
-        if olddt != dt:
-            oldsecs = 0
-            olddt = dt
-        dt2 = datetime.datetime(*(g[:3] + g[-3:]))
-        secs = (dt2 - dt).seconds
-        assert secs >= 0 # should add 24*60*60
-        k = g[6]
-        d.setdefault(str(dt), {})[k] = (secs - oldsecs) / 60.0
-        oldsecs = secs
-        if k not in ks:
-            ks.add(k)
-            kl.append(k)
-
-if (wantkeys - ks):
-    print("warning, requested keys not found in any log:", *(wantkeys - ks), file=sys.stderr)
-
-datakeys = sorted(d.keys())
-
-with open(options.cache_file + ".tmp", "w") as f:
-    for dk in datakeys:
-        print(dk, *("%s:%s" % (k, str(d[dk][k])) for k in kl if k in d[dk]), sep='\t', file=f)
-os.rename(options.cache_file + ".tmp", options.cache_file)
+datakeys = sorted(data.keys())
 datakeys = datakeys[-options.items_to_keep:]
+data = dict((k, data[k]) for k in datakeys)
+
+with open(f"{options.cache_file}.tmp", "x") as fh:
+    json.dump(data, fh)
+os.rename(f"{options.cache_file}.tmp", options.cache_file)
 
 
 def dump_file(outfn, keystolist, showothers):
     showothers = (showothers and 1) or 0
     # careful, outfn is NOT ESCAPED
     f = tempfile.NamedTemporaryFile("w+t")
-    otherkeys = ks - set(keystolist)
     print('\t'.join(keystolist + showothers * ['other']), file=f)
-    for k in datakeys:
-        v = d[k]
-        others = sum(v.get(x, 0) for x in otherkeys)
-        print(k + '\t' + '\t'.join([str(v.get(x, 0)) for x in keystolist] + showothers * [str(others)]), file=f)
+    for t, times in data.items():
+        others = sum(dt for task, dt in times.items() if task not in keystolist)
+        print(t + '\t' + '\t'.join([str(times.get(task, 0)) for task in keystolist] + showothers * [str(others)]), file=f)
     f.flush()
 
     p = os.popen("R --vanilla --slave > /dev/null", "w")
