@@ -98,6 +98,7 @@ def dump_file(outfn, keystolist, showothers):
 
     p = os.popen("R --vanilla --slave > /dev/null", "w")
     p.write("""
+  bitmap(file = "%(outfile)s", type="png16m",width=16.9,height=11.8)
   d = read.table("%(datafile)s",  sep = "\t")
   #d[["ts"]] <- as.POSIXct(d[["timestamp"]])
   k = setdiff(names(d),c("ts","timestamp"))
@@ -107,7 +108,6 @@ def dump_file(outfn, keystolist, showothers):
   #plot(d[["runtime"]],d[["compress"]],type="l",col="blue")
   #lines(d[["runtime"]],d[["logremove"]],type="l",col="red")
   #legend(as.POSIXct("2008-12-05"),9500,"logremove",col="red",lty=1)
-  bitmap(file = "%(outfile)s", type="png16m",width=16.9,height=11.8)
   #plot(d[["ts"]],d[["compress"]],type="l",col="blue")
   #lines(d[["ts"]],d[["logremove"]],type="l",col="red")
   barplot(t(d[,k]), col=palette(), xlab="date",ylab="time/minutes"
