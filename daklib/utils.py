@@ -71,8 +71,7 @@ def our_raw_input(prompt=""):
     # TODO: py3: use `print(..., flush=True)`
     sys.stdout.flush()
     try:
-        ret = six.moves.input()
-        return ret
+        return input()
     except EOFError:
         print("\nUser interrupt (^D).", file=sys.stderr)
         raise SystemExit

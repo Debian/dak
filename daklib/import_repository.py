@@ -26,9 +26,9 @@ import apt_pkg
 import os
 import shutil
 import tempfile
-import six.moves.urllib.request
-import six.moves.urllib.error
-import six.moves.urllib.parse
+import urllib.request
+import urllib.error
+import urllib.parse
 
 from daklib.dbconn import DBSource, PoolFile
 from sqlalchemy.orm import object_session
@@ -93,7 +93,7 @@ def obtain_file(base, path):
     fn = '{0}/{1}'.format(base, path)
     tmp = File()
     if fn.startswith('http://'):
-        fh = six.moves.urllib.request.urlopen(fn, timeout=300)
+        fh = urllib.request.urlopen(fn, timeout=300)
         shutil.copyfileobj(fh, tmp._tmp)
         fh.close()
     else:
