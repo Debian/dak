@@ -160,36 +160,42 @@ def britney_changelog(packages, suite, session):
 #######################################################################################
 
 
-def version_checks(package, architecture, target_suite, new_version, session, force=False):
-    if architecture == "source":
-        suite_version_list = get_suite_version_by_source(package, session)
-    else:
-        suite_version_list = get_suite_version_by_package(package, architecture, session)
+class VersionCheck:
+    def __init__(self, target_suite: str, force: bool, session):
+        self.target_suite = target_suite
+        self.force = force
+        self.session = session
 
-    must_be_newer_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan")]
-    must_be_older_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan")]
+        self.must_be_newer_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeNewerThan", session)]
+        self.must_be_older_than = [vc.reference.suite_name for vc in get_version_checks(target_suite, "MustBeOlderThan", session)]
 
-    # Must be newer than an existing version in target_suite
-    if target_suite not in must_be_newer_than:
-        must_be_newer_than.append(target_suite)
+        # Must be newer than an existing version in target_suite
+        if target_suite not in self.must_be_newer_than:
+            self.must_be_newer_than.append(target_suite)
 
-    violations = False
-
-    for suite, version in suite_version_list:
-        cmp = apt_pkg.version_compare(new_version, version)
-        # for control-suite we allow equal version (for uploads, we don't)
-        if suite in must_be_newer_than and cmp < 0:
-            utils.warn("%s (%s): version check violated: %s targeted at %s is *not* newer than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
-            violations = True
-        if suite in must_be_older_than and cmp > 0:
-            utils.warn("%s (%s): version check violated: %s targeted at %s is *not* older than %s in %s" % (package, architecture, new_version, target_suite, version, suite))
-            violations = True
-
-    if violations:
-        if force:
-            utils.warn("Continuing anyway (forced)...")
+    def __call__(self, package: str, architecture: str, new_version: str):
+        if architecture == "source":
+            suite_version_list = get_suite_version_by_source(package, self.session)
         else:
-            utils.fubar("Aborting. Version checks violated and not forced.")
+            suite_version_list = get_suite_version_by_package(package, architecture, self.session)
+
+        violations = False
+
+        for suite, version in suite_version_list:
+            cmp = apt_pkg.version_compare(new_version, version)
+            # for control-suite we allow equal version (for uploads, we don't)
+            if suite in self.must_be_newer_than and cmp < 0:
+                utils.warn("%s (%s): version check violated: %s targeted at %s is *not* newer than %s in %s" % (package, architecture, new_version, self.target_suite, version, suite))
+                violations = True
+            if suite in self.must_be_older_than and cmp > 0:
+                utils.warn("%s (%s): version check violated: %s targeted at %s is *not* older than %s in %s" % (package, architecture, new_version, self.target_suite, version, suite))
+                violations = True
+
+        if violations:
+            if self.force:
+                utils.warn("Continuing anyway (forced)...")
+            else:
+                utils.fubar("Aborting. Version checks violated and not forced.")
 
 #######################################################################################
 
@@ -306,11 +312,13 @@ def set_suite(file, suite, transaction, britney=False, force=False):
             continue
         desired.add(tuple(split_line))
 
+    version_check = VersionCheck(suite.suite_name, force, session)
+
     # Check to see which packages need added and add them
     for key in sorted(desired, key=functools.cmp_to_key(cmp_package_version)):
         if key not in current:
             (package, version, architecture) = key
-            version_checks(package, architecture, suite.suite_name, version, session, force)
+            version_check(package, architecture, version)
             pkg = get_pkg(package, version, architecture, session)
             if pkg is None:
                 continue
@@ -367,6 +375,8 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
 
     request.sort(key=functools.cmp_to_key(cmp_package_version))
 
+    version_check = VersionCheck(suite.suite_name, force, session)
+
     for package, version, architecture in request:
         pkg = get_pkg(package, version, architecture, session)
         if pkg is None:
@@ -380,7 +390,7 @@ def process_file(file, suite, action, transaction, britney=False, force=False):
 
         # Do version checks when adding packages
         if action == "add":
-            version_checks(package, architecture, suite.suite_name, version, session, force)
+            version_check(package, architecture, version)
 
         if architecture == "source":
             # Find the existing association ID, if any
