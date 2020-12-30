@@ -31,7 +31,6 @@
 ################################################################################
 
 import re
-import six
 
 from .dak_exceptions import UnknownFormatError
 
@@ -75,7 +74,7 @@ class SourceFormat(type):
                 yield "contains source files not allowed in format %s" % cls.name
 
 
-class FormatOne(six.with_metaclass(SourceFormat, SourceFormat)):
+class FormatOne(SourceFormat, metaclass=SourceFormat):
     name = '1.0'
     format = r'1\.0'
 
@@ -96,7 +95,7 @@ class FormatOne(six.with_metaclass(SourceFormat, SourceFormat)):
             yield msg
 
 
-class FormatThree(six.with_metaclass(SourceFormat, SourceFormat)):
+class FormatThree(SourceFormat, metaclass=SourceFormat):
     name = '3.x (native)'
     format = r'3\.\d+ \(native\)'
 
@@ -104,7 +103,7 @@ class FormatThree(six.with_metaclass(SourceFormat, SourceFormat)):
     disallowed = ('orig_tar', 'debian_diff', 'debian_tar', 'more_orig_tar')
 
 
-class FormatThreeQuilt(six.with_metaclass(SourceFormat, SourceFormat)):
+class FormatThreeQuilt(SourceFormat, metaclass=SourceFormat):
     name = '3.x (quilt)'
     format = r'3\.\d+ \(quilt\)'
 
