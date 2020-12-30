@@ -189,14 +189,14 @@ class ArchiveTransaction(object):
 
         try:
             db_binary = session.query(DBBinary).filter_by(**unique).one()
-            for key, value in six.iteritems(rest):
+            for key, value in rest.items():
                 if getattr(db_binary, key) != value:
                     raise ArchiveException('{0}: Does not match binary in database.'.format(binary.hashed_file.filename))
         except NoResultFound:
             db_binary = DBBinary(**unique)
-            for key, value in six.iteritems(rest):
+            for key, value in rest.items():
                 setattr(db_binary, key, value)
-            for key, value in six.iteritems(rest2):
+            for key, value in rest2.items():
                 setattr(db_binary, key, value)
             session.add(db_binary)
             session.flush()
@@ -291,15 +291,15 @@ class ArchiveTransaction(object):
         created = False
         try:
             db_source = session.query(DBSource).filter_by(**unique).one()
-            for key, value in six.iteritems(rest):
+            for key, value in rest.items():
                 if getattr(db_source, key) != value:
                     raise ArchiveException('{0}: Does not match source in database.'.format(source._dsc_file.filename))
         except NoResultFound:
             created = True
             db_source = DBSource(**unique)
-            for key, value in six.iteritems(rest):
+            for key, value in rest.items():
                 setattr(db_source, key, value)
-            for key, value in six.iteritems(rest2):
+            for key, value in rest2.items():
                 setattr(db_source, key, value)
             session.add(db_source)
             session.flush()
@@ -318,7 +318,7 @@ class ArchiveTransaction(object):
 
         ### Now add remaining files and copy them to the archive.
 
-        for hashed_file in six.itervalues(source.files):
+        for hashed_file in source.files.values():
             hashed_file_path = os.path.join(directory, hashed_file.input_filename)
             if os.path.exists(hashed_file_path):
                 db_file = self._install_file(directory, hashed_file, archive, component, source_name)
@@ -700,7 +700,7 @@ class ArchiveUpload(object):
                 # due to the missing files
                 pass
 
-            for f in six.itervalues(files):
+            for f in files.values():
                 src = os.path.join(self.original_directory, f.filename)
                 dst = os.path.join(self.directory, f.filename)
                 if not os.path.exists(src):
@@ -715,7 +715,7 @@ class ArchiveUpload(object):
                 pass
 
             if source is not None:
-                for f in six.itervalues(source.files):
+                for f in source.files.values():
                     src = os.path.join(self.original_directory, f.filename)
                     dst = os.path.join(self.directory, f.filename)
                     if not os.path.exists(dst):

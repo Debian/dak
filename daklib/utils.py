@@ -480,7 +480,7 @@ def TemplateSubst(subst_map, filename):
     """ Perform a substition of template """
     with open(filename) as templatefile:
         template = templatefile.read()
-    for k, v in six.iteritems(subst_map):
+    for k, v in subst_map.items():
         template = template.replace(k, str(v))
     return template
 

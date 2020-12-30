@@ -334,7 +334,7 @@ def real_reject(directory, upload, reason=None, notify=True):
     fs = upload.transaction.fs
     rejectdir = cnf['Dir::Reject']
 
-    files = [f.filename for f in six.itervalues(upload.changes.files)]
+    files = [f.filename for f in upload.changes.files.values()]
     files.append(upload.changes.filename)
 
     for fn in files:

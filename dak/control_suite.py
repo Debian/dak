@@ -45,7 +45,6 @@ import sys
 import apt_pkg
 import functools
 import os
-import six
 
 from daklib.archive import ArchiveTransaction
 from daklib.config import Config
@@ -329,7 +328,7 @@ def set_suite(file, suite, transaction, britney=False, force=False):
             check_propups(pkg, psuites_current, propups_needed)
 
     # Check to see which packages need removed and remove them
-    for key, pkid in six.iteritems(current):
+    for key, pkid in current.items():
         if key not in desired:
             (package, version, architecture) = key
             if architecture == "source":

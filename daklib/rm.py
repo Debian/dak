@@ -42,7 +42,6 @@
 import apt_pkg
 import fcntl
 import functools
-import six
 import sqlalchemy.sql as sql
 import email.utils
 from re import sub
@@ -218,7 +217,7 @@ class ReverseDependencyChecker(object):
         arch_all_removals = set()
 
         if isinstance(removal_requests, dict):
-            removal_requests = six.iteritems(removal_requests)
+            removal_requests = removal_requests.items()
 
         for pkg, arch_list in removal_requests:
             if not arch_list:
@@ -247,10 +246,10 @@ class ReverseDependencyChecker(object):
             # Nothing to remove => no problems
             return dep_problems
 
-        for arch, removed_providers in six.iteritems(affected_virtual_by_arch):
+        for arch, removed_providers in affected_virtual_by_arch.items():
             provides2removal = arch_provides2removal[arch]
             removals = removals_by_arch[arch]
-            for virtual_pkg, virtual_providers in six.iteritems(arch_provided_by[arch]):
+            for virtual_pkg, virtual_providers in arch_provided_by[arch].items():
                 v = virtual_providers & removed_providers
                 if len(v) == len(virtual_providers):
                     # We removed all the providers of virtual_pkg
@@ -260,12 +259,12 @@ class ReverseDependencyChecker(object):
                     #   to minimise the number of blamed packages.
                     provides2removal[virtual_pkg] = sorted(v)[0]
 
-        for arch, removals in six.iteritems(removals_by_arch):
+        for arch, removals in removals_by_arch.items():
             deps = package_dependencies[arch]
             provides2removal = arch_provides2removal[arch]
 
             # Check binary dependencies (Depends)
-            for package, dependencies in six.iteritems(deps):
+            for package, dependencies in deps.items():
                 if package in removals:
                     continue
                 for clause in dependencies:
@@ -280,7 +279,7 @@ class ReverseDependencyChecker(object):
                             removal = provides2removal[dep_package]
                         dep_problems[(removal, arch)].add((package, arch))
 
-            for source, build_dependencies in six.iteritems(src_deps):
+            for source, build_dependencies in src_deps.items():
                 if source in src_removals:
                     continue
                 for clause in build_dependencies:

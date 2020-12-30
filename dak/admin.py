@@ -292,7 +292,7 @@ def component_add(args):
     session = DBConn().session()
 
     component = Component()
-    for key, value in six.iteritems(attributes):
+    for key, value in attributes.items():
         setattr(component, key, value)
 
     session.add(component)
@@ -1060,7 +1060,7 @@ def archive_add(args):
     session = DBConn().session()
 
     archive = Archive()
-    for key, value in six.iteritems(attributes):
+    for key, value in attributes.items():
         setattr(archive, key, value)
 
     session.add(archive)

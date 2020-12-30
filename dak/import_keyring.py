@@ -174,7 +174,7 @@ def main():
     # We don't change the uid, leaving that for historical info; if
     # the id should change, it'll be set when importing another keyring.
 
-    for f, (u, fid, kr) in six.iteritems(db_fin_info):
+    for f, (u, fid, kr) in db_fin_info.items():
         if kr != keyring.keyring_id:
             continue
 
