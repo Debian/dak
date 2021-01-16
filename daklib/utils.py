@@ -718,11 +718,10 @@ def gpg_get_key_addresses(fingerprint):
         return addresses
     addresses = list()
     try:
-        with open(os.devnull, "wb") as devnull:
-            cmd = ["gpg", "--no-default-keyring"]
-            cmd.extend(gpg_keyring_args())
-            cmd.extend(["--with-colons", "--list-keys", "--", fingerprint])
-            output = subprocess.check_output(cmd, stderr=devnull)
+        cmd = ["gpg", "--no-default-keyring"]
+        cmd.extend(gpg_keyring_args())
+        cmd.extend(["--with-colons", "--list-keys", "--", fingerprint])
+        output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
         pass
     else:
