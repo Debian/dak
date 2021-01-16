@@ -711,46 +711,55 @@ def gpg_keyring_args(keyrings=None):
 ################################################################################
 
 
+def _gpg_get_addresses_from_listing(output: bytes):
+    addresses = []
+
+    for l in six.ensure_str(output).split('\n'):
+        parts = l.split(':')
+        if parts[0] not in ("uid", "pub"):
+            continue
+        if parts[1] in ("i", "d", "r"):
+            # Skip uid that is invalid, disabled or revoked
+            continue
+        try:
+            uid = parts[9]
+        except IndexError:
+            continue
+        try:
+            uid = six.ensure_text(uid)
+        except UnicodeDecodeError:
+            uid = uid.decode("latin1") # does not fail
+        m = re_parse_maintainer.match(uid)
+        if not m:
+            continue
+        address = m.group(2)
+        address = six.ensure_str(address)
+        if address.endswith('@debian.org'):
+            # prefer @debian.org addresses
+            # TODO: maybe not hardcode the domain
+            addresses.insert(0, address)
+        else:
+            addresses.append(address)
+
+    return addresses
+
+
 def gpg_get_key_addresses(fingerprint):
     """retreive email addresses from gpg key uids for a given fingerprint"""
     addresses = key_uid_email_cache.get(fingerprint)
     if addresses is not None:
         return addresses
-    addresses = list()
+
     try:
         cmd = ["gpg", "--no-default-keyring"]
         cmd.extend(gpg_keyring_args())
         cmd.extend(["--with-colons", "--list-keys", "--", fingerprint])
         output = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
-        pass
+        addresses = []
     else:
-        for l in six.ensure_str(output).split('\n'):
-            parts = l.split(':')
-            if parts[0] not in ("uid", "pub"):
-                continue
-            if parts[1] in ("i", "d", "r"):
-                # Skip uid that is invalid, disabled or revoked
-                continue
-            try:
-                uid = parts[9]
-            except IndexError:
-                continue
-            try:
-                uid = six.ensure_text(uid)
-            except UnicodeDecodeError:
-                uid = uid.decode("latin1") # does not fail
-            m = re_parse_maintainer.match(uid)
-            if not m:
-                continue
-            address = m.group(2)
-            address = six.ensure_str(address)
-            if address.endswith('@debian.org'):
-                # prefer @debian.org addresses
-                # TODO: maybe not hardcode the domain
-                addresses.insert(0, address)
-            else:
-                addresses.append(address)
+        addresses = _gpg_get_addresses_from_listing(output)
+
     key_uid_email_cache[fingerprint] = addresses
     return addresses
 
