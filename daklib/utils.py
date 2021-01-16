@@ -714,11 +714,11 @@ def gpg_keyring_args(keyrings=None):
 def _gpg_get_addresses_from_listing(output: bytes):
     addresses = []
 
-    for l in six.ensure_str(output).split('\n'):
-        parts = l.split(':')
-        if parts[0] not in ("uid", "pub"):
+    for line in output.split(b'\n'):
+        parts = line.split(b':')
+        if parts[0] not in (b"uid", b"pub"):
             continue
-        if parts[1] in ("i", "d", "r"):
+        if parts[1] in (b"i", b"d", b"r"):
             # Skip uid that is invalid, disabled or revoked
             continue
         try:
@@ -726,9 +726,11 @@ def _gpg_get_addresses_from_listing(output: bytes):
         except IndexError:
             continue
         try:
-            uid = six.ensure_text(uid)
+            uid = uid.decode(encoding='utf-8')
         except UnicodeDecodeError:
-            uid = uid.decode("latin1") # does not fail
+            # If the uid is not valid UTF-8, we assume it is an old uid
+            # still encoding in Latin-1.
+            uid = uid.decode(encoding='latin1')
         m = re_parse_maintainer.match(uid)
         if not m:
             continue
