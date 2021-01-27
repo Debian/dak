@@ -161,16 +161,15 @@ def validate_data(data):
 
 
 def validate_file(fname):
-    f = None
     if fname.endswith('.gz'):
-        f = gzip.open(fname, 'r')
+        opener = gzip.open
     elif fname.endswith('.xz'):
-        f = lzma.open(fname, 'r')
+        opener = lzma.open
     else:
-        f = open(fname, 'r')
+        opener = open
 
-    data = str(f.read(), 'utf-8')
-    f.close()
+    with opener(fname, 'rt', encoding='utf-8') as fh:
+        data = fh.read()
 
     return validate_data(data)
 
