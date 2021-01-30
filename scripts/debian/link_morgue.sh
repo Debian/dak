@@ -101,10 +101,8 @@ out=$(ssh ${DBHOST} preparehashes)
 # And now we get us the file here, so we can easily lookup hashes.
 # (the rsync uses the same ssh key and runs into the forced command.
 # That just knows to send the file for rsync instead of preparing it.)
-if [[ ${out} == UPDATED ]]; then
-    cd "${dbdir}"
-    rsync ${DBHOST}:/srv/ftp-master.debian.org/home/hashes.gz ${HASHFILE}.gz
-fi
+cd "${dbdir}"
+rsync ${DBHOST}:/srv/ftp-master.debian.org/home/hashes.gz ${HASHFILE}.gz
 
 cd "${PROCESSDIR}"
 log "Processing ${PROCESSDIR}"
