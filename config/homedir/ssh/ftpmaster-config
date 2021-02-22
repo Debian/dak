@@ -17,7 +17,7 @@ Host bugs-sync
 
 Host ddtp-sync
   Hostname ddtp.debian.org
-  User ddtp-dak
+  User ddtp
   IdentityFile /srv/ftp-master.debian.org/s3kr1t/ddtp-dak.rsa
 
 Host dep11-sync
