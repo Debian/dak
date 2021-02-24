@@ -33,22 +33,24 @@ def export_external_signature_requests(session, path):
     tbl_arch = DBConn().tbl_architecture
     tbl_ba = DBConn().tbl_bin_associations
     tbl_bin = DBConn().tbl_binaries
+    tbl_src = DBConn().tbl_source
     tbl_esr = DBConn().tbl_external_signature_requests
     tbl_suite = DBConn().tbl_suite
 
-    query = sql.select([tbl_bin.c.package, tbl_suite.c.suite_name, tbl_suite.c.codename, tbl_arch.c.arch_string, sql.func.max(tbl_bin.c.version)]) \
-            .select_from(tbl_esr.join(tbl_suite).join(tbl_ba, tbl_ba.c.id == tbl_esr.c.association_id).join(tbl_bin).join(tbl_arch)) \
-            .group_by(tbl_bin.c.package, tbl_suite.c.suite_name, tbl_suite.c.codename, tbl_arch.c.arch_string)
+    query = sql.select([tbl_bin.c.package, tbl_src.c.source, tbl_suite.c.suite_name, tbl_suite.c.codename, tbl_arch.c.arch_string, sql.func.max(tbl_bin.c.version)]) \
+            .select_from(tbl_esr.join(tbl_suite).join(tbl_ba, tbl_ba.c.id == tbl_esr.c.association_id).join(tbl_bin).join(tbl_arch).join(tbl_src, tbl_bin.c.source == tbl_src.c.id)) \
+            .group_by(tbl_bin.c.package, tbl_src.c.source, tbl_suite.c.suite_name, tbl_suite.c.codename, tbl_arch.c.arch_string)
     requests = session.execute(query)
 
     data = {
         'packages': [
             {
                 'package':      row[0],
-                'suite':        row[1],
-                'codename':     row[2],
-                'architecture': row[3],
-                'version':      row[4],
+                'source':       row[1],
+                'suite':        row[2],
+                'codename':     row[3],
+                'architecture': row[4],
+                'version':      row[5],
             }
             for row in requests],
     }
