@@ -25,6 +25,7 @@ import six
 import tempfile
 
 from daklib.config import Config
+from daklib.dak_exceptions import *
 from daklib.dbconn import *
 from daklib.gpg import SignedFile
 from daklib.regexes import re_field_package
@@ -103,11 +104,27 @@ class CommandFile(object):
         if 'Dinstall::Bcc' in cnf:
             bcc = '{0}\nBcc: {1}'.format(bcc, cnf['Dinstall::Bcc'])
 
-        cc = set(fix_maintainer(address)[1] for address in self.cc)
+        maint_to = None
+        addresses = gpg_get_key_addresses(self.fingerprint.fingerprint)
+        if len(addresses) > 0:
+            maint_to = addresses[0]
+
+        if self.uploader:
+            try:
+                maint_to = fix_maintainer(self.uploader)[1]
+            except ParseMaintError:
+                self.log.log('ignoring malformed uploader', self.filename)
+
+        cc = set()
+        for address in self.cc:
+            try:
+                cc.add(fix_maintainer(address)[1])
+            except ParseMaintError:
+                self.log.log('ignoring malformed cc', self.filename)
 
         subst = {
             '__DAK_ADDRESS__': cnf['Dinstall::MyEmailAddress'],
-            '__MAINTAINER_TO__': fix_maintainer(self.uploader)[1],
+            '__MAINTAINER_TO__': maint_to,
             '__CC__': ", ".join(cc),
             '__BCC__': bcc,
             '__RESULTS__': "\n".join(self.result),
@@ -149,11 +166,6 @@ class CommandFile(object):
             fh.write(signed_file.contents)
             fh.seek(0)
             sections = apt_pkg.TagFile(fh)
-
-        self.uploader = None
-        addresses = gpg_get_key_addresses(self.fingerprint.fingerprint)
-        if len(addresses) > 0:
-            self.uploader = addresses[0]
 
         try:
             next(sections)
