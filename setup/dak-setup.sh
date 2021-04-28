@@ -61,7 +61,7 @@ dak-setup() {
 
   # When setting up the system DB, this needs to be run as postgres
   (cd ${setupdir}; $PG_CMD ./init_db)
-  if [[ ${PGUSER:-} != dak && -v ${PGUSER} ]]; then
+  if [[ ${PGUSER:-} != dak && -v PGUSER ]]; then
     $PG_CMD psql -c "GRANT dak TO \"${PGUSER}\""
   fi
 
