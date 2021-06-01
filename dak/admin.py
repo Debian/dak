@@ -807,6 +807,7 @@ ALLOWED_SUITE_CONFIGS = {
     'changelog': str,
     'changelog_url': str,
     'checksums': SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON,
+    'close_bugs': utils.parse_boolean_from_user,
     'codename': SUITE_CONFIG_READ_ONLY,
     'debugsuite': str,
     'description': str,
