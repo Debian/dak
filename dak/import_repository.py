@@ -31,7 +31,7 @@ from collections import defaultdict
 def usage(status=0):
     print("""
 dak import-repository
-  --keyring=/usr/share/keyring/debian-archive-keyring.gpg
+  --keyring=/usr/share/keyrings/debian-archive-keyring.gpg
   [--key=${fingerprint}]
   [--architectures=a,b,c (default: architectures in origin suite)]
   [--components=main,contrib (default: components in origin suite)]
