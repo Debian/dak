@@ -220,6 +220,22 @@ If the .dsc is signed by an old key no longer in the keyring, use
 ``--ignore-signature``. Make **extra sure** the .dsc is *correct*.
 
 
+NEW on security
+---------------
+
+Just process as on main, nothing special anymore.
+
+Codesigning
+-----------
+Switch to codesigning user, run the following (there may be a tmux
+session called at around that has it in history and maybe some output
+from last run):
+
+``CODESIGN_DSN="postgresql://:5433/codesign" ./code-signing/secure-boot-code-sign.py --config code-signing/etc/debian-prod.yaml``
+
+Check output for any errors.
+
+Can be run as many times as you want, does nothing if no requests are waiting.
 
 .. _Salsa: http://salsa.debian.org/
 .. _FTP-Team: https://salsa.debian.org/ftp-team/
