@@ -206,6 +206,17 @@ And finally, we can generate the signed Release files::
 (Look at ``/srv/dak/ftp/dists/unstable/Release``, ``Release.gpg``, and
 ``InRelease``)
 
+Enable email notifications
+++++++++++
+
+Comment out `No-Mail "true";` line under Dinstall::Options in `/etc/dak/dak.conf`::
+    
+    Dinstall
+    {  
+        Options
+        {
+            // No-Mail "true";
+        };
 
 Next steps
 ++++++++++
@@ -213,5 +224,20 @@ Next steps
 The debian archive automates most of these steps in jobs called
 cron.unchecked, cron.hourly and cron.dinstall.
 
-TODO: Write example (simplified) versions of these cronjobs which will
-do for most installs.
+A simplified example that process unchecked uploads everyday and updates release files.
+Create `/etc/dak/cron.sh`::
+
+    #!/bin/sh
+    
+    set -e
+
+    DAK=/srv/dak/bin/dak
+    
+    $DAK process-upload -d /srv/ftp/pub/UploadQueue -a
+    $DAK generate-packages-sources2
+    $DAK generate-release
+
+and `/etc/cron.d/dak` (you can adjust the time and frequency as needed)::
+    
+    25 10   * * *   dak     /etc/dak/cron.sh
+
