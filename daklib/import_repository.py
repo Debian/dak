@@ -97,7 +97,7 @@ def obtain_file(base, path):
         shutil.copyfileobj(fh, tmp._tmp)
         fh.close()
     else:
-        with open(fn, 'r') as fh:
+        with open(fn, 'rb') as fh:
             shutil.copyfileobj(fh, tmp._tmp)
     return tmp
 
