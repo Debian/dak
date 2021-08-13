@@ -139,17 +139,6 @@ Dinstall
 
     //// ReleaseTransitions (optional): YAML File for blocking uploads to unstable
     // ReleaseTransitions "/srv/dak/web/transitions.yaml";
-
-    //// KeyAutoFetch (optional): boolean (default: false), which if set (and
-    //// not overridden by explicit argument to check_signature()) will enable
-    //// auto key retrieval.  Requires KeyServer variable be
-    //// set.  NB: you should only enable this variable on production systems
-    //// if you have strict control of your upload queue.
-    // KeyAutoFetch "false";
-
-    //// KeyServer (optional): keyserver used for key auto-retrieval
-    //// (c.f. KeyAutoFetch).
-    // KeyServer "wwwkeys.eu.pgp.net";
 };
 
 
