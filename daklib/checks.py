@@ -806,12 +806,6 @@ class NoSourceOnlyCheck(Check):
         if 'all' not in changes.architectures and changes.source.package_list.has_arch_indep_packages():
             if not allow_no_arch_indep_uploads:
                 raise Reject('Uploads must include architecture-independent packages.')
-            for suite in ('oldoldstable', 'oldoldstable-proposed-updates', 'oldoldstable-security',
-                          'jessie', 'jessie-proposed-updates', 'jessie-security',
-                          'oldoldstable-backports', 'oldoldstable-backports-sloppy',
-                          'jessie-backports', 'jessie-backports-sloppy'):
-                if suite in changes.distributions:
-                    raise Reject('Suite {} is not configured to build arch:all packages. Please include them in your upload'.format(suite))
 
         return True
 
