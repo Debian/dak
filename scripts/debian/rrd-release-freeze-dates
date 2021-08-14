@@ -3,3 +3,5 @@ VRULE:1486333796#00ff00:stretch freeze
 VRULE:1497650400#00ff00:stretch release
 VRULE:1552345200#00ff00:buster freeze
 VRULE:1562397149#00ff00:buster release
+VRULE:1615503600#ff0000:bullseye hard freeze
+VRULE:1628927858#ff0000:bullseye release
