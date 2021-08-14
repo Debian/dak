@@ -524,14 +524,14 @@ def main():
 
     if action == "list":
         session = DBConn().session()
-        suite = session.query(Suite).filter_by(suite_name=suite_name).one()
+        suite = get_suite(suite_name, session)
         get_list(suite, session)
     else:
         Logger = daklog.Logger("control-suite")
 
         with ArchiveTransaction() as transaction:
             session = transaction.session
-            suite = session.query(Suite).filter_by(suite_name=suite_name).one()
+            suite = get_suite(suite_name, session)
 
             if action == "set" and not suite.allowcsset:
                 if force:
