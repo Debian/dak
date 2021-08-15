@@ -409,8 +409,8 @@ cd ${ftpdir}/dists
 ln -sT ${new_stable}-backports-sloppy stable-backports-sloppy
 ln -sT ${new_testing}-backports testing-backports
 
-dak admin s add-build-queue stable-backports-sloppy buildd-${new_stable}-backports-sloppy buildd-${new_stable}-backports-sloppy build-queues
-dak admin s add-build-queue testing-backports buildd-${new_testing}-backports buildd-${new_testing}-backports build-queues
+dak admin s add-build-queue stable-backports-sloppy buildd-stable-backports-sloppy buildd-${new_stable}-backports-sloppy build-queues
+dak admin s add-build-queue testing-backports buildd-testing-backports buildd-${new_testing}-backports build-queues
 
 begin;
 
