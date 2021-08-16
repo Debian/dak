@@ -306,7 +306,7 @@ dak admin suite add testing-debug '' origin=Debian label='Debian debug' codename
 dak admin s-c add testing-debug main contrib non-free
 dak admin s-a add testing-debug source all $(dak admin s-a list-arch stable)
 
-dak admin suite add testing-proposed-updates '' origin=Debian label=Debian codename=${new_testing}-proposed-updates description='Debian x.y Testing distribution - Proposed Updates - Not Released' archive=ftp-master
+dak admin suite add testing-proposed-updates '' origin=Debian label=Debian codename=${new_testing}-proposed-updates description='Debian x.y Testing distribution - Proposed Updates - Not Released' allowcsset=True archive=ftp-master
 dak admin s-c add testing-proposed-updates main contrib non-free
 dak admin s-a add testing-proposed-updates source all $(dak admin s-a list-arch stable)
 
