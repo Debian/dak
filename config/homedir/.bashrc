@@ -44,12 +44,12 @@ if [[ -n ${SCRIPTVARS} ]]; then
 fi
 
 function evim() {
-    export EDITOR=$(which vim)
+    export EDITOR=vim
 }
 
 export PAGER=less
 export LESS="-X"
-export EDITOR=$(which emacs)
+export EDITOR=emacs
 export HISTFILESIZE=6000
 export CDPATH=".:~:${base}:${public}:${queuedir}"
 export PATH="~/bin/:${PATH}"
