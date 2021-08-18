@@ -233,7 +233,7 @@ function mkfilesindices() {
 
     cd $base/ftp/indices/files/components
 
-    ARCHLIST=$(tempfile)
+    ARCHLIST=$(mktemp)
 
     log "Querying postgres"
     local query="
