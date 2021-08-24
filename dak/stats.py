@@ -31,7 +31,6 @@
 
 ################################################################################
 
-import six
 import subprocess
 import sys
 import tempfile
@@ -364,9 +363,9 @@ def new_stats(logdir, yaml):
                 with open(logfile, 'rb') as fd:
                     data = fd.read()
             try:
-                data = six.ensure_str(data)
+                data = data.decode()
             except UnicodeDecodeError:
-                data = six.ensure_str(data, encoding='latin1')
+                data = data.decode('latin1')
             ts = parse_new_uploads(data)
             if ts > latest_timestamp:
                 latest_timestamp = ts
