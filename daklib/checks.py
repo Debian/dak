@@ -877,9 +877,8 @@ class LintianCheck(Check):
             if user is not None:
                 cmd.extend(['sudo', '-H', '-u', user])
             cmd.extend(['/usr/bin/lintian', '--show-overrides', '--tags-from-file', temptagfile.name, changespath])
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            output_raw = process.communicate()[0]
-            output = six.ensure_text(output_raw)
+            process = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8")
+            output = process.stdout
             result = process.returncode
 
         if result == 2:
