@@ -38,7 +38,6 @@ import inspect
 import os
 from os.path import normpath
 import re
-import six
 import subprocess
 import warnings
 
@@ -819,7 +818,7 @@ def get_ldap_name(entry):
         ret = entry.get(k)
         if not ret:
             continue
-        value = six.ensure_str(ret[0])
+        value = ret[0].decode()
         if value and value[0] != "-":
             name.append(value)
     return " ".join(name)
@@ -866,11 +865,11 @@ class Keyring(object):
 
         for line_raw in p.stdout:
             try:
-                line = six.ensure_str(line_raw)
+                line = line_raw.decode()
             except UnicodeDecodeError:
                 # Some old UIDs might not use UTF-8 encoding. We assume they
                 # use latin1.
-                line = six.ensure_str(line_raw, encoding='latin1')
+                line = line_raw.decode('latin1')
             field = line.split(":")
             if field[0] == "pub":
                 key = field[4]
@@ -910,12 +909,12 @@ class Keyring(object):
 
         for i in Attrs:
             entry = i[1]
-            uid = six.ensure_str(entry["uid"][0])
+            uid = entry["uid"][0].decode()
             name = get_ldap_name(entry)
             fingerprints = entry["keyFingerPrint"]
             keyid = None
-            for f in fingerprints:
-                f = six.ensure_str(f)
+            for f_raw in fingerprints:
+                f = f_raw.decode()
                 key = self.fpr_lookup.get(f, None)
                 if key not in self.keys:
                     continue
