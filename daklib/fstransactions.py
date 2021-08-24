@@ -174,7 +174,7 @@ class FilesystemTransaction(object):
         """
         self.actions.append(_FilesystemUnlinkAction(path))
 
-    def create(self, path, mode=None):
+    def create(self, path: str, mode=None, text=True):
         """create C{filename} and return file handle
 
         @type  path: str
@@ -182,6 +182,9 @@ class FilesystemTransaction(object):
 
         @type  mode: int
         @param mode: permissions for the new file
+
+        @type  text: bool
+        @param text: open file in text mode
 
         @return: file handle of the new file
         """
@@ -193,7 +196,7 @@ class FilesystemTransaction(object):
             os.makedirs(destdir, 0o2775)
         if os.path.exists(path):
             raise IOError("File '{0}' already exists.".format(path))
-        fh = open(path, 'w')
+        fh = open(path, 'w' if text else 'wb')
         self.actions.append(_FilesystemCreateAction(path))
         if mode is not None:
             os.chmod(path, mode)
