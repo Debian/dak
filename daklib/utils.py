@@ -36,7 +36,6 @@ import email as modemail
 import subprocess
 import errno
 import functools
-import six
 
 import daklib.config as config
 from .dbconn import DBConn, get_architecture, get_component, get_suite, \
@@ -735,7 +734,6 @@ def _gpg_get_addresses_from_listing(output: bytes):
         if not m:
             continue
         address = m.group(2)
-        address = six.ensure_str(address)
         if address.endswith('@debian.org'):
             # prefer @debian.org addresses
             # TODO: maybe not hardcode the domain
@@ -801,8 +799,8 @@ def get_logins_from_ldap(fingerprint='*'):
                        ['uid', 'keyfingerprint'])
     login = {}
     for elem in Attrs:
-        fpr = six.ensure_str(elem[1]['keyFingerPrint'][0])
-        uid = six.ensure_str(elem[1]['uid'][0])
+        fpr = elem[1]['keyFingerPrint'][0].decode()
+        uid = elem[1]['uid'][0].decode()
         login[fpr] = uid
     return login
 
@@ -822,7 +820,7 @@ def get_users_from_ldap():
         name = []
         for k in ('cn', 'mn', 'sn'):
             try:
-                value = six.ensure_str(elem[k][0])
+                value = elem[k][0].decode()
                 if value and value[0] != '-':
                     name.append(value)
             except KeyError:
