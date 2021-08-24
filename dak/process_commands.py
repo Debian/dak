@@ -68,7 +68,7 @@ def main(argv=None):
             log.log(['unexpected filename', basename])
             continue
 
-        with open(fn, 'r') as fh:
+        with open(fn, 'rb') as fh:
             data = fh.read()
 
         try:
@@ -91,7 +91,7 @@ def main(argv=None):
 
         with FilesystemTransaction() as fs:
             fs.unlink(fn)
-            fs.create(dst, mode=0o644).write(data)
+            fs.create(dst, mode=0o644, text=False).write(data)
             fs.commit()
 
     log.close()

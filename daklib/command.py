@@ -38,7 +38,7 @@ class CommandError(Exception):
 
 
 class CommandFile(object):
-    def __init__(self, filename, data, log=None):
+    def __init__(self, filename: str, data: bytes, log=None):
         if log is None:
             from daklib.daklog import Logger
             log = Logger()
@@ -149,7 +149,7 @@ class CommandFile(object):
         keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
         keyring_files = [k.keyring_name for k in keyrings]
 
-        signed_file = SignedFile(six.ensure_binary(self.data), keyring_files)
+        signed_file = SignedFile(self.data, keyring_files)
         if not signed_file.valid:
             self.log.log(['invalid signature', self.filename])
             return False
