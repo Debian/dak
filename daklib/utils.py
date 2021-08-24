@@ -93,13 +93,13 @@ def extract_component_from_section(section):
 ################################################################################
 
 
-def parse_deb822(armored_contents, signing_rules=0, keyrings=None):
+def parse_deb822(armored_contents: bytes, signing_rules=0, keyrings=None):
     require_signature = True
     if keyrings is None:
         keyrings = []
         require_signature = False
 
-    signed_file = SignedFile(armored_contents.encode('utf-8'), keyrings=keyrings, require_signature=require_signature)
+    signed_file = SignedFile(armored_contents, keyrings=keyrings, require_signature=require_signature)
     contents = signed_file.contents.decode('utf-8')
 
     error = ""
@@ -149,7 +149,7 @@ def parse_deb822(armored_contents, signing_rules=0, keyrings=None):
             continue
         error += line
 
-    changes["filecontents"] = armored_contents
+    changes["filecontents"] = armored_contents.decode()
 
     if "source" in changes:
         # Strip the source version in brackets from the source field,
@@ -189,7 +189,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
         "-----BEGIN PGP SIGNATURE-----".
     """
 
-    with open(filename, 'r', encoding='utf-8') as changes_in:
+    with open(filename, 'rb') as changes_in:
         content = changes_in.read()
     changes = parse_deb822(content, signing_rules, keyrings=keyrings)
 
