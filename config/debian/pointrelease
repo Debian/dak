@@ -231,6 +231,10 @@ propups unstable-debug
 propups testing
 propups testing-debug
 
+log "Override changes"
+echo "Any override changes? If so, process them in another window."
+confirm
+
 log "RM time"
 hadrms=0
 
