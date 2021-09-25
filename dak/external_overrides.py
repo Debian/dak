@@ -53,7 +53,7 @@ should be given as lines of the form 'PACKAGE KEY VALUE'.
 #############################################################################
 
 
-class ExternalOverrideReader(object):
+class ExternalOverrideReader:
     """
     Parses an external override file
     """

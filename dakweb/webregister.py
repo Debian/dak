@@ -5,7 +5,7 @@
 """
 
 
-class QueryRegister(object):
+class QueryRegister:
     __shared_state = {}
 
     def __init__(self, *args, **kwargs):

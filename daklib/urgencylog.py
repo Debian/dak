@@ -34,7 +34,7 @@ from .utils import warn, move
 ###############################################################################
 
 
-class UrgencyLog(object):
+class UrgencyLog:
     "Urgency Logger object"
 
     __shared_state = {}

@@ -47,7 +47,7 @@ def which_conf_file():
     return os.getenv("DAK_CONFIG", default_config)
 
 
-class Config(object):
+class Config:
     """
     A Config object is a singleton containing
     information about the DAK configuration

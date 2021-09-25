@@ -78,7 +78,7 @@ class RejectACL(Reject):
         return "ACL {0}: {1}".format(self.acl.name, self.reason)
 
 
-class Check(object):
+class Check:
     """base class for checks
 
     checks are called by L{daklib.archive.ArchiveUpload}. Failing tests should
@@ -472,7 +472,7 @@ class BinaryTimestampCheck(Check):
         future_cutoff = time.time() + cnf.find_i('Dinstall::FutureTimeTravelGrace', 24 * 3600)
         past_cutoff = time.mktime(time.strptime(cnf.find('Dinstall::PastCutoffYear', '1975'), '%Y'))
 
-        class TarTime(object):
+        class TarTime:
             def __init__(self):
                 self.future_files = dict()
                 self.past_files = dict()

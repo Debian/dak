@@ -26,7 +26,7 @@ from daklib.textutils import fix_maintainer
 from daklib.utils import mail_addresses_for_upload, TemplateSubst, send_mail
 
 
-class ProcessedUpload(object):
+class ProcessedUpload:
     """Contains data of a processed upload.
     """
     # people

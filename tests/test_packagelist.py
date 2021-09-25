@@ -21,12 +21,12 @@ import unittest
 from daklib.packagelist import PackageList
 
 
-class FakeArchitecture(object):
+class FakeArchitecture:
     def __init__(self, name):
         self.arch_string = name
 
 
-class FakeSuite(object):
+class FakeSuite:
     def __init__(self, *architectures):
         self.architectures = [FakeArchitecture(a) for a in architectures]
 

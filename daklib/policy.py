@@ -28,7 +28,7 @@ import os
 import shutil
 
 
-class UploadCopy(object):
+class UploadCopy:
     """export a policy queue upload
 
     This class can be used in a with-statement::
@@ -120,7 +120,7 @@ class UploadCopy(object):
         return None
 
 
-class PolicyQueueUploadHandler(object):
+class PolicyQueueUploadHandler:
     """process uploads to policy queues
 
     This class allows to accept or reject uploads and to get a list of missing

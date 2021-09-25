@@ -23,7 +23,7 @@ interfaces around python-apt
 import apt_pkg
 
 
-class DakHashes(object):
+class DakHashes:
     """
     wrapper around `apt_pkg.Hashes`
     """

@@ -17,7 +17,7 @@
 import apt_pkg
 
 
-class AptVersion(object):
+class AptVersion:
     def __init__(self, version):
         self.version = version
 

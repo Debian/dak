@@ -26,7 +26,7 @@ class InvalidSource(Exception):
     pass
 
 
-class PackageListEntry(object):
+class PackageListEntry:
     def __init__(self, name, package_type, section, component, priority, **other):
         self.name = name
         self.type = package_type
@@ -75,7 +75,7 @@ class PackageListEntry(object):
         )
 
 
-class PackageList(object):
+class PackageList:
     def __init__(self, source):
         if 'Package-List' in source:
             self._parse(source)

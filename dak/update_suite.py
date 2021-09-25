@@ -56,7 +56,7 @@ def usage():
     sys.exit(0)
 
 
-class SuiteUpdater(object):
+class SuiteUpdater:
     def __init__(self, transaction, origin, target,
                  new_packages=True, also_from_policy_queue=False,
                  obey_policy_queue=True, obey_build_queues=True,

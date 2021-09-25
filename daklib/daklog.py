@@ -32,7 +32,7 @@ from . import utils
 ################################################################################
 
 
-class Logger(object):
+class Logger:
     "Logger object"
     __shared_state = {}
 

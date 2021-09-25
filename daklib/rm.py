@@ -56,7 +56,7 @@ import debianbts as bts
 ################################################################################
 
 
-class ReverseDependencyChecker(object):
+class ReverseDependencyChecker:
     """A bulk tester for reverse dependency checks
 
     This class is similar to the check_reverse_depends method from "utils".  However,

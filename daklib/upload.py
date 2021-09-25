@@ -83,7 +83,7 @@ class FileDoesNotExist(UploadException):
         return "Refers to non-existing file '{0}'".format(self.filename)
 
 
-class HashedFile(object):
+class HashedFile:
     """file with checksums
     """
 
@@ -267,7 +267,7 @@ def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_
 
 
 @functools.total_ordering
-class Changes(object):
+class Changes:
     """Representation of a .changes file
     """
 
@@ -480,7 +480,7 @@ class Changes(object):
         return self._key() < other._key()
 
 
-class Binary(object):
+class Binary:
     """Representation of a binary package
     """
 
@@ -544,7 +544,7 @@ class Binary(object):
         return "main"
 
 
-class Source(object):
+class Source:
     """Representation of a source package
     """
 

@@ -37,7 +37,7 @@ class CommandError(Exception):
     pass
 
 
-class CommandFile(object):
+class CommandFile:
     def __init__(self, filename: str, data: bytes, log=None):
         if log is None:
             from daklib.daklog import Logger

@@ -22,7 +22,7 @@ import unittest
 import daklib.dbconn
 
 
-class DummyChanges(object):
+class DummyChanges:
     def __init__(self, source, version, changesname):
         self.source = source
         self.version = version

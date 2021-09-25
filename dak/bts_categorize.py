@@ -68,7 +68,7 @@ arguments = [('s', 'simulate', 'BtsCategorize::Options::Simulate'),
              ('h', 'help', 'BtsCategorize::Options::Help')]
 
 
-class BugClassifier(object):
+class BugClassifier:
     """
     classify bugs using usertags based on the bug subject lines
 

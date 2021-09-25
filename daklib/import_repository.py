@@ -38,7 +38,7 @@ from sqlalchemy.orm import object_session
 _release_hashes_fields = ('MD5Sum', 'SHA1', 'SHA256')
 
 
-class Release(object):
+class Release:
     def __init__(self, base, suite_name, data):
         self._base = base
         self._suite_name = suite_name
@@ -70,7 +70,7 @@ class Release(object):
     # a newer version than before
 
 
-class File(object):
+class File:
     def __init__(self):
         config = daklib.config.Config()
         self._tmp = tempfile.NamedTemporaryFile(dir=config['Dir::TempPath'])

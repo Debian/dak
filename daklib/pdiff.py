@@ -177,7 +177,7 @@ def _read_hashes(history, history_order, ind, hashind, lines):
     return current_order[-patches_from_the_end:]
 
 
-class PDiffIndex(object):
+class PDiffIndex:
     def __init__(self, patches_dir, max=56, merge_pdiffs=False):
         self.can_path = None
         self._history = {}

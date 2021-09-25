@@ -46,7 +46,7 @@ class HashMismatchException(ArchiveException):
     pass
 
 
-class ArchiveTransaction(object):
+class ArchiveTransaction:
     """manipulate the archive in a transaction
     """
 
@@ -585,7 +585,7 @@ def source_component_from_package_list(package_list, suite):
     return query.first()
 
 
-class ArchiveUpload(object):
+class ArchiveUpload:
     """handle an upload
 
     This class can be used in a with-statement::

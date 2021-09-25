@@ -36,7 +36,7 @@ class GpgException(Exception):
     pass
 
 
-class _Pipe(object):
+class _Pipe:
     """context manager for pipes
 
     Note: When the pipe is closed by other means than the close_r and close_w
@@ -65,7 +65,7 @@ class _Pipe(object):
             self.w = None
 
 
-class SignedFile(object):
+class SignedFile:
     """handle files signed with PGP
 
     The following attributes are available:

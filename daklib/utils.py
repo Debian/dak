@@ -655,7 +655,7 @@ def parse_args(Options):
 
 
 @functools.total_ordering
-class ArchKey(object):
+class ArchKey:
     """
     Key object for use in sorting lists of architectures.
 

@@ -106,7 +106,7 @@ def sign_release_dir(suite, dirname):
                 daklib.gpg.sign(stdin, stdout, inline=True, **args)
 
 
-class XzFile(object):
+class XzFile:
     def __init__(self, filename, mode='r'):
         self.filename = filename
 
@@ -115,7 +115,7 @@ class XzFile(object):
             return subprocess.check_output(['xz', '-d'], stdin=stdin)
 
 
-class HashFunc(object):
+class HashFunc:
     def __init__(self, release_field, func, db_name):
         self.release_field = release_field
         self.func = func
@@ -129,7 +129,7 @@ RELEASE_HASHES = [
 ]
 
 
-class ReleaseWriter(object):
+class ReleaseWriter:
     def __init__(self, suite):
         self.suite = suite
 

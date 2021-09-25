@@ -37,7 +37,7 @@ import os.path
 import sqlalchemy.sql as sql
 
 
-class BinaryContentsWriter(object):
+class BinaryContentsWriter:
     '''
     BinaryContentsWriter writes the Contents-$arch.gz files.
     '''
@@ -148,7 +148,7 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         writer.close()
 
 
-class SourceContentsWriter(object):
+class SourceContentsWriter:
     '''
     SourceContentsWriter writes the Contents-source.gz files.
     '''
@@ -266,7 +266,7 @@ def source_helper(suite_id, component_id):
     return log_message
 
 
-class ContentsWriter(object):
+class ContentsWriter:
     '''
     Loop over all suites, architectures, overridetypes, and components to write
     all contents files.
@@ -330,7 +330,7 @@ class ContentsWriter(object):
         session.close()
 
 
-class BinaryContentsScanner(object):
+class BinaryContentsScanner:
     '''
     BinaryContentsScanner provides a threadsafe method scan() to scan the
     contents of a DBBinary object.
@@ -394,7 +394,7 @@ def binary_scan_helper(binary_id):
         print("binary_scan_helper raised an exception: %s" % (e))
 
 
-class UnpackedSource(object):
+class UnpackedSource:
     '''
     UnpackedSource extracts a source package into a temporary location and
     gives you some convinient function for accessing it.
@@ -445,7 +445,7 @@ class UnpackedSource(object):
         self.cleanup()
 
 
-class SourceContentsScanner(object):
+class SourceContentsScanner:
     '''
     SourceContentsScanner provides a method scan() to scan the contents of a
     DBSource object.

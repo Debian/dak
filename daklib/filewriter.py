@@ -30,7 +30,7 @@ import os.path
 import subprocess
 
 
-class CompressionMethod(object):
+class CompressionMethod:
     def __init__(self, keyword, extension, command):
         self.keyword = keyword
         self.extension = extension
@@ -47,7 +47,7 @@ _compression_methods = (
 )
 
 
-class BaseFileWriter(object):
+class BaseFileWriter:
     '''
     Base class for compressed and uncompressed file writing.
     '''

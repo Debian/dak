@@ -143,7 +143,7 @@ def get_package_names(suite):
         group_by(DBBinary.package).order_by(DBBinary.package)
 
 
-class NamedSource(object):
+class NamedSource:
     '''
     A source package identified by its name with all of its versions in a
     suite.
@@ -159,7 +159,7 @@ class NamedSource(object):
         return "%s(%s)" % (self.source, ", ".join(self.versions))
 
 
-class DejavuBinary(object):
+class DejavuBinary:
     '''
     A binary package identified by its name which gets built by multiple source
     packages in a suite. The architecture is ignored which leads to the

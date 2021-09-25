@@ -149,7 +149,7 @@ __all__.append('session_wrapper')
 ################################################################################
 
 
-class ORMObject(object):
+class ORMObject:
     """
     ORMObject is a base class for all ORM classes mapped by SQLalchemy. All
     derived classes must implement the properties() method.
@@ -301,7 +301,7 @@ __all__.append('get_architecture')
 ################################################################################
 
 
-class Archive(object):
+class Archive:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -339,7 +339,7 @@ __all__.append('get_archive')
 ################################################################################
 
 
-class ArchiveFile(object):
+class ArchiveFile:
     def __init__(self, archive=None, component=None, file=None):
         self.archive = archive
         self.component = component
@@ -508,7 +508,7 @@ __all__.append('get_component_by_package_suite')
 ################################################################################
 
 
-class BuildQueue(object):
+class BuildQueue:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -626,7 +626,7 @@ __all__.append('get_component_names')
 ################################################################################
 
 
-class DBConfig(object):
+class DBConfig:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -639,7 +639,7 @@ __all__.append('DBConfig')
 ################################################################################
 
 
-class DSCFile(object):
+class DSCFile:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -826,7 +826,7 @@ def get_ldap_name(entry):
 ################################################################################
 
 
-class Keyring(object):
+class Keyring:
     keys = {}
     fpr_lookup = {}
 
@@ -989,7 +989,7 @@ __all__.append('get_active_keyring_paths')
 ################################################################################
 
 
-class DBChange(object):
+class DBChange:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -1099,7 +1099,7 @@ __all__.append('get_maintainer')
 ################################################################################
 
 
-class NewComment(object):
+class NewComment:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -1286,7 +1286,7 @@ __all__.append('get_override_type')
 ################################################################################
 
 
-class PolicyQueue(object):
+class PolicyQueue:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -1323,7 +1323,7 @@ __all__.append('get_policy_queue')
 
 
 @functools.total_ordering
-class PolicyQueueUpload(object):
+class PolicyQueueUpload:
     def _key(self):
         return (
             self.changes.source,
@@ -1344,7 +1344,7 @@ __all__.append('PolicyQueueUpload')
 ################################################################################
 
 
-class PolicyQueueByhandFile(object):
+class PolicyQueueByhandFile:
     pass
 
 
@@ -1668,7 +1668,7 @@ __all__.append('import_metadata_into_db')
 ################################################################################
 
 
-class SrcFormat(object):
+class SrcFormat:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -2030,7 +2030,7 @@ __all__.append('SourceMetadata')
 ################################################################################
 
 
-class MetadataProxy(object):
+class MetadataProxy:
     def __init__(self, session, query):
         self.session = session
         self.query = query
@@ -2091,7 +2091,7 @@ __all__.append('get_version_checks')
 ################################################################################
 
 
-class DBConn(object):
+class DBConn:
     """
     database module init.
     """

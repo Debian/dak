@@ -26,7 +26,7 @@ Simple summary class for dak
 ###############################################################################
 
 
-class SummaryStats(object):
+class SummaryStats:
     __shared_state = {}
 
     def __init__(self, *args, **kwargs):

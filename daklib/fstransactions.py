@@ -22,7 +22,7 @@ import shutil
 import six
 
 
-class _FilesystemAction(object):
+class _FilesystemAction:
     @property
     def temporary_name(self):
         raise NotImplementedError()
@@ -122,7 +122,7 @@ class _FilesystemCreateAction(_FilesystemAction):
             self.need_cleanup = False
 
 
-class FilesystemTransaction(object):
+class FilesystemTransaction:
     """transactions for filesystem actions"""
 
     def __init__(self):

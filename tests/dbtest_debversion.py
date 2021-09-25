@@ -9,7 +9,7 @@ from sqlalchemy.orm import mapper
 import unittest
 
 
-class Version(object):
+class Version:
 
     def __init__(self, version):
         self.version = version
