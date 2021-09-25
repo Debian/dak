@@ -21,7 +21,6 @@
 
 import apt_pkg
 import os
-import six
 import tempfile
 
 from daklib.config import Config

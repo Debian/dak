@@ -22,7 +22,6 @@
 
 import sys
 import apt_pkg
-import six
 
 from daklib.config import Config
 from daklib.dbconn import *
