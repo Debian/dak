@@ -51,7 +51,6 @@ from daklib.dak_exceptions import ParseMaintError
 
 Cnf = None
 direction = []
-row_number = 0
 
 ################################################################################
 
@@ -282,9 +281,6 @@ def table_footer(type):
 
 
 def table_row(source, version, arch, last_mod, maint, distribution, closes, fingerprint, sponsor, changedby):
-
-    global row_number
-
     trclass = "sid"
     session = DBConn().session()
     for dist in distribution:
@@ -299,10 +295,7 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
         trclass += " sourceNEW"
     session.commit()
 
-    if row_number % 2 != 0:
-        print("<tr class=\"%s even\">" % (trclass))
-    else:
-        print("<tr class=\"%s odd\">" % (trclass))
+    print("<tr class=\"%s\">" % (trclass))
 
     if "sourceNEW" in trclass:
         print("<td class=\"package\">%s</td>" % (source))
@@ -338,7 +331,6 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     for close in closes:
         print("<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (html.escape(close), html.escape(close, quote=False)))
     print("</td></tr>")
-    row_number += 1
 
 ############################################################
 

@@ -37,11 +37,6 @@ from daklib import utils
 
 ################################################################################
 
-row_number = 1
-
-
-################################################################################
-
 
 def header():
     return """<!DOCTYPE html>
@@ -104,15 +99,12 @@ def table_footer():
 
 
 def table_row(changesname, delay, changed_by, closes, fingerprint):
-    global row_number
-
-    res = '<tr class="%s">' % ((row_number % 2) and 'odd' or 'even')
+    res = '<tr>'
     res += (2 * '<td valign="top">%s</td>') % tuple(html.escape(x, quote=False) for x in (changesname, delay))
     res += '<td valign="top">%s<br><span class=\"deferredfp\">Fingerprint: %s</span></td>' % (html.escape(changed_by, quote=False), fingerprint)
     res += ('<td valign="top">%s</td>' %
              ''.join(['<a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s">#%s</a><br>' % (close, close) for close in closes]))
     res += '</tr>\n'
-    row_number += 1
     return res
 
 
