@@ -22,27 +22,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import email.header
-import six
 
 from .dak_exceptions import *
 from .regexes import re_parse_maintainer
 
 ################################################################################
-
-
-def force_to_utf8(s):
-    """
-    Forces a string to UTF-8.  If the string isn't already UTF-8,
-    it's assumed to be ISO-8859-1.
-    """
-    if isinstance(s, six.text_type):
-        return s
-    try:
-        six.text_type(s, 'utf-8')
-        return s
-    except UnicodeError:
-        latin1_s = six.text_type(s, 'iso8859-1')
-        return latin1_s.encode('utf-8')
 
 
 def rfc2047_encode(s):
@@ -98,9 +82,6 @@ def fix_maintainer(maintainer):
 
     # Get an RFC2047 compliant version of the name
     rfc2047_name = rfc2047_encode(name)
-
-    # Force the name to be UTF-8
-    name = force_to_utf8(name)
 
     if name.find(',') != -1 or name.find('.') != -1:
         rfc822_maint = "%s (%s)" % (email, name)
