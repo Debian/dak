@@ -60,7 +60,7 @@ from .aptversion import AptVersion
 # Only import Config until Queue stuff is changed to store its config
 # in the database
 from .config import Config
-from .textutils import fix_maintainer, force_to_utf8
+from .textutils import fix_maintainer
 
 # suppress some deprecation warnings in squeeze related to sqlalchemy
 warnings.filterwarnings('ignore',
@@ -415,7 +415,6 @@ class DBBinary(ORMObject):
         for member in tar.getmembers():
             if not member.isdir():
                 name = normpath(member.name)
-                name = force_to_utf8(name)
                 yield name
         tar.close()
         dpkg.stdout.close()
@@ -1575,7 +1574,6 @@ class DBSource(ORMObject):
         unpacked = UnpackedSource(fullpath)
         fileset = set()
         for name in unpacked.get_all_filenames():
-            name = force_to_utf8(name)
             fileset.add(name)
         return fileset
 
