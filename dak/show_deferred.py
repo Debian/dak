@@ -27,7 +27,6 @@ import re
 import time
 import apt_pkg
 import rrdtool
-import six
 
 from debian import deb822
 
@@ -79,7 +78,7 @@ def footer():
     res = "<p class=\"validate\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime()))
     res += "<p class=\"timestamp\">There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>"
     res += "</body></html>"
-    return six.ensure_str(res)
+    return res
 
 
 def table_header():
@@ -206,7 +205,7 @@ def list_uploads(filelist, rrd_dir):
     print(header())
     if uploads:
         print(table_header())
-        print(six.ensure_str(''.join(table_row(*x[1:6]) for x in uploads)))
+        print(''.join(table_row(*x[1:6]) for x in uploads))
         print(table_footer())
     else:
         print('<h1>Currently no deferred uploads to Debian</h1>')
@@ -224,9 +223,8 @@ def list_uploads(filelist, rrd_dir):
 Delayed-Until: %s
 Delay-Remaining: %s
 Fingerprint: %s""" % (time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(time.time() + u[0])), u[2], u[5])
-                fields = six.ensure_str(fields)
                 print(fields, file=f)
-                encoded = six.ensure_str(u[6].dump())
+                encoded = u[6].dump()
                 print(encoded.rstrip(), file=f)
                 open(os.path.join(Cnf["Show-Deferred::LinkPath"], u[1]), "w").write(encoded + fields + '\n')
                 print(file=f)
