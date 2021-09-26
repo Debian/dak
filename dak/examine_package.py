@@ -54,7 +54,6 @@ import subprocess
 import tarfile
 import tempfile
 import threading
-import six
 
 from daklib import utils
 from daklib.config import Config
@@ -159,7 +158,6 @@ def escaped_text(s, strip=False):
 
 
 def formatted_text(s, strip=False):
-    s = six.ensure_str(s)
     if use_html:
         if strip:
             s = s.strip()
@@ -176,8 +174,6 @@ def output_row(s):
 
 
 def format_field(k, v):
-    k = six.ensure_str(k)
-    v = six.ensure_str(v)
     if use_html:
         return """<tr><td class="key">%s:</td><td class="val">%s</td></tr>""" % (k, v)
     else:
@@ -199,7 +195,7 @@ def foldable_output(title, elementnameprefix, content, norow=False):
         result += output_row(content) + "\n"
     if use_html:
         result += """</tbody></table></div>"""
-    return six.ensure_str(result)
+    return result
 
 ################################################################################
 
@@ -317,7 +313,7 @@ def read_changes_or_dsc(suite, filename, session=None):
         except:
             return formatted_text("can't parse .dsc control info")
 
-    filecontents = six.ensure_str(strip_pgp_signature(filename))
+    filecontents = strip_pgp_signature(filename)
     keysinorder = []
     for l in filecontents.split('\n'):
         m = re.match(r'([-a-zA-Z0-9]*):', l)
@@ -436,7 +432,7 @@ def output_package_relations():
         package_relations.clear()
         result = foldable_output("Package relations", "relations", to_print)
         package_relations.clear()
-    return six.ensure_str(result)
+    return result
 
 
 def output_deb_info(suite, filename, packagename, session=None):
@@ -487,12 +483,11 @@ def output_deb_info(suite, filename, packagename, session=None):
 
 
 def do_command(command, escaped=False):
-    process = subprocess.Popen(command, stdout=subprocess.PIPE)
-    data = six.ensure_str(process.communicate()[0])
+    result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
     if escaped:
-        return escaped_text(data)
+        return escaped_text(result.stdout)
     else:
-        return formatted_text(data)
+        return formatted_text(result.stdout)
 
 
 def do_lintian(filename):
@@ -560,7 +555,7 @@ def get_copyright(deb_filename):
                                (printed.copyrights[copyrightmd5]))
     else:
         printed.copyrights[copyrightmd5] = "%s (%s)" % (package, os.path.basename(deb_filename))
-    return res + formatted_text(cright)
+    return res + formatted_text(cright.decode())
 
 
 def get_readme_source(dsc_filename):
@@ -585,11 +580,10 @@ def get_readme_source(dsc_filename):
         else:
             res += "No README.source in this package\n\n"
 
-    return six.ensure_str(res)
+    return res
 
 
 def check_dsc(suite, dsc_filename, session=None):
-    dsc_filename = six.ensure_str(dsc_filename)
     dsc = read_changes_or_dsc(suite, dsc_filename, session)
     dsc_basename = os.path.basename(dsc_filename)
     cdsc = foldable_output(dsc_filename, "dsc", dsc, norow=True) + \
@@ -600,11 +594,11 @@ def check_dsc(suite, dsc_filename, session=None):
            "\n" + \
            foldable_output("README.source for %s" % dsc_basename,
                "source-readmesource", get_readme_source(dsc_filename))
-    return six.ensure_str(cdsc)
+    return cdsc
 
 
 def check_deb(suite, deb_filename, session=None):
-    filename = six.ensure_str(os.path.basename(deb_filename))
+    filename = os.path.basename(deb_filename)
     packagename = filename.split('_')[0]
 
     if filename.endswith(".udeb"):
@@ -633,7 +627,7 @@ def check_deb(suite, deb_filename, session=None):
         result += foldable_output("copyright of %s" % (filename),
             "binary-%s-copyright" % packagename, get_copyright(deb_filename)) + "\n"
 
-    return six.ensure_str(result)
+    return result
 
 # Read a file, strip the signature and return the modified contents as
 # a string.
@@ -643,14 +637,14 @@ def strip_pgp_signature(filename):
     with open(filename, 'rb') as f:
         data = f.read()
         signedfile = SignedFile(data, keyrings=(), require_signature=False)
-        return signedfile.contents
+        return signedfile.contents.decode()
 
 
 def display_changes(suite, changes_filename):
     global printed
     changes = read_changes_or_dsc(suite, changes_filename)
     printed.copyrights = {}
-    return six.ensure_str(foldable_output(changes_filename, "changes", changes, norow=True))
+    return foldable_output(changes_filename, "changes", changes, norow=True)
 
 
 def check_changes(changes_filename):
@@ -667,7 +661,7 @@ def check_changes(changes_filename):
         if f.endswith(".dsc"):
             output += check_dsc(changes['distribution'], f)
         # else: => byhand
-    return six.ensure_str(output)
+    return output
 
 
 def main():
@@ -698,7 +692,7 @@ def main():
             if not Options["Html-Output"]:
                 # Pipe output for each argument through less
                 less_cmd = ("less", "-r", "-")
-                less_process = subprocess.Popen(less_cmd, stdin=subprocess.PIPE, bufsize=0)
+                less_process = subprocess.Popen(less_cmd, stdin=subprocess.PIPE, bufsize=0, text=True)
                 less_fd = less_process.stdin
                 # -R added to display raw control chars for colour
                 my_fd = less_fd
@@ -707,17 +701,17 @@ def main():
 
             try:
                 if f.endswith(".changes"):
-                    my_fd.write(six.ensure_binary(check_changes(f)))
+                    my_fd.write(check_changes(f))
                 elif f.endswith(".deb") or f.endswith(".udeb"):
                     # default to unstable when we don't have a .changes file
                     # perhaps this should be a command line option?
-                    my_fd.write(six.ensure_binary(check_deb('unstable', f)))
+                    my_fd.write(check_deb('unstable', f))
                 elif f.endswith(".dsc"):
-                    my_fd.write(six.ensure_binary(check_dsc('unstable', f)))
+                    my_fd.write(check_dsc('unstable', f))
                 else:
                     utils.fubar("Unrecognised file type: '%s'." % (f))
             finally:
-                my_fd.write(six.ensure_binary(output_package_relations()))
+                my_fd.write(output_package_relations())
                 if not Options["Html-Output"]:
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()
@@ -736,8 +730,8 @@ def main():
 def get_lintian_version():
     if not hasattr(get_lintian_version, '_version'):
         # eg. "Lintian v2.5.100"
-        val = subprocess.check_output(('lintian', '--version'))
-        get_lintian_version._version = six.ensure_str(val).split(' v')[-1].strip()
+        val = subprocess.check_output(('lintian', '--version'), text=True)
+        get_lintian_version._version = val.split(' v')[-1].strip()
 
     return get_lintian_version._version
 
