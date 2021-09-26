@@ -21,7 +21,6 @@
 
 import collections
 import json
-import six
 import sys
 
 import apt_pkg
@@ -246,8 +245,7 @@ def __architecture_rm(d, args):
     print("Architecture %s removed" % args[2])
 
 
-def architecture(command):
-    args = [str(x) for x in command]
+def architecture(args):
     Cnf = utils.get_conf()
     d = DBConn()
 
@@ -492,8 +490,7 @@ def __suite_add_build_queue(d, args):
     session.commit()
 
 
-def suite(command):
-    args = [str(x) for x in command]
+def suite(args):
     Cnf = utils.get_conf()
     d = DBConn()
 
@@ -600,8 +597,7 @@ def __suite_architecture_rm(d, args):
     print("Removed suite-architecture entry for %s, %s" % (args[2].lower(), args[3].lower()))
 
 
-def suite_architecture(command):
-    args = [str(x) for x in command]
+def suite_architecture(args):
     Cnf = utils.get_conf()
     d = DBConn()
 
@@ -704,8 +700,7 @@ def __suite_component_rm(d, args):
     print("Removed suite-component entry for %s, %s" % (args[2].lower(), args[3].lower()))
 
 
-def suite_component(command):
-    args = [str(x) for x in command]
+def suite_component(args):
     Cnf = utils.get_conf()
     d = DBConn()
 
@@ -1000,8 +995,7 @@ def __suite_config_list(d, args, json_format=False):
         print(json.dumps(values, indent=2, sort_keys=True))
 
 
-def suite_config(command):
-    args = [six.ensure_text(x) for x in command]
+def suite_config(args):
     Cnf = utils.get_conf()
     d = DBConn()
 
@@ -1158,8 +1152,7 @@ def __version_check_rm(d, suite_name, check, reference_name):
         print("W: version-check not found.")
 
 
-def version_check(command):
-    args = [str(x) for x in command]
+def version_check(args):
     Cnf = utils.get_conf()
     d = DBConn()
 
@@ -1190,8 +1183,7 @@ dispatch['v-c'] = version_check
 ################################################################################
 
 
-def show_config(command):
-    args = [str(x) for x in command]
+def show_config(args):
     cnf = utils.get_conf()
 
     die_arglen(args, 2, "E: config needs at least a command")
@@ -1247,8 +1239,7 @@ dispatch['c'] = show_config
 ################################################################################
 
 
-def show_keyring(command):
-    args = [str(x) for x in command]
+def show_keyring(args):
     cnf = utils.get_conf()
 
     die_arglen(args, 2, "E: keyring needs at least a command")
@@ -1406,7 +1397,7 @@ def main():
     if options["Dry-Run"]:
         dryrun = True
 
-    subcommand = str(arguments[0])
+    subcommand = arguments[0]
 
     if subcommand in dispatch:
         dispatch[subcommand](arguments)
