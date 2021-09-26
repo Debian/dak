@@ -37,11 +37,11 @@ def rfc2047_encode(s):
     for enc in ('ascii', 'utf-8', 'iso-8859-1'):
         try:
             return email.header.Header(s, enc, 998).encode()
-        except UnicodeError:
+        except UnicodeEncodeError:
             pass
 
     # If we get here, we're boned beyond belief
-    return ''
+    raise RuntimeError("Failed to encode string")
 
 ################################################################################
 
