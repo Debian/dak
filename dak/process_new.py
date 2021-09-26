@@ -53,7 +53,6 @@ import contextlib
 import pwd
 import apt_pkg
 import dak.examine_package
-import six
 from sqlalchemy import or_
 
 from daklib.queue import *
@@ -356,15 +355,15 @@ def check_pkg(upload, upload_copy, session):
     missing = [(m['type'], m["package"]) for m in handler.missing_overrides(hints=missing)]
 
     less_cmd = ("less", "-r", "-")
-    less_process = subprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE)
+    less_process = subprocess.Popen(less_cmd, bufsize=0, stdin=subprocess.PIPE, text=True)
     try:
         less_fd = less_process.stdin
-        less_fd.write(six.ensure_binary(dak.examine_package.display_changes(suite_name, changes)))
+        less_fd.write(dak.examine_package.display_changes(suite_name, changes))
 
         source = upload.source
         if source is not None:
             source_file = os.path.join(upload_copy.directory, os.path.basename(source.poolfile.filename))
-            less_fd.write(six.ensure_binary(dak.examine_package.check_dsc(suite_name, source_file)))
+            less_fd.write(dak.examine_package.check_dsc(suite_name, source_file))
 
         for binary in upload.binaries:
             binary_file = os.path.join(upload_copy.directory, os.path.basename(binary.poolfile.filename))
@@ -372,9 +371,9 @@ def check_pkg(upload, upload_copy, session):
             # We always need to call check_deb to display package relations for every binary,
             # but we print its output only if new overrides are being added.
             if ("deb", binary.package) in missing:
-                less_fd.write(six.ensure_binary(examined))
+                less_fd.write(examined)
 
-        less_fd.write(six.ensure_binary(dak.examine_package.output_package_relations()))
+        less_fd.write(dak.examine_package.output_package_relations())
         less_process.stdin.close()
     except IOError as e:
         if e.errno == errno.EPIPE:
