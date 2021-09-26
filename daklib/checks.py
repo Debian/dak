@@ -37,7 +37,6 @@ import apt_pkg
 from apt_pkg import version_compare
 import datetime
 import os
-import six
 import subprocess
 import tempfile
 import textwrap
@@ -49,8 +48,11 @@ def check_fields_for_valid_utf8(filename, control):
     """Check all fields of a control file for valid UTF-8"""
     for field in control.keys():
         try:
-            six.ensure_text(field)
-            six.ensure_text(control[field])
+            # Access the field value to make `TagSection` try to decode it.
+            # We should also do the same for the field name, but this requires
+            # https://bugs.debian.org/995118 to be fixed.
+            # TODO: make sure the field name `field` is valid UTF-8 too
+            control[field]
         except UnicodeDecodeError:
             raise Reject('{0}: The {1} field is not valid UTF-8'.format(filename, field))
 
@@ -180,9 +182,9 @@ class SignatureAndHashesCheck(Check):
             raise Reject('{0}: {1}\n'
                          'Perhaps you need to include the file in your upload?\n\n'
                          'If the orig tarball is missing, the -sa flag for dpkg-buildpackage will be your friend.'
-                         .format(filename, six.text_type(e)))
+                         .format(filename, str(e)))
         except daklib.upload.UploadException as e:
-            raise Reject('{0}: {1}'.format(filename, six.text_type(e)))
+            raise Reject('{0}: {1}'.format(filename, str(e)))
 
 
 class WeakSignatureCheck(Check):
