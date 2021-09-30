@@ -192,18 +192,8 @@ def header():
     </title>
     <script>
     function togglePkg() {
-        var children = document.getElementsByTagName("*");
-        for (var i = 0; i < children.length; i++) {
-            if(!children[i].hasAttribute("class"))
-                continue;
-            c = children[i].getAttribute("class").split(" ");
-            for(var j = 0; j < c.length; j++) {
-                if(c[j] == "sourceNEW") {
-                    if (children[i].style.display == '')
-                        children[i].style.display = 'none';
-                    else children[i].style.display = '';
-                }
-            }
+        for (const el of document.getElementsByClassName('sourceNEW')) {
+            el.style.display = el.style.display == '' ? 'none' : '';
         }
     }
     </script>
