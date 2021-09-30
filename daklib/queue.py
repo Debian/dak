@@ -68,9 +68,9 @@ def check_valid(overrides, session):
             o['valid'] = False
         if o['type'] not in ('dsc', 'deb', 'udeb'):
             raise Exception('Unknown override type {0}'.format(o['type']))
-        if o['type'] == 'udeb' and o['section'] != 'debian-installer':
+        if o['type'] == 'udeb' and o['section'].split('/', 1)[-1] != 'debian-installer':
             o['valid'] = False
-        if o['section'] == 'debian-installer' and o['type'] not in ('dsc', 'udeb'):
+        if o['section'].split('/', 1)[-1] == 'debian-installer' and o['type'] not in ('dsc', 'udeb'):
             o['valid'] = False
         all_valid = all_valid and o['valid']
     return all_valid
