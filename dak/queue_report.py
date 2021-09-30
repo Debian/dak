@@ -184,14 +184,13 @@ def header():
     print("""<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <link type="text/css" rel="stylesheet" href="style.css" />
-    <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="https://www.debian.org/favicon.ico">
     <title>
       Debian NEW and BYHAND Packages
     </title>
-    <script type="text/javascript">
-    //<![CDATA[
+    <script>
     function togglePkg() {
         var children = document.getElementsByTagName("*");
         for (var i = 0; i < children.length; i++) {
@@ -207,28 +206,27 @@ def header():
             }
         }
     }
-    //]]>
     </script>
   </head>
   <body id="NEW">
     <div id="logo">
       <a href="https://www.debian.org/">
         <img src="https://www.debian.org/logos/openlogo-nd-50.png"
-        alt="" /></a>
+        alt=""></a>
       <a href="https://www.debian.org/">
         <img src="https://www.debian.org/Pics/debian.png"
-        alt="Debian Project" /></a>
+        alt="Debian Project"></a>
     </div>
     <div id="titleblock">
 
       <img src="https://www.debian.org/Pics/red-upperleft.png"
-      id="red-upperleft" alt=""/>
+      id="red-upperleft" alt="">
       <img src="https://www.debian.org/Pics/red-lowerleft.png"
-      id="red-lowerleft" alt=""/>
+      id="red-lowerleft" alt="">
       <img src="https://www.debian.org/Pics/red-upperright.png"
-      id="red-upperright" alt=""/>
+      id="red-upperright" alt="">
       <img src="https://www.debian.org/Pics/red-lowerright.png"
-      id="red-lowerright" alt=""/>
+      id="red-lowerright" alt="">
       <span class="title">
         Debian NEW and BYHAND Packages
       </span>
@@ -243,7 +241,7 @@ def footer():
     print("""
     <div class="footer">
     <p>Hint: Age is the youngest upload of the package, if there is more than
-    one version.<br />
+    one version.<br>
     You may want to look at <a href="https://ftp-master.debian.org/REJECT-FAQ.html">the REJECT-FAQ</a>
       for possible reasons why one of the above packages may get rejected.</p>
     </div> </body> </html>
@@ -303,12 +301,12 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
         print("<td class=\"package\"><a href=\"https://tracker.debian.org/pkg/%(source)s\">%(source)s</a></td>" % {'source': source})
     print("<td class=\"version\">")
     for vers in version.split():
-        print("<a href=\"new/%s_%s.html\">%s</a><br/>" % (source, html.escape(vers), html.escape(vers, quote=False)))
+        print("<a href=\"new/%s_%s.html\">%s</a><br>" % (source, html.escape(vers), html.escape(vers, quote=False)))
     print("</td>")
     print("<td class=\"arch\">%s</td>" % (arch))
     print("<td class=\"distribution\">")
     for dist in distribution:
-        print("%s<br/>" % (dist))
+        print("%s<br>" % (dist))
     print("</td>")
     print("<td class=\"age\"><abbr title=\"%s\">%s</abbr></td>" % (
         datetime.datetime.utcfromtimestamp(int(time.time()) - last_mod).strftime('%a, %d %b %Y %T UTC'),
@@ -317,19 +315,19 @@ def table_row(source, version, arch, last_mod, maint, distribution, closes, fing
     (name, mail) = maint.split(":", 1)
 
     print("<td class=\"upload-data\">")
-    print("<span class=\"maintainer\">Maintainer: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (html.escape(mail), html.escape(name, quote=False)))
+    print("<span class=\"maintainer\">Maintainer: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br>" % (html.escape(mail), html.escape(name, quote=False)))
     (name, mail) = changedby.split(":", 1)
-    print("<span class=\"changed-by\">Changed-By: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br/>" % (html.escape(mail), html.escape(name, quote=False)))
+    print("<span class=\"changed-by\">Changed-By: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a></span><br>" % (html.escape(mail), html.escape(name, quote=False)))
 
     if sponsor:
-        print("<span class=\"sponsor\">Sponsor: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br/>" % (html.escape(sponsor), html.escape(sponsor, quote=False)))
+        print("<span class=\"sponsor\">Sponsor: <a href=\"https://qa.debian.org/developer.php?login=%s\">%s</a>@debian.org</span><br>" % (html.escape(sponsor), html.escape(sponsor, quote=False)))
 
     print("<span class=\"signature\">Fingerprint: %s</span>" % (fingerprint))
     print("</td>")
 
     print("<td class=\"closes\">")
     for close in closes:
-        print("<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br/>" % (html.escape(close), html.escape(close, quote=False)))
+        print("<a href=\"https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=%s\">#%s</a><br>" % (html.escape(close), html.escape(close, quote=False)))
     print("</td></tr>")
 
 ############################################################

@@ -56,13 +56,11 @@ def html_header(name, missing):
     result = """<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
     <title>%(name)s - Debian NEW package overview</title>
-    <link type="text/css" rel="stylesheet" href="/style.css" />
-    <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />
-    <script type="text/javascript">
-      //<![CDATA[
-      <!--
+    <link rel="stylesheet" href="/style.css">
+    <link rel="shortcut icon" href="https://www.debian.org/favicon.ico">
+    <script>
       function toggle(id, initial, display) {
         var o = document.getElementById(id);
         toggleObj(o, initial, display);
@@ -80,28 +78,26 @@ def html_header(name, missing):
           o.style.display = display;
         }
       }
-      //-->
-      //]]>
     </script>
   </head>
   <body id="NEW-details-page">
     <div id="logo">
       <a href="https://www.debian.org/">
         <img src="https://www.debian.org/logos/openlogo-nd-50.png"
-        alt="" /></a>
+        alt=""></a>
       <a href="https://www.debian.org/">
         <img src="https://www.debian.org/Pics/debian.png"
-        alt="Debian Project" /></a>
+        alt="Debian Project"></a>
     </div>
     <div id="titleblock">
       <img src="https://www.debian.org/Pics/red-upperleft.png"
-      id="red-upperleft" alt=""/>
+      id="red-upperleft" alt="">
       <img src="https://www.debian.org/Pics/red-lowerleft.png"
-      id="red-lowerleft" alt=""/>
+      id="red-lowerleft" alt="">
       <img src="https://www.debian.org/Pics/red-upperright.png"
-      id="red-upperright" alt=""/>
+      id="red-upperright" alt="">
       <img src="https://www.debian.org/Pics/red-lowerright.png"
-      id="red-lowerright" alt=""/>
+      id="red-lowerright" alt="">
       <span class="title">
         Debian NEW package overview for %(name)s
       </span>

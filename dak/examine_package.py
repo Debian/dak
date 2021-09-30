@@ -184,7 +184,7 @@ def foldable_output(title, elementnameprefix, content, norow=False):
     d = {'elementnameprefix': elementnameprefix}
     result = ''
     if use_html:
-        result += """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s" />
+        result += """<div id="%(elementnameprefix)s-wrap"><a name="%(elementnameprefix)s"></a>
                    <table class="infobox rfc822">\n""" % d
     result += headline(title, bodyelement="%(elementnameprefix)s-body" % d)
     if use_html:

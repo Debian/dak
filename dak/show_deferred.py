@@ -39,10 +39,10 @@ from daklib import utils
 
 def header():
     return """<!DOCTYPE html>
-        <html lang="en"><head><meta charset="utf-8" />
+        <html lang="en"><head><meta charset="utf-8">
         <title>Deferred uploads to Debian</title>
-        <link type="text/css" rel="stylesheet" href="style.css" />
-        <link rel="shortcut icon" href="https://www.debian.org/favicon.ico" />
+        <link rel="stylesheet" href="style.css">
+        <link rel="shortcut icon" href="https://www.debian.org/favicon.ico">
         </head>
         <body>
         <div align="center">
@@ -51,7 +51,7 @@ def header():
         <a href="https://www.debian.org/">
      <img src="https://www.debian.org/Pics/debian.png" border="0" hspace="0" vspace="0" alt="Debian Project"></a>
         </div>
-        <br />
+        <br>
         <table class="reddy" width="100%">
         <tr>
         <td class="reddy">
@@ -94,7 +94,7 @@ def table_header():
 
 
 def table_footer():
-    return '</table><br/><p>non-NEW uploads are <a href="/deferred/">available</a> (<a href="/deferred/status">machine readable version</a>), see the <a href="ftp://ftp.upload.debian.org/pub/UploadQueue/README">UploadQueue-README</a> and <a href="https://www.debian.org/doc/manuals/developers-reference/ch05.en.html#delayed-incoming">Developer\'s reference</a> for more information on the DELAYED queue.</p></center><br/>\n'
+    return '</table><br><p>non-NEW uploads are <a href="/deferred/">available</a> (<a href="/deferred/status">machine readable version</a>), see the <a href="ftp://ftp.upload.debian.org/pub/UploadQueue/README">UploadQueue-README</a> and <a href="https://www.debian.org/doc/manuals/developers-reference/ch05.en.html#delayed-incoming">Developer\'s reference</a> for more information on the DELAYED queue.</p></center><br>\n'
 
 
 def table_row(changesname, delay, changed_by, closes, fingerprint):
