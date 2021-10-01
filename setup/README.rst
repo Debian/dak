@@ -157,7 +157,7 @@ And we can then process the NEW queue::
     NEW
 
     hello                optional             devel
-    dsc:hello            extra                misc
+    dsc:hello            optional             misc
     Add overrides, Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?A
 
 PENDING ACCEPT

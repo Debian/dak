@@ -306,7 +306,7 @@ class PolicyQueueUploadHandler:
                         section = "{0}/{1}".format(source_component, section)
                     missing.append(dict(
                             package=source.source,
-                            priority='extra',
+                            priority='optional',
                             section=section,
                             component=source_component,
                             type='dsc',

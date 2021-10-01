@@ -80,7 +80,7 @@ SELECT
   ||
   E'\nDirectory\: pool/' || :component_name || '/' || SUBSTRING(f.filename FROM E'\\A(.*)/[^/]*\\Z')
   ||
-  E'\nPriority\: ' || COALESCE(pri.priority, 'extra')
+  E'\nPriority\: ' || COALESCE(pri.priority, 'optional')
   ||
   E'\nSection\: ' || COALESCE(sec.section, 'misc')
 
