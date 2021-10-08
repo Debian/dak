@@ -68,8 +68,7 @@ def input_or_exit(prompt=None):
     try:
         return input(prompt)
     except EOFError:
-        print("\nUser interrupt (^D).", file=sys.stderr)
-        raise SystemExit
+        sys.exit("\nUser interrupt (^D).")
 
 ################################################################################
 
