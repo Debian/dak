@@ -56,9 +56,6 @@ from collections import defaultdict
 
 ################################################################################
 
-default_config = "/etc/dak/dak.conf"     #: default dak config, defines host properties
-
-alias_cache = None        #: Cache for email alias checks
 key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 
 ################################################################################
