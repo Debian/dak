@@ -64,13 +64,9 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 ################################################################################
 
 
-def our_raw_input(prompt=""):
-    if prompt:
-        print(prompt)
-    # TODO: py3: use `print(..., flush=True)`
-    sys.stdout.flush()
+def our_raw_input(prompt=None):
     try:
-        return input()
+        return input(prompt)
     except EOFError:
         print("\nUser interrupt (^D).", file=sys.stderr)
         raise SystemExit
