@@ -165,8 +165,6 @@ def main():
     nr_actions = len([act for act in actions if act])
     if nr_actions > 1:
         utils.fubar("Only one of -b/--binary, -B/--binary-only and -S/--source-only can be used.")
-    if "Carbon-Copy" not in Options and "Done" not in Options:
-        utils.fubar("can't use -C/--carbon-copy without also using -d/--done option.")
     if Options["Architecture"] and not Options["Partial"]:
         utils.warn("-a/--architecture implies -p/--partial.")
         Options["Partial"] = "true"
