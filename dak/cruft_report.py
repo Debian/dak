@@ -40,6 +40,7 @@ import os
 import sys
 import re
 import apt_pkg
+from collections import defaultdict
 
 from daklib.config import Config
 from daklib.dbconn import *
@@ -107,9 +108,7 @@ def add_nbs(nbs_d, source, version, package, suite_id, session):
             no_longer_in_suite[package] = ""
             return
 
-    nbs_d.setdefault(source, {})
-    nbs_d[source].setdefault(version, {})
-    nbs_d[source][version][package] = ""
+    nbs_d[source][version].add(package)
 
 ################################################################################
 
@@ -142,13 +141,12 @@ def do_anais(architecture, binaries_list, source, session):
         else:
             latest_version = None
         # Check for 'invalid' architectures
-        versions_d = {}
+        versions_d = defaultdict(list)
         for arch, version in ql:
             if arch not in architectures:
-                versions_d.setdefault(version, [])
                 versions_d[version].append(arch)
 
-        if versions_d != {}:
+        if versions_d:
             anais_output += "\n (*) %s_%s [%s]: %s\n" % (binary, latest_version, source, architecture)
             for version in sorted(versions_d, key=version_sort_key):
                 arches = sorted(versions_d[version])
@@ -609,12 +607,12 @@ def main():
     src_pkgs = {}
     bin2source = {}
     bins_in_suite = {}
-    nbs = {}
+    nbs = defaultdict(lambda: defaultdict(set))
     source_versions = {}
 
     anais_output = ""
 
-    nfu_packages = {}
+    nfu_packages = defaultdict(list)
 
     suite = get_suite(Options["Suite"].lower(), session)
     if not suite:
@@ -635,7 +633,7 @@ def main():
     if "outdated non-free" in checks:
         report_outdated_nonfree(suite_name, session, rdeps)
 
-    bin_not_built = {}
+    bin_not_built = defaultdict(set)
 
     if "bnb" in checks:
         bins_in_suite = get_suite_binaries(suite, session)
@@ -657,8 +655,7 @@ def main():
                     # Check for binaries not built on any architecture.
                     for binary in binaries_list:
                         if binary not in bins_in_suite:
-                            bin_not_built.setdefault(source, {})
-                            bin_not_built[source][binary] = ""
+                            bin_not_built[source].add(binary)
 
                 if "anais" in checks:
                     anais_output += do_anais(architecture, binaries_list, source, session)
@@ -685,7 +682,6 @@ def main():
                 continue
 
             if "nfu" in checks:
-                nfu_packages.setdefault(architecture, [])
                 nfu_entries = parse_nfu(architecture)
 
             filename = "%s/dists/%s/%s/binary-%s/Packages" % (suite.archive.path, suite_name, component, architecture)
@@ -710,9 +706,7 @@ def main():
                         source = m.group(1)
                         version = m.group(2)
                     if package not in bin_pkgs:
-                        nbs.setdefault(source, {})
-                        nbs[source].setdefault(package, {})
-                        nbs[source][package][version] = ""
+                        nbs[source][package].add(version)
                     else:
                         if "nfu" in checks:
                             if package in nfu_entries and \
@@ -720,7 +714,7 @@ def main():
                                 nfu_packages[architecture].append((package, version, source_versions[source]))
 
     # Distinguish dubious (version numbers match) and 'real' NBS (they don't)
-    dubious_nbs = {}
+    dubious_nbs = defaultdict(lambda: defaultdict(set))
     version_sort_key = functools.cmp_to_key(apt_pkg.version_compare)
     for source in nbs:
         for package in nbs[source]:
