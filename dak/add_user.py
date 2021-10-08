@@ -112,7 +112,7 @@ def main():
     print("0x%s -> %s <%s> -> %s -> %s" % (Cnf["Add-User::Options::Key"], name, emails[0], uid, primary_key))
 
     prompt = "Add user %s with above data (y/N) ? " % (uid)
-    yn = utils.our_raw_input(prompt).lower()
+    yn = utils.input_or_exit(prompt).lower()
 
     if yn == "y":
         # Create an account for the user?

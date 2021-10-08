@@ -64,7 +64,7 @@ key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
 ################################################################################
 
 
-def our_raw_input(prompt=None):
+def input_or_exit(prompt=None):
     try:
         return input(prompt)
     except EOFError:

@@ -93,7 +93,7 @@ def prod_maintainer(notes, upload, session, trainee=False):
         prompt = "[P]rod, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
+            answer = utils.input_or_exit(prompt)
             m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
@@ -128,7 +128,7 @@ def prod_maintainer(notes, upload, session, trainee=False):
 
     print("Sent prodding message")
 
-    answer = utils.our_raw_input("Store prod message as note? (Y/n)?").lower()
+    answer = utils.input_or_exit("Store prod message as note? (Y/n)?").lower()
     if answer != "n":
         comment = NewComment()
         comment.policy_queue = upload.policy_queue
@@ -157,7 +157,7 @@ def edit_note(note, upload, session, trainee=False):
             prompt = "[D]one, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
+            answer = utils.input_or_exit(prompt)
             m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)

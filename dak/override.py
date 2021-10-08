@@ -40,7 +40,7 @@ from daklib import utils
 
 
 def game_over():
-    answer = utils.our_raw_input("Continue (y/N)? ").lower()
+    answer = utils.input_or_exit("Continue (y/N)? ").lower()
     if answer != "y":
         print("Aborted.")
         sys.exit(1)

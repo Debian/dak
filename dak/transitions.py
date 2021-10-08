@@ -372,7 +372,7 @@ def edit_transitions():
 
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
+            answer = utils.input_or_exit(prompt)
             if answer == "":
                 answer = default
             answer = answer[:1].upper()
@@ -456,7 +456,7 @@ def check_transitions(transitions):
         elif Options["automatic"]:
             answer = "y"
         else:
-            answer = utils.our_raw_input(prompt).lower()
+            answer = utils.input_or_exit(prompt).lower()
 
         if answer == "":
             answer = "n"

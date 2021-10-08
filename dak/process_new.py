@@ -259,7 +259,7 @@ def edit_index(new, upload, index):
         edit_priority = edit_section = 0
 
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
+            answer = utils.input_or_exit(prompt)
             m = re_default_answer.match(prompt)
             if answer == "":
                 answer = m.group(1)
@@ -279,7 +279,7 @@ def edit_index(new, upload, index):
             readline.set_completer(Priorities.complete)
             got_priority = 0
             while not got_priority:
-                new_priority = utils.our_raw_input("New priority: ").strip()
+                new_priority = utils.input_or_exit("New priority: ").strip()
                 if new_priority not in Priorities.priorities:
                     print("E: '%s' is not a valid priority, try again." % (new_priority))
                 else:
@@ -291,7 +291,7 @@ def edit_index(new, upload, index):
             readline.set_completer(Sections.complete)
             got_section = 0
             while not got_section:
-                new_section = utils.our_raw_input("New section: ").strip()
+                new_section = utils.input_or_exit("New section: ").strip()
                 if new_section not in Sections.sections:
                     print("E: '%s' is not a valid section, try again." % (new_section))
                 else:
@@ -323,7 +323,7 @@ def edit_overrides(new, upload, session):
 
         got_answer = 0
         while not got_answer:
-            answer = utils.our_raw_input(prompt)
+            answer = utils.input_or_exit(prompt)
             if not answer.isdigit():
                 answer = answer[:1].upper()
             if answer == "E" or answer == "D":
@@ -460,7 +460,7 @@ def get_reject_reason(reason=''):
         prompt = "[R]eject, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
+            answer = utils.input_or_exit(prompt)
             m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
@@ -536,7 +536,7 @@ def do_new(upload, upload_copy, handler, session):
         prompt += "Edit overrides, Check, Manual reject, Note edit, Prod, [S]kip, Quit ?"
 
         while prompt.find(answer) == -1:
-            answer = utils.our_raw_input(prompt)
+            answer = utils.input_or_exit(prompt)
             m = re_default_answer.search(prompt)
             if answer == "":
                 answer = m.group(1)
@@ -577,13 +577,13 @@ def do_new(upload, upload_copy, handler, session):
                 sys.exit(0)
             Logger.log(["NEW PROD", upload.changes.changesname])
         elif answer == 'R' and not Options["Trainee"]:
-            confirm = utils.our_raw_input("Really clear note (y/N)? ").lower()
+            confirm = utils.input_or_exit("Really clear note (y/N)? ").lower()
             if confirm == "y":
                 for c in get_new_comments(upload.policy_queue, upload.changes.source, upload.changes.version, session=session):
                     session.delete(c)
                 session.commit()
         elif answer == 'O' and not Options["Trainee"]:
-            confirm = utils.our_raw_input("Really clear all notes (y/N)? ").lower()
+            confirm = utils.input_or_exit("Really clear all notes (y/N)? ").lower()
             if confirm == "y":
                 for c in get_new_comments(upload.policy_queue, upload.changes.source, session=session):
                     session.delete(c)

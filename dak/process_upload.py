@@ -429,7 +429,7 @@ def action(directory, upload):
             answer = 'A'
 
     while prompt.find(answer) == -1:
-        answer = utils.our_raw_input(prompt)
+        answer = utils.input_or_exit(prompt)
         m = re_default_answer.match(prompt)
         if answer == "":
             answer = m.group(1)

@@ -178,7 +178,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 modules.append((update_module, i))
             if not Config().find_b("Update-DB::Options::Yes", False):
                 prompt = "\nUpdate database? (y/N) "
-                answer = utils.our_raw_input(prompt)
+                answer = utils.input_or_exit(prompt)
                 if answer.upper() != 'Y':
                     sys.exit(0)
         else:
