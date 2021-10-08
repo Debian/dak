@@ -133,9 +133,7 @@ def do_anais(architecture, binaries_list, source, session):
                              {'suiteid': suite_id, 'package': binary})
         ql = q.fetchall()
         versions = []
-        for i in ql:
-            arch = i[0]
-            version = i[1]
+        for arch, version in ql:
             if arch in architectures:
                 versions.append(version)
         versions.sort(key=version_sort_key)
@@ -145,9 +143,7 @@ def do_anais(architecture, binaries_list, source, session):
             latest_version = None
         # Check for 'invalid' architectures
         versions_d = {}
-        for i in ql:
-            arch = i[0]
-            version = i[1]
+        for arch, version in ql:
             if arch not in architectures:
                 versions_d.setdefault(version, [])
                 versions_d[version].append(arch)
