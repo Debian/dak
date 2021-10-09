@@ -32,6 +32,7 @@
 ################################################################################
 
 import asyncio
+import errno
 import os
 import re
 import sys
@@ -104,7 +105,7 @@ async def smartlink(f, t):
         await call_decompressor(['xz', '-d'], '{}.xz'.format(f), t)
     else:
         print("missing: %s" % (f))
-        raise IOError(f)
+        raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), f)
 
 
 async def genchanges(Options, outdir, oldfile, origfile, maxdiffs=56, merged_pdiffs=False):

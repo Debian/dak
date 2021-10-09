@@ -127,7 +127,7 @@ def obtain_release_file(release, filename):
     Returns: daklib.import_repository.File
     """
     if filename not in release._hashes:
-        raise IOError("File {0} not referenced in Release".format(filename))
+        raise ValueError("File {0} not referenced in Release".format(filename))
 
     compressed = False
     for ext in _compressions:

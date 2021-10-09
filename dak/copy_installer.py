@@ -103,7 +103,7 @@ class InstallerCopier:
 
     def check_dir(self, dir, message):
         if not os.path.isdir(dir):
-            raise IOError("%s (%s)" % (message, dir))
+            raise Exception("%s (%s)" % (message, dir))
 
     def check_architecture(self, arch_dir):
         architecture = re.sub('.*?/installer-(.*?)/.*', r'\1', arch_dir)

@@ -38,8 +38,8 @@ class ImportTestCase(DakTestCase):
         copier = InstallerCopier(version='20110106', dest='bar')
 
     def test_suites(self):
-        self.assertRaises(IOError, self.missing_source)
-        self.assertRaises(IOError, self.missing_dest)
+        self.assertRaises(Exception, self.missing_source)
+        self.assertRaises(Exception, self.missing_dest)
 
     def test_copy(self):
         copier = InstallerCopier(version='20110106')
