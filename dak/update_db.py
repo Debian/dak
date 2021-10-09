@@ -229,7 +229,7 @@ Updates dak's database schema to the lastest version. You should disable crontab
                 fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
             else:
                 utils.warn("Lock directory doesn't exist yet - not locking")
-        except IOError as e:
+        except OSError as e:
             if e.errno in (errno.EACCES, errno.EAGAIN):
                 utils.fubar("Couldn't obtain lock, looks like archive is doing something, try again later.")
             else:

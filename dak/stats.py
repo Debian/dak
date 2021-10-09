@@ -336,7 +336,7 @@ def new_stats(logdir, yaml):
     try:
         with open(yaml, 'r') as fd:
             stats = safe_load(fd)
-    except IOError:
+    except OSError:
         pass
     if not stats:
         stats = {'history': {'stats': {'NEW': 0, 'ACCEPT': 0,

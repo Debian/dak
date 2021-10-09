@@ -911,7 +911,7 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
     try:
         with open(file) as f:
             lines = f.readlines()
-    except IOError:
+    except OSError:
         print("Warning:  Couldn't open %s; don't know about WNPP bugs, so won't close any." % file)
         lines = []
     wnpp = {}
@@ -1288,7 +1288,7 @@ def find_possibly_compressed_file(filename):
         if os.path.exists(_file):
             return _file
 
-    raise IOError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+    raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
 
 ################################################################################
 

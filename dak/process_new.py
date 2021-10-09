@@ -375,7 +375,7 @@ def check_pkg(upload, upload_copy, session):
 
         less_fd.write(dak.examine_package.output_package_relations())
         less_process.stdin.close()
-    except IOError as e:
+    except OSError as e:
         if e.errno == errno.EPIPE:
             utils.warn("[examine_package] Caught EPIPE; skipping.")
         else:
@@ -805,7 +805,7 @@ def main():
     if not Options["No-Action"]:
         try:
             Logger = daklog.Logger("process-new")
-        except IOError:
+        except OSError:
             Options["Trainee"] = "True"
 
     Sections = Section_Completer(session)

@@ -173,7 +173,7 @@ class HashedFile:
         try:
             with open(path) as fh:
                 self.check_fh(fh)
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 raise FileDoesNotExist(self.input_filename)
             raise

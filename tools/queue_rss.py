@@ -109,7 +109,7 @@ def parse_leave_reason(fname):
 
     try:
         f = open(fname)
-    except IOError as e:
+    except OSError as e:
         print("Can't open %s: %s" % (fname, e), file=sys.stderr)
         return {}
 
@@ -213,7 +213,7 @@ if __name__ == "__main__":
             except UnicodeDecodeError:
                 fh.seek(0)
                 status = pickle.load(fh, encoding="latin-1")
-    except IOError:
+    except OSError:
         status = Status()
 
     current_queue = parse_queuedir(settings.queuedir)
@@ -229,7 +229,7 @@ if __name__ == "__main__":
     try:
         status.feed_in.write_xml(open(feed_in_file, "w+"), "utf-8")
         status.feed_out.write_xml(open(feed_out_file, "w+"), "utf-8")
-    except IOError as why:
+    except OSError as why:
         print("Unable to write feeds:", why, file=sys.stderr)
         sys.exit(1)
 
@@ -238,7 +238,7 @@ if __name__ == "__main__":
     try:
         with open(status_db, 'wb+') as fh:
             pickle.dump(status, fh)
-    except IOError as why:
+    except OSError as why:
         print("Unable to save status:", why, file=sys.stderr)
         sys.exit(1)
 

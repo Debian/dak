@@ -187,7 +187,7 @@ def check_dscs():
         except UnicodeDecodeError:
             utils.warn("found invalid dsc file (%s), not properly utf-8 encoded" % f)
             count += 1
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.ENOENT:
                 utils.warn("missing dsc file (%s)" % f)
                 count += 1

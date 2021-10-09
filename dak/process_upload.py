@@ -552,7 +552,7 @@ def main():
         lock_fd = os.open(os.path.join(cnf["Dir::Lock"], 'process-upload.lock'), os.O_RDWR | os.O_CREAT)
         try:
             fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except IOError as e:
+        except OSError as e:
             if e.errno in (errno.EACCES, errno.EAGAIN):
                 utils.fubar("Couldn't obtain lock; assuming another 'dak process-upload' is already running.")
             else:

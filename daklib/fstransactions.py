@@ -30,7 +30,7 @@ class _FilesystemAction:
     def check_for_temporary(self):
         try:
             if os.path.exists(self.temporary_name):
-                raise IOError(errno.EEXIST, os.strerror(errno.EEXIST), self.temporary_name)
+                raise OSError(errno.EEXIST, os.strerror(errno.EEXIST), self.temporary_name)
         except NotImplementedError:
             pass
 
@@ -195,7 +195,7 @@ class FilesystemTransaction:
         if not os.path.exists(destdir):
             os.makedirs(destdir, 0o2775)
         if os.path.exists(path):
-            raise IOError(errno.EEXIST, os.strerror(errno.EEXIST), path)
+            raise OSError(errno.EEXIST, os.strerror(errno.EEXIST), path)
         fh = open(path, 'w' if text else 'wb')
         self.actions.append(_FilesystemCreateAction(path))
         if mode is not None:

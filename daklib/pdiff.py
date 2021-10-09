@@ -417,7 +417,7 @@ class PDiffIndex:
                 self._unmerged_history_order = list(self._history_order)
                 self._old_merged_patches_prefix = []
 
-        except (IOError, apt_pkg.Error):
+        except (OSError, apt_pkg.Error):
             # On error, we ignore everything.  This causes the file to be regenerated from scratch.
             # It forces everyone to download the full file for if they are behind.
             # But it is self-healing providing that we generate valid files from here on.

@@ -61,7 +61,7 @@ class FilesystemTransactionTestCase(DakTestCase):
                 with FilesystemTransaction() as fs:
                     self._copy_a_b(t, fs)
 
-        self.assertRaises(IOError, copy)
+        self.assertRaises(OSError, copy)
 
     def test_copy_existing_and_commit(self):
         with TemporaryDirectory() as t:

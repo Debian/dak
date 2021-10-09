@@ -51,7 +51,7 @@ def _tupletable():
         try:
             tripletable = False
             table = _load_table('/usr/share/dpkg/tupletable')
-        except IOError as e:
+        except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
             tripletable = True

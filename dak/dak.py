@@ -187,7 +187,7 @@ def main():
 
     try:
         logger = Logger('dak top-level', print_starting=False)
-    except IOError:
+    except OSError:
         logger = None
 
     functionality = init()

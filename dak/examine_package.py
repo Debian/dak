@@ -716,7 +716,7 @@ def main():
                     # Reset stdout here so future less invocations aren't FUBAR
                     less_fd.close()
                     less_process.wait()
-        except IOError as e:
+        except OSError as e:
             if e.errno == errno.EPIPE:
                 utils.warn("[examine-package] Caught EPIPE; skipping.")
                 pass
