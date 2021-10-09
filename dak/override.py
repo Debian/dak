@@ -139,7 +139,7 @@ def main():
             oldpriority = r[0]
         else:
             oldsourcesection = r[1]
-            oldpriority = 'source'
+            oldpriority = 'optional'
 
     if not oldpriority and not oldsourcesection:
         utils.fubar("Unable to find package %s" % (package))
@@ -177,9 +177,6 @@ def main():
     if newpriority == oldpriority and newsection == oldsection:
         print("I: Doing nothing")
         sys.exit(0)
-
-    if oldpriority == 'source' and newpriority != 'source':
-        utils.fubar("Trying to change priority of a source-only package")
 
     if Options["Check"]:
         print("WARNING: Check option is deprecated by Debian Policy 4.0.1")

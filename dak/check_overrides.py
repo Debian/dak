@@ -46,7 +46,7 @@
 #   some degree
 # * consistency checks like:
 #   - section=debian-installer only for udeb and # dsc
-#   - priority=source iff dsc
+#   - priority=optional if dsc
 #   - (suite, package, 'dsc') is unique,
 #   - just as (suite, package, (u)deb) (yes, across components!)
 #   - sections match their component (each component has an own set of sections,
@@ -111,7 +111,7 @@ def process(osuite, affected_suites, originosuite, component, otype, session):
     type_id = ot.overridetype_id
     dsc_type_id = get_override_type("dsc", session).overridetype_id
 
-    source_priority_id = get_priority("source", session).priority_id
+    source_priority_id = get_priority("optional", session).priority_id
 
     if otype == "deb" or otype == "udeb":
         packages = {}
