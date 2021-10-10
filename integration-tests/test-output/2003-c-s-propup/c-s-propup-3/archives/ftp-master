@@ -547,15 +547,12 @@
 ./dists/testing/main/source/Sources.diff
 ./dists/testing/main/source/Sources.diff/Index
 ./dists/testing/main/source/Sources.diff/XXXX-XX-XX-XXXX.XX.gz
-./dists/testing/main/source/Sources.diff/XXXX-XX-XX-XXXX.XX.gz
 ./dists/testing/main/source/Sources.diff/by-hash
 ./dists/testing/main/source/Sources.diff/by-hash/SHA256
-./dists/testing/main/source/Sources.diff/by-hash/SHA256/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ./dists/testing/main/source/Sources.diff/by-hash/SHA256/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ./dists/testing/main/source/Sources.xz
 ./dists/testing/main/source/by-hash
 ./dists/testing/main/source/by-hash/SHA256
-./dists/testing/main/source/by-hash/SHA256/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ./dists/testing/main/source/by-hash/SHA256/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ./dists/testing/main/source/by-hash/SHA256/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 ./dists/testing/main/source/by-hash/SHA256/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
