@@ -34,27 +34,27 @@ class FakeSuite:
 source_all = {
     'Package-List': '\n libdune-common-doc deb doc optional arch=all\n',
     'Binary': 'libdune-common-doc\n',
-    }
+}
 
 source_any = {
     'Package-List': '\n libdune-common-dev deb libdevel optional arch=any\n',
     'Binary': 'libdune-common-dev\n',
-    }
+}
 
 source_all_any = {
     'Package-List': '\n libdune-common-dev deb libdevel optional arch=any\nlibdune-common-doc deb doc optional arch=all\n',
     'Binary': 'libdune-common-dev, libdune-common-doc\n',
-    }
+}
 
 source_amd64 = {
     'Package-List': '\n libdune-common-dev deb libdevel optional arch=amd64\n',
     'Binary': 'libdune-common-dev\n',
-    }
+}
 
 source_linuxany = {
     'Package-List': '\n libdune-common-dev deb libdevel optional arch=linux-any\n',
     'Binary': 'libdune-common-dev\n',
-    }
+}
 
 source_noarch = {
     'Package-List': '\n libdune-common-dev deb libdevel optional\n',

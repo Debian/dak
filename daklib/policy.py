@@ -270,7 +270,7 @@ class PolicyQueueUploadHandler:
                             component=component,
                             type=type,
                             included=included
-                            ))
+                        ))
             components.add(component)
 
         for binary in self.upload.binaries:
@@ -311,7 +311,7 @@ class PolicyQueueUploadHandler:
                             component=source_component,
                             type='dsc',
                             included=True,
-                            ))
+                        ))
 
         return missing
 

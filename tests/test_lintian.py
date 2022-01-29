@@ -66,83 +66,91 @@ class GenerateRejectMessages(DakTestCase):
 
     def testUnknownTag(self):
         self.assertNumReject([
-            {
-                'level': 'W',
-                'package': 'pkgname',
-                'tag': 'unknown-tag',
-                'description': '',
-            }
-            ], {'fatal': ['known-tag'], 'nonfatal': []},
+                {
+                    'level': 'W',
+                    'package': 'pkgname',
+                    'tag': 'unknown-tag',
+                    'description': '',
+                },
+            ],
+            {'fatal': ['known-tag'], 'nonfatal': []},
             0,
         )
 
     def testFatalTags(self):
         self.assertNumReject([
-            {
-                'level': 'W',
-                'package': 'pkgname',
-                'tag': 'fatal-tag-1',
-                'description': '',
-            },
-            {
-                'level': 'W',
-                'package': 'pkgname',
-                'tag': 'fatal-tag-2',
-                'description': '',
-            },
-            ], {'fatal': ['fatal-tag-1', 'fatal-tag-2'], 'nonfatal': []},
+                {
+                    'level': 'W',
+                    'package': 'pkgname',
+                    'tag': 'fatal-tag-1',
+                    'description': '',
+                },
+                {
+                    'level': 'W',
+                    'package': 'pkgname',
+                    'tag': 'fatal-tag-2',
+                    'description': '',
+                },
+            ],
+            {'fatal': ['fatal-tag-1', 'fatal-tag-2'], 'nonfatal': []},
             2,
         )
 
     def testMixture(self):
         self.assertNumReject([
-            {
-                'level': 'W',
-                'package': 'pkgname',
-                'tag': 'fatal-tag',
-                'description': '',
-            },
-            {
-                'level': 'W',
-                'package': 'pkgname',
-                'tag': 'unknown-tag',
-                'description': '',
-            },
-            ], {'fatal': ['fatal-tag'], 'nonfatal': []},
+                {
+                    'level': 'W',
+                    'package': 'pkgname',
+                    'tag': 'fatal-tag',
+                    'description': '',
+                },
+                {
+                    'level': 'W',
+                    'package': 'pkgname',
+                    'tag': 'unknown-tag',
+                    'description': '',
+                },
+            ],
+            {'fatal': ['fatal-tag'], 'nonfatal': []},
             1,
         )
 
     def testOverridable(self):
         self.assertNumReject([
-            {
-                'level': 'W',
-                'package': 'pkgname',
-                'tag': 'non-fatal-tag',
-                'description': '',
-            },
-            ], {'fatal': [], 'nonfatal': ['non-fatal-tag']},
+                {
+                    'level': 'W',
+                    'package': 'pkgname',
+                    'tag': 'non-fatal-tag',
+                    'description': '',
+                },
+            ],
+            {'fatal': [], 'nonfatal': ['non-fatal-tag']},
             1 + 1, # We add an extra 'reject' hint message
         )
 
     def testOverrideAllowed(self):
         self.assertNumReject([
-                {'level': 'O',
-                'package': 'pkgname',
-                'tag': 'non-fatal-tag',
-                'description': ''},
-                ], {'fatal': [], 'nonfatal': ['non-fatal-tag']},
+                {
+                    'level': 'O',
+                    'package': 'pkgname',
+                    'tag': 'non-fatal-tag',
+                    'description': ''
+                }
+            ],
+            {'fatal': [], 'nonfatal': ['non-fatal-tag']},
             0,
         )
 
     def testOverrideNotAllowed(self):
         self.assertNumReject([
-            {
-                'level': 'O',
-                'package': 'pkgname',
-                'tag': 'fatal-tag',
-                'description': '',
-            },
-            ], {'fatal': ['fatal-tag'], 'nonfatal': []},
+                {
+                    'level': 'O',
+                    'package': 'pkgname',
+                    'tag': 'fatal-tag',
+                    'description': '',
+                },
+            ],
+            {'fatal': ['fatal-tag'], 'nonfatal': []},
             1,
         )
 

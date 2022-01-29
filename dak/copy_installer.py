@@ -47,7 +47,7 @@ def main():
             ('s', "source",      "Copy-Installer::Options::Source",      "HasArg"),
             ('d', "destination", "Copy-Installer::Options::Destination", "HasArg"),
             ('n', "no-action",   "Copy-Installer::Options::No-Action"),
-            ]
+    ]
     for option in ["help", "source", "destination", "no-action"]:
         key = "Copy-Installer::Options::%s" % option
         if key not in cnf:

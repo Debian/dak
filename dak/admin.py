@@ -281,7 +281,7 @@ def component_add(args):
         component_name=name,
         description=description,
         ordering=ordering,
-        )
+    )
 
     for option in args[3:]:
         (key, value) = option.split('=')
@@ -1046,7 +1046,7 @@ def archive_add(args):
         archive_name=name,
         path=path,
         description=description,
-        )
+    )
 
     for option in args[3:]:
         (key, value) = option.split('=')

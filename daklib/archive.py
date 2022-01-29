@@ -173,18 +173,18 @@ class ArchiveTransaction:
             package=control['Package'],
             version=control['Version'],
             architecture=architecture,
-            )
+        )
         rest = dict(
             source=source,
             maintainer=maintainer,
             poolfile=db_file,
             binarytype=binary.type,
-            )
+        )
         # Other attributes that are ignored for purposes of equality with
         # an existing source
         rest2 = dict(
             fingerprint=fingerprint,
-            )
+        )
 
         try:
             db_binary = session.query(DBBinary).filter_by(**unique).one()
@@ -274,18 +274,18 @@ class ArchiveTransaction:
         unique = dict(
             source=source_name,
             version=control['Version'],
-            )
+        )
         rest = dict(
             maintainer=maintainer,
             poolfile=db_file_dsc,
             dm_upload_allowed=(control.get('DM-Upload-Allowed', 'no') == 'yes'),
-            )
+        )
         # Other attributes that are ignored for purposes of equality with
         # an existing source
         rest2 = dict(
             changedby=changed_by,
             fingerprint=fingerprint,
-            )
+        )
 
         created = False
         try:
@@ -1006,7 +1006,7 @@ class ArchiveUpload:
                     checks.BinaryTimestampCheck,
                     checks.SingleDistributionCheck,
                     checks.ArchAllBinNMUCheck,
-                    ):
+                ):
                 chk().check(self)
 
             final_suites = self._final_suites()
@@ -1022,7 +1022,7 @@ class ArchiveUpload:
                     checks.NewOverrideCheck,
                     checks.NoSourceOnlyCheck,
                     checks.LintianCheck,
-                    ):
+                ):
                 chk().check(self)
 
             for chk in (
@@ -1031,7 +1031,7 @@ class ArchiveUpload:
                     checks.SourceFormatCheck,
                     checks.SuiteArchitectureCheck,
                     checks.VersionCheck,
-                    ):
+                ):
                 for suite in final_suites:
                     chk().per_suite_check(self, suite)
 

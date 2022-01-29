@@ -94,7 +94,7 @@ def _subst_for_upload(upload):
         '__VERSION__': upload.version,
         '__ARCHITECTURE__': upload.architecture,
         '__WARNINGS__': '\n'.join(upload.warnings),
-        }
+    }
 
     override_maintainer = cnf.get('Dinstall::OverrideMaintainer')
     if override_maintainer:

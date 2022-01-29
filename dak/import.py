@@ -196,7 +196,7 @@ def main(argv=None):
         ('D', 'dump', 'Import::Options::Dump', 'HasArg'),
         ('E', 'export-dump', 'Import::Options::Export'),
         ('s', 'ignore-signature', 'Import::Options::IgnoreSignature'),
-        ]
+    ]
 
     cnf = daklib.config.Config()
     cnf['Import::Options::Dummy'] = ''

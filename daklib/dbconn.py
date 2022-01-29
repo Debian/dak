@@ -2188,14 +2188,14 @@ class DBConn:
                    fingerprints=relation(Fingerprint, secondary=self.tbl_acl_fingerprint_map, collection_class=set),
                    match_keyring=relation(Keyring, primaryjoin=(self.tbl_acl.c.match_keyring_id == self.tbl_keyrings.c.id)),
                    per_source=relation(ACLPerSource, collection_class=set),
-                   ))
+                ))
 
         mapper(ACLPerSource, self.tbl_acl_per_source,
                properties=dict(
                    acl=relation(ACL),
                    fingerprint=relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.fingerprint_id == self.tbl_fingerprint.c.id)),
                    created_by=relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.created_by_id == self.tbl_fingerprint.c.id)),
-                   ))
+                ))
 
         mapper(Archive, self.tbl_archive,
                properties=dict(archive_id=self.tbl_archive.c.id,
@@ -2333,12 +2333,12 @@ class DBConn:
                    target_suite=relation(Suite),
                    source=relation(DBSource),
                    binaries=relation(DBBinary, secondary=self.tbl_policy_queue_upload_binaries_map),
-                   ))
+                ))
 
         mapper(PolicyQueueByhandFile, self.tbl_policy_queue_byhand_file,
                properties=dict(
                    upload=relation(PolicyQueueUpload, backref='byhand'),
-                   )
+                )
                )
 
         mapper(Priority, self.tbl_priority,
