@@ -110,6 +110,7 @@ ${scriptsdir}/link_morgue \
              --known-hashes ${HASHFILE}.gz \
              --farmdir "${FARMBASE}" \
              --morguedir "${PROCESSDIR}"
+log "Processing ${PROCESSDIR} done"
 
 # And now, maybe, transfer stuff over to stabile...
 if [ "$(hostname -s)" != "stabile" ]; then
@@ -129,4 +130,6 @@ if [ "$(hostname -s)" != "stabile" ]; then
     # And remove empty subdirs. To remove entire hierarchies we probably should run this
     # in a loop, but why bother? They'll be gone in a few days then, so meh.
     find "${PROCESSDIR}" -type d -empty -print0 | xargs --no-run-if-empty -0 rmdir
+
+    log "Moving old files out of morgue done"
 fi
