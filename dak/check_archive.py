@@ -477,7 +477,7 @@ def check_files_not_symlinks():
 ################################################################################
 
 
-def chk_bd_process_dir(unused, dirname, filenames):
+def chk_bd_process_dir(dirname, filenames):
     for name in filenames:
         if not name.endswith(".dsc"):
             continue
@@ -498,7 +498,8 @@ def chk_bd_process_dir(unused, dirname, filenames):
 def check_build_depends():
     """ Validate build-dependencies of .dsc files in the archive """
     cnf = Config()
-    os.path.walk(cnf["Dir::Root"], chk_bd_process_dir, None)
+    for dirpath, dirnames, filenames in os.walk(cnf["Dir::Root"]):
+        chk_bd_process_dir(dirpath, filenames)
 
 ################################################################################
 
