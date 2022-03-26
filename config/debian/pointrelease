@@ -195,7 +195,7 @@ log "Cleaning ${pusuite} and ${pusuite}-debug"
 dak control-suite --remove ${pusuite} < ${pusuite}.list
 dak control-suite --remove ${pusuite}-debug < ${pusuite}-debug.list
 
-log "Cleaning changelogs from proposed-updates"
+log "Cleaning changelogs from ${pusuite}"
 pumorguedir="${base}/morgue/queues/$(date +%Y/%m)"
 mkdir -p "${pumorguedir}"
 cd ${ftpdir}/dists/${pusuite}
