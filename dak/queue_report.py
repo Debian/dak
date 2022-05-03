@@ -226,7 +226,12 @@ def header():
 
 def footer():
     print("<p class=\"timestamp\">Timestamp: %s (UTC)</p>" % (time.strftime("%d.%m.%Y / %H:%M:%S", time.gmtime())))
-    print("<p>There are <a href=\"/stat.html\">graphs about the queues</a> available.</p>")
+    print("""
+        <p>
+            There are <a href=\"/stat.html\">graphs about the queues</a> available.
+            You can also look at the <a href="/new.822">RFC822 version</a>.
+        </p>
+    """)
 
     print("""
     <div class="footer">
