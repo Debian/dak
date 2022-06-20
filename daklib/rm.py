@@ -124,7 +124,7 @@ class ReverseDependencyChecker:
                         FROM binaries b
                         JOIN bin_associations ba ON b.id = ba.bin AND ba.suite = :suite_id
                         WHERE b.architecture = :arch_id OR b.architecture = :arch_all_id''')
-            query = session.query('package', 'depends', 'provides'). \
+            query = session.query(sql.column('package'), sql.column('depends'), sql.column('provides')). \
                 from_statement(statement).params(params)
             for package, depends, provides in query:
 
@@ -166,8 +166,8 @@ class ReverseDependencyChecker:
                        WHERE suite = :suite_id)
                    AND sm.key_id in :metakey_ids
                GROUP BY s.id, s.source''')
-        query = session.query('source', 'build_dep').from_statement(statement). \
-            params(params)
+        query = session.query(sql.column('source'), sql.column('build_dep')) \
+            .from_statement(statement).params(params)
         for source, build_dep in query:
             if build_dep is not None:
                 # Remove [arch] information since we want to see breakage on all arches

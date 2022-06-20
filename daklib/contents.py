@@ -100,8 +100,8 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
     where b.id = bc.binary_id and o.package = b.package
     group by bc.file''')
 
-        return self.session.query("file", "pkglist").from_statement(query). \
-            params(params)
+        return self.session.query(sql.column("file"), sql.column("pkglist")) \
+            .from_statement(query).params(params)
 
     def formatline(self, filename, package_list):
         '''
@@ -187,8 +187,8 @@ select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
     from newest_sources s, src_contents sc
     where s.id = sc.source_id group by sc.file''')
 
-        return self.session.query("file", "pkglist").from_statement(query). \
-            params(params)
+        return self.session.query(sql.column("file"), sql.column("pkglist")) \
+            .from_statement(query).params(params)
 
     def formatline(self, filename, package_list):
         '''

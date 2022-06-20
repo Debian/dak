@@ -12,7 +12,7 @@ import unittest
 
 def read_number():
     session = DBConn().session()
-    result = session.query('foo').from_statement(sql.text('select 7 as foo')).scalar()
+    result = session.query(sql.column('foo')).from_statement(sql.text('select 7 as foo')).scalar()
     sleep(0.1)
     session.close()
     return result

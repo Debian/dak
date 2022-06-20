@@ -1076,7 +1076,9 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 JOIN files_archive_map af ON b.file = af.file_id
                 JOIN component c ON af.component_id = c.id
                 WHERE b.architecture = :arch_id''')
-        query = session.query('package', 'source', 'component', 'depends', 'provides'). \
+        query = session.query(sql.column('package'), sql.column('source'),
+                              sql.column('component'), sql.column('depends'),
+                              sql.column('provides')). \
             from_statement(statement).params(params)
         for package, source, component, depends, provides in query:
             sources[package] = source
@@ -1174,8 +1176,8 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                    WHERE suite = :suite_id)
                AND sm.key_id in :metakey_ids
            GROUP BY s.id, s.source''')
-    query = session.query('source', 'build_dep').from_statement(statement). \
-        params(params)
+    query = session.query(sql.column('source'), sql.column('build_dep')) \
+        .from_statement(statement).params(params)
     for source, build_dep in query:
         if source in removals:
             continue
