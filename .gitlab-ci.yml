@@ -24,7 +24,7 @@ test bullseye:
 
 flake8:
   <<: *template
-  image: debian:buster
+  image: debian:bullseye
   script:
     - apt-get update
     - apt-get install -y flake8
@@ -44,7 +44,7 @@ get coverage:
       - logs
 
 contributors:
-  image: debian:buster
+  image: debian:bullseye
   stage: deploy
   dependencies: []
   script:
