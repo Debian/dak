@@ -48,13 +48,13 @@ setup_unstable() {
     # unstable-debug + unstable
     dak admin suite add-all-arches unstable-debug "" codename=sid-debug archive=debian-debug \
         allowcsset=no byhash=yes accept_binary_uploads=False accept_source_uploads=False
-    dak admin suite-component add unstable-debug main contrib non-free
+    dak admin suite-component add unstable-debug main contrib non-free-firmware non-free
 
 
     dak admin suite add-all-arches unstable "" codename=sid archive=ftp-master \
         allowcsset=no byhash=yes overrideprocess=True debugsuite=unstable-debug \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog
-    dak admin suite-component add unstable main contrib non-free
+    dak admin suite-component add unstable main contrib non-free-firmware non-free
     dak admin suite add-build-queue unstable buildd-unstable buildd-sid build-queues
 
     section_end setup_debian_unstable
@@ -68,14 +68,14 @@ setup_debian_like_archive() {
     # testing-debug + testing
     dak admin suite add-all-arches testing-debug "" codename=buster-debug archive=debian-debug \
         allowcsset=no byhash=yes accept_binary_uploads=False accept_source_uploads=False
-    dak admin suite-component add testing-debug main contrib non-free
+    dak admin suite-component add testing-debug main contrib non-free-firmware non-free
 
     dak admin suite add-all-arches testing "" codename=buster archive=ftp-master \
         allowcsset=yes byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         changelog=dists/testing/ChangeLog \
         overrideprocess=True overrideorigin=unstable debugsuite=testing-debug
-    dak admin suite-component add testing main contrib non-free
+    dak admin suite-component add testing main contrib non-free-firmware non-free
 
     # testing-proposed-updates
     dak admin suite add-all-arches testing-proposed-updates "" \
@@ -83,7 +83,7 @@ setup_debian_like_archive() {
         allowcsset=yes byhash=yes \
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         overridesuite=testing
-    dak admin suite-component add testing-proposed-updates main contrib non-free
+    dak admin suite-component add testing-proposed-updates main contrib non-free-firmware non-free
     dak admin suite add-build-queue testing-proposed-updates buildd-testing-proposed-updates buildd-buster-proposed-updates build-queues
     HAVE_TPU=1
 
@@ -94,7 +94,7 @@ setup_debian_like_archive() {
         changelog_url=http://metadata.ftp-master.debian.org/changelogs/@CHANGEPATH@_changelog \
         notautomatic=yes butautomaticupgrades=no \
         overridesuite=unstable overridecodename=sid
-    dak admin suite-component add experimental main contrib non-free
+    dak admin suite-component add experimental main contrib non-free-firmware non-free
     dak admin suite add-build-queue experimental buildd-experimental buildd-rc-buggy build-queues
     HAVE_EXPERIMENTAL=1
 

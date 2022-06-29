@@ -28,7 +28,7 @@ dak admin architecture add amd64 AMD64
 for suite in testing stable; do
   dak admin suite add "${suite}" ""
   dak admin suite-architecture add "${suite}" source all amd64
-  dak admin suite-component add "${suite}" main contrib non-free
+  dak admin suite-component add "${suite}" main contrib non-free-firmware non-free
 done
 
 echo "---- testing ----"

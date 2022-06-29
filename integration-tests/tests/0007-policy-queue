@@ -28,7 +28,7 @@ set -u
   dak admin architecture add amd64 AMD64
   dak admin suite add unstable "" codename=sid
   dak admin suite-architecture add unstable source all amd64
-  dak admin suite-component add unstable main contrib non-free
+  dak admin suite-component add unstable main contrib non-free-firmware non-free
 
   # add embargoed policy queue
   dak admin suite add embargoed "" codename=embargoed archive=policy

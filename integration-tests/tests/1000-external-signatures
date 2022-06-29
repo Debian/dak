@@ -28,7 +28,7 @@ shopt -s extglob
 dak admin architecture add amd64 AMD64
 dak admin suite add unstable "" codename=sid allowcsset=yes
 dak admin suite-architecture add unstable source all amd64
-dak admin suite-component add unstable main contrib non-free
+dak admin suite-component add unstable main contrib non-free-firmware non-free
 dak admin suite add-build-queue unstable buildd-unstable buildd-sid ${DAKHOST}
 
 import-fixture-signing-key
@@ -123,7 +123,7 @@ expected_empty='
   # configure a policy queue first...
   dak admin suite add embargoed "" codename=embargoed
   dak admin suite-architecture add unstable source all amd64
-  dak admin suite-component add unstable main contrib non-free
+  dak admin suite-component add unstable main contrib non-free-firmware non-free
   psql -1 -d projectb <<-EOT
 	\set ON_ERROR_STOP
 	INSERT INTO policy_queue (queue_name, path, send_to_build_queues, suite_id)
