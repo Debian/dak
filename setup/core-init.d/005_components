@@ -9,6 +9,7 @@ psql << EOF
 COPY component (name, description, meets_dfsg) FROM stdin;
 main	Main	t
 contrib	Contrib	t
+non-free-firmware	Firmware that fails to meet the DFSG	f
 non-free	Software that fails to meet the DFSG	f
 \.
 EOF

@@ -67,7 +67,7 @@ xfce
 zope"
 
 values=""
-for prefix in "" "contrib/" "non-free/"; do
+for prefix in "" "contrib/" "non-free-firmware/" "non-free/"; do
     for section in ${SECTIONS}; do
         values="${values:+${values},} ('${prefix}${section}')"
     done

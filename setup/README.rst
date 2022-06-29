@@ -92,7 +92,7 @@ Add a suite (origin=, label= and codename= are optional)::
 
 Add the components to the suite::
 
-    # dak admin s-c add unstable main contrib non-free
+    # dak admin s-c add unstable main contrib non-free-firmware non-free
 
 Re-run dak init-dirs to add new suite directories to /srv/dak::
 
