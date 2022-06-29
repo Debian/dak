@@ -4,10 +4,12 @@
 ./dists/byhand/contrib
 ./dists/byhand/main
 ./dists/byhand/non-free
+./dists/byhand/non-free-firmware
 ./dists/new
 ./dists/new/contrib
 ./dists/new/main
 ./dists/new/non-free
+./dists/new/non-free-firmware
 ./pool
 ./pool/non-free
 ./pool/non-free/n
