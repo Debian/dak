@@ -56,7 +56,7 @@ def do_update(self):
         for stmt in statements:
             c.execute(stmt)
 
-        for component in ('main', 'contrib', 'non-free'):
+        for component in ('main', 'contrib', 'non-free-firmware', 'non-free'):
             c.execute("UPDATE component SET ordering = nextval('component_ordering_seq') WHERE name = '{0}'".format(component))
         c.execute("UPDATE component SET ordering = nextval('component_ordering_seq') WHERE ordering IS NULL")
         c.execute("""ALTER TABLE component ALTER COLUMN ordering SET NOT NULL""")
