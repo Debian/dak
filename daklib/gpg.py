@@ -288,7 +288,7 @@ class SignedFile:
 
             os.execvp(self.gpg, args)
         finally:
-            os._exit(1)
+            os._exit(2)
 
     def contents_sha1(self):
         return apt_pkg.sha1sum(self.contents)
