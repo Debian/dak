@@ -139,6 +139,8 @@ class SignedFile:
                 stdin.w = None # was closed by _do_io
 
                 (pid_, status_code, usage_) = os.wait4(pid, 0)
+                if pid_ != pid:
+                    raise Exception(f"wait4() waited for pid {pid_}, but we expected {pid}")
                 exit_code = waitstatus_to_exitcode(status_code)
 
                 self.contents = read[contents.r]
