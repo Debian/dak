@@ -151,7 +151,11 @@ class SignedFile:
                     stderr = self.stderr.decode('ascii', errors='replace')
                     raise GpgException("No status output from GPG. (GPG exited with status code %s)\n%s" % (exit_code, stderr))
 
-                if exit_code not in (0, 1):
+                # gpg exits with 0 (no error), 1 (at least one invalid sig),
+                # or anything else (fatal error).  Even though status 2
+                # indicates a fatal error, we still allow it as it is also
+                # returned when the public key is not known.
+                if exit_code not in (0, 1, 2):
                     stderr = self.stderr.decode('ascii', errors='replace')
                     raise GpgException(f"GPG exited with a fatal error (exit code {exit_code})\n{stderr}")
 
