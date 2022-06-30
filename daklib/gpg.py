@@ -315,7 +315,7 @@ class SignedFile:
             except:
                 # Ignore errors, we want to reach the `exit` call below.
                 pass
-            os._exit(2)
+            os._exit(3)
 
     def contents_sha1(self):
         return apt_pkg.sha1sum(self.contents)
