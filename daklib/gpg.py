@@ -288,6 +288,12 @@ class SignedFile:
 
             os.execvp(self.gpg, args)
         finally:
+            try:
+                print("Failed to execute gpg.", file=sys.stderr)
+                sys.stderr.flush()
+            except:
+                # Ignore errors, we want to reach the `exit` call below.
+                pass
             os._exit(2)
 
     def contents_sha1(self):
