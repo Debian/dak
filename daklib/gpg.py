@@ -65,6 +65,16 @@ class _Pipe:
             self.w = None
 
 
+# Can be replaced with `os.waitstatus_to_exitcode` (Python 3.9)
+def waitstatus_to_exitcode(status):
+    if os.WIFEXITED(status):
+        return os.WEXITSTATUS(status)
+    elif os.WIFSIGNALED(status):
+        return -os.WTERMSIG(status)
+    else:
+        raise ValueError(f"Unexpected status code '{status}'")
+
+
 class SignedFile:
     """handle files signed with PGP
 
@@ -128,7 +138,8 @@ class SignedFile:
                 read = self._do_io([contents.r, stderr.r, status.r], {stdin.w: data})
                 stdin.w = None # was closed by _do_io
 
-                (pid_, exit_code, usage_) = os.wait4(pid, 0)
+                (pid_, status_code, usage_) = os.wait4(pid, 0)
+                exit_code = waitstatus_to_exitcode(status_code)
 
                 self.contents = read[contents.r]
                 self.status = read[status.r]
