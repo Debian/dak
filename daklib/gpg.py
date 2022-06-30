@@ -138,6 +138,10 @@ class SignedFile:
                     stderr = self.stderr.decode('ascii', errors='replace')
                     raise GpgException("No status output from GPG. (GPG exited with status code %s)\n%s" % (exit_code, stderr))
 
+                if exit_code not in (0, 1):
+                    stderr = self.stderr.decode('ascii', errors='replace')
+                    raise GpgException(f"GPG exited with a fatal error (exit code {exit_code})\n{stderr}")
+
                 for line in self.status.splitlines():
                     self._parse_status(line)
 
