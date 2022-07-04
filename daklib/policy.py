@@ -263,7 +263,8 @@ class PolicyQueueUploadHandler:
                     missing.append(hint)
                     component = hint['component']
                 else:
-                    missing.append(dict(
+                    missing.append(
+                        dict(
                             package=name,
                             priority=priority,
                             section=section,
@@ -304,7 +305,8 @@ class PolicyQueueUploadHandler:
                     section = 'misc'
                     if source_component != 'main':
                         section = "{0}/{1}".format(source_component, section)
-                    missing.append(dict(
+                    missing.append(
+                        dict(
                             package=source.source,
                             priority='optional',
                             section=section,

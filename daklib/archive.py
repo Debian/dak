@@ -1006,7 +1006,7 @@ class ArchiveUpload:
                     checks.BinaryTimestampCheck,
                     checks.SingleDistributionCheck,
                     checks.ArchAllBinNMUCheck,
-                ):
+            ):
                 chk().check(self)
 
             final_suites = self._final_suites()
@@ -1022,7 +1022,7 @@ class ArchiveUpload:
                     checks.NewOverrideCheck,
                     checks.NoSourceOnlyCheck,
                     checks.LintianCheck,
-                ):
+            ):
                 chk().check(self)
 
             for chk in (
@@ -1031,7 +1031,7 @@ class ArchiveUpload:
                     checks.SourceFormatCheck,
                     checks.SuiteArchitectureCheck,
                     checks.VersionCheck,
-                ):
+            ):
                 for suite in final_suites:
                     chk().per_suite_check(self, suite)
 

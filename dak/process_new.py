@@ -236,7 +236,7 @@ def edit_new(overrides, upload, session):
                     component=component,
                     priority=priority,
                     included=o['included'],
-                ))
+            ))
     return new_overrides
 
 ################################################################################
