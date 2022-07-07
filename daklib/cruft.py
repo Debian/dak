@@ -60,8 +60,8 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
                 DBBinary.package,
                 DBSource.source,
                 Architecture.arch_string,
-            ). \
-            subquery()
+        ). \
+        subquery()
 
         return aliased(q1)
 
@@ -72,8 +72,8 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
             highq.c.source,
             highq.c.version.label('higherversion'),
             lowq.c.version.label('lowerversion')
-            ). \
-        join(lowq, highq.c.source == lowq.c.source)
+    ). \
+    join(lowq, highq.c.source == lowq.c.source)
 
     if include_equal:
         query = query.filter(highq.c.version <= lowq.c.version)

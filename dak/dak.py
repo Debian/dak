@@ -162,7 +162,7 @@ def init():
          "Modify external overrides"),
         ("write-sections",
          "Write out section descriptions"),
-        ]
+    ]
     return functionality
 
 ################################################################################

@@ -140,7 +140,7 @@ def main(argv=None):
         ('t', 'target-suite', 'Import-Repository::Target-Suite', 'HasArg'),
         ('A', 'add-overrides', 'Import-Repository::AddOverrides'),
         ('n', 'max-packages', 'Import-Repository::MaxPackages', 'HasArg'),
-        ]
+    ]
 
     cnf = daklib.config.Config()
     argv = apt_pkg.parse_commandline(cnf.Cnf, arguments, argv)

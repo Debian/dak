@@ -263,14 +263,15 @@ class PolicyQueueUploadHandler:
                     missing.append(hint)
                     component = hint['component']
                 else:
-                    missing.append(dict(
+                    missing.append(
+                        dict(
                             package=name,
                             priority=priority,
                             section=section,
                             component=component,
                             type=type,
                             included=included
-                            ))
+                        ))
             components.add(component)
 
         for binary in self.upload.binaries:
@@ -304,14 +305,15 @@ class PolicyQueueUploadHandler:
                     section = 'misc'
                     if source_component != 'main':
                         section = "{0}/{1}".format(source_component, section)
-                    missing.append(dict(
+                    missing.append(
+                        dict(
                             package=source.source,
                             priority='optional',
                             section=section,
                             component=source_component,
                             type='dsc',
                             included=True,
-                            ))
+                        ))
 
         return missing
 

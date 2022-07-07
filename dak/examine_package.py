@@ -126,7 +126,7 @@ ansi_colours = {
     'maintainer': "\033[32m",
     'distro': "\033[1m\033[41m",
     'error': "\033[1m\033[41m",
-    }
+}
 
 html_colours = {
     'main': ('<span style="color: green">', "</span>"),
@@ -138,7 +138,7 @@ html_colours = {
     'maintainer': ('<span style="color: green">', "</span>"),
     'distro': ('<span style="font-weight: bold; background-color: red">', "</span>"),
     'error': ('<span style="font-weight: bold; background-color: red">', "</span>"),
-    }
+}
 
 
 def colour_output(s, colour):

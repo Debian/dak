@@ -472,7 +472,7 @@ if IsolatedAsyncioTestCase is not None:
                                                          'T-patch-4-F-patch-4.gz',
 
                                                          'patch-4.gz',
-                                                         ]
+                                                        ]
                               )
 
                 delete_obsolete_patches(index)
@@ -507,7 +507,7 @@ if IsolatedAsyncioTestCase is not None:
                                                          'T-patch-7-F-patch-7.gz',
 
                                                          'patch-5.gz',
-                                                         ]
+                                                        ]
                               )
 
                 delete_obsolete_patches(index)
@@ -551,7 +551,7 @@ if IsolatedAsyncioTestCase is not None:
                                                          'T-patch-9-F-patch-9.gz',
 
                                                          'patch-7.gz',
-                                                         ]
+                                                        ]
                               )
 
                 delete_obsolete_patches(index)

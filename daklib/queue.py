@@ -114,7 +114,7 @@ def prod_maintainer(notes, upload, session, trainee=False):
         '__SOURCE__': upload.changes.source,
         '__CHANGES_FILENAME__': upload.changes.changesname,
         '__MAINTAINER_TO__': ", ".join(maintainer_to),
-        }
+    }
 
     Subst["__FROM_ADDRESS__"] = user_email_address
     Subst["__PROD_MESSAGE__"] = prod_message

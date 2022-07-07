@@ -128,7 +128,7 @@ class CommandFile:
             '__BCC__': bcc,
             '__RESULTS__': "\n".join(self.result),
             '__FILENAME__': self.filename,
-            }
+        }
 
         message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-command.processed'))
 

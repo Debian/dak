@@ -71,8 +71,8 @@ class GenerateRejectMessages(DakTestCase):
                 'package': 'pkgname',
                 'tag': 'unknown-tag',
                 'description': '',
-            }
-            ], {'fatal': ['known-tag'], 'nonfatal': []},
+            }],
+            {'fatal': ['known-tag'], 'nonfatal': []},
             0,
         )
 
@@ -89,8 +89,8 @@ class GenerateRejectMessages(DakTestCase):
                 'package': 'pkgname',
                 'tag': 'fatal-tag-2',
                 'description': '',
-            },
-            ], {'fatal': ['fatal-tag-1', 'fatal-tag-2'], 'nonfatal': []},
+            }],
+            {'fatal': ['fatal-tag-1', 'fatal-tag-2'], 'nonfatal': []},
             2,
         )
 
@@ -107,8 +107,8 @@ class GenerateRejectMessages(DakTestCase):
                 'package': 'pkgname',
                 'tag': 'unknown-tag',
                 'description': '',
-            },
-            ], {'fatal': ['fatal-tag'], 'nonfatal': []},
+            }],
+            {'fatal': ['fatal-tag'], 'nonfatal': []},
             1,
         )
 
@@ -119,18 +119,20 @@ class GenerateRejectMessages(DakTestCase):
                 'package': 'pkgname',
                 'tag': 'non-fatal-tag',
                 'description': '',
-            },
-            ], {'fatal': [], 'nonfatal': ['non-fatal-tag']},
+            }],
+            {'fatal': [], 'nonfatal': ['non-fatal-tag']},
             1 + 1, # We add an extra 'reject' hint message
         )
 
     def testOverrideAllowed(self):
         self.assertNumReject([
-                {'level': 'O',
+            {
+                'level': 'O',
                 'package': 'pkgname',
                 'tag': 'non-fatal-tag',
-                'description': ''},
-                ], {'fatal': [], 'nonfatal': ['non-fatal-tag']},
+                'description': ''
+            }],
+            {'fatal': [], 'nonfatal': ['non-fatal-tag']},
             0,
         )
 
@@ -141,8 +143,8 @@ class GenerateRejectMessages(DakTestCase):
                 'package': 'pkgname',
                 'tag': 'fatal-tag',
                 'description': '',
-            },
-            ], {'fatal': ['fatal-tag'], 'nonfatal': []},
+            }],
+            {'fatal': ['fatal-tag'], 'nonfatal': []},
             1,
         )
 

@@ -236,7 +236,7 @@ def edit_new(overrides, upload, session):
                     component=component,
                     priority=priority,
                     included=o['included'],
-                    ))
+            ))
     return new_overrides
 
 ################################################################################
@@ -411,7 +411,7 @@ def do_bxa_notification(new, upload, session):
         '__DISTRO__': cnf['Dinstall::MyDistribution'],
         '__BCC__': 'X-DAK: dak process-new',
         '__BINARY_DESCRIPTIONS__': summary,
-        }
+    }
 
     bxa_mail = utils.TemplateSubst(subst, os.path.join(cnf["Dir::Templates"], "process-new.bxa_notification"))
     utils.send_mail(bxa_mail)
@@ -435,7 +435,7 @@ def run_user_inspect_command(upload, upload_copy):
             directory=directory,
             dsc=dsc,
             changes=changes,
-            )
+    )
 
     subprocess.check_call(shell_command, shell=True)
 
