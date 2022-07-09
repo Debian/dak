@@ -363,6 +363,7 @@ while :; do
     dak dominate --force -s ${suite}
     log "cruft-report"
     dak cruft-report -s ${suite}
+    echo "Remember to keep the linux ABI included in the last release."
     echo "Anything to remove? If so, copy/paste commands into another window, have fun"
     echo "When done, continue here. Enter anything if you got removals, empty if not (will rerun dominate/cruft-report then)"
     read -e -p "Anything removed?" -i "yes" removedstuff
