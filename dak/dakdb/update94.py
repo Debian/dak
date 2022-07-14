@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 src_associations_full view
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Correct permissions of policy_queue_upload_id_seq
 

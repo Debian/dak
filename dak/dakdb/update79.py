@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 add world schema and new stable views
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """remove unused database objects
 
 @contact: Debian FTP Master <ftpmaster@debian.org>

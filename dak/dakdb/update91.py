@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 per-queue NEW comments and permissions
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add column to store checksums we want per suite (Packages/Release files)
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 add table to keep track of seen signatures
 

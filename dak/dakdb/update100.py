@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add a component - suite mapping to only expose certain components in certain suites
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 add per-suite close_bugs option
 

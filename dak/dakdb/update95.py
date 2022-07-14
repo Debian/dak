@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Require SHA-1 and SHA-256 checksums in "files" table.
 

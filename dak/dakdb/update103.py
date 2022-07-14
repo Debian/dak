@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Drop unique .changes name requirement and allow ftpteam to forget seen files
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Alter permissions for new tables and set default permissions
 

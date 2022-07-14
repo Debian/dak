@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Do not include long description in Packages index by default
 

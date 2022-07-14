@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Remove obsolete functions
 

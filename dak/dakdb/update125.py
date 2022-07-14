@@ -1,4 +1,3 @@
-# coding=utf8
 """
 Add separate merged pdiff support settings for suites
 

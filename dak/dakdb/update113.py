@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add accept_{source,binary}_uploads to suite
 

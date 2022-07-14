@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add a new release_suite name which we use in generate_releases
 

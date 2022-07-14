@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add last_changed to suite
 

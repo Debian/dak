@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Multi-archive support; convert policy and build queues to regular suites
 

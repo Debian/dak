@@ -1,5 +1,3 @@
-# coding=utf8
-
 """remove duplicate constraint
 
 @contact: Debian FTP Master <ftpmaster@debian.org>

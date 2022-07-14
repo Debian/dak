@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add a debug suite field to the suite table
 

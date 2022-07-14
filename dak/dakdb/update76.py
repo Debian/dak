@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add list of closed bugs to changes table
 

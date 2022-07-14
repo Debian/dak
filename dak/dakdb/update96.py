@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add world.suite_summary view.
 

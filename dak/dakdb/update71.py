@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Make lastused in queuefiles/policyqueuefiles default now()
 

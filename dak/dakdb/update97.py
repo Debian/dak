@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Create path entries for changelog exporting
 

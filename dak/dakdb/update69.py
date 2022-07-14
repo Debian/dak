@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add support for Description-md5
 

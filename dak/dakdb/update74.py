@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Drop origin_server column from archive table
 

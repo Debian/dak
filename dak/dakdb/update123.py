@@ -1,4 +1,3 @@
-# coding=utf8
 """
 Add separate Contents-all support settings for suites
 

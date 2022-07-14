@@ -1,5 +1,3 @@
-# coding=utf8
-
 """set owner tables for sequences
 
 @contact: Debian FTP Master <ftpmaster@debian.org>

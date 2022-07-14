@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 new views binary_component, source_component and package_list
 

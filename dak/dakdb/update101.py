@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add column to store compression type of indices
 

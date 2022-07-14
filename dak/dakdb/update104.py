@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Drop created and modified columns from bin_contents and src_contents
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 rename policy queues
 

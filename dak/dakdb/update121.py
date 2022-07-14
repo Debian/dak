@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Update changes table to not require a value for the Binary column
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 remove per-fingerprint ACLs that are identical to keyring ACL
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Change indices for {src,bin}_contents
 

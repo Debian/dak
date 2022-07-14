@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Unprivileged group into the database config table
 

@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add codename to package_list view
 

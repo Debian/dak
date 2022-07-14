@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 add external_files table for security
 

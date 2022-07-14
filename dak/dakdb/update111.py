@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Make install_date in source consistant with binaries
 

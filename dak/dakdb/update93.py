@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 update world.files-1 view to handle backports archive on ftp-master
 

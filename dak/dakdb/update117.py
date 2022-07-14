@@ -1,5 +1,3 @@
-# coding=utf8
-
 """list of external signature requests
 
 @contact: Debian FTP Master <ftpmaster@debian.org>

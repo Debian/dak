@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Add suite options for overrides and control-suite to DB
 

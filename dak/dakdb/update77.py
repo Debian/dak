@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Move stayofexecution to the database
 

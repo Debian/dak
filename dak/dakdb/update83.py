@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 switch to new ACL implementation and add pre-suite NEW
 

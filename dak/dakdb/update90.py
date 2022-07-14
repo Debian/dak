@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 add created_by_id and created columns to acl_per_source table
 

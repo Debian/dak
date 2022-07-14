@@ -1,4 +1,3 @@
-# coding=utf8
 """
 Put descriptions into sections table
 

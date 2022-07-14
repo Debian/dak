@@ -1,5 +1,3 @@
-# coding=utf8
-
 """
 Reference archive table from suite and add path to archive root
 
