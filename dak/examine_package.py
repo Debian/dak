@@ -395,7 +395,7 @@ def create_depends_string(suite, depends_tree, session=None):
 
                 if component == "contrib":
                     result += colour_output(adepends, "contrib")
-                elif component == "non-free":
+                elif component in ("non-free-firmware", "non-free"):
                     result += colour_output(adepends, "nonfree")
                 else:
                     result += colour_output(adepends, "main")

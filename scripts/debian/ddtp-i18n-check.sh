@@ -146,6 +146,8 @@ is_dirname_okay () {
 #		"$dists_parent_dir/dists/$STABLE/main/i18n")       return 0;;
 #		"$dists_parent_dir/dists/$STABLE/contrib")         return 0;;
 #		"$dists_parent_dir/dists/$STABLE/contrib/i18n")    return 0;;
+#		"$dists_parent_dir/dists/$STABLE/non-free-firmware")        return 0;;
+#		"$dists_parent_dir/dists/$STABLE/non-free-firmware/i18n")   return 0;;
 #		"$dists_parent_dir/dists/$STABLE/non-free")        return 0;;
 #		"$dists_parent_dir/dists/$STABLE/non-free/i18n")   return 0;;
 		"$dists_parent_dir/dists/$TESTING")                return 0;;
@@ -153,6 +155,8 @@ is_dirname_okay () {
 		"$dists_parent_dir/dists/$TESTING/main/i18n")      return 0;;
 		"$dists_parent_dir/dists/$TESTING/contrib")        return 0;;
 		"$dists_parent_dir/dists/$TESTING/contrib/i18n")   return 0;;
+		"$dists_parent_dir/dists/$TESTING/non-free-firmware")       return 0;;
+		"$dists_parent_dir/dists/$TESTING/non-free-firmware/i18n")  return 0;;
 		"$dists_parent_dir/dists/$TESTING/non-free")       return 0;;
 		"$dists_parent_dir/dists/$TESTING/non-free/i18n")  return 0;;
 		"$dists_parent_dir/dists/$UNSTABLE")               return 0;;
@@ -160,6 +164,8 @@ is_dirname_okay () {
 		"$dists_parent_dir/dists/$UNSTABLE/main/i18n")     return 0;;
 		"$dists_parent_dir/dists/$UNSTABLE/contrib")       return 0;;
 		"$dists_parent_dir/dists/$UNSTABLE/contrib/i18n")  return 0;;
+		"$dists_parent_dir/dists/$UNSTABLE/non-free-firmware")      return 0;;
+		"$dists_parent_dir/dists/$UNSTABLE/non-free-firmware/i18n") return 0;;
 		"$dists_parent_dir/dists/$UNSTABLE/non-free")      return 0;;
 		"$dists_parent_dir/dists/$UNSTABLE/non-free/i18n") return 0;;
 	esac

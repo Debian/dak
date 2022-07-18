@@ -66,7 +66,7 @@ re_package = re.compile(r"^(.+?)_.*")
 re_doc_directory = re.compile(r".*/doc/([^/]*).*")
 
 re_contrib = re.compile('^contrib/')
-re_nonfree = re.compile('^non-free/')
+re_nonfree = re.compile('^(?:non-free-firmware|non-free)/')
 
 re_localhost = re.compile(r"localhost\.localdomain")
 re_version = re.compile(r'^(.*)\((.*)\)')

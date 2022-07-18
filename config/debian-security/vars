@@ -21,6 +21,6 @@ source ${configdir}/../common/variables
 declare -r uploadhost=ftp-master.debian.org
 declare -r uploaddir=/pub/UploadQueue/
 
-components="main non-free contrib"
+components="main non-free-firmware non-free contrib"
 override_types="deb dsc udeb"
 declare -r suites=$(dak admin s list)

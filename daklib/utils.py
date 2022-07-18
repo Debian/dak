@@ -1198,7 +1198,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 component, = session.query(Component.component_name) \
                     .join(Component.overrides) \
                     .filter(Override.suite == overridesuite) \
-                    .filter(Override.package == re.sub('/(contrib|non-free)$', '', source)) \
+                    .filter(Override.package == re.sub('/(contrib|non-free-firmware|non-free)$', '', source)) \
                     .join(Override.overridetype).filter(OverrideType.overridetype == 'dsc') \
                     .first()
                 key = source

@@ -104,7 +104,7 @@ class DBDakTestCase(DakTestCase):
         if 'comp' in self.__dict__:
             return
         self.comp = {}
-        for name in ('main', 'contrib', 'non-free'):
+        for name in ('main', 'contrib', 'non-free-firmware', 'non-free'):
             self.comp[name] = get_component(name, self.session)
             if not self.comp[name]:
                 self.comp[name] = Component(component_name=name)
