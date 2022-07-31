@@ -22,6 +22,8 @@
 import collections
 import json
 import sys
+from dataclasses import dataclass
+from typing import Any, Callable
 
 import apt_pkg
 
@@ -733,7 +735,11 @@ SUITE_CONFIG_READ_ONLY = object()
 SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON = object()
 
 
-SuiteConfigSerializer = collections.namedtuple('SuiteConfigSerializer', ['db_name', 'serialize', 'deserialize'])
+@dataclass
+class SuiteConfigSerializer:
+    db_name: str
+    serialize: Callable[[Any], str]
+    deserialize: Callable[[str], Any]
 
 
 def _serialize_suite(x):
