@@ -182,10 +182,10 @@ function _runtasks() {
                 ;;
             *)
                 GO=(
-                    FUNC=${FUNC}
-                    TIME=${TIME}
-                    ARGS=${ARGS}
-                    ERR=${ERR}
+                    FUNC="${FUNC}"
+                    TIME="${TIME}"
+                    ARGS="${ARGS}"
+                    ERR="${ERR}"
                 )
                 if [[ ${BACKGROUND} == true ]]; then
                     stage $GO &
