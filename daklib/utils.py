@@ -397,6 +397,11 @@ def send_mail(message, whitelists=None):
                 # return, as we removed all recipients.
                 call_sendmail = False
 
+    # sign mail
+    mailkey = Cnf.get('Dinstall::Mail-Signature-Key', '')
+    if mailkey:
+        msg = daklib.mail.sign_mail(msg, keyids=[mailkey])
+
     msg_bytes = msg.as_bytes(policy=email.policy.default)
 
     maildir = Cnf.get('Dir::Mail')
