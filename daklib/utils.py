@@ -402,10 +402,10 @@ def send_mail(message, whitelists=None):
     if mailkey:
         kwargs = {
             'keyids': [mailkey],
-            'pubring': cnf.get('Dinstall::SigningPubKeyring') or None,
-            'secring': cnf.get('Dinstall::SigningKeyring') or None,
-            'homedir': cnf.get('Dinstall::SigningHomedir') or None,
-            'passphrase_file': cnf.get('Dinstall::SigningPassphraseFile') or None,
+            'pubring': Cnf.get('Dinstall::SigningPubKeyring') or None,
+            'secring': Cnf.get('Dinstall::SigningKeyring') or None,
+            'homedir': Cnf.get('Dinstall::SigningHomedir') or None,
+            'passphrase_file': Cnf.get('Dinstall::SigningPassphraseFile') or None,
         }
         msg = daklib.mail.sign_mail(msg, **kwargs)
 
