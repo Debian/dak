@@ -400,7 +400,14 @@ def send_mail(message, whitelists=None):
     # sign mail
     mailkey = Cnf.get('Dinstall::Mail-Signature-Key', '')
     if mailkey:
-        msg = daklib.mail.sign_mail(msg, keyids=[mailkey])
+        kwargs = {
+            'keyids': [mailkey],
+            'pubring': cnf.get('Dinstall::SigningPubKeyring') or None,
+            'secring': cnf.get('Dinstall::SigningKeyring') or None,
+            'homedir': cnf.get('Dinstall::SigningHomedir') or None,
+            'passphrase_file': cnf.get('Dinstall::SigningPassphraseFile') or None,
+        }
+        msg = daklib.mail.sign_mail(msg, **kwargs)
 
     msg_bytes = msg.as_bytes(policy=email.policy.default)
 
