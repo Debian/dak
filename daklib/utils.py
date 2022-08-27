@@ -32,12 +32,13 @@ import tempfile
 import apt_inst
 import apt_pkg
 import re
-import email as modemail
+import email.policy
 import subprocess
 import errno
 import functools
 
 import daklib.config as config
+import daklib.mail
 from .dbconn import DBConn, get_architecture, get_component, get_suite, \
                    get_active_keyring_paths, \
                    get_suite_architectures, get_or_set_metadatakey, \
@@ -326,8 +327,8 @@ def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
 ################################################################################
 
 
-def send_mail(message, filename="", whitelists=None):
-    """sendmail wrapper, takes _either_ a message string or a file as arguments
+def send_mail(message, whitelists=None):
+    """sendmail wrapper, takes a message string
 
     @type  whitelists: list of (str or None)
     @param whitelists: path to whitelists. C{None} or an empty list whitelists
@@ -337,31 +338,18 @@ def send_mail(message, filename="", whitelists=None):
                        Dinstall::MailWhiteList.
     """
 
-    maildir = Cnf.get('Dir::Mail')
-    if maildir:
-        path = os.path.join(maildir, datetime.datetime.now().isoformat())
-        path = find_next_free(path)
-        with open(path, 'w') as fh:
-            print(message, end=' ', file=fh)
+    msg = daklib.mail.parse_mail(message)
 
     # Check whether we're supposed to be sending mail
+    call_sendmail = True
     if "Dinstall::Options::No-Mail" in Cnf and Cnf["Dinstall::Options::No-Mail"]:
-        return
-
-    # If we've been passed a string dump it into a temporary file
-    if message:
-        (fd, filename) = tempfile.mkstemp()
-        with os.fdopen(fd, 'wt') as f:
-            f.write(message)
+        call_sendmail = False
 
     if whitelists is None or None in whitelists:
         whitelists = []
     if Cnf.get('Dinstall::MailWhiteList', ''):
         whitelists.append(Cnf['Dinstall::MailWhiteList'])
     if len(whitelists) != 0:
-        with open(filename) as message_in:
-            message_raw = modemail.message_from_file(message_in)
-
         whitelist = []
         for path in whitelists:
             with open(path, 'r') as whitelist_in:
@@ -376,14 +364,14 @@ def send_mail(message, filename="", whitelists=None):
         fields = ["To", "Bcc", "Cc"]
         for field in fields:
             # Check each field
-            value = message_raw.get(field, None)
+            value = msg.get(field, None)
             if value is not None:
                 match = []
                 for item in value.split(","):
-                    (rfc822_maint, rfc2047_maint, name, email) = fix_maintainer(item.strip())
+                    (rfc822_maint, rfc2047_maint, name, mail) = fix_maintainer(item.strip())
                     mail_whitelisted = 0
                     for wr in whitelist:
-                        if wr.match(email):
+                        if wr.match(mail):
                             mail_whitelisted = 1
                             break
                     if not mail_whitelisted:
@@ -393,39 +381,41 @@ def send_mail(message, filename="", whitelists=None):
 
                 # Doesn't have any mail in whitelist so remove the header
                 if len(match) == 0:
-                    del message_raw[field]
+                    del msg[field]
                 else:
-                    message_raw.replace_header(field, ', '.join(match))
+                    msg.replace_header(field, ', '.join(match))
 
         # Change message fields in order if we don't have a To header
-        if "To" not in message_raw:
+        if "To" not in msg:
             fields.reverse()
             for field in fields:
-                if field in message_raw:
-                    message_raw[fields[-1]] = message_raw[field]
-                    del message_raw[field]
+                if field in msg:
+                    msg[fields[-1]] = msg[field]
+                    del msg[field]
                     break
             else:
-                # Clean up any temporary files
-                # and return, as we removed all recipients.
-                if message:
-                    os.unlink(filename)
-                return
+                # return, as we removed all recipients.
+                call_sendmail = False
 
-        fd = os.open(filename, os.O_RDWR | os.O_EXCL, 0o700)
-        with os.fdopen(fd, 'wt') as f:
-            f.write(message_raw.as_string(True))
+    msg_bytes = msg.as_bytes(policy=email.policy.default)
+
+    maildir = Cnf.get('Dir::Mail')
+    if maildir:
+        path = os.path.join(maildir, datetime.datetime.now().isoformat())
+        path = find_next_free(path)
+        with open(path, 'wb') as fh:
+            fh.write(msg_bytes)
 
     # Invoke sendmail
+    if not call_sendmail:
+        return
     try:
-        with open(filename, 'r') as fh:
-            subprocess.check_output(Cnf["Dinstall::SendmailCommand"].split(), stdin=fh, stderr=subprocess.STDOUT)
+        subprocess.run(Cnf["Dinstall::SendmailCommand"].split(),
+                       input=msg_bytes,
+                       check=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-        raise SendmailFailedError(e.output.rstrip())
-
-    # Clean up any temporary files
-    if message:
-        os.unlink(filename)
+        raise SendmailFailedError(e.output.decode().rstrip())
 
 ################################################################################
 
