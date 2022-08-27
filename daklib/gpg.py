@@ -321,7 +321,7 @@ class SignedFile:
         return apt_pkg.sha1sum(self.contents)
 
 
-def sign(infile, outfile, keyids=[], inline=False, pubring=None, secring=None, homedir=None, passphrase_file=None):
+def sign(infile, outfile=None, keyids=[], inline=False, pubring=None, secring=None, homedir=None, passphrase_file=None):
     args = [
         '/usr/bin/gpg',
         '--no-options', '--no-tty', '--batch', '--armour',
@@ -342,6 +342,20 @@ def sign(infile, outfile, keyids=[], inline=False, pubring=None, secring=None, h
 
     args.append('--clearsign' if inline else '--detach-sign')
 
-    subprocess.check_call(args, stdin=infile, stdout=outfile)
+    kwargs = {}
+    if isinstance(infile, str):
+        infile = infile.encode('utf-8')
+    if isinstance(infile, bytes):
+        kwargs['input'] = infile
+    else:
+        kwargs['stdin'] = infile
+    if outfile is None:
+        kwargs['stdout'] = subprocess.PIPE
+    else:
+        kwargs['stdout'] = outfile
+
+    result = subprocess.run(args, check=True, **kwargs)
+    if outfile is None:
+        return result.stdout
 
 # vim: set sw=4 et:
