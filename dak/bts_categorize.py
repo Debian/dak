@@ -65,7 +65,8 @@ OPTIONS
 arguments = [('s', 'simulate', 'BtsCategorize::Options::Simulate'),
              ('v', 'verbose', 'BtsCategorize::Options::Verbose'),
              ('q', 'quiet', 'BtsCategorize::Options::Quiet'),
-             ('h', 'help', 'BtsCategorize::Options::Help')]
+             ('h', 'help', 'BtsCategorize::Options::Help'),
+             ('o', 'option', '', 'ArbItem')]
 
 
 class BugClassifier:
