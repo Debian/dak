@@ -992,10 +992,10 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
                 'Dinstall::UploadMailRecipients', recipient))
 
         if address is not None:
-            email = fix_maintainer(address)[3]
-            if email not in emails:
+            mail = fix_maintainer(address)[3]
+            if mail not in emails:
                 addresses.add(address)
-                emails.add(email)
+                emails.add(mail)
 
     encoded_addresses = [fix_maintainer(e)[1] for e in addresses]
     return encoded_addresses
