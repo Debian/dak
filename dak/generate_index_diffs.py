@@ -80,7 +80,7 @@ def tryunlink(file):
 
 
 def smartstat(file):
-    for ext in ["", ".gz", ".bz2", ".xz"]:
+    for ext in ["", ".gz", ".bz2", ".xz", ".zst"]:
         if os.path.isfile(file + ext):
             return (ext, os.stat(file + ext))
     return (None, None)
@@ -103,6 +103,8 @@ async def smartlink(f, t):
         await call_decompressor(['bzip2', '-d'], '{}.bz2'.format(f), t)
     elif os.path.isfile("%s.xz" % (f)):
         await call_decompressor(['xz', '-d'], '{}.xz'.format(f), t)
+    elif os.path.isfile(f"{f}.zst"):
+        await call_decompressor(['zstd', '--decompress'], f'{f}.zst', t)
     else:
         print("missing: %s" % (f))
         raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), f)

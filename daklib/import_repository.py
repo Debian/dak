@@ -116,7 +116,7 @@ def obtain_release(base, suite_name, keyring, fingerprint=None):
     return r
 
 
-_compressions = ('.xz', '.gz', '.bz2')
+_compressions = ('.zst', '.xz', '.gz', '.bz2')
 
 
 def obtain_release_file(release, filename):

@@ -359,6 +359,9 @@ def new_stats(logdir, yaml):
             elif fn.endswith('.xz'):
                 with open(logfile, 'rb') as fh:
                     data = subprocess.check_output(['xzcat'], stdin=fh)
+            elif fn.endswith('.zst'):
+                with open(logfile, 'rb') as fh:
+                    data = subprocess.check_output(['zstdcat'], stdin=fh)
             else:
                 with open(logfile, 'rb') as fd:
                     data = fd.read()

@@ -115,6 +115,15 @@ class XzFile:
             return subprocess.check_output(['xz', '-d'], stdin=stdin)
 
 
+class ZstdFile:
+    def __init__(self, filename, mode='r'):
+        self.filename = filename
+
+    def read(self):
+        with open(self.filename, 'rb') as stdin:
+            return subprocess.check_output(['zstd', '--decompress'], stdin=stdin)
+
+
 class HashFunc:
     def __init__(self, release_field, func, db_name):
         self.release_field = release_field
@@ -432,6 +441,8 @@ class ReleaseWriter:
                     uncompnotseen[filename[:-4]] = (bz2.BZ2File, filename)
                 elif entry.endswith(".xz") and filename[:-3] not in uncompnotseen:
                     uncompnotseen[filename[:-3]] = (XzFile, filename)
+                elif entry.endswith(".zst") and filename[:-3] not in uncompnotseen:
+                    uncompnotseen[filename[:-3]] = (ZstdFile, filename)
 
                 fileinfo[filename]['len'] = len(contents)
 

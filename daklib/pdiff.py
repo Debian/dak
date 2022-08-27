@@ -69,6 +69,8 @@ async def open_decompressed(file, named_temp_file=False):
         return await call_decompressor(['bzcat'], '{}.bz2'.format(file))
     elif os.path.isfile("%s.xz" % file):
         return await call_decompressor(['xzcat'], '{}.xz'.format(file))
+    elif os.path.isfile(f"{file}.zst"):
+        return await call_decompressor(['zstdcat'], f'{file}.zst')
     else:
         return None
 

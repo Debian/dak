@@ -23,6 +23,10 @@ import shutil
 import subprocess
 
 
+def decompress_zstd(input, output):
+    subprocess.check_call(["zstd", "--decompress"], stdin=input, stdout=output)
+
+
 def decompress_xz(input, output):
     subprocess.check_call(["xz", "--decompress"], stdin=input, stdout=output)
 
@@ -36,6 +40,7 @@ def decompress_gz(input, output):
 
 
 decompressors = {
+    '.zst': decompress_zstd,
     '.xz': decompress_xz,
     '.bz2': decompress_bz2,
     '.gz': decompress_gz,

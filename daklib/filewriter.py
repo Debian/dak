@@ -41,6 +41,7 @@ _compression_methods = (
     CompressionMethod('bzip2', '.bz2', ['bzip2', '-9']),
     CompressionMethod('gzip', '.gz', ['gzip', '-9cn', '--rsyncable', '--no-name']),
     CompressionMethod('xz', '.xz', ['xz', '-c']),
+    CompressionMethod('zstd', '.zst', ['zstd', '--compress']),
     # 'none' must be the last compression method as BaseFileWriter
     # handling it will remove the input file for other compressions
     CompressionMethod('none', '', None),
