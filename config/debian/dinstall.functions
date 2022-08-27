@@ -426,7 +426,7 @@ function dm() {
 
 function bts() {
     log "Categorizing uncategorized bugs filed against ftp.debian.org"
-    sudo -u dak-unpriv dak bts-categorize
+    sudo -u dak-unpriv dak bts-categorize -o Dinstall::Mail-Signature-Key=""
 }
 
 function mirrorpush() {
