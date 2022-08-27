@@ -27,7 +27,7 @@ test-setup() {
 
   section_start "setup_dak_installation[collapsed=true]" "Prepare DAK"
 
-  export DAKBASE=$(mktemp -d)
+  export DAKBASE=$(mktemp -d --tmpdir dak-integration-test.XXXXXXXXXX)
   export HOME="${DAKBASE}/home"
   export DAKHOST=dak-master
   export PGDATABASE=projectb
