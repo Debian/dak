@@ -26,6 +26,7 @@ Config access class
 
 ################################################################################
 
+import getpass
 import grp
 import os
 import apt_pkg
@@ -89,6 +90,11 @@ class Config:
                     if bygroup.get(group):
                         apt_pkg.read_config_file_isc(self.Cnf, bygroup[group])
                     break
+
+        # Read user-specific options
+        byuser_config_path = self.Cnf.get(f"ByUser::{getpass.getuser()}", "")
+        if byuser_config_path:
+            apt_pkg.read_config_file_isc(self.Cnf, byuser_config_path)
 
         if 'Include' in self.Cnf:
             for filename in self.Cnf.value_list('Include'):
