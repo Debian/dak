@@ -340,6 +340,12 @@ def send_mail(message, whitelists=None):
 
     msg = daklib.mail.parse_mail(message)
 
+    # The incoming message might be UTF-8, but outgoing mail should
+    # use a legacy-compatible encoding. Set the content to the
+    # text to make sure this is the case.
+    # Note that this does not work with multipart messages.
+    msg.set_content(msg.get_payload(), cte="quoted-printable")
+
     # Check whether we're supposed to be sending mail
     call_sendmail = True
     if "Dinstall::Options::No-Mail" in Cnf and Cnf["Dinstall::Options::No-Mail"]:
