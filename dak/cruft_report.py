@@ -639,8 +639,8 @@ def main():
         bins_in_suite = get_suite_binaries(suite, session)
 
     # Checks based on the Sources files
-    components = get_component_names(session)
-    for component in components:
+    components = [c.component_name for c in suite.components]
+    for component in [c.component_name for c in suite.components]:
         filename = "%s/dists/%s/%s/source/Sources" % (suite.archive.path, suite_name, component)
         filename = utils.find_possibly_compressed_file(filename)
         with apt_pkg.TagFile(filename) as Sources:
