@@ -66,6 +66,7 @@ Remove PACKAGE(s) from suite(s).
   -a, --architecture=ARCH    only act on this architecture
   -b, --binary               PACKAGE are binary packages to remove
   -B, --binary-only          remove binaries only
+      --binary-version=VER   only remove packages with binary vesion VER
   -c, --component=COMPONENT  act on this component
   -C, --carbon-copy=EMAIL    send a CC of removal message to EMAIL
   -d, --done=BUG#            send removal message as closure to bug#
@@ -79,6 +80,7 @@ Remove PACKAGE(s) from suite(s).
   -R, --rdep-check           check reverse dependencies
   -s, --suite=SUITE          act on this suite
   -S, --source-only          remove source only
+      --source-version=VER   only remove packages with source version VER
 
 ARCH, BUG#, COMPONENT and SUITE can be comma (or space) separated lists, e.g.
     --architecture=amd64,i386""")
@@ -125,6 +127,7 @@ def main():
                  ('a', "architecture", "Rm::Options::Architecture", "HasArg"),
                  ('b', "binary", "Rm::Options::Binary"),
                  ('B', "binary-only", "Rm::Options::Binary-Only"),
+                 ('', "binary-version", "Rm::Options::Binary-Version"),
                  ('c', "component", "Rm::Options::Component", "HasArg"),
                  ('C', "carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d', "done", "Rm::Options::Done", "HasArg"), # Bugs fixed
@@ -136,6 +139,7 @@ def main():
                  ('p', "partial", "Rm::Options::Partial"),
                  ('s', "suite", "Rm::Options::Suite", "HasArg"),
                  ('S', "source-only", "Rm::Options::Source-Only"),
+                 ('', "source-version", "Rm::Options::Source-Version"),
                  ]
 
     for i in ['NoArchAllRdeps',
@@ -183,6 +187,11 @@ def main():
     if not Options["No-Action"] and not Options["Carbon-Copy"] \
            and not Options["Done"] and Options["Reason"].find("[auto-cruft]") == -1:
         utils.fubar("Need a -C/--carbon-copy if not closing a bug and not doing a cruft removal.")
+
+    parameters = {
+        "binary_version": Options.get("Binary-Version", "") or None,
+        "source_version": Options.get("Source-Version", "") or None,
+    }
 
     if Options["Binary"]:
         field = "b.package"
@@ -250,8 +259,11 @@ def main():
                      JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
                      JOIN component c ON c.id = af.component_id
                      JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
-                WHERE %s %s %s %s %s
-        """ % (q_outdated, con_packages, con_suites, con_components, con_architectures))
+                WHERE
+                     (:binary_version IS NULL OR b.version = :binary_version)
+                     AND (:source_version IS NULL OR s.version = :source_version)
+                     AND %s %s %s %s %s
+        """ % (q_outdated, con_packages, con_suites, con_components, con_architectures), parameters)
         to_remove.extend(q)
     else:
         # Source-only
@@ -267,8 +279,10 @@ def main():
                          JOIN files_archive_map af ON af.file_id = f.id AND af.archive_id = su.archive_id
                          JOIN component c ON c.id = af.component_id
                          JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
-                    WHERE %s %s %s %s
-            """ % (q_outdated, con_packages, con_suites, con_components))
+                    WHERE
+                         (:source_version IS NULL OR s.version = :source_version)
+                         AND %s %s %s %s
+            """ % (q_outdated, con_packages, con_suites, con_components), parameters)
             to_remove.extend(q)
         if not Options["Source-Only"]:
             # Source + Binary
@@ -284,8 +298,11 @@ def main():
                          JOIN component c ON af.component_id = c.id
                          JOIN source s ON b.source = s.id
                          JOIN newest_source on s.source = newest_source.source AND su.id = newest_source.suite
-                    WHERE %s %s %s %s %s
-            """ % (q_outdated, con_packages, con_suites, con_components, con_architectures))
+                    WHERE
+                         (:binary_version IS NULL OR b.version = :binary_version)
+                         AND (:source_version IS NULL OR s.version = :source_version)
+                         AND %s %s %s %s %s
+            """ % (q_outdated, con_packages, con_suites, con_components, con_architectures), parameters)
             to_remove.extend(q)
 
     if not to_remove:
