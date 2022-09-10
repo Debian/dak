@@ -296,6 +296,7 @@ class ContentsWriter:
         component_query = session.query(Component)
         if component_names:
             component_query = component_query.filter(Component.component_name.in_(component_names))
+        components = component_query.all()
         if not force:
             suite_query = suite_query.filter(Suite.untouchable == False)  # noqa:E712
         deb_id = get_override_type('deb', session).overridetype_id
@@ -312,7 +313,7 @@ class ContentsWriter:
             if suite.separate_contents_architecture_all:
                 skip_arch_all = False
 
-            for component in component_query:
+            for component in (c for c in suite.components if c in components):
                 component_id = component.component_id
                 # handle source packages
                 pool.apply_async(source_helper, (suite_id, component_id),
