@@ -127,7 +127,7 @@ def main():
                  ('a', "architecture", "Rm::Options::Architecture", "HasArg"),
                  ('b', "binary", "Rm::Options::Binary"),
                  ('B', "binary-only", "Rm::Options::Binary-Only"),
-                 ('\0', "binary-version", "Rm::Options::Binary-Version"),
+                 ('\0', "binary-version", "Rm::Options::Binary-Version", "HasArg"),
                  ('c', "component", "Rm::Options::Component", "HasArg"),
                  ('C', "carbon-copy", "Rm::Options::Carbon-Copy", "HasArg"), # Bugs to Cc
                  ('d', "done", "Rm::Options::Done", "HasArg"), # Bugs fixed
@@ -139,7 +139,7 @@ def main():
                  ('p', "partial", "Rm::Options::Partial"),
                  ('s', "suite", "Rm::Options::Suite", "HasArg"),
                  ('S', "source-only", "Rm::Options::Source-Only"),
-                 ('\0', "source-version", "Rm::Options::Source-Version"),
+                 ('\0', "source-version", "Rm::Options::Source-Version", "HasArg"),
                  ]
 
     for i in ['NoArchAllRdeps',
