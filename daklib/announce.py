@@ -153,11 +153,10 @@ def announce_accept(upload):
 
     suite_names = []
     for suite in upload.suites:
-        if suite.policy_queue:
+        if suite.policy_queue and suite not in upload.from_policy_suites:
             suite_names.append("{0}->{1}".format(suite.suite_name, suite.policy_queue.queue_name))
         else:
             suite_names.append(suite.suite_name)
-    suite_names.extend(suite.suite_name for suite in upload.from_policy_suites)
     subst['__SUITE__'] = ', '.join(suite_names) or '(none)'
 
     message = TemplateSubst(subst, os.path.join(cnf['Dir::Templates'], 'process-unchecked.accepted'))
