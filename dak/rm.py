@@ -195,10 +195,10 @@ def main():
 
     if Options["Binary"]:
         con_packages = "AND b.package IN :packages"
-        parameters['packages'] = arguments
+        parameters['packages'] = tuple(arguments)
     else:
         con_packages = "AND s.source IN :sources"
-        parameters['sources'] = arguments
+        parameters['sources'] = tuple(arguments)
 
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options)
