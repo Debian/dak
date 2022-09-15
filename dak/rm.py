@@ -194,10 +194,11 @@ def main():
     }
 
     if Options["Binary"]:
-        field = "b.package"
+        con_packages = "AND b.package IN :packages"
+        parameters['packages'] = arguments
     else:
-        field = "s.source"
-    con_packages = "AND %s IN (%s)" % (field, ", ".join([repr(i) for i in arguments]))
+        con_packages = "AND s.source IN :sources"
+        parameters['sources'] = arguments
 
     (con_suites, con_architectures, con_components, check_source) = \
                  utils.parse_args(Options)
