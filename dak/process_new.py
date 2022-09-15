@@ -411,6 +411,10 @@ def do_bxa_notification(new, upload, session):
         '__DISTRO__': cnf['Dinstall::MyDistribution'],
         '__BCC__': 'X-DAK: dak process-new',
         '__BINARY_DESCRIPTIONS__': summary,
+        '__CHANGES_FILENAME__': upload.changes_filename,
+        '__SOURCE__': upload.source,
+        '__VERSION__': upload.version,
+        '__ARCHITECTURE__': upload.architecture,
     }
 
     bxa_mail = utils.TemplateSubst(subst, os.path.join(cnf["Dir::Templates"], "process-new.bxa_notification"))

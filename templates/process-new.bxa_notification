@@ -3,6 +3,11 @@ X-Not-Really-To: crypt@bis.doc.gov, enc@nsa.gov, web_site@bis.doc.gov
 To: bxa@ftp-master.debian.org
 __BCC__
 X-Debian: DAK
+Debian: DAK
+Debian-Changes: __CHANGES_FILENAME__
+Debian-Source: __SOURCE__
+Debian-Version: __VERSION__
+Debian-Architecture: __ARCHITECTURE__
 Precedence: junk
 Auto-Submitted: auto-generated
 MIME-Version: 1.0

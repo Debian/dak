@@ -4,6 +4,13 @@ To: __ANNOUNCE_LIST_ADDRESS__
 __BCC__
 X-Debian: DAK
 X-Debian-Package: __SOURCE__
+Debian: DAK
+Debian-Changes: __CHANGES_FILENAME__
+Debian-Source: __SOURCE__
+Debian-Version: __VERSION__
+Debian-Architecture: __ARCHITECTURE__
+Debian-Suite: __SUITE__
+Debian-Archive-Action: __ACTION__
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit

@@ -150,6 +150,7 @@ def announce_accept(upload):
     whitelists = _whitelists(upload)
 
     accepted_to_real_suite = any(suite.policy_queue is None or suite in upload.from_policy_suites for suite in upload.suites)
+    subst['__ACTION__'] = 'accept' if accepted_to_real_suite else 'policy'
 
     suite_names = []
     for suite in upload.suites:

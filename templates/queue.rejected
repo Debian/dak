@@ -4,6 +4,12 @@ __BCC__
 __CC__
 X-Debian: DAK
 X-Debian-Package: __SOURCE__
+Debian: DAK
+Debian-Changes: __CHANGES_FILENAME__
+Debian-Source: __SOURCE__
+Debian-Version: __VERSION__
+Debian-Architecture: __ARCHITECTURE__
+Debian-Archive-Action: reject
 Precedence: bulk
 Auto-Submitted: auto-generated
 MIME-Version: 1.0
