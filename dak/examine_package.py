@@ -357,10 +357,9 @@ def get_provides(suite):
                AND b.suite = (
                  SELECT id
                  FROM suite
-                 WHERE suite_name = '%(suite)s'
-                 OR codename = '%(suite)s')''' % \
-            {'suite': suite}
-    for p in session.execute(query):
+                 WHERE suite_name = :suite
+                 OR codename = :suite)'''
+    for p in session.execute(query, {'suite': suite}):
         for e in p:
             for i in e.split(','):
                 provides.add(i.strip())

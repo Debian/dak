@@ -130,14 +130,17 @@ def britney_changelog(packages, suite, session):
         else:
             new[p] = [current[p], 0]
 
+    params = {}
     query = "SELECT source, changelog FROM changelogs WHERE"
-    for p in new.keys():
-        query += " source = '%s' AND version > '%s' AND version <= '%s'" \
-                 % (p, new[p][1], new[p][0])
+    for n, p in enumerate(new.keys()):
+        query += f" source = :source_{n} AND version > :version1_{n} AND version <= :version2_{n}"
         query += " AND architecture LIKE '%source%' AND distribution in \
                   ('unstable', 'experimental', 'testing-proposed-updates') OR"
+        params['source_' + n] = p
+        params['version1_' + n] = new[p][1]
+        params['version2_' + n] = new[p][0]
     query += " False ORDER BY source, version DESC"
-    q = session.execute(query)
+    q = session.execute(query, params)
 
     pu = None
     with open(brit_file, 'w') as brit:

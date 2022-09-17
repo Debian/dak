@@ -122,8 +122,8 @@ SELECT b.package
   JOIN bin_associations ba ON b.id = ba.bin
   JOIN suite ON ba.suite = suite.id
   JOIN files_archive_map af ON b.file = af.file_id AND suite.archive_id = af.archive_id
- WHERE b.type = :otype AND ba.suite IN (%s) AND af.component_id = :component_id
-""" % (",".join([str(i) for i in affected_suites])), {'otype': otype, 'component_id': component_id})
+ WHERE b.type = :otype AND ba.suite IN :affected_suites AND af.component_id = :component_id
+""", {'otype': otype, 'affected_suites': tuple(affected_suites), 'component_id': component_id})
         for i in q.fetchall():
             packages[i[0]] = 0
 
@@ -133,8 +133,8 @@ SELECT s.source FROM source s
   JOIN src_associations sa ON s.id = sa.source
   JOIN suite ON sa.suite = suite.id
   JOIN files_archive_map af ON s.file = af.file_id AND suite.archive_id = af.archive_id
- WHERE sa.suite IN (%s) AND af.component_id = :component_id
-""" % (",".join([str(i) for i in affected_suites])), {'component_id': component_id})
+ WHERE sa.suite IN :affected_suites AND af.component_id = :component_id
+""", {'affected_suites': tuple(affected_suites), 'component_id': component_id})
     for i in q.fetchall():
         src_packages[i[0]] = 0
 

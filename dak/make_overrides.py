@@ -75,12 +75,14 @@ def do_list(output_file, suite, component, otype, session):
     # takes 1:45, the 'dumb' tuple-based one takes 0:16 - mhy
 
     if otype.overridetype == "dsc":
-        q = session.execute("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.section = s.id ORDER BY s.section, o.package" % (suite.suite_id, component.component_id, otype.overridetype_id))
+        q = session.execute("SELECT o.package, s.section, o.maintainer FROM override o, section s WHERE o.suite = :suite AND o.component = :component AND o.type = :otype AND o.section = s.id ORDER BY s.section, o.package",
+                            {'suite': suite.suite_id, 'component': component.component_id, 'otype': otype.overridetype_id})
         for i in q.fetchall():
             output_file.write(utils.result_join(i) + '\n')
 
     else:
-        q = session.execute("SELECT o.package, p.priority, s.section, o.maintainer FROM override o, priority p, section s WHERE o.suite = %s AND o.component = %s AND o.type = %s AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package" % (suite.suite_id, component.component_id, otype.overridetype_id))
+        q = session.execute("SELECT o.package, p.priority, s.section, o.maintainer FROM override o, priority p, section s WHERE o.suite = :suite AND o.component = :component AND o.type = :otype AND o.priority = p.id AND o.section = s.id ORDER BY s.section, p.level, o.package",
+                            {'suite': suite.suite_id, 'component': component.component_id, 'otype': otype.overridetype_id})
         for i in q.fetchall():
             output_file.write(utils.result_join(i) + '\n')
 
