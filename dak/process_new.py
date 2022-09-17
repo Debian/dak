@@ -55,6 +55,7 @@ import apt_pkg
 import dak.examine_package
 from sqlalchemy import or_
 
+import daklib.dbconn
 from daklib.queue import *
 from daklib import daklog
 from daklib import utils
@@ -390,7 +391,7 @@ def check_pkg(upload, upload_copy, session):
 ## FIXME: horribly Debian specific
 
 
-def do_bxa_notification(new, upload, session):
+def do_bxa_notification(new, upload: daklib.dbconn.PolicyQueueUpload, session):
     cnf = Config()
 
     new = set([o['package'] for o in new if o['type'] == 'deb'])
@@ -676,7 +677,7 @@ def lock_package(package):
         os.unlink(path)
 
 
-def do_pkg(upload, session):
+def do_pkg(upload: daklib.dbconn.PolicyQueueUpload, session):
     # Try to get an included dsc
     dsc = upload.source
 
@@ -716,7 +717,7 @@ def show_new_comments(uploads, session):
 ################################################################################
 
 
-def sort_uploads(new_queue, uploads, session, nobinaries=False):
+def sort_uploads(new_queue, uploads, session, nobinaries=False) -> [daklib.dbconn.PolicyQueueUpload]:
     sources = {}
     sorteduploads = []
     suitesrc = [s.source for s in session.query(DBSource.source).
