@@ -3,18 +3,18 @@
   except:
     - deploy@ftp-team/dak
 
-test buster:
+test bullseye:
   <<: *template
-  image: debian:buster
+  image: debian:bullseye
   parallel: 3
   script: debian/run-ci --with-coverage
   artifacts:
     paths:
       - output
 
-test bullseye:
+test bookworm:
   <<: *template
-  image: debian:bullseye
+  image: debian:bookworm
   parallel: 3
   script: debian/run-ci --with-coverage
   artifacts:
@@ -32,10 +32,10 @@ flake8:
 
 get coverage:
   <<: *template
-  image: debian:buster
+  image: debian:bullseye
   stage: coverage
   dependencies:
-    - test buster
+    - test bullseye
   script:
     - debian/run-coverage
   artifacts:
