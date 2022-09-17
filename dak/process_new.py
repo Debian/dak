@@ -413,9 +413,9 @@ def do_bxa_notification(new, upload: daklib.dbconn.PolicyQueueUpload, session):
         '__BCC__': 'X-DAK: dak process-new',
         '__BINARY_DESCRIPTIONS__': summary,
         '__CHANGES_FILENAME__': upload.changes.changesname,
-        '__SOURCE__': upload.source,
-        '__VERSION__': upload.version,
-        '__ARCHITECTURE__': upload.architecture,
+        '__SOURCE__': upload.changes.source,
+        '__VERSION__': upload.changes.version,
+        '__ARCHITECTURE__': upload.changes.architecture,
     }
 
     bxa_mail = utils.TemplateSubst(subst, os.path.join(cnf["Dir::Templates"], "process-new.bxa_notification"))
