@@ -43,6 +43,7 @@ test-setup() {
   chmod 0700 "${GNUPGHOME}"
   echo "Dinstall::SigningHomedir \"${GNUPGHOME}\";" >> "${DAK_CONFIG}"
   echo "Dir::Mail \"${DAKBASE}/outgoing-mail\";" >> "${DAK_CONFIG}"
+  echo "Dinstall::BXANotify 1;" >> "${DAK_CONFIG}"
   echo "Dinstall::Mail-Signature-Key \"589E8FA542378066E944B6222F7C63E8F3A2C549\";" >> "${DAK_CONFIG}"
 
   section_end setup_dak_installation
