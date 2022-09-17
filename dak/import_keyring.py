@@ -52,7 +52,7 @@ def get_fingerprint_info(session):
 
 
 def list_uids(session, pattern):
-    sql_pattern = "%%%s%%" % pattern
+    sql_pattern = f"%{pattern}%"
     message = "List UIDs matching pattern %s" % sql_pattern
     message += "\n" + ("=" * len(message))
     print(message)
