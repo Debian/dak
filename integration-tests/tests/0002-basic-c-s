@@ -33,6 +33,7 @@ dak admin suite-component add unstable main contrib non-free-firmware non-free
 dak admin suite add testing "" codename=buster
 dak admin suite-architecture add testing source all amd64
 dak admin suite-component add testing main contrib non-free-firmware non-free
+dak admin suite-config set testing changelog=changelog-testing
 
 assert-control-suite-list() {
     local suite="$1" expected="$2"
@@ -85,7 +86,7 @@ EOF
 
 # Move package 0.1 to testing
 (
-    dak control-suite --list=unstable | dak control-suite --add=testing
+    dak control-suite --list=unstable | dak control-suite --set=testing --britney
     actual=$(dak control-suite --list=testing)
     expected=$(dak control-suite --list=unstable)
     assert-equal "dak control-suite --list=testing" "${actual}" "${expected}"
