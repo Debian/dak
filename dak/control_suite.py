@@ -128,12 +128,12 @@ def britney_changelog(packages, suite, session):
             if apt_pkg.version_compare(current[p], old[p]) > 0:
                 new[p] = [current[p], old[p]]
         else:
-            new[p] = [current[p], 0]
+            new[p] = [current[p], None]
 
     params = {}
     query = "SELECT source, changelog FROM changelogs WHERE"
     for n, p in enumerate(new.keys()):
-        query += f" source = :source_{n} AND version > :version1_{n} AND version <= :version2_{n}"
+        query += f" source = :source_{n} AND (:version1_{n} IS NULL OR version > :version1_{n}) AND version <= :version2_{n}"
         query += " AND architecture LIKE '%source%' AND distribution in \
                   ('unstable', 'experimental', 'testing-proposed-updates') OR"
         params[f'source_{n}'] = p
