@@ -136,9 +136,9 @@ def britney_changelog(packages, suite, session):
         query += f" source = :source_{n} AND version > :version1_{n} AND version <= :version2_{n}"
         query += " AND architecture LIKE '%source%' AND distribution in \
                   ('unstable', 'experimental', 'testing-proposed-updates') OR"
-        params['source_' + n] = p
-        params['version1_' + n] = new[p][1]
-        params['version2_' + n] = new[p][0]
+        params[f'source_{n}'] = p
+        params[f'version1_{n}'] = new[p][1]
+        params[f'version2_{n}'] = new[p][0]
     query += " False ORDER BY source, version DESC"
     q = session.execute(query, params)
 
