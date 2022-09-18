@@ -33,7 +33,7 @@ dak admin suite-component add unstable main contrib non-free-firmware non-free
 dak admin suite add testing "" codename=buster
 dak admin suite-architecture add testing source all amd64
 dak admin suite-component add testing main contrib non-free-firmware non-free
-dak admin suite-config set testing changelog=changelog-testing
+dak admin suite-config set testing allowcsset=True changelog=changelog-testing
 
 assert-control-suite-list() {
     local suite="$1" expected="$2"
