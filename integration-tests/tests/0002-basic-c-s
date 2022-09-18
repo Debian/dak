@@ -130,6 +130,36 @@ EOF
     assert-control-suite-list testing "${expected}"
 )
 
+# use control-suite --add to add a package to testing
+(
+    dak control-suite --add=testing <<EOF
+package 0.2-1 source
+package 0.2-1 all
+EOF
+    expected="$(cat <<EOF
+package 0.1-1 all
+package 0.2-1 all
+package 0.1-1 source
+package 0.2-1 source
+EOF
+)"
+    assert-control-suite-list testing "${expected}"
+)
+
+# and control-suite --remove to remove it again
+(
+    dak control-suite --remove=testing <<EOF
+package 0.2-1 source
+package 0.2-1 all
+EOF
+    expected="$(cat <<EOF
+package 0.1-1 all
+package 0.1-1 source
+EOF
+)"
+    assert-control-suite-list testing "${expected}"
+)
+
 # dak ls run just for the sake of it
 (
     expected="$(cat <<EOF
