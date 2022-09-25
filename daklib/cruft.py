@@ -278,7 +278,7 @@ with
         from newest_binaries
         group by architecture, source, version),
     unique_binaries_uptodate_arch as
-    (select ub.package, ub.architecture, ua.source, ua.version
+    (select ub.package, (select a.arch_string from architecture a where a.id = ub.architecture) as arch_string, ua.source, ua.version
         from unique_binaries ub
         join source s
             on ub.source = s.id
@@ -286,18 +286,16 @@ with
             on ub.architecture = ua.architecture and s.source = ua.source),
     unique_binaries_uptodate_arch_agg as
     (select ubua.package,
-        array(select unnest(array_agg(a.arch_string)) order by 1) as arch_list,
+        array_agg(ubua.arch_string order by ubua.arch_string) as arch_list,
         ubua.source, ubua.version
         from unique_binaries_uptodate_arch ubua
-        join architecture a
-            on ubua.architecture = a.id
         group by ubua.source, ubua.version, ubua.package),
     uptodate_packages as
     (select package, source, version
         from newest_binaries
         group by package, source, version),
     outdated_packages as
-    (select array(select unnest(array_agg(package)) order by 1) as pkg_list,
+    (select array_agg(package order by package) as pkg_list,
         arch_list, source, version
         from unique_binaries_uptodate_arch_agg
         where package not in
