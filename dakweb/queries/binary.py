@@ -60,7 +60,7 @@ def binary_by_metadata(key=None):
 
     s = DBConn().session()
     q = s.query(DBBinary.package, DBSource.source, SourceMetadata.value)
-    q = q.join(DBSource).join(SourceMetadata).join(MetadataKey)
+    q = q.join(DBSource, DBBinary.source_id == DBSource.source_id).join(SourceMetadata).join(MetadataKey)
     q = q.filter(MetadataKey.key == key)
     q = q.group_by(DBBinary.package, DBSource.source, SourceMetadata.value)
     ret = []
