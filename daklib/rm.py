@@ -556,7 +556,7 @@ def remove(session, reason, suites, removals,
             Subst_close_other["__BUG_NUMBER_ALSO__"] = ""
             Subst_close_other["__SOURCE__"] = source_pkg
             merged_bugs = set()
-            other_bugs = bts.get_bugs(src=source_pkg, status='open') + bts.get_bugs(src=source_pkg, status='forwarded')
+            other_bugs = bts.get_bugs(src=source_pkg, status=('open', 'forwarded'))
             if other_bugs:
                 for bugno in other_bugs:
                     if bugno not in merged_bugs:
