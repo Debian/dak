@@ -101,7 +101,7 @@ class BugClassifier:
         for tags in tagged_bugs.keys():
             tagged_bugs_ftp += tagged_bugs[tags]
 
-        return [bug for bug in bts.get_status(bts.get_bugs("package", "ftp.debian.org"))
+        return [bug for bug in bts.get_status(bts.get_bugs(package="ftp.debian.org"))
                      if bug.pending == 'pending' and bug.bug_num not in tagged_bugs_ftp]
 
     def classify_bug(self, bug):
