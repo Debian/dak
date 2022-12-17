@@ -112,6 +112,8 @@ def prod_maintainer(notes, upload, session, trainee=False):
 
     Subst = {
         '__SOURCE__': upload.changes.source,
+        '__VERSION__': upload.changes.version,
+        '__ARCHITECTURE__': upload.changes.architecture,
         '__CHANGES_FILENAME__': upload.changes.changesname,
         '__MAINTAINER_TO__': ", ".join(maintainer_to),
     }
