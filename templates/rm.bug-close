@@ -32,7 +32,7 @@ close them or re-assign them to another package if the removed package
 was superseded by another one.
 
 The version of this package that was in Debian prior to this removal
-can still be found using http://snapshot.debian.org/.
+can still be found using https://snapshot.debian.org/.
 
 Thank you for reporting the bug, which will now be closed.  If you
 have further comments please address them to __BUG_NUMBER__@__BUG_SERVER__.

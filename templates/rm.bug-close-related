@@ -19,7 +19,7 @@ that we couldn't deal with your issue properly.
 For details on the removal, please see https://__BUG_SERVER__/__BUG_NUMBER__
 
 The version of this package that was in Debian prior to this removal
-can still be found using http://snapshot.debian.org/.
+can still be found using https://snapshot.debian.org/.
 
 Please note that the changes have been done on the master archive and
 will not propagate to any mirrors until the next dinstall run at the

@@ -78,7 +78,7 @@ trap byebye_lock ERR EXIT TERM HUP INT QUIT
 
 PROCESSDIR="${base}/morgue"
 FARMBASE="/srv/snapshot.debian.org/farm"
-FARMURL="http://snapshot.debian.org/file/"
+FARMURL="https://snapshot.debian.org/file/"
 PROGRAM="link_morgue"
 DBHOST="lw08.debian.org"
 HASHFILE="${dbdir}/hashes"
