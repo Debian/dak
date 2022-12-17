@@ -3,6 +3,10 @@ To: __BUG_NUMBER__-close@__BUG_SERVER__
 __CC__
 __BCC__
 X-Debian: DAK
+Debian: DAK
+Debian-Archive-Action: remove
+Debian-Source: __SOURCES__
+Debian-Suite: __SUITES__
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit

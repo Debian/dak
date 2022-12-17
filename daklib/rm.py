@@ -348,6 +348,7 @@ def remove(session, reason, suites, removals,
     # Generate the summary of what's to be removed
     d = {}
     summary = ""
+    affected_sources = set()
     sources = []
     binaries = []
     whitelists = []
@@ -465,11 +466,13 @@ def remove(session, reason, suites, removals,
             package_id = i[3]
             for suite_id in suite_ids_list:
                 if architecture == "source":
-                    session.execute("DELETE FROM src_associations WHERE source = :packageid AND suite = :suiteid",
+                    q = session.execute("DELETE FROM src_associations sa USING source s WHERE sa.source = s.id AND sa.source = :packageid AND sa.suite = :suiteid RETURNING s.source",
                                     {'packageid': package_id, 'suiteid': suite_id})
+                    affected_sources.add(q.scalar())
                 else:
-                    session.execute("DELETE FROM bin_associations WHERE bin = :packageid AND suite = :suiteid",
+                    q = session.execute("DELETE FROM bin_associations ba USING binaries b, source s WHERE ba.bin = b.id AND b.source = s.id AND ba.bin = :packageid AND ba.suite = :suiteid RETURNING s.source",
                                     {'packageid': package_id, 'suiteid': suite_id})
+                    affected_sources.add(q.scalar())
                 # Delete from the override file
                 if not partial:
                     if architecture == "source":
@@ -498,7 +501,9 @@ def remove(session, reason, suites, removals,
         Subst_common["__CC__"] = "X-DAK: dak rm"
         if carbon_copy:
             Subst_common["__CC__"] += "\nCc: " + ", ".join(carbon_copy)
+        Subst_common["__SOURCES__"] = ", ".join(sorted(affected_sources))
         Subst_common["__SUITE_LIST__"] = suites_list
+        Subst_common["__SUITES__"] = ", ".join(sorted(suites))
         Subst_common["__SUBJECT__"] = "Removed package(s) from %s" % (suites_list)
         Subst_common["__ADMIN_ADDRESS__"] = cnf["Dinstall::MyAdminAddress"]
         Subst_common["__DISTRO__"] = cnf["Dinstall::MyDistribution"]
