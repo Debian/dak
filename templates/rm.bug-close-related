@@ -3,6 +3,7 @@ To: __BUG_NUMBER_ALSO__
 __CC__
 __BCC__
 X-Debian: DAK
+Debian: DAK
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Content-Transfer-Encoding: 8bit
