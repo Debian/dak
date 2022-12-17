@@ -78,7 +78,7 @@ def check_valid(overrides, session):
 ###############################################################################
 
 
-def prod_maintainer(notes, upload, session, trainee=False):
+def prod_maintainer(notes, upload: "daklib.dbconn.PolicyQueueUpload", session, trainee=False):
     cnf = Config()
     changes = upload.changes
     whitelists = [upload.target_suite.mail_whitelist]

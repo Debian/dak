@@ -481,7 +481,7 @@ def get_reject_reason(reason=''):
 ################################################################################
 
 
-def do_new(upload, upload_copy, handler, session):
+def do_new(upload: daklib.dbconn.PolicyQueueUpload, upload_copy, handler, session):
     run_user_inspect_command(upload, upload_copy)
 
     # The main NEW processing loop
