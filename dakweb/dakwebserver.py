@@ -53,9 +53,8 @@ from .queries.source import *
 from .queries.suite import *
 from .queries.binary import *
 
-# Set up our initial database connection
-d = DBConn()
-
 # Run the bottle if we're called directly
 if __name__ == '__main__':
+    # Set up our initial database connection
+    d = DBConn()
     bottle.run()
