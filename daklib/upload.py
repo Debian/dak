@@ -383,11 +383,11 @@ class Changes:
         @type: list of L{daklib.upload.Binary}
         """
         if self._binaries is None:
-            binaries = []
-            for f in self.files.values():
-                if re_file_binary.match(f.filename):
-                    binaries.append(Binary(self.directory, f))
-            self._binaries = binaries
+            self._binaries = [
+                Binary(self.directory, f)
+                for f in self.files.values()
+                if re_file_binary.match(f.filename)
+            ]
         return self._binaries
 
     @property
