@@ -415,13 +415,10 @@ class Changes:
         """included buildinfo files
         @type: list of L{daklib.upload.HashedFile}
         """
-        buildinfo = []
-
-        for f in self.files.values():
-            if re_file_buildinfo.match(f.filename):
-                buildinfo.append(f)
-
-        return buildinfo
+        return [
+            f for f in self.files.values()
+            if re_file_buildinfo.match(f.filename)
+        ]
 
     @property
     def binary_names(self):
