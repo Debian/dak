@@ -284,7 +284,7 @@ def check_dsc_files(dsc_filename, dsc, dsc_files):
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
 
-def build_file_list(changes, is_a_dsc=0, field="files", hashname="md5sum"):
+def build_file_list(changes, is_a_dsc=False, field="files", hashname="md5sum"):
     files = {}
 
     # Make sure we have a Files: field to parse...

@@ -17,7 +17,7 @@ class ParseChangesTestCase(DakTestCase):
 class ParseDscTestCase(ParseChangesTestCase):
     def test_1(self):
         changes = self.assertParse('dsc/1.dsc', -1, 1)
-        files = build_file_list(changes, 1)
+        files = build_file_list(changes, True)
         rejmsg = check_dsc_files('1.dsc', changes, files.keys())
         self.assertEqual(rejmsg, [])
 
@@ -67,7 +67,7 @@ class ParseDscTestCase(ParseChangesTestCase):
 
     def test_10(self):
         changes = self.assertParse('dsc/10.dsc', -1, 1)
-        files = build_file_list(changes, 1)
+        files = build_file_list(changes, True)
         rejmsg = check_dsc_files('10.dsc', changes, files.keys())
         self.assertEqual(rejmsg, [])
 
