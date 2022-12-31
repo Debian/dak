@@ -448,10 +448,7 @@ class Changes:
         """total size of files included in this upload in bytes
         @type: number
         """
-        count = 0
-        for f in self.files.values():
-            count += f.size
-        return count
+        return sum(f.size for f in self.files.values())
 
     def _key(self):
         """tuple used to compare two changes files
