@@ -248,7 +248,7 @@ def edit_index(new, upload, index):
     priority = new[index]["priority"]
     section = new[index]["section"]
     ftype = new[index]["type"]
-    done = 0
+    done = False
     while not done:
         print("\t".join([package, priority, section]))
 
@@ -273,7 +273,7 @@ def edit_index(new, upload, index):
         elif answer == 'B':
             edit_priority = edit_section = 1
         elif answer == 'D':
-            done = 1
+            done = True
 
         # Edit the priority
         if edit_priority:
