@@ -149,9 +149,7 @@ def takenover_binaries(upload, missing, session):
 
 def print_new(upload, missing, indexed, session, file=sys.stdout):
     check_valid(missing, session)
-    index = 0
-    for m in missing:
-        index += 1
+    for index, m in enumerate(missing, 1):
         if m['type'] != 'deb':
             package = '{0}:{1}'.format(m['type'], m['package'])
         else:
