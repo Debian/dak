@@ -25,6 +25,7 @@ import fcntl
 import os
 import select
 import subprocess
+from collections.abc import Iterable
 
 try:
     _MAXFD = os.sysconf("SC_OPEN_MAX")
@@ -86,17 +87,17 @@ class SignedFile:
       primary_fingerprint - fingerprint of the primary key associated to the key used for signing
     """
 
-    def __init__(self, data, keyrings, require_signature=True, gpg="/usr/bin/gpg"):
+    def __init__(self, data: bytes, keyrings: Iterable[str], require_signature: bool = True, gpg: str = "/usr/bin/gpg"):
         """
-        @param data: byte-string containing the message
-        @param keyrings: sequence of keyrings
-        @param require_signature: if True (the default), will raise an exception if no valid signature was found
-        @param gpg: location of the gpg binary
+        :param data: byte-string containing the message
+        :param keyrings: sequence of keyrings
+        :param require_signature: if True (the default), will raise an exception if no valid signature was found
+        :param gpg: location of the gpg binary
         """
         self.gpg = gpg
         self.keyrings = keyrings
 
-        self.valid = False
+        self.valid: bool = False #: valid signature
         self.expired = False
         self.invalid = False
         self.weak_signature = False
@@ -108,11 +109,13 @@ class SignedFile:
 
     @property
     def fingerprint(self) -> str:
+        """fingerprint of the (sub)key used for the signature"""
         assert len(self.fingerprints) == 1
         return self.fingerprints[0]
 
     @property
     def primary_fingerprint(self) -> str:
+        """fingerprint of the primary key used for the signature"""
         assert len(self.primary_fingerprints) == 1
         return self.primary_fingerprints[0]
 
@@ -201,11 +204,10 @@ class SignedFile:
 
         return dict((fd, b"".join(read_lines[fd])) for fd in read_lines)
 
-    def _parse_timestamp(self, timestamp, datestring=None):
+    def _parse_timestamp(self, timestamp, datestring=None) -> datetime.datetime:
         """parse timestamp in GnuPG's format
 
-        @rtype:   L{datetime.datetime}
-        @returns: datetime object for the given timestamp
+        :return: datetime object for the given timestamp
         """
         # The old implementation did only return the date. As we already
         # used this for replay production, return the legacy value for

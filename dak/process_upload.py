@@ -229,7 +229,7 @@ def try_or_reject(function):
     return wrapper
 
 
-def get_processed_upload(upload):
+def get_processed_upload(upload) -> daklib.announce.ProcessedUpload:
     changes = upload.changes
     control = upload.changes.changes
 

@@ -13,12 +13,11 @@ from dakweb.webregister import QueryRegister
 
 
 @bottle.route('/archives')
-def archives():
+def archives() -> str:
     """
     Give information about all known archives (sets of suites)
 
-    @rtype: dict
-    return: list of dictionaries
+    :return: list of dictionaries
     """
 
     s = DBConn().session()

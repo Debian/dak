@@ -9,13 +9,14 @@
 
 import bottle
 import json
+from typing import Optional
 
 from daklib.dbconn import DBConn, Suite
 from dakweb.webregister import QueryRegister
 
 
 @bottle.route('/suites')
-def suites():
+def suites() -> str:
     """
     Give information about all known suites.
 
@@ -23,8 +24,7 @@ def suites():
     @maps: codename maps to Codename: in the release file.
     @maps: dakname is an internal name and should not be relied upon.
 
-    @rtype: list of dictionaries
-    @return: Dictionaries made out of
+    :return: List of dictionaries made out of
              - name
              - codename
              - dakname
@@ -56,26 +56,20 @@ QueryRegister().register_path('/suites', suites)
 
 
 @bottle.route('/suite/<suite>')
-def suite(suite=None):
+def suite(suite: Optional[str] = None) -> str:
     """
     Gives information about a single suite.  Note that this routine will look
     up a suite first by the main suite_name, but then also by codename if no
     suite is initially found.  It can therefore be used to canonicalise suite
     names.
 
-    @type suite: string
-    @param suite: Name or codename of the suite.
-    @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
+    :param suite: Name or codename of the suite.
+      @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
 
-    @maps: name maps to Suite: in the release file
-    @maps: codename maps to Codename: in the release file.
-    @maps: dakname is an internal name and should not be relied upon.
-
-    @rtype: dictionary
-    @return: A dictionary of
-             - name
-             - codename
-             - dakname
+    :return: A dictionary of
+             - name: maps to `Suite:` in the Release file
+             - codename: maps to `Codename:` in the Release file
+             - dakname: internal name that should not be relied upload
              - archive
              - architectures
              - components

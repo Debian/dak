@@ -37,6 +37,8 @@ import daklib.packagelist
 
 if TYPE_CHECKING:
     import datetime
+    import re
+
 
 class UploadException(Exception):
     pass
@@ -93,9 +95,7 @@ class HashedFile:
 
     def __init__(self, filename: str, size: int, md5sum: str, sha1sum: str, sha256sum: str, section: Optional[str] = None, priority: Optional[str] = None, input_filename: Optional[str] = None):
         self.filename: str = filename
-        """name of the file
-        @type: str
-        """
+        """name of the file"""
 
         if input_filename is None:
             input_filename = filename
@@ -103,59 +103,37 @@ class HashedFile:
         """name of the file on disk
 
         Used for temporary files that should not be installed using their on-disk name.
-        @type: str
         """
 
         self.size: int = size
-        """size in bytes
-        @type: long
-        """
+        """size in bytes"""
 
         self.md5sum: str = md5sum
-        """MD5 hash in hexdigits
-        @type: str
-        """
+        """MD5 hash in hexdigits"""
 
         self.sha1sum: str = sha1sum
-        """SHA1 hash in hexdigits
-        @type: str
-        """
+        """SHA1 hash in hexdigits"""
 
         self.sha256sum: str = sha256sum
-        """SHA256 hash in hexdigits
-        @type: str
-        """
+        """SHA256 hash in hexdigits"""
 
         self.section: Optional[str] = section
-        """section or C{None}
-        @type: str or C{None}
-        """
+        """section or C{None}"""
 
         self.priority: Optional[str] = priority
-        """priority or C{None}
-        @type: str of C{None}
-        """
+        """priority or C{None}"""
 
     @classmethod
     def from_file(cls, directory: str, filename: str, section: Optional[str] = None, priority: Optional[str] = None) -> 'HashedFile':
         """create with values for an existing file
 
-        Create a C{HashedFile} object that refers to an already existing file.
+        Create a :class:`HashedFile` object that refers to an already existing file.
 
-        @type  directory: str
-        @param directory: directory the file is located in
-
-        @type  filename: str
-        @param filename: filename
-
-        @type  section: str or C{None}
-        @param section: optional section as given in .changes files
-
-        @type  priority: str or C{None}
-        @param priority: optional priority as given in .changes files
-
-        @rtype:  L{HashedFile}
-        @return: C{HashedFile} object for the given file
+        :param directory: directory the file is located in
+        :param filename: filename
+        :param section: optional section as given in .changes files
+        :param priority: optional priority as given in .changes files
+        :return: :class:`HashedFile` object for the given file
         """
         path = os.path.join(directory, filename)
         with open(path, 'r') as fh:
@@ -168,10 +146,8 @@ class HashedFile:
 
         Check if size and hashes match the expected value.
 
-        @type  directory: str
-        @param directory: directory the file is located in
-
-        @raise InvalidHashException: hash mismatch
+        :param directory: directory the file is located in
+        :raises InvalidHashException: if there is a hash mismatch
         """
         path = os.path.join(directory, self.input_filename)
         try:
@@ -203,22 +179,17 @@ class HashedFile:
 def parse_file_list(
         control: Mapping[str, str],
         has_priority_and_section: bool,
-        safe_file_regexp = re_file_safe,
+        safe_file_regexp: 're.Pattern' = re_file_safe,
         fields=('Files', 'Checksums-Sha1', 'Checksums-Sha256')
 ) -> dict[str, HashedFile]:
     """Parse Files and Checksums-* fields
 
-    @type  control: dict-like
-    @param control: control file to take fields from
-
-    @type  has_priority_and_section: bool
-    @param has_priority_and_section: Files field include section and priority
+    :param control: control file to take fields from
+    :param has_priority_and_section: Files field include section and priority
                                      (as in .changes)
+    :return: dict mapping filenames to L{daklib.upload.HashedFile} objects
 
-    @raise InvalidChangesException: missing fields or other grave errors
-
-    @rtype:  dict
-    @return: dict mapping filenames to L{daklib.upload.HashedFile} objects
+    :raises InvalidChangesException: missing fields or other grave errors
     """
     entries = {}
 
@@ -285,22 +256,16 @@ class Changes:
             raise InvalidChangesException('{0}: unsafe filename'.format(filename))
 
         self.directory: str = directory
-        """directory the .changes is located in
-        @type: str
-        """
+        """directory the .changes is located in"""
 
         self.filename: str = filename
-        """name of the .changes file
-        @type: str
-        """
+        """name of the .changes file"""
 
         with open(self.path, 'rb') as fd:
             data = fd.read()
         self.signature = SignedFile(data, keyrings, require_signature)
-        self.changes = apt_pkg.TagSection(self.signature.contents)
-        """dict to access fields of the .changes file
-        @type: dict-like
-        """
+        self.changes: apt_pkg.TagSection = apt_pkg.TagSection(self.signature.contents)
+        """dict to access fields of the .changes file"""
 
         self._binaries: 'Optional[list[Binary]]' = None
         self._source: 'Optional[Source]' = None
@@ -310,30 +275,22 @@ class Changes:
 
     @property
     def path(self) -> str:
-        """path to the .changes file
-        @type: str
-        """
+        """path to the .changes file"""
         return os.path.join(self.directory, self.filename)
 
     @property
     def primary_fingerprint(self) -> str:
-        """fingerprint of the key used for signing the .changes file
-        @type: str
-        """
+        """fingerprint of the key used for signing the .changes file"""
         return self.signature.primary_fingerprint
 
     @property
     def valid_signature(self) -> bool:
-        """C{True} if the .changes has a valid signature
-        @type: bool
-        """
+        """C{True} if the .changes has a valid signature"""
         return self.signature.valid
 
     @property
     def weak_signature(self) -> bool:
-        """C{True} if the .changes was signed using a weak algorithm
-        @type: bool
-        """
+        """C{True} if the .changes was signed using a weak algorithm"""
         return self.signature.weak_signature
 
     @property
@@ -346,23 +303,17 @@ class Changes:
 
     @property
     def architectures(self) -> list[str]:
-        """list of architectures included in the upload
-        @type: list of str
-        """
+        """list of architectures included in the upload"""
         return self.changes.get('Architecture', '').split()
 
     @property
     def distributions(self) -> list[str]:
-        """list of target distributions for the upload
-        @type: list of str
-        """
+        """list of target distributions for the upload"""
         return self.changes['Distribution'].split()
 
     @property
     def source(self) -> 'Optional[Source]':
-        """included source or C{None}
-        @type: L{daklib.upload.Source} or C{None}
-        """
+        """included source or C{None}"""
         if self._source is None:
             source_files = []
             for f in self.files.values():
@@ -374,23 +325,17 @@ class Changes:
 
     @property
     def sourceful(self) -> bool:
-        """C{True} if the upload includes source
-        @type: bool
-        """
+        """C{True} if the upload includes source"""
         return "source" in self.architectures
 
     @property
     def source_name(self) -> str:
-        """source package name
-        @type: str
-        """
+        """source package name"""
         return re_field_source.match(self.changes['Source']).group('package')
 
     @property
     def binaries(self) -> 'list[Binary]':
-        """included binary packages
-        @type: list of L{daklib.upload.Binary}
-        """
+        """included binary packages"""
         if self._binaries is None:
             self._binaries = [
                 Binary(self.directory, f)
@@ -401,9 +346,7 @@ class Changes:
 
     @property
     def byhand_files(self) -> list[HashedFile]:
-        """included byhand files
-        @type: list of L{daklib.upload.HashedFile}
-        """
+        """included byhand files"""
         byhand = []
 
         for f in self.files.values():
@@ -421,9 +364,7 @@ class Changes:
 
     @property
     def buildinfo_files(self) -> list[HashedFile]:
-        """included buildinfo files
-        @type: list of L{daklib.upload.HashedFile}
-        """
+        """included buildinfo files"""
         return [
             f for f in self.files.values()
             if re_file_buildinfo.match(f.filename)
@@ -431,32 +372,24 @@ class Changes:
 
     @property
     def binary_names(self) -> list[str]:
-        """names of included binary packages
-        @type: list of str
-        """
+        """names of included binary packages"""
         return self.changes.get('Binary', '').split()
 
     @property
     def closed_bugs(self) -> list[str]:
-        """bugs closed by this upload
-        @type: list of str
-        """
+        """bugs closed by this upload"""
         return self.changes.get('Closes', '').split()
 
     @property
     def files(self) -> dict[str, HashedFile]:
-        """dict mapping filenames to L{daklib.upload.HashedFile} objects
-        @type: dict
-        """
+        """dict mapping filenames to L{daklib.upload.HashedFile} objects"""
         if self._files is None:
             self._files = parse_file_list(self.changes, True)
         return self._files
 
     @property
     def bytes(self) -> int:
-        """total size of files included in this upload in bytes
-        @type: number
-        """
+        """total size of files included in this upload in bytes"""
         return sum(f.size for f in self.files.values())
 
     def _key(self) -> tuple[str, AptVersion, bool, str]:
@@ -466,8 +399,6 @@ class Changes:
         we sort changes that include source before those without source (so
         that sourceful uploads get processed first), and finally fall back
         to the filename (this should really never happen).
-
-        @rtype:  tuple
         """
         return (
             self.changes.get('Source'),
@@ -489,17 +420,13 @@ class Binary:
 
     def __init__(self, directory: str, hashed_file: HashedFile):
         self.hashed_file: HashedFile = hashed_file
-        """file object for the .deb
-        @type: HashedFile
-        """
+        """file object for the .deb"""
 
         path = os.path.join(directory, hashed_file.input_filename)
         data = apt_inst.DebFile(path).control.extractdata("control")
 
-        self.control = apt_pkg.TagSection(data)
-        """dict to access fields in DEBIAN/control
-        @type: dict-like
-        """
+        self.control: apt_pkg.TagSection = apt_pkg.TagSection(data)
+        """dict to access fields in DEBIAN/control"""
 
     @classmethod
     def from_file(cls, directory, filename) -> 'Binary':
@@ -508,9 +435,7 @@ class Binary:
 
     @property
     def source(self) -> tuple[str, str]:
-        """get tuple with source package name and version
-        @type: tuple of str
-        """
+        """get tuple with source package name and version"""
         source = self.control.get("Source", None)
         if source is None:
             return (self.control["Package"], self.control["Version"])
@@ -528,9 +453,7 @@ class Binary:
 
     @property
     def type(self) -> str:
-        """package type ('deb' or 'udeb')
-        @type: str
-        """
+        """package type ('deb' or 'udeb')"""
         match = re_file_binary.match(self.hashed_file.filename)
         if not match:
             raise InvalidBinaryException('{0}: Does not match re_file_binary'.format(self.hashed_file.filename))
@@ -538,9 +461,7 @@ class Binary:
 
     @property
     def component(self) -> str:
-        """component name
-        @type: str
-        """
+        """component name"""
         fields = self.control['Section'].split('/')
         if len(fields) > 1:
             return fields[0]
@@ -553,9 +474,7 @@ class Source:
 
     def __init__(self, directory: str, hashed_files: list[HashedFile], keyrings, require_signature=True):
         self.hashed_files: list[HashedFile] = hashed_files
-        """list of source files (including the .dsc itself)
-        @type: list of L{HashedFile}
-        """
+        """list of source files (including the .dsc itself)"""
 
         dsc_file = None
         for f in hashed_files:
@@ -577,14 +496,10 @@ class Source:
             data = fd.read()
         self.signature = SignedFile(data, keyrings, require_signature)
         self.dsc: Mapping[str, str] = apt_pkg.TagSection(self.signature.contents)
-        """dict to access fields in the .dsc file
-        @type: dict-like
-        """
+        """dict to access fields in the .dsc file"""
 
-        self.package_list = daklib.packagelist.PackageList(self.dsc)
-        """Information about packages built by the source.
-        @type: daklib.packagelist.PackageList
-        """
+        self.package_list: daklib.packagelist.PackageList = daklib.packagelist.PackageList(self.dsc)
+        """Information about packages built by the source."""
 
         self._files: Optional[dict[str, HashedFile]] = None
 
@@ -598,8 +513,6 @@ class Source:
         """dict mapping filenames to L{HashedFile} objects for additional source files
 
         This list does not include the .dsc itself.
-
-        @type: dict
         """
         if self._files is None:
             self._files = parse_file_list(self.dsc, False)
@@ -607,23 +520,17 @@ class Source:
 
     @property
     def primary_fingerprint(self) -> str:
-        """fingerprint of the key used to sign the .dsc
-        @type: str
-        """
+        """fingerprint of the key used to sign the .dsc"""
         return self.signature.primary_fingerprint
 
     @property
     def valid_signature(self) -> bool:
-        """C{True} if the .dsc has a valid signature
-        @type: bool
-        """
+        """C{True} if the .dsc has a valid signature"""
         return self.signature.valid
 
     @property
     def weak_signature(self) -> bool:
-        """C{True} if the .dsc was signed using a weak algorithm
-        @type: bool
-        """
+        """C{True} if the .dsc was signed using a weak algorithm"""
         return self.signature.weak_signature
 
     @property
@@ -631,8 +538,6 @@ class Source:
         """guessed component name
 
         Might be wrong. Don't rely on this.
-
-        @type: str
         """
         if 'Section' not in self.dsc:
             return 'main'
@@ -643,7 +548,5 @@ class Source:
 
     @property
     def filename(self) -> str:
-        """filename of .dsc file
-        @type: str
-        """
+        """filename of .dsc file"""
         return self._dsc_file.filename

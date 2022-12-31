@@ -271,9 +271,6 @@ class ReleaseWriter:
     def generate_release_files(self):
         """
         Generate Release files for the given suite
-
-        @type suite: string
-        @param suite: Suite name
         """
 
         suite = self.suite

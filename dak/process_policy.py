@@ -445,7 +445,7 @@ def remove_upload(upload, transaction):
 ################################################################################
 
 
-def get_processed_upload(upload):
+def get_processed_upload(upload) -> daklib.announce.ProcessedUpload:
     pu = daklib.announce.ProcessedUpload()
 
     pu.maintainer = upload.changes.maintainer
@@ -472,13 +472,8 @@ def get_processed_upload(upload):
 ################################################################################
 
 
-def remove_unreferenced_binaries(policy_queue, transaction):
-    """Remove binaries that are no longer referenced by an upload
-
-    @type  policy_queue: L{daklib.dbconn.PolicyQueue}
-
-    @type  transaction: L{daklib.archive.ArchiveTransaction}
-    """
+def remove_unreferenced_binaries(policy_queue: PolicyQueue, transaction: ArchiveTransaction) -> None:
+    """Remove binaries that are no longer referenced by an upload"""
     session = transaction.session
     suite = policy_queue.suite
 
@@ -499,13 +494,8 @@ def remove_unreferenced_binaries(policy_queue, transaction):
         transaction.remove_binary(binary, suite)
 
 
-def remove_unreferenced_sources(policy_queue, transaction):
-    """Remove sources that are no longer referenced by an upload or a binary
-
-    @type  policy_queue: L{daklib.dbconn.PolicyQueue}
-
-    @type  transaction: L{daklib.archive.ArchiveTransaction}
-    """
+def remove_unreferenced_sources(policy_queue: PolicyQueue, transaction: ArchiveTransaction) -> None:
+    """Remove sources that are no longer referenced by an upload or a binary"""
     session = transaction.session
     suite = policy_queue.suite
 

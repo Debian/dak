@@ -20,6 +20,7 @@
 import errno
 import os
 import shutil
+from typing import IO, Optional
 
 
 class _FilesystemAction:
@@ -128,65 +129,44 @@ class FilesystemTransaction:
     def __init__(self):
         self.actions = []
 
-    def copy(self, source, destination, link=False, symlink=False, mode=None):
+    def copy(self, source: str, destination: str, link: bool = False, symlink: bool = False, mode: Optional[int] = None) -> None:
         """copy C{source} to C{destination}
 
-        @type  source: str
-        @param source: source file
-
-        @type  destination: str
-        @param destination: destination file
-
-        @type  link: bool
-        @param link: try hardlinking, falling back to copying
-
-        @type  symlink: bool
-        @param symlink: create a symlink instead of copying
-
-        @type  mode: int
-        @param mode: permissions to change C{destination} to
+        :param source: source file
+        :param destination: destination file
+        :param link: try hardlinking, falling back to copying
+        :param symlink: create a symlink instead of copying
+        :param mode: permissions to change C{destination} to
         """
         if isinstance(mode, str):
             mode = int(mode, 8)
 
         self.actions.append(_FilesystemCopyAction(source, destination, link=link, symlink=symlink, mode=mode))
 
-    def move(self, source, destination, mode=None):
+    def move(self, source: str, destination: str, mode: Optional[int] = None) -> None:
         """move C{source} to C{destination}
 
-        @type  source: str
-        @param source: source file
-
-        @type  destination: str
-        @param destination: destination file
-
-        @type  mode: int
-        @param mode: permissions to change C{destination} to
+        :param source: source file
+        :param destination: destination file
+        :param mode: permissions to change C{destination} to
         """
         self.copy(source, destination, link=True, mode=mode)
         self.unlink(source)
 
-    def unlink(self, path):
+    def unlink(self, path: str) -> None:
         """unlink C{path}
 
-        @type  path: str
-        @param path: file to unlink
+        :param path: file to unlink
         """
         self.actions.append(_FilesystemUnlinkAction(path))
 
-    def create(self, path: str, mode=None, text=True):
+    def create(self, path: str, mode: Optional[int] = None, text: bool = True) -> IO:
         """create C{filename} and return file handle
 
-        @type  path: str
-        @param path: file to create
-
-        @type  mode: int
-        @param mode: permissions for the new file
-
-        @type  text: bool
-        @param text: open file in text mode
-
-        @return: file handle of the new file
+        :param path: file to create
+        :param mode: permissions for the new file
+        :param text: open file in text mode
+        :return: file handle of the new file
         """
         if isinstance(mode, str):
             mode = int(mode, 8)

@@ -32,10 +32,13 @@ import os
 import shutil
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import object_session
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable, Optional, TYPE_CHECKING, Union
 import sqlalchemy.exc
 import subprocess
 import traceback
+
+if TYPE_CHECKING:
+    import daklib.packagelist
 
 
 class ArchiveException(Exception):
@@ -57,20 +60,12 @@ class ArchiveTransaction:
     def get_file(self, hashed_file: daklib.upload.HashedFile, source_name: str, check_hashes: bool = True) -> PoolFile:
         """Look for file C{hashed_file} in database
 
-        @type  hashed_file: L{daklib.upload.HashedFile}
-        @param hashed_file: file to look for in the database
-
-        @type  source_name: str
-        @param source_name: source package name
-
-        @type  check_hashes: bool
-        @param check_hashes: check size and hashes match
-
-        @raise KeyError: file was not found in the database
-        @raise HashMismatchException: hash mismatch
-
-        @rtype:  L{daklib.dbconn.PoolFile}
-        @return: database entry for the file
+        :param hashed_file: file to look for in the database
+        :param source_name: source package name
+        :param check_hashes: check size and hashes match
+        :return: database entry for the file
+        :raises KeyError: file was not found in the database
+        :raises HashMismatchException: hash mismatch
         """
         poolname = os.path.join(daklib.utils.poolify(source_name), hashed_file.filename)
         try:
@@ -89,8 +84,7 @@ class ArchiveTransaction:
 
         Will not give an error when the file is already present.
 
-        @rtype:  L{daklib.dbconn.PoolFile}
-        @return: database object for the new file
+        :return: database object for the new file
         """
         session = self.session
 
@@ -121,34 +115,18 @@ class ArchiveTransaction:
     def install_binary(self, directory: str, binary: daklib.upload.Binary, suite: Suite, component: Component, allow_tainted: bool = False, fingerprint: Optional[Fingerprint] = None, source_suites=None, extra_source_archives: Optional[Iterable[Archive]] = None) -> DBBinary:
         """Install a binary package
 
-        @type  directory: str
-        @param directory: directory the binary package is located in
-
-        @type  binary: L{daklib.upload.Binary}
-        @param binary: binary package to install
-
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: target suite
-
-        @type  component: L{daklib.dbconn.Component}
-        @param component: target component
-
-        @type  allow_tainted: bool
-        @param allow_tainted: allow to copy additional files from tainted archives
-
-        @type  fingerprint: L{daklib.dbconn.Fingerprint}
-        @param fingerprint: optional fingerprint
-
-        @type  source_suites: SQLAlchemy subquery for C{daklib.dbconn.Suite} or C{True}
-        @param source_suites: suites to copy the source from if they are not
+        :param directory: directory the binary package is located in
+        :param binary: binary package to install
+        :param suite: target suite
+        :param component: target component
+        :param allow_tainted: allow to copy additional files from tainted archives
+        :param fingerprint: optional fingerprint
+        :param source_suites: suites to copy the source from if they are not
                               in C{suite} or C{True} to allow copying from any
                               suite.
-
-        @type  extra_source_archives: list of L{daklib.dbconn.Archive}
-        @param extra_source_archives: extra archives to copy Built-Using sources from
-
-        @rtype:  L{daklib.dbconn.DBBinary}
-        @return: databse object for the new package
+                              Can be a SQLAlchemy subquery for C{daklib.dbconn.Suite} or C{True}.
+        :param extra_source_archives: extra archives to copy Built-Using sources from
+        :return: database object for the new package
         """
         session = self.session
         control = binary.control
@@ -211,22 +189,15 @@ class ArchiveTransaction:
 
         return db_binary
 
-    def _ensure_extra_source_exists(self, filename, source, archive, extra_archives=None):
+    def _ensure_extra_source_exists(self, filename: str, source: DBSource, archive: Archive, extra_archives: Optional[Iterable[Archive]] = None):
         """ensure source exists in the given archive
 
         This is intended to be used to check that Built-Using sources exist.
 
-        @type  filename: str
-        @param filename: filename to use in error messages
-
-        @type  source: L{daklib.dbconn.DBSource}
-        @param source: source to look for
-
-        @type  archive: L{daklib.dbconn.Archive}
-        @param archive: archive to look in
-
-        @type  extra_archives: list of L{daklib.dbconn.Archive}
-        @param extra_archives: list of archives to copy the source package from
+        :param filename: filename to use in error messages
+        :param source: source to look for
+        :param archive: archive to look in
+        :param extra_archives: list of archives to copy the source package from
                                if it is not yet present in C{archive}
         """
         session = self.session
@@ -350,29 +321,14 @@ class ArchiveTransaction:
     def install_source(self, directory: str, source: daklib.upload.Source, suite: Suite, component: Component, changed_by: Maintainer, allow_tainted: bool = False, fingerprint: Optional[Fingerprint] = None) -> DBSource:
         """Install a source package
 
-        @type  directory: str
-        @param directory: directory the source package is located in
-
-        @type  source: L{daklib.upload.Source}
-        @param source: source package to install
-
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: target suite
-
-        @type  component: L{daklib.dbconn.Component}
-        @param component: target component
-
-        @type  changed_by: L{daklib.dbconn.Maintainer}
-        @param changed_by: person who prepared this version of the package
-
-        @type  allow_tainted: bool
-        @param allow_tainted: allow to copy additional files from tainted archives
-
-        @type  fingerprint: L{daklib.dbconn.Fingerprint}
-        @param fingerprint: optional fingerprint
-
-        @rtype:  L{daklib.dbconn.DBSource}
-        @return: database object for the new source
+        :param directory: directory the source package is located in
+        :param source: source package to install
+        :param suite: target suite
+        :param component: target component
+        :param changed_by: person who prepared this version of the package
+        :param allow_tainted: allow to copy additional files from tainted archives
+        :param fingerprint: optional fingerprint
+        :return: database object for the new source
         """
         db_source = self.install_source_to_archive(directory, source, suite.archive, component, changed_by, allow_tainted, fingerprint)
 
@@ -383,20 +339,13 @@ class ArchiveTransaction:
 
         return db_source
 
-    def _copy_file(self, db_file: PoolFile, archive: Archive, component: Component, allow_tainted=False) -> None:
+    def _copy_file(self, db_file: PoolFile, archive: Archive, component: Component, allow_tainted: bool = False) -> None:
         """Copy a file to the given archive and component
 
-        @type  db_file: L{daklib.dbconn.PoolFile}
-        @param db_file: file to copy
-
-        @type  archive: L{daklib.dbconn.Archive}
-        @param archive: target archive
-
-        @type  component: L{daklib.dbconn.Archive}
-        @param component: target component
-
-        @type  allow_tainted: bool
-        @param allow_tainted: allow to copy from tainted archives (such as NEW)
+        :param db_file: file to copy
+        :param archive: target archive
+        :param component: target component
+        :param allow_tainted: allow to copy from tainted archives (such as NEW)
         """
         session = self.session
 
@@ -416,20 +365,11 @@ class ArchiveTransaction:
     def copy_binary(self, db_binary: DBBinary, suite: Suite, component: Component, allow_tainted: bool = False, extra_archives: Optional[Iterable[Archive]] = None) -> None:
         """Copy a binary package to the given suite and component
 
-        @type  db_binary: L{daklib.dbconn.DBBinary}
-        @param db_binary: binary to copy
-
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: target suite
-
-        @type  component: L{daklib.dbconn.Component}
-        @param component: target component
-
-        @type  allow_tainted: bool
-        @param allow_tainted: allow to copy from tainted archives (such as NEW)
-
-        @type  extra_archives: list of L{daklib.dbconn.Archive}
-        @param extra_archives: extra archives to copy Built-Using sources from
+        :param db_binary: binary to copy
+        :param suite: target suite
+        :param component: target component
+        :param allow_tainted: allow to copy from tainted archives (such as NEW)
+        :param extra_archives: extra archives to copy Built-Using sources from
         """
         session = self.session
         archive = suite.archive
@@ -457,17 +397,10 @@ class ArchiveTransaction:
     def copy_source(self, db_source: DBSource, suite: Suite, component: Component, allow_tainted: bool = False) -> None:
         """Copy a source package to the given suite and component
 
-        @type  db_source: L{daklib.dbconn.DBSource}
-        @param db_source: source to copy
-
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: target suite
-
-        @type  component: L{daklib.dbconn.Component}
-        @param component: target component
-
-        @type  allow_tainted: bool
-        @param allow_tainted: allow to copy from tainted archives (such as NEW)
+        :param db_source: source to copy
+        :param suite: target suite
+        :param component: target component
+        :param allow_tainted: allow to copy from tainted archives (such as NEW)
         """
         archive = suite.archive
         if archive.tainted:
@@ -481,14 +414,9 @@ class ArchiveTransaction:
     def remove_file(self, db_file: PoolFile, archive: Archive, component: Component) -> None:
         """Remove a file from a given archive and component
 
-        @type  db_file: L{daklib.dbconn.PoolFile}
-        @param db_file: file to remove
-
-        @type  archive: L{daklib.dbconn.Archive}
-        @param archive: archive to remove the file from
-
-        @type  component: L{daklib.dbconn.Component}
-        @param component: component to remove the file from
+        :param db_file: file to remove
+        :param archive: archive to remove the file from
+        :param component: component to remove the file from
         """
         af = self.session.query(ArchiveFile).filter_by(file=db_file, archive=archive, component=component)
         self.fs.unlink(af.path)
@@ -497,11 +425,8 @@ class ArchiveTransaction:
     def remove_binary(self, binary: DBBinary, suite: Suite) -> None:
         """Remove a binary from a given suite and component
 
-        @type  binary: L{daklib.dbconn.DBBinary}
-        @param binary: binary to remove
-
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: suite to remove the package from
+        :param binary: binary to remove
+        :param suite: suite to remove the package from
         """
         binary.suites.remove(suite)
         self.session.flush()
@@ -509,13 +434,10 @@ class ArchiveTransaction:
     def remove_source(self, source: DBSource, suite: Suite) -> None:
         """Remove a source from a given suite and component
 
-        @type  source: L{daklib.dbconn.DBSource}
-        @param source: source to remove
+        :param source: source to remove
+        :param suite: suite to remove the package from
 
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: suite to remove the package from
-
-        @raise ArchiveException: source package is still referenced by other
+        :raises ArchiveException: source package is still referenced by other
                                  binaries in the suite
         """
         session = self.session
@@ -556,7 +478,7 @@ class ArchiveTransaction:
         return None
 
 
-def source_component_from_package_list(package_list, suite) -> Optional[Component]:
+def source_component_from_package_list(package_list: 'daklib.packagelist.PackageList', suite: Suite) -> Optional[Component]:
     """Get component for a source package
 
     This function will look at the Package-List field to determine the
@@ -566,14 +488,9 @@ def source_component_from_package_list(package_list, suite) -> Optional[Componen
 
     It the source package has no Package-List field, None is returned.
 
-    @type  package_list: L{daklib.packagelist.PackageList}
-    @param package_list: package list of the source to get the override for
-
-    @type  suite: L{daklib.dbconn.Suite}
-    @param suite: suite to consider for binaries produced
-
-    @rtype:  L{daklib.dbconn.Component} or C{None}
-    @return: component for the given source or C{None}
+    :param package_list: package list of the source to get the override for
+    :param suite: suite to consider for binaries produced
+    :return: component for the given source or C{None}
     """
     if package_list.fallback:
         return None
@@ -598,67 +515,54 @@ class ArchiveUpload:
     """
 
     def __init__(self, directory: str, changes, keyrings):
-        self.transaction = ArchiveTransaction()
-        """transaction used to handle the upload
-        @type: L{daklib.archive.ArchiveTransaction}
-        """
+        self.transaction: ArchiveTransaction = ArchiveTransaction()
+        """transaction used to handle the upload"""
 
         self.session = self.transaction.session
         """database session"""
 
-        self.original_directory = directory
+        self.original_directory: str = directory
         self.original_changes = changes
 
-        self.changes = None
-        """upload to process
-        @type: L{daklib.upload.Changes}
-        """
+        self.changes: Optional[daklib.upload.Changes] = None
+        """upload to process"""
 
-        self.directory = None
-        """directory with temporary copy of files. set by C{prepare}
-        @type: str
-        """
+        self.directory: str = None
+        """directory with temporary copy of files. set by C{prepare}"""
 
         self.keyrings = keyrings
 
-        self.fingerprint = self.session.query(Fingerprint).filter_by(fingerprint=changes.primary_fingerprint).one()
-        """fingerprint of the key used to sign the upload
-        @type: L{daklib.dbconn.Fingerprint}
-        """
+        self.fingerprint: Fingerprint = self.session.query(Fingerprint).filter_by(fingerprint=changes.primary_fingerprint).one()
+        """fingerprint of the key used to sign the upload"""
 
-        self.reject_reasons = []
-        """reasons why the upload cannot by accepted
-        @type: list of str
-        """
+        self.reject_reasons: list[str] = []
+        """reasons why the upload cannot by accepted"""
 
-        self.warnings = []
+        self.warnings: list[str] = []
         """warnings
-        @note: Not used yet.
-        @type: list of str
+
+        .. note::
+
+           Not used yet.
         """
 
         self.final_suites = None
 
         self.new: bool = False
-        """upload is NEW. set by C{check}
-        @type: bool
-        """
+        """upload is NEW. set by C{check}"""
 
         self._checked: bool = False
-        """checks passes. set by C{check}
-        @type: bool
-        """
+        """checks passes. set by C{check}"""
 
         self._new_queue = self.session.query(PolicyQueue).filter_by(queue_name='new').one()
         self._new = self._new_queue.suite
 
-    def warn(self, message):
+    def warn(self, message: str) -> None:
         """add a warning message
 
         Adds a warning message that can later be seen in C{self.warnings}
 
-        @type  message: string
-        @param message: warning message
+        :param message: warning message
         """
         self.warnings.append(message)
 
@@ -728,15 +632,14 @@ class ArchiveUpload:
                             # probably be rejected later.
                             pass
 
-    def unpacked_source(self):
+    def unpacked_source(self) -> Optional[str]:
         """Path to unpacked source
 
         Get path to the unpacked source. This method does unpack the source
         into a temporary directory under C{self.directory} if it has not
         been done so already.
 
-        @rtype:  str or C{None}
-        @return: string giving the path to the unpacked source directory
+        :return: string giving the path to the unpacked source directory
                  or C{None} if no source was included in the upload.
         """
         assert self.directory is not None
@@ -783,11 +686,10 @@ class ArchiveUpload:
             ## XXX: propup-version and map-unreleased not yet implemented
         return suite_names
 
-    def _mapped_suites(self):
+    def _mapped_suites(self) -> list[Suite]:
         """Get target suites after mappings
 
-        @rtype:  list of L{daklib.dbconn.Suite}
-        @return: list giving the mapped target suites of this upload
+        :return: list giving the mapped target suites of this upload
         """
         session = self.session
 
@@ -796,7 +698,7 @@ class ArchiveUpload:
             suite_names.update(self._map_suite(dist))
 
         suites = session.query(Suite).filter(Suite.suite_name.in_(suite_names))
-        return suites
+        return suites.all()
 
     def _check_new_binary_overrides(self, suite, overridesuite):
         new = False
@@ -828,7 +730,7 @@ class ArchiveUpload:
 
         return new
 
-    def _check_new(self, suite, overridesuite):
+    def _check_new(self, suite, overridesuite) -> bool:
         """Check if upload is NEW
 
         An upload is NEW if it has binary or source packages that do not have
@@ -838,8 +740,7 @@ class ArchiveUpload:
         Debug packages (*-dbgsym in Section: debug) are not considered as NEW
         if C{suite} has a separate debug suite.
 
-        @rtype:  bool
-        @return: C{True} if the upload is NEW, C{False} otherwise
+        :return: C{True} if the upload is NEW, C{False} otherwise
         """
         session = self.session
         new = False
@@ -887,17 +788,12 @@ class ArchiveUpload:
 
         return final_suites
 
-    def _binary_override(self, suite, binary):
+    def _binary_override(self, suite: Suite, binary: 'Union[daklib.upload.Binary, daklib.packagelist.PackageListEntry]') -> Optional[Override]:
         """Get override entry for a binary
 
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: suite to get override for
-
-        @type  binary: L{daklib.upload.Binary} or L{daklib.packagelist.PackageListEntry}
-        @param binary: binary to get override for
-
-        @rtype:  L{daklib.dbconn.Override} or C{None}
-        @return: override for the given binary or C{None}
+        :param suite: suite to get override for
+        :param binary: binary to get override for
+        :return: override for the given binary or C{None}
         """
         if suite.overridesuite is not None:
             suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
@@ -912,17 +808,12 @@ class ArchiveUpload:
 
         return query.one_or_none()
 
-    def _source_override(self, suite, source):
+    def _source_override(self, suite: Suite, source: daklib.upload.Source) -> Optional[Override]:
         """Get override entry for a source
 
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: suite to get override for
-
-        @type  source: L{daklib.upload.Source}
-        @param source: source to get override for
-
-        @rtype:  L{daklib.dbconn.Override} or C{None}
-        @return: override for the given source or C{None}
+        :param suite: suite to get override for
+        :param source: source to get override for
+        :return: override for the given source or C{None}
         """
         if suite.overridesuite is not None:
             suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
@@ -936,21 +827,14 @@ class ArchiveUpload:
 
         return query.one_or_none()
 
-    def _binary_component(self, suite, binary, only_overrides=True):
+    def _binary_component(self, suite: Suite, binary: daklib.upload.Binary, only_overrides: bool = True) -> Optional[Component]:
         """get component for a binary
 
         By default this will only look at overrides to get the right component;
         if C{only_overrides} is C{False} this method will also look at the
         Section field.
 
-        @type  suite: L{daklib.dbconn.Suite}
-
-        @type  binary: L{daklib.upload.Binary}
-
-        @type  only_overrides: bool
-        @param only_overrides: only use overrides to get the right component
-
-        @rtype: L{daklib.dbconn.Component} or C{None}
+        :param only_overrides: only use overrides to get the right component
         """
         override = self._binary_override(suite, binary)
         if override is not None:
@@ -959,21 +843,14 @@ class ArchiveUpload:
             return None
         return get_mapped_component(binary.component, self.session)
 
-    def _source_component(self, suite, source, only_overrides=True):
+    def _source_component(self, suite: Suite, source: daklib.upload.Binary, only_overrides: bool = True) -> Optional[Component]:
         """get component for a source
 
         By default this will only look at overrides to get the right component;
         if C{only_overrides} is C{False} this method will also look at the
         Section field.
 
-        @type  suite: L{daklib.dbconn.Suite}
-
-        @type  binary: L{daklib.upload.Binary}
-
-        @type  only_overrides: bool
-        @param only_overrides: only use overrides to get the right component
-
-        @rtype: L{daklib.dbconn.Component} or C{None}
+        :param only_overrides: only use overrides to get the right component
         """
         override = self._source_override(suite, source)
         if override is not None:
@@ -982,14 +859,11 @@ class ArchiveUpload:
             return None
         return get_mapped_component(source.component, self.session)
 
-    def check(self, force=False):
+    def check(self, force: bool = False) -> bool:
         """run checks against the upload
 
-        @type  force: bool
-        @param force: ignore failing forcable checks
-
-        @rtype:  bool
-        @return: C{True} if all checks passed, C{False} otherwise
+        :param force: ignore failing forcable checks
+        :return: C{True} if all checks passed, C{False} otherwise
         """
         # XXX: needs to be better structured.
         assert self.changes.valid_signature
@@ -1053,32 +927,23 @@ class ArchiveUpload:
             suite: Suite,
             source_component_func: Callable[[daklib.upload.Source], Component],
             binary_component_func: Callable[[daklib.upload.Binary], Component],
-            source_suites = None,
+            source_suites=None,
             extra_source_archives: Optional[Iterable[Archive]] = None,
             policy_upload: bool = False
     ) -> tuple[Optional[DBSource], list[DBBinary]]:
         """Install upload to the given suite
 
-        @type  target_suite: L{daklib.dbconn.Suite}
-        @param target_suite: target suite (before redirection to policy queue or NEW)
-
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: suite to install the package into. This is the real suite,
+        :param target_suite: target suite (before redirection to policy queue or NEW)
+        :param suite: suite to install the package into. This is the real suite,
                       ie. after any redirection to NEW or a policy queue
-
-        @param source_component_func: function to get the L{daklib.dbconn.Component}
+        :param source_component_func: function to get the L{daklib.dbconn.Component}
                                       for a L{daklib.upload.Source} object
-
-        @param binary_component_func: function to get the L{daklib.dbconn.Component}
+        :param binary_component_func: function to get the L{daklib.dbconn.Component}
                                       for a L{daklib.upload.Binary} object
-
-        @param source_suites: see L{daklib.archive.ArchiveTransaction.install_binary}
-
-        @param extra_source_archives: see L{daklib.archive.ArchiveTransaction.install_binary}
-
-        @param policy_upload: Boolean indicating upload to policy queue (including NEW)
-
-        @return: tuple with two elements. The first is a L{daklib.dbconn.DBSource}
+        :param source_suites: see L{daklib.archive.ArchiveTransaction.install_binary}
+        :param extra_source_archives: see L{daklib.archive.ArchiveTransaction.install_binary}
+        :param policy_upload: Boolean indicating upload to policy queue (including NEW)
+        :return: tuple with two elements. The first is a L{daklib.dbconn.DBSource}
                  object for the install source or C{None} if no source was
                  included. The second is a list of L{daklib.dbconn.DBBinary}
                  objects for the installed binary packages.
@@ -1194,9 +1059,6 @@ class ArchiveUpload:
         """Try AUTOBYHAND
 
         Try to handle byhand packages automatically.
-
-        @rtype:  list of L{daklib.upload.HashedFile}
-        @return: list of remaining byhand files
         """
         assert len(self.reject_reasons) == 0
         assert self.changes.valid_signature
@@ -1258,13 +1120,8 @@ class ArchiveUpload:
 
         return len(remaining) == 0
 
-    def _install_byhand(self, policy_queue_upload, hashed_file) -> PolicyQueueByhandFile:
-        """install byhand file
-
-        @type  policy_queue_upload: L{daklib.dbconn.PolicyQueueUpload}
-
-        @type  hashed_file: L{daklib.upload.HashedFile}
-        """
+    def _install_byhand(self, policy_queue_upload: PolicyQueueUpload, hashed_file: daklib.upload.HashedFile) -> PolicyQueueByhandFile:
+        """install byhand file"""
         fs = self.transaction.fs
         session = self.transaction.session
         policy_queue = policy_queue_upload.policy_queue

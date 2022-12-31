@@ -18,6 +18,7 @@
 
 import os
 import sys
+from typing import Optional
 
 from daklib.dbconn import DBConn, Fingerprint, Keyring, Uid, ACL
 
@@ -43,7 +44,7 @@ def usage(status=0):
     sys.exit(status)
 
 
-def get_fingerprint(entry, session):
+def get_fingerprint(entry: str, session) -> Optional[Fingerprint]:
     """get fingerprint for given ACL entry
 
     The entry is a string in one of these formats::
@@ -53,13 +54,9 @@ def get_fingerprint(entry, session):
         fpr:<fingerprint>
         keyring:<keyring-name>
 
-    @type  entry: string
-    @param entry: ACL entry
-
-    @param session: database session
-
-    @rtype:  L{daklib.dbconn.Fingerprint} or C{None}
-    @return: fingerprint for the entry
+    :param entry: ACL entry
+    :param session: database session
+    :return: fingerprint for the entry
     """
     field, value = entry.split(":", 1)
     q = session.query(Fingerprint).join(Fingerprint.keyring).filter(Keyring.active == True)  # noqa:E712

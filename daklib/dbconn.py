@@ -32,7 +32,6 @@
 ################################################################################
 
 import apt_pkg
-from daklib.gpg import GpgException
 import functools
 import inspect
 import os
@@ -40,6 +39,7 @@ from os.path import normpath
 import re
 import subprocess
 import warnings
+from typing import Optional, TYPE_CHECKING, Union
 
 from debian.debfile import Deb822
 from tarfile import TarFile
@@ -56,6 +56,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.exc import *
 from sqlalchemy.orm.exc import NoResultFound
 
+import daklib.gpg
 from .aptversion import AptVersion
 # Only import Config until Queue stuff is changed to store its config
 # in the database
@@ -68,6 +69,9 @@ warnings.filterwarnings('ignore',
     SAWarning)
 
 from .database.base import Base
+
+if TYPE_CHECKING:
+    import sqlalchemy.orm.query
 
 
 ################################################################################
@@ -275,19 +279,14 @@ __all__.append('Architecture')
 
 
 @session_wrapper
-def get_architecture(architecture, session=None):
+def get_architecture(architecture: str, session=None) -> Optional[Architecture]:
     """
     Returns database id for given C{architecture}.
 
-    @type architecture: string
-    @param architecture: The name of the architecture
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Architecture
-    @return: Architecture object for the given arch (None if not present)
+    :param architecture: The name of the architecture
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: Architecture object for the given arch (None if not present)
     """
 
     q = session.query(Architecture).filter_by(arch_string=architecture)
@@ -311,20 +310,14 @@ __all__.append('Archive')
 
 
 @session_wrapper
-def get_archive(archive, session=None):
+def get_archive(archive: str, session=None) -> Optional[Archive]:
     """
     returns database id for given C{archive}.
 
-    @type archive: string
-    @param archive: the name of the arhive
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Archive
-    @return: Archive object for the given name (None if not present)
-
+    :param archive: the name of the arhive
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: Archive object for the given name (None if not present)
     """
     archive = archive.lower()
 
@@ -418,24 +411,22 @@ class DBBinary(ORMObject):
         dpkg.stdout.close()
         dpkg.wait()
 
-    def read_control(self):
+    def read_control(self) -> bytes:
         '''
         Reads the control information from a binary.
 
-        @rtype: text
-        @return: stanza text of the control section.
+        :return: stanza text of the control section.
         '''
         from . import utils
         fullpath = self.poolfile.fullpath
         return utils.deb_extract_control(fullpath)
 
-    def read_control_fields(self):
+    def read_control_fields(self) -> apt_pkg.TagSection:
         '''
         Reads the control information from a binary and return
         as a dictionary.
 
-        @rtype: dict
-        @return: fields of the control section as a dictionary.
+        :return: fields of the control section as a dictionary.
         '''
         stanza = self.read_control()
         return apt_pkg.TagSection(stanza)
@@ -451,15 +442,12 @@ __all__.append('DBBinary')
 
 
 @session_wrapper
-def get_suites_binary_in(package, session=None):
+def get_suites_binary_in(package: str, session=None) -> 'list[Suite]':
     """
     Returns list of Suite objects which given C{package} name is in
 
-    @type package: str
-    @param package: DBBinary package name to search for
-
-    @rtype: list
-    @return: list of Suite objects for the given package
+    :param package: DBBinary package name to search for
+    :return: list of Suite objects for the given package
     """
 
     return session.query(Suite).filter(Suite.binaries.any(DBBinary.package == package)).all()
@@ -469,23 +457,16 @@ __all__.append('get_suites_binary_in')
 
 
 @session_wrapper
-def get_component_by_package_suite(package, suite_list, arch_list=None, session=None):
+def get_component_by_package_suite(package: str, suite_list: list[str], arch_list: Optional[str] = None, session=None) -> Optional[str]:
     '''
     Returns the component name of the newest binary package in suite_list or
     None if no package is found. The result can be optionally filtered by a list
     of architecture names.
 
-    @type package: str
-    @param package: DBBinary package name to search for
-
-    @type suite_list: list of str
-    @param suite_list: list of suite_name items
-
-    @type arch_list: list of str
-    @param arch_list: optional list of arch_string items that defaults to []
-
-    @rtype: str or NoneType
-    @return: name of component or None
+    :param package: DBBinary package name to search for
+    :param suite_list: list of suite_name items
+    :param arch_list: optional list of arch_string items that defaults to []
+    :return: name of component or None
     '''
 
     q = session.query(DBBinary).filter_by(package=package). \
@@ -547,16 +528,12 @@ __all__.append('Component')
 
 
 @session_wrapper
-def get_component(component, session=None):
+def get_component(component: str, session=None) -> Optional[Component]:
     """
     Returns database id for given C{component}.
 
-    @type component: string
-    @param component: The name of the override type
-
-    @rtype: int
-    @return: the database id for the given component
-
+    :param component: The name of the override type
+    :return: the database id for the given component
     """
     component = component.lower()
 
@@ -581,22 +558,20 @@ __all__.append('get_mapped_component_name')
 
 
 @session_wrapper
-def get_mapped_component(component_name, session=None):
+def get_mapped_component(component_name: str, session=None) -> Optional[Component]:
     """get component after mappings
 
     Evaluate component mappings from ComponentMappings in dak.conf for the
     given component name.
 
-    @todo: ansgar wants to get rid of this. It's currently only used for
-           the security archive
+    .. todo::
 
-    @type  component_name: str
-    @param component_name: component name
+       ansgar wants to get rid of this. It's currently only used for
+       the security archive
 
-    @param session: database session
-
-    @rtype:  L{daklib.dbconn.Component} or C{None}
-    @return: component after applying maps or C{None}
+    :param component_name: component name
+    :param session: database session
+    :return: component after applying maps or C{None}
     """
     component_name = get_mapped_component_name(component_name)
     component = session.query(Component).filter_by(component_name=component_name).first()
@@ -607,12 +582,11 @@ __all__.append('get_mapped_component')
 
 
 @session_wrapper
-def get_component_names(session=None):
+def get_component_names(session=None) -> list[str]:
     """
     Returns list of strings of component names.
 
-    @rtype: list
-    @return: list of strings of component names
+    :return: list of strings of component names
     """
 
     return [x.component_name for x in session.query(Component).all()]
@@ -648,21 +622,19 @@ __all__.append('DSCFile')
 
 
 @session_wrapper
-def get_dscfiles(dscfile_id=None, source_id=None, poolfile_id=None, session=None):
+def get_dscfiles(
+        dscfile_id: Optional[int] = None,
+        source_id: Optional[int] = None,
+        poolfile_id: Optional[int] = None,
+        session=None
+) -> list[DSCFile]:
     """
     Returns a list of DSCFiles which may be empty
 
-    @type dscfile_id: int (optional)
-    @param dscfile_id: the dscfile_id of the DSCFiles to find
-
-    @type source_id: int (optional)
-    @param source_id: the source id related to the DSCFiles to find
-
-    @type poolfile_id: int (optional)
-    @param poolfile_id: the poolfile id related to the DSCFiles to find
-
-    @rtype: list
-    @return: Possibly empty list of DSCFiles
+    :param dscfile_id: the dscfile_id of the DSCFiles to find
+    :param source_id: the source id related to the DSCFiles to find
+    :param poolfile_id: the poolfile id related to the DSCFiles to find
+    :return: Possibly empty list of DSCFiles
     """
 
     q = session.query(DSCFile)
@@ -746,19 +718,14 @@ __all__.append('Fingerprint')
 
 
 @session_wrapper
-def get_fingerprint(fpr, session=None):
+def get_fingerprint(fpr: str, session=None) -> Optional[Fingerprint]:
     """
     Returns Fingerprint object for given fpr.
 
-    @type fpr: string
-    @param fpr: The fpr to find / add
-
-    @type session: SQLAlchemy
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied).
-
-    @rtype: Fingerprint
-    @return: the Fingerprint object for the given fpr or None
+    :param fpr: The fpr to find / add
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied).
+    :return: the Fingerprint object for the given fpr or None
     """
 
     q = session.query(Fingerprint).filter_by(fingerprint=fpr)
@@ -769,23 +736,18 @@ __all__.append('get_fingerprint')
 
 
 @session_wrapper
-def get_or_set_fingerprint(fpr, session=None):
+def get_or_set_fingerprint(fpr: str, session=None) -> Fingerprint:
     """
     Returns Fingerprint object for given fpr.
 
     If no matching fpr is found, a row is inserted.
 
-    @type fpr: string
-    @param fpr: The fpr to find / add
-
-    @type session: SQLAlchemy
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied).  If not passed, a commit will be performed at
-    the end of the function, otherwise the caller is responsible for commiting.
-    A flush will be performed either way.
-
-    @rtype: Fingerprint
-    @return: the Fingerprint object for the given fpr
+    :param fpr: The fpr to find / add
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied).  If not passed, a commit will be performed at
+       the end of the function, otherwise the caller is responsible for commiting.
+       A flush will be performed either way.
+    :return: the Fingerprint object for the given fpr
     """
 
     q = session.query(Fingerprint).filter_by(fingerprint=fpr)
@@ -889,11 +851,11 @@ class Keyring:
         (out, err) = p.communicate()
         r = p.returncode
         if r != 0:
-            raise GpgException("command failed: %s\nstdout: %s\nstderr: %s\n" % (cmd, out, err))
+            raise daklib.gpg.GpgException("command failed: %s\nstdout: %s\nstderr: %s\n" % (cmd, out, err))
 
     def import_users_from_ldap(self, session):
         from .utils import open_ldap_connection
-        import ldap
+        import ldap  # type: ignore
         l = open_ldap_connection()
         cnf = Config()
         LDAPDn = cnf["Import-LDAP-Fingerprints::LDAPDn"]
@@ -953,16 +915,13 @@ __all__.append('Keyring')
 
 
 @session_wrapper
-def get_keyring(keyring, session=None):
+def get_keyring(keyring: str, session=None) -> Optional[Keyring]:
     """
     If C{keyring} does not have an entry in the C{keyrings} table yet, return None
     If C{keyring} already has an entry, simply return the existing Keyring
 
-    @type keyring: string
-    @param keyring: the keyring name
-
-    @rtype: Keyring
-    @return: the Keyring object for this keyring
+    :param keyring: the keyring name
+    :return: the Keyring object for this keyring
     """
 
     q = session.query(Keyring).filter_by(keyring_name=keyring)
@@ -975,8 +934,7 @@ __all__.append('get_keyring')
 @session_wrapper
 def get_active_keyring_paths(session=None) -> list[str]:
     """
-    @rtype: list
-    @return: list of active keyring paths
+    :return: list of active keyring paths
     """
     return [x.keyring_name for x in session.query(Keyring).filter(Keyring.active == True).order_by(desc(Keyring.priority)).all()]  # noqa:E712
 
@@ -998,20 +956,14 @@ __all__.append('DBChange')
 
 
 @session_wrapper
-def get_dbchange(filename, session=None):
+def get_dbchange(filename: str, session=None) -> Optional[DBChange]:
     """
     returns DBChange object for given C{filename}.
 
-    @type filename: string
-    @param filename: the name of the file
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: DBChange
-    @return:  DBChange object for the given filename (C{None} if not present)
-
+    :param filename: the name of the file
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return:  DBChange object for the given filename (C{None} if not present)
     """
     q = session.query(DBChange).filter_by(changesname=filename)
     return q.one_or_none()
@@ -1040,23 +992,18 @@ __all__.append('Maintainer')
 
 
 @session_wrapper
-def get_or_set_maintainer(name, session=None):
+def get_or_set_maintainer(name: str, session=None) -> Maintainer:
     """
     Returns Maintainer object for given maintainer name.
 
     If no matching maintainer name is found, a row is inserted.
 
-    @type name: string
-    @param name: The maintainer name to add
-
-    @type session: SQLAlchemy
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied).  If not passed, a commit will be performed at
-    the end of the function, otherwise the caller is responsible for commiting.
-    A flush will be performed either way.
-
-    @rtype: Maintainer
-    @return: the Maintainer object for the given maintainer
+    :param name: The maintainer name to add
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied).  If not passed, a commit will be performed at
+       the end of the function, otherwise the caller is responsible for commiting.
+       A flush will be performed either way.
+    :return: the Maintainer object for the given maintainer
     """
 
     q = session.query(Maintainer).filter_by(name=name)
@@ -1076,16 +1023,13 @@ __all__.append('get_or_set_maintainer')
 
 
 @session_wrapper
-def get_maintainer(maintainer_id, session=None):
+def get_maintainer(maintainer_id: int, session=None) -> Optional[Maintainer]:
     """
     Return the name of the maintainer behind C{maintainer_id} or None if that
     maintainer_id is invalid.
 
-    @type maintainer_id: int
-    @param maintainer_id: the id of the maintainer
-
-    @rtype: Maintainer
-    @return: the Maintainer with this C{maintainer_id}
+    :param maintainer_id: the id of the maintainer
+    :return: the Maintainer with this C{maintainer_id}
     """
 
     return session.query(Maintainer).get(maintainer_id)
@@ -1108,22 +1052,14 @@ __all__.append('NewComment')
 
 
 @session_wrapper
-def has_new_comment(policy_queue, package, version, session=None):
+def has_new_comment(policy_queue, package: str, version: str, session=None) -> bool:
     """
     Returns true if the given combination of C{package}, C{version} has a comment.
 
-    @type package: string
-    @param package: name of the package
-
-    @type version: string
-    @param version: package version
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: boolean
-    @return: true/false
+    :param package: name of the package
+    :param version: package version
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
     """
 
     q = session.query(NewComment).filter_by(policy_queue=policy_queue)
@@ -1137,26 +1073,23 @@ __all__.append('has_new_comment')
 
 
 @session_wrapper
-def get_new_comments(policy_queue, package=None, version=None, comment_id=None, session=None):
+def get_new_comments(
+        policy_queue,
+        package: Optional[str] = None,
+        version: Optional[str] = None,
+        comment_id: Optional[int] = None,
+        session=None
+) -> list[NewComment]:
     """
     Returns (possibly empty) list of NewComment objects for the given
     parameters
 
-    @type package: string (optional)
-    @param package: name of the package
-
-    @type version: string (optional)
-    @param version: package version
-
-    @type comment_id: int (optional)
-    @param comment_id: An id of a comment
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: A (possibly empty) list of NewComment objects will be returned
+    :param package: name of the package
+    :param version: package version
+    :param comment_id: An id of a comment
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: A (possibly empty) list of NewComment objects will be returned
     """
 
     q = session.query(NewComment).filter_by(policy_queue=policy_queue)
@@ -1194,31 +1127,26 @@ __all__.append('Override')
 
 
 @session_wrapper
-def get_override(package, suite=None, component=None, overridetype=None, session=None):
+def get_override(
+        package: str,
+        suite: Union[str, list[str], None] = None,
+        component: Union[str, list[str], None] = None,
+        overridetype: Union[str, list[str], None] = None,
+        session=None
+) -> list[Override]:
     """
     Returns Override object for the given parameters
 
-    @type package: string
-    @param package: The name of the package
-
-    @type suite: string, list or None
-    @param suite: The name of the suite (or suites if a list) to limit to.  If
+    :param package: The name of the package
+    :param suite: The name of the suite (or suites if a list) to limit to.  If
                   None, don't limit.  Defaults to None.
-
-    @type component: string, list or None
-    @param component: The name of the component (or components if a list) to
+    :param component: The name of the component (or components if a list) to
                       limit to.  If None, don't limit.  Defaults to None.
-
-    @type overridetype: string, list or None
-    @param overridetype: The name of the overridetype (or overridetypes if a list) to
+    :param overridetype: The name of the overridetype (or overridetypes if a list) to
                          limit to.  If None, don't limit.  Defaults to None.
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: A (possibly empty) list of Override objects will be returned
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: A (possibly empty) list of Override objects will be returned
     """
 
     q = session.query(Override)
@@ -1259,19 +1187,14 @@ __all__.append('OverrideType')
 
 
 @session_wrapper
-def get_override_type(override_type, session=None):
+def get_override_type(override_type: str, session=None) -> Optional[OverrideType]:
     """
     Returns OverrideType object for given C{override type}.
 
-    @type override_type: string
-    @param override_type: The name of the override type
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: int
-    @return: the database id for the given override type
+    :param override_type: The name of the override type
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: the database id for the given override type
     """
 
     q = session.query(OverrideType).filter_by(overridetype=override_type)
@@ -1295,19 +1218,14 @@ __all__.append('PolicyQueue')
 
 
 @session_wrapper
-def get_policy_queue(queuename, session=None):
+def get_policy_queue(queuename: str, session=None) -> Optional[PolicyQueue]:
     """
     Returns PolicyQueue object for given C{queue name}
 
-    @type queuename: string
-    @param queuename: The name of the queue
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: PolicyQueue
-    @return: PolicyQueue object for the given queue
+    :param queuename: The name of the queue
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: PolicyQueue object for the given queue
     """
 
     q = session.query(PolicyQueue).filter_by(queue_name=queuename)
@@ -1379,19 +1297,14 @@ __all__.append('Priority')
 
 
 @session_wrapper
-def get_priority(priority, session=None):
+def get_priority(priority: str, session=None) -> Optional[Priority]:
     """
     Returns Priority object for given C{priority name}.
 
-    @type priority: string
-    @param priority: The name of the priority
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Priority
-    @return: Priority object for the given priority
+    :param priority: The name of the priority
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: Priority object for the given priority
     """
 
     q = session.query(Priority).filter_by(priority=priority)
@@ -1402,16 +1315,13 @@ __all__.append('get_priority')
 
 
 @session_wrapper
-def get_priorities(session=None):
+def get_priorities(session=None) -> dict[str, int]:
     """
     Returns dictionary of priority names -> id mappings
 
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: dictionary
-    @return: dictionary of priority names -> id mappings
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied)
+    :return: dictionary of priority names -> id mappings
     """
 
     ret = {}
@@ -1433,19 +1343,14 @@ __all__.append('Section')
 
 
 @session_wrapper
-def get_section(section, session=None):
+def get_section(section: str, session=None) -> Optional[Section]:
     """
     Returns Section object for given C{section name}.
 
-    @type section: string
-    @param section: The name of the section
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Section
-    @return: Section object for the given section name
+    :param section: The name of the section
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: Section object for the given section name
     """
 
     q = session.query(Section).filter_by(section=section)
@@ -1456,16 +1361,13 @@ __all__.append('get_section')
 
 
 @session_wrapper
-def get_sections(session=None):
+def get_sections(session=None) -> dict[str, int]:
     """
     Returns dictionary of section names -> id mappings
 
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: dictionary
-    @return: dictionary of section names -> id mappings
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied)
+    :return: dictionary of section names -> id mappings
     """
 
     ret = {}
@@ -1483,13 +1385,10 @@ __all__.append('get_sections')
 
 class SignatureHistory(ORMObject):
     @classmethod
-    def from_signed_file(cls, signed_file):
+    def from_signed_file(cls, signed_file: 'daklib.gpg.SignedFile') -> 'SignatureHistory':
         """signature history entry from signed file
 
-        @type  signed_file: L{daklib.gpg.SignedFile}
-        @param signed_file: signed file
-
-        @rtype: L{SignatureHistory}
+        :param signed_file: signed file
         """
         self = cls()
         self.fingerprint = signed_file.primary_fingerprint
@@ -1548,12 +1447,11 @@ class DBSource(ORMObject):
             'fingerprint', 'poolfile', 'version', 'suites_count',
             'install_date', 'binaries_count', 'uploaders_count']
 
-    def read_control_fields(self):
+    def read_control_fields(self) -> Deb822:
         '''
         Reads the control information from a dsc
 
-        @rtype: tuple
-        @return: fields is the dsc information in a dictionary form
+        :return: fields is the dsc information in a dictionary form
         '''
         with open(self.poolfile.fullpath, 'r') as fd:
             fields = Deb822(fd)
@@ -1586,15 +1484,12 @@ __all__.append('DBSource')
 
 
 @session_wrapper
-def get_suites_source_in(source, session=None):
+def get_suites_source_in(source: str, session=None) -> 'list[Suite]':
     """
     Returns list of Suite objects which given C{source} name is in
 
-    @type source: str
-    @param source: DBSource package name to search for
-
-    @rtype: list
-    @return: list of Suite objects for the given source
+    :param source: DBSource package name to search for
+    :return: list of Suite objects for the given source
     """
 
     return session.query(Suite).filter(Suite.sources.any(source=source)).all()
@@ -1607,22 +1502,16 @@ __all__.append('get_suites_source_in')
 
 
 @session_wrapper
-def get_source_in_suite(source, suite_name, session=None):
+def get_source_in_suite(source: str, suite_name: Optional[str], session=None) -> Optional[DBSource]:
     """
     Returns a DBSource object for a combination of C{source} and C{suite_name}.
 
       - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
       - B{suite_name} - a suite name, eg. I{unstable}
 
-    @type source: string
-    @param source: source package name
-
-    @type suite_name: string
-    @param suite_name: the suite name
-
-    @rtype: string
-    @return: the version for I{source} in I{suite}
-
+    :param source: source package name
+    :param suite_name: the suite name
+    :return: the version for I{source} in I{suite}
     """
     suite = get_suite(suite_name, session)
     if suite is None:
@@ -1730,20 +1619,13 @@ class Suite(ORMObject):
 
         return "\n".join(ret)
 
-    def get_architectures(self, skipsrc=False, skipall=False):
+    def get_architectures(self, skipsrc: bool = False, skipall: bool = False) -> list[Architecture]:
         """
         Returns list of Architecture objects
 
-        @type skipsrc: boolean
-        @param skipsrc: Whether to skip returning the 'source' architecture entry
-        (Default False)
-
-        @type skipall: boolean
-        @param skipall: Whether to skip returning the 'all' architecture entry
-        (Default False)
-
-        @rtype: list
-        @return: list of Architecture objects for the given name (may be empty)
+        :param skipsrc: Whether to skip returning the 'source' architecture entry
+        :param skipall: Whether to skip returning the 'all' architecture entry
+        :return: list of Architecture objects for the given name (may be empty)
         """
 
         q = object_session(self).query(Architecture).with_parent(self)
@@ -1753,18 +1635,14 @@ class Suite(ORMObject):
             q = q.filter(Architecture.arch_string != 'all')
         return q.order_by(Architecture.arch_string).all()
 
-    def get_sources(self, source):
+    def get_sources(self, source: str) -> sqlalchemy.orm.query.Query:
         """
         Returns a query object representing DBSource that is part of C{suite}.
 
           - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
 
-        @type source: string
-        @param source: source package name
-
-        @rtype: sqlalchemy.orm.query.Query
-        @return: a query of DBSource
-
+        :param source: source package name
+        :return: a query of DBSource
         """
 
         session = object_session(self)
@@ -1795,19 +1673,14 @@ __all__.append('Suite')
 
 
 @session_wrapper
-def get_suite(suite, session=None):
+def get_suite(suite: str, session=None) -> Optional[Suite]:
     """
     Returns Suite object for given C{suite name}.
 
-    @type suite: string
-    @param suite: The name of the suite
-
-    @type session: Session
-    @param session: Optional SQLA session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: Suite
-    @return: Suite object for the requested suite name (None if not present)
+    :param suite: The name of the suite
+    :param session: Optional SQLA session object (a temporary one will be
+       generated if not supplied)
+    :return: Suite object for the requested suite name (None if not present)
     """
 
     # Start by looking for the dak internal name
@@ -1835,28 +1708,17 @@ __all__.append('get_suite')
 
 
 @session_wrapper
-def get_suite_architectures(suite, skipsrc=False, skipall=False, session=None):
+def get_suite_architectures(suite: str, skipsrc: bool = False, skipall: bool = False, session=None) -> list[Architecture]:
     """
     Returns list of Architecture objects for given C{suite} name. The list is
     empty if suite does not exist.
 
-    @type suite: str
-    @param suite: Suite name to search for
-
-    @type skipsrc: boolean
-    @param skipsrc: Whether to skip returning the 'source' architecture entry
-    (Default False)
-
-    @type skipall: boolean
-    @param skipall: Whether to skip returning the 'all' architecture entry
-    (Default False)
-
-    @type session: Session
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied)
-
-    @rtype: list
-    @return: list of Architecture objects for the given name (may be empty)
+    :param suite: Suite name to search for
+    :param skipsrc: Whether to skip returning the 'source' architecture entry
+    :param skipall: Whether to skip returning the 'all' architecture entry
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied)
+    :return: list of Architecture objects for the given name (may be empty)
     """
 
     try:
@@ -1899,22 +1761,17 @@ __all__.append('Uid')
 
 
 @session_wrapper
-def get_or_set_uid(uidname, session=None):
+def get_or_set_uid(uidname: str, session=None) -> Uid:
     """
     Returns uid object for given uidname.
 
     If no matching uidname is found, a row is inserted.
 
-    @type uidname: string
-    @param uidname: The uid to add
-
-    @type session: SQLAlchemy
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied).  If not passed, a commit will be performed at
-    the end of the function, otherwise the caller is responsible for commiting.
-
-    @rtype: Uid
-    @return: the uid object for the given uidname
+    :param uidname: The uid to add
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied).  If not passed, a commit will be performed at
+       the end of the function, otherwise the caller is responsible for commiting.
+    :return: the uid object for the given uidname
     """
 
     q = session.query(Uid).filter_by(uid=uidname)
@@ -1959,22 +1816,17 @@ __all__.append('MetadataKey')
 
 
 @session_wrapper
-def get_or_set_metadatakey(keyname, session=None):
+def get_or_set_metadatakey(keyname: str, session=None) -> MetadataKey:
     """
     Returns MetadataKey object for given uidname.
 
     If no matching keyname is found, a row is inserted.
 
-    @type keyname: string
-    @param keyname: The keyname to add
-
-    @type session: SQLAlchemy
-    @param session: Optional SQL session object (a temporary one will be
-    generated if not supplied).  If not passed, a commit will be performed at
-    the end of the function, otherwise the caller is responsible for commiting.
-
-    @rtype: MetadataKey
-    @return: the metadatakey object for the given keyname
+    :param keyname: The keyname to add
+    :param session: Optional SQL session object (a temporary one will be
+       generated if not supplied).  If not passed, a commit will be performed at
+       the end of the function, otherwise the caller is responsible for commiting.
+    :return: the metadatakey object for the given keyname
     """
 
     q = session.query(MetadataKey).filter_by(key=keyname)

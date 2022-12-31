@@ -17,7 +17,7 @@
 """module to process policy queue uploads"""
 
 from .config import Config
-from .dbconn import Component, Override, OverrideType, Priority, Section, Suite, get_mapped_component, get_mapped_component_name
+from .dbconn import Component, Override, OverrideType, PolicyQueueUpload, Priority, Section, Suite, get_mapped_component, get_mapped_component_name
 from .fstransactions import FilesystemTransaction
 from .regexes import re_file_changes, re_file_safe
 from .packagelist import PackageList
@@ -42,11 +42,10 @@ class UploadCopy:
     the with-block.
     """
 
-    def __init__(self, upload, group=None):
+    def __init__(self, upload: PolicyQueueUpload, group=None):
         """initializer
 
-        @type  upload: L{daklib.dbconn.PolicyQueueUpload}
-        @param upload: upload to handle
+        :param upload: upload to handle
         """
 
         self.directory = None
@@ -56,17 +55,10 @@ class UploadCopy:
     def export(self, directory: str, mode: Optional[int] = None, symlink: bool = True, ignore_existing: bool = False) -> None:
         """export a copy of the upload
 
-        @type  directory: str
-        @param directory: directory to export to
-
-        @type  mode: int
-        @param mode: permissions to use for the copied files
-
-        @type  symlink: bool
-        @param symlink: use symlinks instead of copying the files
-
-        @type  ignore_existing: bool
-        @param ignore_existing: ignore already existing files
+        :param directory: directory to export to
+        :param mode: permissions to use for the copied files
+        :param symlink: use symlinks instead of copying the files
+        :param ignore_existing: ignore already existing files
         """
         with FilesystemTransaction() as fs:
             source = self.upload.source
@@ -128,13 +120,11 @@ class PolicyQueueUploadHandler:
     overrides (for NEW processing).
     """
 
-    def __init__(self, upload, session):
+    def __init__(self, upload: PolicyQueueUpload, session):
         """initializer
 
-        @type  upload: L{daklib.dbconn.PolicyQueueUpload}
-        @param upload: upload to process
-
-        @param session: database session
+        :param upload: upload to process
+        :param session: database session
         """
         self.upload = upload
         self.session = session
@@ -189,8 +179,7 @@ class PolicyQueueUploadHandler:
     def reject(self, reason: str) -> None:
         """mark upload as rejected
 
-        @type  reason: str
-        @param reason: reason for the rejection
+        :param reason: reason for the rejection
         """
         cnf = Config()
 
@@ -213,8 +202,7 @@ class PolicyQueueUploadHandler:
     def get_action(self) -> Optional[str]:
         """get current action
 
-        @rtype:  str
-        @return: string giving the current action, one of 'ACCEPT', 'ACCEPTED', 'REJECT'
+        :return: string giving the current action, one of 'ACCEPT', 'ACCEPTED', 'REJECT'
         """
         changes_prefix = self._changes_prefix
 
@@ -226,14 +214,12 @@ class PolicyQueueUploadHandler:
 
         return None
 
-    def missing_overrides(self, hints=None):
+    def missing_overrides(self, hints: Optional[list[dict]] = None) -> list[dict]:
         """get missing override entries for the upload
 
-        @type  hints: list of dict
-        @param hints: suggested hints for new overrides in the same format as
+        :param hints: suggested hints for new overrides in the same format as
                       the return value
-
-        @return: list of dicts with the following keys:
+        :return: list of dicts with the following keys:
 
                  - package: package name
                  - priority: default priority (from upload)

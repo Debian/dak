@@ -451,8 +451,7 @@ def run_user_inspect_command(upload: daklib.dbconn.PolicyQueueUpload, upload_cop
 def get_reject_reason(reason: str = '') -> Optional[str]:
     """get reason for rejection
 
-    @rtype:  str
-    @return: string giving the reason for the rejection or C{None} if the
+    :return: string giving the reason for the rejection or C{None} if the
              rejection should be cancelled
     """
     answer = 'E'
@@ -653,8 +652,7 @@ def lock_package(package: str):
     """
     Lock C{package} so that noone else jumps in processing it.
 
-    @type package: string
-    @param package: source package name to lock
+    :param package: source package name to lock
     """
 
     cnf = Config()

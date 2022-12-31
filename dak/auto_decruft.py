@@ -38,6 +38,7 @@ import sys
 import apt_pkg
 from itertools import chain, product
 from collections import defaultdict
+from collections.abc import Iterable
 
 from daklib.config import Config
 from daklib.dbconn import *
@@ -68,14 +69,11 @@ Automatic removal of common kinds of cruft
 ################################################################################
 
 
-def compute_sourceless_groups(suite_id, session):
+def compute_sourceless_groups(suite_id: int, session):
     """Find binaries without a source
 
-    @type suite_id: int
-    @param suite_id: The id of the suite denoted by suite_name
-
-    @type session: SQLA Session
-    @param session: The database session in use
+    :param suite_id: The id of the suite denoted by suite_name
+    :param session: The database session in use
     """""
     rows = query_without_source(suite_id, session)
     message = '[auto-cruft] no longer built from source, no reverse dependencies'
@@ -97,17 +95,12 @@ def compute_sourceless_groups(suite_id, session):
         yield group_info
 
 
-def compute_nbs_groups(suite_id, suite_name, session):
+def compute_nbs_groups(suite_id: int, suite_name: str, session):
     """Find binaries no longer built
 
-    @type suite_id: int
-    @param suite_id: The id of the suite denoted by suite_name
-
-    @type suite_name: string
-    @param suite_name: The name of the suite to remove from
-
-    @type session: SQLA Session
-    @param session: The database session in use
+    :param suite_id: The id of the suite denoted by suite_name
+    :param suite_name: The name of the suite to remove from
+    :param session: The database session in use
     """""
     rows = queryNBS(suite_id, session)
     arch2ids = dict((a.arch_string, a.arch_id) for a in get_suite_architectures(suite_name))
@@ -156,19 +149,14 @@ def dedup(*args):
                 yield value
 
 
-def merge_group(groupA, groupB):
+def merge_group(groupA: dict, groupB: dict) -> dict:
     """Merges two removal groups into one
 
     Note that some values are taken entirely from groupA (e.g. name and message)
 
-    @type groupA: dict
-    @param groupA: A removal group
-
-    @type groupB: dict
-    @param groupB: Another removal group
-
-    @rtype: dict
-    @returns: A merged group
+    :param groupA: A removal group
+    :param groupB: Another removal group
+    :return: A merged group
     """
     pkg_list = sorted(dedup(groupA["packages"], groupB["packages"]))
     arch_list = sorted(dedup(groupA["architectures"], groupB["architectures"]))
@@ -193,23 +181,14 @@ def merge_group(groupA, groupB):
     return merged_group
 
 
-def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
+def auto_decruft_suite(suite_name: str, suite_id: int, session, dryrun: bool, debug: bool):
     """Run the auto-decrufter on a given suite
 
-    @type suite_name: string
-    @param suite_name: The name of the suite to remove from
-
-    @type suite_id: int
-    @param suite_id: The id of the suite denoted by suite_name
-
-    @type session: SQLA Session
-    @param session: The database session in use
-
-    @type dryrun: bool
-    @param dryrun: If True, just print the actions rather than actually doing them
-
-    @type debug: bool
-    @param debug: If True, print some extra information
+    :param suite_name: The name of the suite to remove from
+    :param suite_id: The id of the suite denoted by suite_name
+    :param session: The database session in use
+    :param dryrun: If True, just print the actions rather than actually doing them
+    :param debug: If True, print some extra information
     """
     all_architectures = [a.arch_string for a in get_suite_architectures(suite_name)]
     pkg_arch2groups = defaultdict(set)
@@ -343,20 +322,13 @@ def auto_decruft_suite(suite_name, suite_id, session, dryrun, debug):
         remove_groups(groups.values(), suite_id, suite_name, session)
 
 
-def sources2removals(source_list, suite_id, session):
+def sources2removals(source_list: Iterable[str], suite_id: int, session) -> list:
     """Compute removals items given a list of names of source packages
 
-    @type source_list: list
-    @param source_list: A list of names of source packages
-
-    @type suite_id: int
-    @param suite_id: The id of the suite from which these sources should be removed
-
-    @type session: SQLA Session
-    @param session: The database session in use
-
-    @rtype: list
-    @return: A list of items to be removed to remove all sources and their binaries from the given suite
+    :param source_list: A list of names of source packages
+    :param suite_id: The id of the suite from which these sources should be removed
+    :param session: The database session in use
+    :return: A list of items to be removed to remove all sources and their binaries from the given suite
     """
     to_remove = []
     params = {"suite_id": suite_id, "sources": tuple(source_list)}
@@ -377,29 +349,16 @@ def sources2removals(source_list, suite_id, session):
     return to_remove
 
 
-def decruft_newer_version_in(othersuite, suite_name, suite_id, rm_msg, session, dryrun, decruft_equal_versions):
+def decruft_newer_version_in(othersuite: str, suite_name: str, suite_id: int, rm_msg: str, session, dryrun: bool, decruft_equal_versions: bool) -> None:
     """Compute removals items given a list of names of source packages
 
-    @type othersuite: str
-    @param othersuite: The name of the suite to compare with (e.g. "unstable" for "NVIU")
-
-    @type suite: str
-    @param suite: The name of the suite from which to do removals (e.g. "experimental" for "NVIU")
-
-    @type suite_id: int
-    @param suite_id: The id of the suite from which these sources should be removed
-
-    @type rm_msg: str
-    @param rm_msg: The removal message (or tag, e.g. "NVIU")
-
-    @type session: SQLA Session
-    @param session: The database session in use
-
-    @type dryrun: bool
-    @param dryrun: If True, just print the actions rather than actually doing them
-
-    @type decruft_equal_versions: bool
-    @param decruft_equal_versions: If True, use >= instead of > for finding decruftable packages.
+    :param othersuite: The name of the suite to compare with (e.g. "unstable" for "NVIU")
+    :param suite: The name of the suite from which to do removals (e.g. "experimental" for "NVIU")
+    :param suite_id: The id of the suite from which these sources should be removed
+    :param rm_msg: The removal message (or tag, e.g. "NVIU")
+    :param session: The database session in use
+    :param dryrun: If True, just print the actions rather than actually doing them
+    :param decruft_equal_versions: If True, use >= instead of > for finding decruftable packages.
     """
     nvi_list = [x[0] for x in newer_version(othersuite, suite_name, session, include_equal=decruft_equal_versions)]
     if nvi_list:

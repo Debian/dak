@@ -47,14 +47,14 @@ class CommandFile:
         self.filename: str = filename
         self.data = data
 
-    def _check_replay(self, signed_file, session):
+    def _check_replay(self, signed_file: SignedFile, session):
         """check for replays
 
-        @note: Will commit changes to the database.
+        .. note::
 
-        @type signed_file: L{daklib.gpg.SignedFile}
+           Will commit changes to the database.
 
-        @param session: database session
+        :param session: database session
         """
         # Mark commands file as seen to prevent replays.
         signature_history = SignatureHistory.from_signed_file(signed_file)
@@ -137,9 +137,8 @@ class CommandFile:
     def evaluate(self) -> bool:
         """evaluate commands file
 
-        @rtype:   bool
-        @returns: C{True} if the file was processed sucessfully,
-                  C{False} otherwise
+        :return: C{True} if the file was processed sucessfully,
+                 C{False} otherwise
         """
         result = True
 

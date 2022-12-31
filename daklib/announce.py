@@ -20,6 +20,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
+from typing import Optional, Union
 
 from daklib.config import Config
 from daklib.textutils import fix_maintainer
@@ -53,14 +54,11 @@ class ProcessedUpload:
     warnings = [] #: Eventual warnings for upload
 
 
-def _subst_for_upload(upload):
+def _subst_for_upload(upload: ProcessedUpload) -> dict:
     """ Prepare substitutions used for announce mails.
 
-    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
-    @param upload: upload to handle
-
-    @rtype: dict
-    @returns: A dict of substition values for use by L{daklib.utils.TemplateSubst}
+    :param upload: upload to handle
+    :return: A dict of substition values for use by L{daklib.utils.TemplateSubst}
     """
     cnf = Config()
 
@@ -103,21 +101,16 @@ def _subst_for_upload(upload):
     return subst
 
 
-def _whitelists(upload):
+def _whitelists(upload: ProcessedUpload):
     return [s.mail_whitelist for s in upload.suites]
 
 
-def announce_reject(upload, reason, rejected_by=None):
+def announce_reject(upload: ProcessedUpload, reason: str, rejected_by: Optional[str] = None) -> None:
     """ Announce a reject.
 
-    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
-    @param upload: upload to handle
-
-    @type  reason: string
-    @param reason: Reject reason
-
-    @type  rejected_by: string
-    @param rejected_by: Who is doing the reject.
+    :param upload: upload to handle
+    :param reason: Reject reason
+    :param rejected_by: Who is doing the reject.
     """
     cnf = Config()
     subst = _subst_for_upload(upload)
@@ -138,11 +131,10 @@ def announce_reject(upload, reason, rejected_by=None):
     send_mail(message, whitelists=whitelists)
 
 
-def announce_accept(upload):
+def announce_accept(upload: ProcessedUpload) -> None:
     """ Announce an upload.
 
-    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
-    @param upload: upload to handle
+    :param upload: upload to handle
     """
 
     cnf = Config()
@@ -197,11 +189,10 @@ def announce_accept(upload):
             send_mail(message, whitelists=whitelists)
 
 
-def announce_new(upload):
+def announce_new(upload: ProcessedUpload) -> None:
     """ Announce an upload going to NEW.
 
-    @type  upload: L{daklib.upload.Source} or L{daklib.upload.Binary}
-    @param upload: upload to handle
+    :param upload: upload to handle
     """
 
     cnf = Config()

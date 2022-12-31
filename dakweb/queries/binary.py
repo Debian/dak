@@ -7,18 +7,18 @@
 
 import bottle
 import json
+from typing import Optional
 
 from daklib.dbconn import DBConn, DBBinary, DBSource, SourceMetadata, MetadataKey
 from dakweb.webregister import QueryRegister
 
 
 @bottle.route('/binary/metadata_keys/')
-def binary_metadata_keys():
+def binary_metadata_keys() -> str:
     """
     List all possible metadata keys
 
-    @rtype: dictionary
-    @return: A list of metadata keys
+    :return: A list of metadata keys
     """
     s = DBConn().session()
     q = s.query(MetadataKey)
@@ -36,7 +36,7 @@ QueryRegister().register_path('/metadata_keys', binary_metadata_keys)
 
 
 @bottle.route('/binary/by_metadata/<key>')
-def binary_by_metadata(key=None):
+def binary_by_metadata(key: Optional[str] = None) -> str:
     """
 
     Finds all Debian binary packages which have the specified metadata set
@@ -45,11 +45,8 @@ def binary_by_metadata(key=None):
     E.g., to find out the Go import paths of all Debian Go packages, query
     /binary/by_metadata/Go-Import-Path.
 
-    @type key: string
-    @param key: Metadata key of the source package to search for.
-
-    @rtype: dictionary
-    @return: A list of dictionaries of
+    :param key: Metadata key of the source package to search for.
+    :return: A list of dictionaries of
              - binary
              - source
              - metadata value

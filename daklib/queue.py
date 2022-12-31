@@ -34,15 +34,14 @@ from .dbconn import *
 ################################################################################
 
 
-def check_valid(overrides, session) -> bool:
+def check_valid(overrides: list[dict], session) -> bool:
     """Check if section and priority for new overrides exist in database.
 
     Additionally does sanity checks:
       - debian-installer packages have to be udeb (or source)
       - non debian-installer packages cannot be udeb
 
-    @type  overrides: list of dict
-    @param overrides: list of overrides to check. The overrides need
+    :param overrides: list of overrides to check. The overrides need
                       to be given in form of a dict with the following keys:
 
                       - package: package name
@@ -52,9 +51,7 @@ def check_valid(overrides, session) -> bool:
                       - type: type of requested override ('dsc', 'deb' or 'udeb')
 
                       All values are strings.
-
-    @rtype:  bool
-    @return: C{True} if all overrides are valid, C{False} if there is any
+    :return: C{True} if all overrides are valid, C{False} if there is any
              invalid override.
     """
     all_valid = True

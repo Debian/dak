@@ -32,6 +32,7 @@ Output override files for apt-ftparchive and indices/
 import os
 import sys
 import apt_pkg
+from typing import TextIO
 
 from daklib.dbconn import *
 from daklib.config import Config
@@ -50,25 +51,15 @@ Outputs the override tables to text files.
 ################################################################################
 
 
-def do_list(output_file, suite, component, otype, session):
+def do_list(output_file: TextIO, suite: Suite, component: Component, otype: OverrideType, session):
     """
     Fetch override data for suite from the database and dump it.
 
-    @type output_file: fileobject
-    @param output_file: where to write the overrides to
-
-    @type suite: Suite object
-    @param suite: A suite object describing the Suite
-
-    @type component: Component object
-    @param component: The name of the component
-
-    @type otype: OverrideType object
-    @param otype: object of type of override. deb/udeb/dsc
-
-    @type session: SQLA Session
-    @param session: the database session in use
-
+    :param output_file: where to write the overrides to
+    :param suite: A suite object describing the Suite
+    :param component: The name of the component
+    :param otype: object of type of override. deb/udeb/dsc
+    :param session: the database session in use
     """
     # Here's a nice example of why the object API isn't always the
     # right answer.  On my laptop, the object version of the code

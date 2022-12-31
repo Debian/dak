@@ -47,6 +47,7 @@ import email.utils
 from re import sub
 from collections import defaultdict
 from .regexes import re_build_dep_arch
+from typing import Optional, Union
 
 from daklib.dbconn import *
 from daklib import utils
@@ -66,16 +67,13 @@ class ReverseDependencyChecker:
     required.
     """
 
-    def __init__(self, session, suite):
+    def __init__(self, session, suite: str):
         """Creates a new ReverseDependencyChecker instance
 
         This will spend a significant amount of time caching data.
 
-        @type session: SQLA Session
-        @param session: The database session in use
-
-        @type suite: str
-        @param suite: The name of the suite that is used as basis for removal tests.
+        :param session: The database session in use
+        :param suite: The name of the suite that is used as basis for removal tests.
         """
         self._session = session
         dbsuite = get_suite(suite, session)
@@ -182,7 +180,7 @@ class ReverseDependencyChecker:
 
         return package_dependencies, arch_providers_of, arch_provided_by
 
-    def check_reverse_depends(self, removal_requests):
+    def check_reverse_depends(self, removal_requests: Union[dict, list[tuple]]) -> dict:
         """Bulk check reverse dependencies
 
         Example:
@@ -193,13 +191,11 @@ class ReverseDependencyChecker:
           }
           obj.check_reverse_depends(removal_request)
 
-        @type removal_requests: dict (or a list of tuples)
-        @param removal_requests: A dictionary mapping a package name to a list of architectures.  The list of
+        :param removal_requests: A dictionary mapping a package name to a list of architectures.  The list of
           architectures decides from which the package will be removed - if the list is empty the package will
           be removed on ALL architectures in the suite (including "source").
 
-        @rtype: dict
-        @return: A mapping of "removed package" (as a "(pkg, arch)"-tuple) to a set of broken
+        :return: A mapping of "removed package" (as a "(pkg, arch)"-tuple) to a set of broken
           broken packages (also as "(pkg, arch)"-tuple).  Note that the architecture values
           in these tuples /can/ be "source" to reflect a breakage in build-dependencies.
         """
@@ -297,53 +293,31 @@ class ReverseDependencyChecker:
         return dep_problems
 
 
-def remove(session, reason, suites, removals,
-           whoami=None, partial=False, components=None, done_bugs=None, date=None,
-           carbon_copy=None, close_related_bugs=False):
+def remove(session, reason: str, suites: list, removals: list,
+           whoami: Optional[str] = None, partial: bool = False,
+           components: list = None, done_bugs: list = None,
+           date: Optional[str] = None, carbon_copy: list[str] = None,
+           close_related_bugs: bool = False) -> None:
     """Batch remove a number of packages
     Verify that the files listed in the Files field of the .dsc are
     those expected given the announced Format.
 
-    @type session: SQLA Session
-    @param session: The database session in use
-
-    @type reason: string
-    @param reason: The reason for the removal (e.g. "[auto-cruft] NBS (no longer built by <source>)")
-
-    @type suites: list
-    @param suites: A list of the suite names in which the removal should occur
-
-    @type removals: list
-    @param removals: A list of the removals.  Each element should be a tuple (or list) of at least the following
+    :param session: The database session in use
+    :param reason: The reason for the removal (e.g. "[auto-cruft] NBS (no longer built by <source>)")
+    :param suites: A list of the suite names in which the removal should occur
+    :param removals: A list of the removals.  Each element should be a tuple (or list) of at least the following
         for 4 items from the database (in order): package, version, architecture, (database) id.
         For source packages, the "architecture" should be set to "source".
-
-    @type partial: bool
-    @param partial: Whether the removal is "partial" (e.g. architecture specific).
-
-    @type components: list
-    @param components: List of components involved in a partial removal.  Can be an empty list to not restrict the
+    :param whoami: The person (or entity) doing the removal.  Defaults to utils.whoami()
+    :param partial: Whether the removal is "partial" (e.g. architecture specific).
+    :param components: List of components involved in a partial removal.  Can be an empty list to not restrict the
         removal to any components.
-
-    @type whoami: string
-    @param whoami: The person (or entity) doing the removal.  Defaults to utils.whoami()
-
-    @type date: string
-    @param date: The date of the removal. Defaults to `date -R`
-
-    @type done_bugs: list
-    @param done_bugs: A list of bugs to be closed when doing this removal.
-
-    @type close_related_bugs: bool
-    @param done_bugs: Whether bugs related to the package being removed should be closed as well.  NB: Not implemented
-      for more than one suite.
-
-    @type carbon_copy: list
-    @param carbon_copy: A list of mail addresses to CC when doing removals.  NB: all items are taken "as-is" unlike
+    :param done_bugs: A list of bugs to be closed when doing this removal.
+    :param date: The date of the removal. Defaults to `date -R`
+    :param carbon_copy: A list of mail addresses to CC when doing removals.  NB: all items are taken "as-is" unlike
         "dak rm".
-
-    @rtype: None
-    @return: Nothing
+    :param close_related_bugs: Whether bugs related to the package being removed should be closed as well.  NB: Not implemented
+      for more than one suite.
     """
     # Generate the summary of what's to be removed
     d = {}

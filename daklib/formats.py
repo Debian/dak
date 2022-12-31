@@ -33,7 +33,7 @@ from .regexes import re_verwithext
 from .dak_exceptions import UnknownFormatError
 
 
-def parse_format(txt: str):
+def parse_format(txt: str) -> tuple:
     """
     Parse a .changes Format string into a tuple representation for easy
     comparison.
@@ -45,13 +45,10 @@ def parse_format(txt: str):
 
     If the format doesn't match these forms, raises UnknownFormatError.
 
-    @type txt: string
-    @param txt: Format string to parse
+    :param txt: Format string to parse
+    :return: Parsed format
 
-    @rtype: tuple
-    @return: Parsed format
-
-    @raise UnknownFormatError: Unknown Format: line
+    :raises UnknownFormatError: Unknown Format: line
     """
 
     format = re_verwithext.search(txt)
@@ -72,11 +69,13 @@ def parse_format(txt: str):
     return format
 
 
-def validate_changes_format(format, field):
+def validate_changes_format(format: tuple[int], field: str) -> None:
     """
     Validate a tuple-representation of a .changes Format: field. Raises
     UnknownFormatError if the field is invalid, otherwise return type is
     undefined.
+
+    :raises UnknownFormatError: if the field is invalid
     """
 
     if (format < (1, 5) or format > (1, 8)):

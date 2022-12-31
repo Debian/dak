@@ -18,7 +18,7 @@ def madison():
     """
     Display information about B{package(s)}.
 
-    @since: December 2014
+    .. versionadded:: December 2014
 
     @keyword package: Space separated list of packages.
     @keyword a: only show info for specified architectures.
@@ -29,8 +29,7 @@ def madison():
     @keyword f: output json format. I{json}
     @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
 
-    @rtype: text/plain or application/json
-    @return: Text or Json format of the data
+    :return: Text or Json format of the data
     """
 
     r = bottle.request

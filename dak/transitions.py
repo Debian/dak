@@ -36,6 +36,8 @@ import errno
 import fcntl
 import tempfile
 import apt_pkg
+from collections.abc import Iterable
+from typing import Optional
 
 from daklib.dbconn import *
 from daklib import utils
@@ -121,17 +123,16 @@ Options:
 #####################################
 
 
-def load_transitions(trans_file):
+def load_transitions(trans_file: str) -> Optional[dict]:
     """
     Parse a transition yaml file and check it for validity.
 
-    @attention: This function may run B{within sudo}
+    .. warning::
 
-    @type trans_file: string
-    @param trans_file: filename to parse
+       This function may run B{within sudo}
 
-    @rtype: dict or None
-    @return: validated dictionary of transition entries or None
+    :param trans_file: filename to parse
+    :return: validated dictionary of transition entries or None
              if validation fails, empty string if reading C{trans_file}
              returned something else than a dict
 
@@ -225,8 +226,9 @@ def lock_file(f):
     """
     Lock a file
 
-    @attention: This function may run B{within sudo}
+    .. warning::
 
+       This function may run B{within sudo}
     """
     for retry in range(10):
         lock_fd = os.open(f, os.O_RDWR | os.O_CREAT)
@@ -250,7 +252,7 @@ def lock_file(f):
 #####################################
 
 
-def write_transitions(from_trans):
+def write_transitions(from_trans: dict) -> None:
     """
     Update the active transitions file safely.
     This function takes a parsed input file (which avoids invalid
@@ -258,11 +260,11 @@ def write_transitions(from_trans):
     active) and ensure the transitions file is updated atomically
     to avoid locks.
 
-    @attention: This function may run B{within sudo}
+    .. warning::
 
-    @type from_trans: dict
-    @param from_trans: transitions dictionary, as returned by L{load_transitions}
+       This function may run B{within sudo}
 
+    :param from_trans: transitions dictionary, as returned by L{load_transitions}
     """
 
     trans_file = Cnf["Dinstall::ReleaseTransitions"]
@@ -285,16 +287,16 @@ def write_transitions(from_trans):
 ##########################################
 
 
-def write_transitions_from_file(from_file):
+def write_transitions_from_file(from_file: str) -> None:
     """
     We have a file we think is valid; if we're using sudo, we invoke it
     here, otherwise we just parse the file and call write_transitions
 
-    @attention: This function usually runs B{within sudo}
+    .. warning::
 
-    @type from_file: filename
-    @param from_file: filename of a transitions file
+       This function usually runs B{within sudo}
 
+    :param from_file: filename of a transitions file
     """
 
     # Lets check if from_file is in the directory we expect it to be in
@@ -315,20 +317,19 @@ def write_transitions_from_file(from_file):
 ################################################################################
 
 
-def temp_transitions_file(transitions):
+def temp_transitions_file(transitions: dict) -> str:
     """
     Open a temporary file and dump the current transitions into it, so users
     can edit them.
 
-    @type transitions: dict
-    @param transitions: current defined transitions
+    :param transitions: current defined transitions
+    :return: path of newly created tempfile
 
-    @rtype: string
-    @return: path of newly created tempfile
+    .. note::
 
-    @note: NB: file is unlinked by caller, but fd is never actually closed.
-           We need the chmod, as the file is (most possibly) copied from a
-           sudo-ed script and would be unreadable if it has default mkstemp mode
+       file is unlinked by caller, but fd is never actually closed.
+       We need the chmod, as the file is (most possibly) copied from a
+       sudo-ed script and would be unreadable if it has default mkstemp mode
     """
 
     (fd, path) = tempfile.mkstemp("", "transitions", Cnf["Dir::TempPath"])
@@ -497,28 +498,16 @@ def check_transitions(transitions):
 ################################################################################
 
 
-def get_info(trans, source, expected, rm, reason, packages):
+def get_info(trans: str, source: str, expected: str, rm: str, reason: str, packages: Iterable[str]) -> str:
     """
     Print information about a single transition.
 
-    @type trans: string
-    @param trans: Transition name
-
-    @type source: string
-    @param source: Source package
-
-    @type expected: string
-    @param expected: Expected version in testing
-
-    @type rm: string
-    @param rm: Responsible RM
-
-    @type reason: string
-    @param reason: Reason
-
-    @type packages: list
-    @param packages: list of blocked packages
-
+    :param trans: Transition name
+    :param source: Source package
+    :param expected: Expected version in testing
+    :param rm: Responsible release manager (RM)
+    :param reason: Reason
+    :param packages: list of blocked packages
     """
     return """Looking at transition: %s
 Source:      %s
@@ -531,14 +520,13 @@ Blocked Packages (total: %d): %s
 ################################################################################
 
 
-def transition_info(transitions):
+def transition_info(transitions: dict):
     """
     Print information about all defined transitions.
     Calls L{get_info} for every transition and then tells user if the transition is
     still ongoing or if the expected version already hit testing.
 
-    @type transitions: dict
-    @param transitions: defined transitions
+    :param transitions: defined transitions
     """
 
     session = DBConn().session()

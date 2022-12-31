@@ -35,6 +35,7 @@ import daklib.upload
 import apt_inst
 import apt_pkg
 from apt_pkg import version_compare
+from collections.abc import Iterable
 import datetime
 import os
 import subprocess
@@ -45,7 +46,9 @@ from typing import TYPE_CHECKING
 import yaml
 
 if TYPE_CHECKING:
+    import daklib.archive
     import re
+
 
 def check_fields_for_valid_utf8(filename, control):
     """Check all fields of a control file for valid UTF-8"""
@@ -91,26 +94,22 @@ class Check:
     description why the upload should be rejected.
     """
 
-    def check(self, upload):
+    def check(self, upload: 'daklib.archive.ArchiveUpload'):
         """do checks
 
-        @type  upload: L{daklib.archive.ArchiveUpload}
-        @param upload: upload to check
+        :param upload: upload to check
 
-        @raise daklib.checks.Reject: upload should be rejected
+        :raises Reject: upload should be rejected
         """
         raise NotImplementedError
 
-    def per_suite_check(self, upload, suite):
+    def per_suite_check(self, upload: 'daklib.archive.ArchiveUpload', suite: Suite):
         """do per-suite checks
 
-        @type  upload: L{daklib.archive.ArchiveUpload}
-        @param upload: upload to check
+        :param upload: upload to check
+        :param suite: suite to check
 
-        @type  suite: L{daklib.dbconn.Suite}
-        @param suite: suite to check
-
-        @raise daklib.checks.Reject: upload should be rejected
+        :raises Reject: upload should be rejected
         """
         raise NotImplementedError
 
@@ -125,6 +124,11 @@ class Check:
 
 
 class SignatureAndHashesCheck(Check):
+    """Check signature of changes and dsc file (if included in upload)
+
+    Make sure the signature is valid and done by a known user.
+    """
+
     def check_replay(self, upload) -> bool:
         # Use private session as we want to remember having seen the .changes
         # in all cases.
@@ -134,11 +138,6 @@ class SignatureAndHashesCheck(Check):
         if r is not None:
             raise Reject('Signature for changes file was already seen at {0}.\nPlease refresh the signature of the changes file if you want to upload it again.'.format(r.seen))
         return True
-
-    """Check signature of changes and dsc file (if included in upload)
-
-    Make sure the signature is valid and done by a known user.
-    """
 
     def check(self, upload):
         allow_source_untrusted_sig_keys = Config().value_list('Dinstall::AllowSourceUntrustedSigKeys')
@@ -165,19 +164,13 @@ class SignatureAndHashesCheck(Check):
         if upload.fingerprint is None or upload.fingerprint.uid is None:
             raise Reject(".changes signed by unknown key.")
 
-    """Make sure hashes match existing files
+    def _check_hashes(self, upload: 'daklib.archive.ArchiveUpload', filename: str, files: Iterable[daklib.upload.HashedFile]):
+        """Make sure hashes match existing files
 
-    @type  upload: L{daklib.archive.ArchiveUpload}
-    @param upload: upload we are processing
-
-    @type  filename: str
-    @param filename: name of the file the expected hash values are taken from
-
-    @type  files: sequence of L{daklib.upload.HashedFile}
-    @param files: files to check the hashes for
+        :param upload: upload we are processing
+        :param filename: name of the file the expected hash values are taken from
+        :param files: files to check the hashes for
     """
-
-    def _check_hashes(self, upload, filename, files):
         try:
             for f in files:
                 f.check(upload.directory)

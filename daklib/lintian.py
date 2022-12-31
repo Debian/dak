@@ -47,15 +47,14 @@
 from .regexes import re_parse_lintian
 
 
-def parse_lintian_output(output):
+def parse_lintian_output(output: str):
     """
     Parses Lintian output and returns a generator with the data.
 
     >>> list(parse_lintian_output('W: pkgname: some-tag path/to/file'))
     [('W', 'pkgname', 'some-tag', 'path/to/file')]
 
-    @type output: string
-    @param output: The output from lintian
+    :param output: The output from lintian
     """
 
     for line in output.split('\n'):
@@ -69,11 +68,10 @@ def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: arg
     Generates package reject messages by comparing parsed lintian output with
     tag definitions. Returns a generator containing the reject messages.
 
-    @param parsed_tags: Parsed lintian tags as returned by L{parse_lintian_output}
+    :param parsed_tags: Parsed lintian tags as returned by L{parse_lintian_output}
+    :param tag_definitions: YAML.load lintian tag definitions to reject on
 
-    @param tag_definitions: YAML.load lintian tag definitions to reject on
-
-    @return: Reject message(s), if any
+    :return: Reject message(s), if any
     """
 
     tags = set()

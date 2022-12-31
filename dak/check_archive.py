@@ -80,16 +80,13 @@ The following MODEs are available:
 ################################################################################
 
 
-def process_dir(unused, dirname, filenames):
+def process_dir(unused, dirname: str, filenames: dict) -> None:
     """
     Process a directory and output every files name which is not listed already
     in the C{filenames} or global C{excluded} dictionaries.
 
-    @type dirname: string
-    @param dirname: the directory to look at
-
-    @type filenames: dict
-    @param filenames: Known filenames to ignore
+    :param dirname: the directory to look at
+    :param filenames: Known filenames to ignore
     """
     global waste, db_files, excluded
 

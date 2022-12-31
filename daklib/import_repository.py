@@ -30,8 +30,9 @@ import urllib.request
 import urllib.error
 import urllib.parse
 
-from daklib.dbconn import DBSource, PoolFile
+from daklib.dbconn import Archive, Component, DBBinary, DBSource, PoolFile
 from sqlalchemy.orm import object_session
+from typing import Optional
 
 # Hmm, maybe use APT directly for all of this?
 
@@ -83,12 +84,12 @@ class File:
         return daklib.dakapt.DakHashes(self.fh())
 
 
-def obtain_file(base, path):
+def obtain_file(base, path) -> File:
     """Obtain a file 'path' located below 'base'
 
-    Returns: daklib.import_repository.File
+    .. note::
 
-    Note: return type can still change
+       return type can still change
     """
     fn = '{0}/{1}'.format(base, path)
     tmp = File()
@@ -102,11 +103,8 @@ def obtain_file(base, path):
     return tmp
 
 
-def obtain_release(base, suite_name, keyring, fingerprint=None):
-    """Obtain release information
-
-    Returns: daklib.import_repository.Release
-    """
+def obtain_release(base, suite_name, keyring, fingerprint=None) -> Release:
+    """Obtain release information"""
     tmp = obtain_file(base, 'dists/{0}/InRelease'.format(suite_name))
     data = tmp.fh().read()
     f = daklib.gpg.SignedFile(data, [keyring])
@@ -119,12 +117,10 @@ def obtain_release(base, suite_name, keyring, fingerprint=None):
 _compressions = ('.zst', '.xz', '.gz', '.bz2')
 
 
-def obtain_release_file(release, filename):
+def obtain_release_file(release, filename) -> File:
     """Obtain file referenced from Release
 
     A compressed version is automatically selected and decompressed if it exists.
-
-    Returns: daklib.import_repository.File
     """
     if filename not in release._hashes:
         raise ValueError("File {0} not referenced in Release".format(filename))
@@ -150,15 +146,12 @@ def obtain_release_file(release, filename):
     return tmp
 
 
-def import_source_to_archive(base, entry, transaction, archive, component):
+def import_source_to_archive(base, entry, transaction, archive, component) -> DBSource:
     """Import source package described by 'entry' into the given 'archive' and 'component'
 
     'entry' needs to be a dict-like object with at least the following
     keys as used in a Sources index: Directory, Files, Checksums-Sha1,
     Checksums-Sha256
-
-    Return: daklib.dbconn.DBSource
-
     """
     # Obtain and verify files
     if not daklib.regexes.re_file_safe_slash.match(entry['Directory']):
@@ -188,14 +181,12 @@ def import_source_to_archive(base, entry, transaction, archive, component):
     return db_source
 
 
-def import_package_to_suite(base, entry, transaction, suite, component):
+def import_package_to_suite(base, entry, transaction, suite, component) -> DBBinary:
     """Import binary package described by 'entry' into the given 'suite' and 'component'
 
     'entry' needs to be a dict-like object with at least the following
     keys as used in a Packages index: Filename, Size, MD5sum, SHA1,
     SHA256
-
-    Returns: daklib.dbconn.DBBinary
     """
     # Obtain and verify file
     filename = entry['Filename']
@@ -218,25 +209,19 @@ def import_source_to_suite(base, entry, transaction, suite, component):
     'entry' needs to be a dict-like object with at least the following
     keys as used in a Sources index: Directory, Files, Checksums-Sha1,
     Checksums-Sha256
-
-    Returns: daklib.dbconn.DBBinary
     """
     source = import_source_to_archive(base, entry, transaction, suite.archive, component)
     source.suites.append(suite)
     transaction.flush()
 
 
-def source_in_archive(source, version, archive, component=None):
+def source_in_archive(source: str, version: str, archive: Archive, component: Optional[daklib.dbconn.Component] = None) -> bool:
     """Check that source package 'source' with version 'version' exists in 'archive',
     with an optional check for the given component 'component'.
 
-    @type source: str
-    @type version: str
-    @type archive: daklib.dbconn.Archive
-    @type component: daklib.dbconn.Component or None
-    @rtype: boolean
+    .. note::
 
-    Note: This should probably be moved somewhere else
+       This should probably be moved somewhere else
     """
     session = object_session(archive)
     query = session.query(DBSource).filter_by(source=source, version=version) \

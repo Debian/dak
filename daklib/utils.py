@@ -37,7 +37,7 @@ import subprocess
 import errno
 import functools
 from collections.abc import Iterable, Mapping, Sequence
-from typing import NoReturn, Optional, Union
+from typing import NoReturn, Optional, TYPE_CHECKING, Union
 
 import daklib.config as config
 import daklib.mail
@@ -56,6 +56,10 @@ from .regexes import re_single_line_field, \
 from .formats import parse_format, validate_changes_format
 from .srcformats import get_format_from_string
 from collections import defaultdict
+
+if TYPE_CHECKING:
+    import daklib.daklog
+    import daklib.upload
 
 ################################################################################
 
@@ -212,17 +216,10 @@ def check_dsc_files(dsc_filename: str, dsc: Mapping[str, str], dsc_files: Mappin
     Verify that the files listed in the Files field of the .dsc are
     those expected given the announced Format.
 
-    @type dsc_filename: string
-    @param dsc_filename: path of .dsc file
-
-    @type dsc: dict
-    @param dsc: the content of the .dsc parsed by C{parse_changes()}
-
-    @type dsc_files: dict
-    @param dsc_files: the file list returned by C{build_file_list()}
-
-    @rtype: list
-    @return: all errors detected
+    :param dsc_filename: path of .dsc file
+    :param dsc: the content of the .dsc parsed by C{parse_changes()}
+    :param dsc_files: the file list returned by C{build_file_list()}
+    :return: all errors detected
     """
     rejmsg = []
 
@@ -329,11 +326,10 @@ def build_file_list(changes, is_a_dsc: bool = False, field="files", hashname="md
 ################################################################################
 
 
-def send_mail(message, whitelists=None) -> None:
+def send_mail(message, whitelists: Optional[list[Optional[str]]] = None) -> None:
     """sendmail wrapper, takes a message string
 
-    @type  whitelists: list of (str or None)
-    @param whitelists: path to whitelists. C{None} or an empty list whitelists
+    :param whitelists: path to whitelists. C{None} or an empty list whitelists
                        everything, otherwise an address is whitelisted if it is
                        included in any of the lists.
                        In addition a global whitelist can be specified in
@@ -843,27 +839,16 @@ def clean_symlink(src, dest, root):
 ################################################################################
 
 
-def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
+def temp_dirname(parent: Optional[str] = None, prefix: str = "dak", suffix: str = "", mode: Optional[str] = None, group: Optional[str] = None) -> tuple:
     """
     Return a secure and unique directory by pre-creating it.
 
-    @type parent: str
-    @param parent: If non-null it will be the directory the directory is pre-created in.
-
-    @type prefix: str
-    @param prefix: The filename will be prefixed with this string
-
-    @type suffix: str
-    @param suffix: The filename will end with this string
-
-    @type mode: str
-    @param mode: If set the file will get chmodded to those permissions
-
-    @type group: str
-    @param group: If set the file will get chgrped to the specified group.
-
-    @rtype: list
-    @return: Returns a pair (fd, name)
+    :param parent: If non-null it will be the directory the directory is pre-created in.
+    :param prefix: The filename will be prefixed with this string
+    :param suffix: The filename will end with this string
+    :param mode: If set the file will get chmodded to those permissions
+    :param group: If set the file will get chgrped to the specified group.
+    :return: Returns a pair (fd, name)
 
     """
 
@@ -946,20 +931,13 @@ def deb_extract_control(path: str) -> bytes:
 ################################################################################
 
 
-def mail_addresses_for_upload(maintainer, changed_by, fingerprint) -> list[str]:
+def mail_addresses_for_upload(maintainer: str, changed_by: str, fingerprint: str) -> list[str]:
     """mail addresses to contact for an upload
 
-    @type  maintainer: str
-    @param maintainer: Maintainer field of the .changes file
-
-    @type  changed_by: str
-    @param changed_by: Changed-By field of the .changes file
-
-    @type  fingerprint: str
-    @param fingerprint: fingerprint of the key used to sign the upload
-
-    @rtype:  list of str
-    @return: list of RFC 2047-encoded mail addresses to contact regarding
+    :param maintainer: Maintainer field of the .changes file
+    :param changed_by: Changed-By field of the .changes file
+    :param fingerprint: fingerprint of the key used to sign the upload
+    :return: list of RFC 2047-encoded mail addresses to contact regarding
              this upload
     """
     recipients = Cnf.value_list('Dinstall::UploadMailRecipients')
@@ -1019,14 +997,9 @@ def call_editor_for_file(path: str) -> None:
 def call_editor(text: str = "", suffix: str = ".txt") -> str:
     """run editor and return the result as a string
 
-    @type  text: str
-    @param text: initial text
-
-    @type  suffix: str
-    @param suffix: extension for temporary file
-
-    @rtype:  str
-    @return: string with the edited text
+    :param text: initial text
+    :param suffix: extension for temporary file
+    :return: string with the edited text
     """
     with tempfile.NamedTemporaryFile(mode='w+t', suffix=suffix) as fh:
         print(text, end='', file=fh)
@@ -1240,11 +1213,8 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 def parse_built_using(control: Mapping[str, str]) -> list[tuple[str, str]]:
     """source packages referenced via Built-Using
 
-    @type  control: dict-like
-    @param control: control file to take Built-Using field from
-
-    @rtype:  list of (str, str)
-    @return: list of (source_name, source_version) pairs
+    :param control: control file to take Built-Using field from
+    :return: list of (source_name, source_version) pairs
     """
     built_using = control.get('Built-Using', None)
     if built_using is None:
@@ -1265,11 +1235,8 @@ def parse_built_using(control: Mapping[str, str]) -> list[tuple[str, str]]:
 def is_in_debug_section(control: Mapping[str, str]) -> bool:
     """binary package is a debug package
 
-    @type  control: dict-like
-    @param control: control file of binary package
-
-    @rtype Boolean
-    @return: True if the binary package is a debug package
+    :param control: control file of binary package
+    :return: True if the binary package is a debug package
     """
     section = control['Section'].split('/', 1)[-1]
     auto_built_package = control.get("Auto-Built-Package")
@@ -1281,12 +1248,9 @@ def is_in_debug_section(control: Mapping[str, str]) -> bool:
 def find_possibly_compressed_file(filename: str) -> str:
     """
 
-    @type  filename: string
-    @param filename: path to a control file (Sources, Packages, etc) to
+    :param filename: path to a control file (Sources, Packages, etc) to
                      look for
-
-    @rtype string
-    @return: path to the (possibly compressed) control file, or null if the
+    :return: path to the (possibly compressed) control file, or null if the
              file doesn't exist
     """
     _compressions = ('', '.xz', '.gz', '.bz2')
@@ -1325,20 +1289,13 @@ def suite_suffix(suite_name: str) -> str:
 ################################################################################
 
 
-def process_buildinfos(directory, buildinfo_files, fs_transaction, logger) -> None:
+def process_buildinfos(directory: str, buildinfo_files: 'Iterable[daklib.upload.HashedFile]', fs_transaction: 'daklib.fstransactions.FilesystemTransaction', logger: 'daklib.daklog.Logger') -> None:
     """Copy buildinfo files into Dir::BuildinfoArchive
 
-    @type directory: string
-    @param directory: directory where .changes is stored
-
-    @type buildinfo_files: list of str
-    @param buildinfo_files: names of buildinfo files
-
-    @type fs_transaction: L{daklib.fstransactions.FilesystemTransaction}
-    @param fs_transaction: FilesystemTransaction instance
-
-    @type logger: L{daklib.daklog.Logger}
-    @param logger: logger instance
+    :param directory: directory where .changes is stored
+    :param buildinfo_files: names of buildinfo files
+    :param fs_transaction: FilesystemTransaction instance
+    :param logger: logger instance
     """
 
     if 'Dir::BuildinfoArchive' not in Cnf:
@@ -1359,20 +1316,13 @@ def process_buildinfos(directory, buildinfo_files, fs_transaction, logger) -> No
 ################################################################################
 
 
-def move_to_morgue(morguesubdir, filenames, fs_transaction, logger):
+def move_to_morgue(morguesubdir: str, filenames: Iterable[str], fs_transaction: 'daklib.fstransactions.FilesystemTransaction', logger: 'daklib.daklog.Logger'):
     """Move a file to the correct dir in morgue
 
-    @type morguesubdir: string
-    @param morguesubdir: subdirectory of morgue where this file needs to go
-
-    @type filenames: list of str
-    @param filenames: names of files
-
-    @type fs_transaction: L{daklib.fstransactions.FilesystemTransaction}
-    @param fs_transaction: FilesystemTransaction instance
-
-    @type logger: L{daklib.daklog.Logger}
-    @param logger: logger instance
+    :param morguesubdir: subdirectory of morgue where this file needs to go
+    :param filenames: names of files
+    :param fs_transaction: FilesystemTransaction instance
+    :param logger: logger instance
     """
 
     morguedir = Cnf.get("Dir::Morgue", os.path.join(
