@@ -107,6 +107,7 @@ def session_wrapper(fn):
     synonym for session.flush().
     """
 
+    @functools.wraps(fn)
     def wrapped(*args, **kwargs):
         private_transaction = False
 
@@ -137,9 +138,6 @@ def session_wrapper(fn):
             if private_transaction:
                 # We created a session; close it.
                 session.close()
-
-    wrapped.__doc__ = fn.__doc__
-    wrapped.__name__ = fn.__name__
 
     return wrapped
 
