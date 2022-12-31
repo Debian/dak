@@ -570,14 +570,10 @@ def join_with_commas_and(list):
 
 
 def pp_deps(deps):
-    pp_deps = []
-    for atom in deps:
-        (pkg, version, constraint) = atom
-        if constraint:
-            pp_dep = "%s (%s %s)" % (pkg, constraint, version)
-        else:
-            pp_dep = pkg
-        pp_deps.append(pp_dep)
+    pp_deps = (
+        f"{pkg} ({constraint} {version})" if constraint else pkg
+        for pkg, constraint, version in deps
+    )
     return " |".join(pp_deps)
 
 ################################################################################
