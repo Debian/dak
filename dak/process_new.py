@@ -317,7 +317,7 @@ def edit_index(new, upload, index):
 
 def edit_overrides(new, upload, session):
     print()
-    done = 0
+    done = False
     while not done:
         print_new(upload, new, indexed=1, session=session)
         prompt = "edit override <n>, Editor, Done ? "
@@ -339,7 +339,7 @@ def edit_overrides(new, upload, session):
         if answer == 'E':
             new = edit_new(new, upload, session)
         elif answer == 'D':
-            done = 1
+            done = True
         else:
             edit_index(new, upload, answer - 1)
 
