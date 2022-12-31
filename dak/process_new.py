@@ -53,6 +53,7 @@ import contextlib
 import pwd
 import apt_pkg
 import dak.examine_package
+from collections import defaultdict
 from sqlalchemy import or_
 
 import daklib.dbconn
@@ -718,7 +719,7 @@ def show_new_comments(uploads, session):
 
 
 def sort_uploads(new_queue, uploads, session, nobinaries=False) -> [daklib.dbconn.PolicyQueueUpload]:
-    sources = {}
+    sources = defaultdict(list)
     sorteduploads = []
     suitesrc = [s.source for s in session.query(DBSource.source).
       filter(DBSource.suites.any(Suite.suite_name.in_(['unstable', 'experimental'])))]
@@ -726,8 +727,6 @@ def sort_uploads(new_queue, uploads, session, nobinaries=False) -> [daklib.dbcon
       filter_by(trainee=False, policy_queue=new_queue).distinct()]
     for upload in uploads:
         source = upload.changes.source
-        if source not in sources:
-            sources[source] = []
         sources[source].append({'upload': upload,
                                 'date': upload.changes.created,
                                 'stack': 1,
