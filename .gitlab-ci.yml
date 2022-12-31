@@ -43,6 +43,17 @@ get coverage:
       - coverage
       - logs
 
+sphinx:
+  image: debian:bullseye
+  script:
+    - apt-get update
+    - apt-get install -y build-essential python3-sphinx
+    - apt-get build-dep -y .
+    - make -C docs html
+  artifacts:
+    paths:
+      - docs/_build/html
+
 contributors:
   image: debian:bullseye
   stage: deploy
@@ -62,9 +73,11 @@ pages:
     - mkdir -p public/epydoc
     - epydoc -q --html --graph all --css white -n DAK -o public/epydoc --include-log --show-imports dak daklib dakweb
     - mv coverage public/coverage
+    - mv docs/_build/html public/docs
   stage: deploy
   dependencies:
     - get coverage
+    - sphinx
   artifacts:
     paths:
       - public
