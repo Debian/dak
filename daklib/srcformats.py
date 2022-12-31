@@ -34,7 +34,7 @@ import re
 
 from .dak_exceptions import UnknownFormatError
 
-srcformats = []
+srcformats: 'list[SourceFormat]' = []
 
 
 def get_format_from_string(txt):

@@ -21,6 +21,8 @@
 from daklib.architecture import match_architecture
 from daklib.utils import extract_component_from_section
 
+from typing import Optional
+
 
 class InvalidSource(Exception):
     pass
@@ -37,13 +39,13 @@ class PackageListEntry:
 
         self.architectures = self._architectures()
 
-    def _architectures(self):
+    def _architectures(self) -> Optional[list[str]]:
         archs = self.other.get("arch", None)
         if archs is None:
             return None
         return archs.split(',')
 
-    def built_on_architecture(self, architecture):
+    def built_on_architecture(self, architecture: str) -> Optional[bool]:
         archs = self.architectures
         if archs is None:
             return None
@@ -52,7 +54,7 @@ class PackageListEntry:
                 return True
         return False
 
-    def built_in_suite(self, suite):
+    def built_in_suite(self, suite) -> Optional[bool]:
         built = False
         for arch in suite.architectures:
             if arch.arch_string == 'source':
@@ -64,7 +66,7 @@ class PackageListEntry:
                 built = None
         return built
 
-    def built_in_default_profile(self):
+    def built_in_default_profile(self) -> bool:
         # See man:dsc(5) and https://bugs.debian.org/913965#77
         profiles_and = self.other.get('profile')
         if profiles_and is None:
@@ -86,7 +88,7 @@ class PackageList:
 
         self.fallback = any(entry.architectures is None for entry in self.package_list)
 
-    def _binaries(self, source):
+    def _binaries(self, source) -> set[str]:
         return set(name.strip() for name in source['Binary'].split(","))
 
     def _parse(self, source):
@@ -135,7 +137,7 @@ class PackageList:
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
             self.package_list.append(entry)
 
-    def packages_for_suite(self, suite, only_default_profile=True):
+    def packages_for_suite(self, suite, only_default_profile=True) -> list[PackageListEntry]:
         packages = []
         for entry in self.package_list:
             if only_default_profile and not entry.built_in_default_profile():
@@ -145,7 +147,7 @@ class PackageList:
                 packages.append(entry)
         return packages
 
-    def has_arch_indep_packages(self):
+    def has_arch_indep_packages(self) -> Optional[bool]:
         has_arch_indep = False
         for entry in self.package_list:
             built = entry.built_on_architecture('all')
@@ -155,7 +157,7 @@ class PackageList:
                 has_arch_indep = None
         return has_arch_indep
 
-    def has_arch_dep_packages(self):
+    def has_arch_dep_packages(self) -> Optional[bool]:
         has_arch_dep = False
         for entry in self.package_list:
             built_on_all = entry.built_on_architecture('all')

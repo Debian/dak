@@ -26,6 +26,7 @@ import daklib.utils as utils
 import errno
 import os
 import shutil
+from typing import Optional
 
 
 class UploadCopy:
@@ -52,7 +53,7 @@ class UploadCopy:
         self.upload = upload
         self.group = group
 
-    def export(self, directory, mode=None, symlink=True, ignore_existing=False):
+    def export(self, directory: str, mode: Optional[int] = None, symlink: bool = True, ignore_existing: bool = False) -> None:
         """export a copy of the upload
 
         @type  directory: str
@@ -169,7 +170,7 @@ class PolicyQueueUploadHandler:
         assert re_file_changes.match(changesname)
         return changesname[0:-8]
 
-    def accept(self):
+    def accept(self) -> None:
         """mark upload as accepted"""
         assert len(self.missing_overrides()) == 0
 
@@ -185,7 +186,7 @@ class PolicyQueueUploadHandler:
             else:
                 raise
 
-    def reject(self, reason):
+    def reject(self, reason: str) -> None:
         """mark upload as rejected
 
         @type  reason: str
@@ -209,7 +210,7 @@ class PolicyQueueUploadHandler:
             else:
                 raise
 
-    def get_action(self):
+    def get_action(self) -> Optional[str]:
         """get current action
 
         @rtype:  str

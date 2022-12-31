@@ -42,13 +42,13 @@ class DakHashes:
             return str(h)[len(name) + 1:]
 
     @property
-    def md5(self):
+    def md5(self) -> str:
         return self._hashvalue('md5sum')
 
     @property
-    def sha1(self):
+    def sha1(self) -> str:
         return self._hashvalue('sha1')
 
     @property
-    def sha256(self):
+    def sha256(self) -> str:
         return self._hashvalue('sha256')

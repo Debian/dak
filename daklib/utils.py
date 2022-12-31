@@ -36,6 +36,8 @@ import email.policy
 import subprocess
 import errno
 import functools
+from collections.abc import Iterable, Mapping, Sequence
+from typing import NoReturn, Optional, Union
 
 import daklib.config as config
 import daklib.mail
@@ -57,12 +59,12 @@ from collections import defaultdict
 
 ################################################################################
 
-key_uid_email_cache = {}  #: Cache for email addresses from gpg key uids
+key_uid_email_cache: dict[str, list[str]] = {}  #: Cache for email addresses from gpg key uids
 
 ################################################################################
 
 
-def input_or_exit(prompt=None):
+def input_or_exit(prompt: Optional[str] = None) -> str:
     try:
         return input(prompt)
     except EOFError:
@@ -71,7 +73,7 @@ def input_or_exit(prompt=None):
 ################################################################################
 
 
-def extract_component_from_section(section):
+def extract_component_from_section(section: str) -> tuple[str, str]:
     component = ""
 
     if section.find('/') != -1:
@@ -86,7 +88,7 @@ def extract_component_from_section(section):
 ################################################################################
 
 
-def parse_deb822(armored_contents: bytes, signing_rules=0, keyrings=None):
+def parse_deb822(armored_contents: bytes, signing_rules=0, keyrings=None) -> dict[str, str]:
     require_signature = True
     if keyrings is None:
         keyrings = []
@@ -160,7 +162,7 @@ def parse_deb822(armored_contents: bytes, signing_rules=0, keyrings=None):
 ################################################################################
 
 
-def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
+def parse_changes(filename: str, signing_rules=0, dsc_file=0, keyrings=None) -> dict[str, str]:
     """
     Parses a changes file and returns a dictionary where each field is a
     key.  The mandatory first argument is the filename of the .changes
@@ -205,7 +207,7 @@ def parse_changes(filename, signing_rules=0, dsc_file=0, keyrings=None):
 ################################################################################
 
 
-def check_dsc_files(dsc_filename, dsc, dsc_files):
+def check_dsc_files(dsc_filename: str, dsc: Mapping[str, str], dsc_files: Mapping[str, Mapping[str, str]]) -> list[str]:
     """
     Verify that the files listed in the Files field of the .dsc are
     those expected given the announced Format.
@@ -226,7 +228,7 @@ def check_dsc_files(dsc_filename, dsc, dsc_files):
 
     # Ensure .dsc lists proper set of source files according to the format
     # announced
-    has = defaultdict(lambda: 0)
+    has: defaultdict[str, int] = defaultdict(lambda: 0)
 
     ftype_lookup = (
         (r'orig\.tar\.(gz|bz2|xz)\.asc', ('orig_tar_sig',)),
@@ -284,7 +286,7 @@ def check_dsc_files(dsc_filename, dsc, dsc_files):
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
 
-def build_file_list(changes, is_a_dsc=False, field="files", hashname="md5sum"):
+def build_file_list(changes, is_a_dsc: bool = False, field="files", hashname="md5sum") -> dict[str, dict[str, str]]:
     files = {}
 
     # Make sure we have a Files: field to parse...
@@ -327,7 +329,7 @@ def build_file_list(changes, is_a_dsc=False, field="files", hashname="md5sum"):
 ################################################################################
 
 
-def send_mail(message, whitelists=None):
+def send_mail(message, whitelists=None) -> None:
     """sendmail wrapper, takes a message string
 
     @type  whitelists: list of (str or None)
@@ -438,7 +440,7 @@ def send_mail(message, whitelists=None):
 ################################################################################
 
 
-def poolify(source):
+def poolify(source: str) -> str:
     if source[:3] == "lib":
         return source[:4] + '/' + source + '/'
     else:
@@ -447,7 +449,7 @@ def poolify(source):
 ################################################################################
 
 
-def move(src, dest, overwrite=0, perms=0o664):
+def move(src: str, dest: str, overwrite: bool = False, perms: int = 0o664) -> None:
     if os.path.exists(dest) and os.path.isdir(dest):
         dest_dir = dest
     else:
@@ -474,7 +476,7 @@ def move(src, dest, overwrite=0, perms=0o664):
 ################################################################################
 
 
-def TemplateSubst(subst_map, filename):
+def TemplateSubst(subst_map: Mapping[str, str], filename: str) -> str:
     """ Perform a substition of template """
     with open(filename) as templatefile:
         template = templatefile.read()
@@ -485,12 +487,12 @@ def TemplateSubst(subst_map, filename):
 ################################################################################
 
 
-def fubar(msg, exit_code=1):
+def fubar(msg: str, exit_code: int = 1) -> NoReturn:
     print("E:", msg, file=sys.stderr)
     sys.exit(exit_code)
 
 
-def warn(msg):
+def warn(msg: str) -> None:
     print("W:", msg, file=sys.stderr)
 
 ################################################################################
@@ -499,17 +501,17 @@ def warn(msg):
 # (read: removing stray periods).
 
 
-def whoami():
+def whoami() -> str:
     return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '')
 
 
-def getusername():
+def getusername() -> str:
     return pwd.getpwuid(os.getuid())[0]
 
 ################################################################################
 
 
-def size_type(c):
+def size_type(c: Union[int, float]) -> str:
     t = " B"
     if c > 10240:
         c = c / 1024
@@ -522,7 +524,7 @@ def size_type(c):
 ################################################################################
 
 
-def find_next_free(dest, too_many=100):
+def find_next_free(dest: str, too_many: int = 100) -> str:
     extra = 0
     orig_dest = dest
     while os.path.lexists(dest) and extra < too_many:
@@ -535,7 +537,7 @@ def find_next_free(dest, too_many=100):
 ################################################################################
 
 
-def result_join(original, sep='\t'):
+def result_join(original: Iterable[Optional[str]], sep: str = '\t') -> str:
     return sep.join(
         x if x is not None else ""
         for x in original
@@ -559,7 +561,7 @@ def prefix_multi_line_string(str, prefix, include_blank_lines=0):
 ################################################################################
 
 
-def join_with_commas_and(list):
+def join_with_commas_and(list: Sequence[str]) -> str:
     if len(list) == 0:
         return "nothing"
     if len(list) == 1:
@@ -569,7 +571,7 @@ def join_with_commas_and(list):
 ################################################################################
 
 
-def pp_deps(deps):
+def pp_deps(deps: Iterable[tuple[str, str, str]]) -> str:
     pp_deps = (
         f"{pkg} ({constraint} {version})" if constraint else pkg
         for pkg, constraint, version in deps
@@ -585,7 +587,7 @@ def get_conf():
 ################################################################################
 
 
-def parse_args(Options):
+def parse_args(Options) -> tuple[str, str, str, bool]:
     """ Handle -a, -c and -s arguments; returns them as SQL constraints """
     # XXX: This should go away and everything which calls it be converted
     #      to use SQLA properly.  For now, we'll just fix it not to use
@@ -664,7 +666,7 @@ class ArchKey:
         self.arch = arch
         self.issource = arch == 'source'
 
-    def __lt__(self, other):
+    def __lt__(self, other: 'ArchKey') -> bool:
         if self.issource:
             return not other.issource
         if other.issource:
@@ -678,7 +680,7 @@ class ArchKey:
 ################################################################################
 
 
-def split_args(s, dwim=True):
+def split_args(s: str, dwim: bool = True) -> list[str]:
     """
     Split command line arguments which can be separated by either commas
     or whitespace.  If dwim is set, it will complain about string ending
@@ -697,8 +699,8 @@ def split_args(s, dwim=True):
 ################################################################################
 
 
-def gpg_keyring_args(keyrings=None):
-    if not keyrings:
+def gpg_keyring_args(keyrings: Optional[Iterable[str]] = None) -> list[str]:
+    if keyrings is None:
         keyrings = get_active_keyring_paths()
 
     return ["--keyring={}".format(path) for path in keyrings]
@@ -706,8 +708,8 @@ def gpg_keyring_args(keyrings=None):
 ################################################################################
 
 
-def _gpg_get_addresses_from_listing(output: bytes):
-    addresses = []
+def _gpg_get_addresses_from_listing(output: bytes) -> list[str]:
+    addresses: list[str] = []
 
     for line in output.split(b'\n'):
         parts = line.split(b':')
@@ -740,7 +742,7 @@ def _gpg_get_addresses_from_listing(output: bytes):
     return addresses
 
 
-def gpg_get_key_addresses(fingerprint):
+def gpg_get_key_addresses(fingerprint: str) -> list[str]:
     """retreive email addresses from gpg key uids for a given fingerprint"""
     addresses = key_uid_email_cache.get(fingerprint)
     if addresses is not None:
@@ -785,7 +787,7 @@ def open_ldap_connection():
 ################################################################################
 
 
-def get_logins_from_ldap(fingerprint='*'):
+def get_logins_from_ldap(fingerprint: str = '*') -> dict[str, str]:
     """retrieve login from LDAP linked to a given fingerprint"""
     import ldap
     l = open_ldap_connection()
@@ -793,7 +795,7 @@ def get_logins_from_ldap(fingerprint='*'):
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(keyfingerprint=%s)' % fingerprint,
                        ['uid', 'keyfingerprint'])
-    login = {}
+    login: dict[str, str] = {}
     for elem in Attrs:
         fpr = elem[1]['keyFingerPrint'][0].decode()
         uid = elem[1]['uid'][0].decode()
@@ -803,14 +805,14 @@ def get_logins_from_ldap(fingerprint='*'):
 ################################################################################
 
 
-def get_users_from_ldap():
+def get_users_from_ldap() -> dict[str, str]:
     """retrieve login and user names from LDAP"""
     import ldap
     l = open_ldap_connection()
     LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
     Attrs = l.search_s(LDAPDn, ldap.SCOPE_ONELEVEL,
                        '(uid=*)', ['uid', 'cn', 'mn', 'sn'])
-    users = {}
+    users: dict[str, str] = {}
     for elem in Attrs:
         elem = elem[1]
         name = []
@@ -877,7 +879,7 @@ def temp_dirname(parent=None, prefix="dak", suffix="", mode=None, group=None):
 ################################################################################
 
 
-def get_changes_files(from_dir):
+def get_changes_files(from_dir: str) -> list[str]:
     """
     Takes a directory and lists all .changes files in it (as well as chdir'ing
     to the directory; this is due to broken behaviour on the part of p-u/p-a
@@ -937,14 +939,14 @@ def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnp
 ################################################################################
 
 
-def deb_extract_control(path):
+def deb_extract_control(path: str) -> bytes:
     """extract DEBIAN/control from a binary package"""
     return apt_inst.DebFile(path).control.extractdata("control")
 
 ################################################################################
 
 
-def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
+def mail_addresses_for_upload(maintainer, changed_by, fingerprint) -> list[str]:
     """mail addresses to contact for an upload
 
     @type  maintainer: str
@@ -1007,14 +1009,14 @@ def mail_addresses_for_upload(maintainer, changed_by, fingerprint):
 ################################################################################
 
 
-def call_editor_for_file(path):
+def call_editor_for_file(path: str) -> None:
     editor = os.environ.get('VISUAL', os.environ.get('EDITOR', 'sensible-editor'))
     subprocess.check_call([editor, path])
 
 ################################################################################
 
 
-def call_editor(text="", suffix=".txt"):
+def call_editor(text: str = "", suffix: str = ".txt") -> str:
     """run editor and return the result as a string
 
     @type  text: str
@@ -1235,7 +1237,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
 ################################################################################
 
 
-def parse_built_using(control):
+def parse_built_using(control: Mapping[str, str]) -> list[tuple[str, str]]:
     """source packages referenced via Built-Using
 
     @type  control: dict-like
@@ -1260,7 +1262,7 @@ def parse_built_using(control):
 ################################################################################
 
 
-def is_in_debug_section(control):
+def is_in_debug_section(control: Mapping[str, str]) -> bool:
     """binary package is a debug package
 
     @type  control: dict-like
@@ -1276,7 +1278,7 @@ def is_in_debug_section(control):
 ################################################################################
 
 
-def find_possibly_compressed_file(filename):
+def find_possibly_compressed_file(filename: str) -> str:
     """
 
     @type  filename: string
@@ -1299,7 +1301,7 @@ def find_possibly_compressed_file(filename):
 ################################################################################
 
 
-def parse_boolean_from_user(value):
+def parse_boolean_from_user(value: str) -> bool:
     value = value.lower()
     if value in {'yes', 'true', 'enable', 'enabled'}:
         return True
@@ -1308,7 +1310,7 @@ def parse_boolean_from_user(value):
     raise ValueError("Not sure whether %s should be a True or a False" % value)
 
 
-def suite_suffix(suite_name):
+def suite_suffix(suite_name: str) -> str:
     """Return suite_suffix for the given suite"""
     suffix = Cnf.find('Dinstall::SuiteSuffix', '')
     if suffix == '':
@@ -1323,7 +1325,7 @@ def suite_suffix(suite_name):
 ################################################################################
 
 
-def process_buildinfos(directory, buildinfo_files, fs_transaction, logger):
+def process_buildinfos(directory, buildinfo_files, fs_transaction, logger) -> None:
     """Copy buildinfo files into Dir::BuildinfoArchive
 
     @type directory: string

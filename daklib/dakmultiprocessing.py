@@ -97,7 +97,7 @@ class DakProcessPool(Pool):
             # for them might raise exceptions which would otherwise be lost
             self.results.append(r.get())
 
-    def overall_status(self):
+    def overall_status(self) -> int:
         # Return the highest of our status results
         # This basically allows us to do sys.exit(overall_status()) and have us
         # exit 0 if everything was good and non-zero if not

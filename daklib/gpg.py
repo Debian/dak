@@ -107,12 +107,12 @@ class SignedFile:
         self._verify(data, require_signature)
 
     @property
-    def fingerprint(self):
+    def fingerprint(self) -> str:
         assert len(self.fingerprints) == 1
         return self.fingerprints[0]
 
     @property
-    def primary_fingerprint(self):
+    def primary_fingerprint(self) -> str:
         assert len(self.primary_fingerprints) == 1
         return self.primary_fingerprints[0]
 

@@ -83,7 +83,7 @@ class InvalidArchitecture(Exception):
     pass
 
 
-def Debian_arch_to_Debian_tuple(arch):
+def Debian_arch_to_Debian_tuple(arch: str):
     parts = arch.split('-')
 
     # Handle architecture wildcards
@@ -106,7 +106,7 @@ def Debian_arch_to_Debian_tuple(arch):
     return tuple.split('-', 3)
 
 
-def match_architecture(arch, wildcard):
+def match_architecture(arch: str, wildcard: str) -> bool:
     # 'all' has no valid tuple
     if arch == 'all' or wildcard == 'all':
         return arch == wildcard

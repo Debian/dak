@@ -34,7 +34,7 @@ from .dbconn import *
 ################################################################################
 
 
-def check_valid(overrides, session):
+def check_valid(overrides, session) -> bool:
     """Check if section and priority for new overrides exist in database.
 
     Additionally does sanity checks:

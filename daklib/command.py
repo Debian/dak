@@ -41,10 +41,10 @@ class CommandFile:
         if log is None:
             from daklib.daklog import Logger
             log = Logger()
-        self.cc = []
+        self.cc: list[str] = []
         self.result = []
         self.log = log
-        self.filename = filename
+        self.filename: str = filename
         self.data = data
 
     def _check_replay(self, signed_file, session):
@@ -61,7 +61,7 @@ class CommandFile:
         session.add(signature_history)
         session.commit()
 
-    def _quote_section(self, section):
+    def _quote_section(self, section) -> str:
         lines = []
         for l in str(section).splitlines():
             lines.append("> {0}".format(l))
@@ -134,7 +134,7 @@ class CommandFile:
 
         send_mail(message)
 
-    def evaluate(self):
+    def evaluate(self) -> bool:
         """evaluate commands file
 
         @rtype:   bool
@@ -193,14 +193,14 @@ class CommandFile:
 
         return result
 
-    def _split_packages(self, value):
+    def _split_packages(self, value: str) -> list[str]:
         names = value.split()
         for name in names:
             if not re_field_package.match(name):
                 raise CommandError('Invalid package name "{0}"'.format(name))
         return names
 
-    def action_dm(self, fingerprint, section, session):
+    def action_dm(self, fingerprint, section, session) -> None:
         cnf = Config()
 
         if 'Command::DM::AdminKeyrings' not in cnf \
@@ -262,7 +262,7 @@ class CommandFile:
 
         session.commit()
 
-    def _action_dm_admin_common(self, fingerprint, section, session):
+    def _action_dm_admin_common(self, fingerprint, section, session) -> None:
         cnf = Config()
 
         if 'Command::DM-Admin::AdminFingerprints' not in cnf \
@@ -273,7 +273,7 @@ class CommandFile:
         if fingerprint.fingerprint not in allowed_fingerprints:
             raise CommandError('Key {0} is not allowed to admin DM'.format(fingerprint.fingerprint))
 
-    def action_dm_remove(self, fingerprint, section, session):
+    def action_dm_remove(self, fingerprint, section, session) -> None:
         self._action_dm_admin_common(fingerprint, section, session)
 
         cnf = Config()
@@ -298,7 +298,7 @@ class CommandFile:
 
         session.commit()
 
-    def action_dm_migrate(self, fingerprint, section, session):
+    def action_dm_migrate(self, fingerprint, section, session) -> None:
         self._action_dm_admin_common(fingerprint, section, session)
         cnf = Config()
         acl_name = cnf.get('Command::DM::ACL', 'dm')
@@ -331,7 +331,7 @@ class CommandFile:
 
         session.commit()
 
-    def action_break_the_archive(self, fingerprint, section, session):
+    def action_break_the_archive(self, fingerprint, section, session) -> None:
         name = 'Dave'
         uid = fingerprint.uid
         if uid is not None and uid.name is not None:

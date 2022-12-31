@@ -41,8 +41,11 @@ import subprocess
 import tempfile
 import textwrap
 import time
+from typing import TYPE_CHECKING
 import yaml
 
+if TYPE_CHECKING:
+    import re
 
 def check_fields_for_valid_utf8(filename, control):
     """Check all fields of a control file for valid UTF-8"""
@@ -112,7 +115,7 @@ class Check:
         raise NotImplementedError
 
     @property
-    def forcable(self):
+    def forcable(self) -> bool:
         """allow to force ignore failing test
 
         C{True} if it is acceptable to force ignoring a failing test,
@@ -122,7 +125,7 @@ class Check:
 
 
 class SignatureAndHashesCheck(Check):
-    def check_replay(self, upload):
+    def check_replay(self, upload) -> bool:
         # Use private session as we want to remember having seen the .changes
         # in all cases.
         session = upload.session
@@ -476,8 +479,8 @@ class BinaryTimestampCheck(Check):
 
         class TarTime:
             def __init__(self):
-                self.future_files = dict()
-                self.past_files = dict()
+                self.future_files: dict[str, int] = {}
+                self.past_files: dict[str, int] = {}
 
             def callback(self, member, data):
                 if member.mtime > future_cutoff:
@@ -507,7 +510,7 @@ class BinaryTimestampCheck(Check):
 class SourceCheck(Check):
     """Check source package for syntax errors."""
 
-    def check_filename(self, control, filename, regex):
+    def check_filename(self, control, filename, regex: re.Pattern):
         # In case we have an .orig.tar.*, we have to strip the Debian revison
         # from the version number. So handle this special case first.
         is_orig = True
@@ -759,7 +762,7 @@ transition is done.""".format(transition_source, currentlymsg, expected, t["rm"]
 
 
 class NoSourceOnlyCheck(Check):
-    def is_source_only_upload(self, upload):
+    def is_source_only_upload(self, upload) -> bool:
         changes = upload.changes
         if changes.source is not None and len(changes.binaries) == 0:
             return True
@@ -1001,5 +1004,5 @@ class VersionCheck(Check):
         return True
 
     @property
-    def forcable(self):
+    def forcable(self) -> bool:
         return True

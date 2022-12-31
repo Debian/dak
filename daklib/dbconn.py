@@ -975,7 +975,7 @@ __all__.append('get_keyring')
 
 
 @session_wrapper
-def get_active_keyring_paths(session=None):
+def get_active_keyring_paths(session=None) -> list[str]:
     """
     @rtype: list
     @return: list of active keyring paths

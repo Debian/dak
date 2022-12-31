@@ -54,7 +54,9 @@ import pwd
 import apt_pkg
 import dak.examine_package
 from collections import defaultdict
+from collections.abc import Iterable
 from sqlalchemy import or_
+from typing import NoReturn, Optional
 
 import daklib.dbconn
 from daklib.queue import *
@@ -147,7 +149,7 @@ def takenover_binaries(upload, missing, session):
 ################################################################################
 
 
-def print_new(upload, missing, indexed, session, file=sys.stdout):
+def print_new(upload: daklib.dbconn.PolicyQueueUpload, missing, indexed, session, file=sys.stdout):
     check_valid(missing, session)
     for index, m in enumerate(missing, 1):
         if m['type'] != 'deb':
@@ -186,7 +188,7 @@ def print_new(upload, missing, indexed, session, file=sys.stdout):
 ################################################################################
 
 
-def index_range(index):
+def index_range(index: int) -> str:
     if index == 1:
         return "1"
     else:
@@ -196,7 +198,7 @@ def index_range(index):
 ################################################################################
 
 
-def edit_new(overrides, upload, session):
+def edit_new(overrides, upload: daklib.dbconn.PolicyQueueUpload, session):
     with tempfile.NamedTemporaryFile(mode="w+t") as fh:
         # Write the current data to a temporary file
         print_new(upload, overrides, indexed=0, session=session, file=fh)
@@ -242,7 +244,7 @@ def edit_new(overrides, upload, session):
 ################################################################################
 
 
-def edit_index(new, upload, index):
+def edit_index(new, upload: daklib.dbconn.PolicyQueueUpload, index):
     package = new[index]['package']
     priority = new[index]["priority"]
     section = new[index]["section"]
@@ -314,7 +316,7 @@ def edit_index(new, upload, index):
 ################################################################################
 
 
-def edit_overrides(new, upload, session):
+def edit_overrides(new, upload: daklib.dbconn.PolicyQueueUpload, session):
     print()
     done = False
     while not done:
@@ -347,7 +349,7 @@ def edit_overrides(new, upload, session):
 
 ################################################################################
 
-def check_pkg(upload, upload_copy, session):
+def check_pkg(upload, upload_copy: UploadCopy, session):
     missing = []
     changes = os.path.join(upload_copy.directory, upload.changes.changesname)
     suite_name = upload.target_suite.suite_name
@@ -423,7 +425,7 @@ def do_bxa_notification(new, upload: daklib.dbconn.PolicyQueueUpload, session):
 ################################################################################
 
 
-def run_user_inspect_command(upload, upload_copy):
+def run_user_inspect_command(upload: daklib.dbconn.PolicyQueueUpload, upload_copy: UploadCopy):
     command = os.environ.get('DAK_INSPECT_UPLOAD')
     if command is None:
         return
@@ -446,7 +448,7 @@ def run_user_inspect_command(upload, upload_copy):
 ################################################################################
 
 
-def get_reject_reason(reason=''):
+def get_reject_reason(reason: str = '') -> Optional[str]:
     """get reason for rejection
 
     @rtype:  str
@@ -480,7 +482,7 @@ def get_reject_reason(reason=''):
 ################################################################################
 
 
-def do_new(upload: daklib.dbconn.PolicyQueueUpload, upload_copy, handler, session):
+def do_new(upload: daklib.dbconn.PolicyQueueUpload, upload_copy: UploadCopy, handler, session):
     run_user_inspect_command(upload, upload_copy)
 
     # The main NEW processing loop
@@ -607,7 +609,7 @@ def do_new(upload: daklib.dbconn.PolicyQueueUpload, upload_copy, handler, sessio
 ################################################################################
 
 
-def usage(exit_code=0):
+def usage(exit_code: int = 0) -> NoReturn:
     print("""Usage: dak process-new [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -b, --no-binaries         do not sort binary-NEW packages first
@@ -647,7 +649,7 @@ ENVIRONMENT VARIABLES
 
 
 @contextlib.contextmanager
-def lock_package(package):
+def lock_package(package: str):
     """
     Lock C{package} so that noone else jumps in processing it.
 
@@ -696,7 +698,7 @@ def do_pkg(upload: daklib.dbconn.PolicyQueueUpload, session):
         print("Seems to be locked by %s already, skipping..." % (e))
 
 
-def show_new_comments(uploads, session):
+def show_new_comments(uploads: Iterable[daklib.dbconn.PolicyQueueUpload], session):
     sources = [upload.changes.source for upload in uploads]
     if len(sources) == 0:
         return
@@ -716,7 +718,12 @@ def show_new_comments(uploads, session):
 ################################################################################
 
 
-def sort_uploads(new_queue, uploads, session, nobinaries=False) -> [daklib.dbconn.PolicyQueueUpload]:
+def sort_uploads(
+        new_queue: PolicyQueue,
+        uploads: Iterable[daklib.dbconn.PolicyQueueUpload],
+        session,
+        nobinaries: bool = False
+) -> list[daklib.dbconn.PolicyQueueUpload]:
     sources = defaultdict(list)
     sorteduploads = []
     suitesrc = [s.source for s in session.query(DBSource.source).

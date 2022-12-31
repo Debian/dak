@@ -67,7 +67,7 @@ class UrgencyLog:
 
             self.writes = 0
 
-    def log(self, source, version, urgency):
+    def log(self, source: str, version: str, urgency: str):
         "Log an event"
 
         # Don't try and log if Dir::UrgencyLog is not configured

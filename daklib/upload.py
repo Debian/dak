@@ -26,6 +26,8 @@ import apt_pkg
 import errno
 import functools
 import os
+from collections.abc import Mapping
+from typing import Optional, TYPE_CHECKING
 
 from daklib.aptversion import AptVersion
 from daklib.gpg import SignedFile
@@ -33,6 +35,8 @@ from daklib.regexes import *
 import daklib.dakapt
 import daklib.packagelist
 
+if TYPE_CHECKING:
+    import datetime
 
 class UploadException(Exception):
     pass
@@ -51,7 +55,7 @@ class InvalidSourceException(UploadException):
 
 
 class InvalidHashException(UploadException):
-    def __init__(self, filename, hash_name, expected, actual):
+    def __init__(self, filename: str, hash_name: str, expected, actual):
         self.filename = filename
         self.hash_name = hash_name
         self.expected = expected
@@ -68,15 +72,15 @@ class InvalidHashException(UploadException):
 
 
 class InvalidFilenameException(UploadException):
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, filename: str):
+        self.filename: str = filename
 
     def __str__(self):
         return "Invalid filename '{0}'.".format(self.filename)
 
 
 class FileDoesNotExist(UploadException):
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         self.filename = filename
 
     def __str__(self):
@@ -87,53 +91,53 @@ class HashedFile:
     """file with checksums
     """
 
-    def __init__(self, filename, size, md5sum, sha1sum, sha256sum, section=None, priority=None, input_filename=None):
-        self.filename = filename
+    def __init__(self, filename: str, size: int, md5sum: str, sha1sum: str, sha256sum: str, section: Optional[str] = None, priority: Optional[str] = None, input_filename: Optional[str] = None):
+        self.filename: str = filename
         """name of the file
         @type: str
         """
 
         if input_filename is None:
             input_filename = filename
-        self.input_filename = input_filename
+        self.input_filename: str = input_filename
         """name of the file on disk
 
         Used for temporary files that should not be installed using their on-disk name.
         @type: str
         """
 
-        self.size = size
+        self.size: int = size
         """size in bytes
         @type: long
         """
 
-        self.md5sum = md5sum
+        self.md5sum: str = md5sum
         """MD5 hash in hexdigits
         @type: str
         """
 
-        self.sha1sum = sha1sum
+        self.sha1sum: str = sha1sum
         """SHA1 hash in hexdigits
         @type: str
         """
 
-        self.sha256sum = sha256sum
+        self.sha256sum: str = sha256sum
         """SHA256 hash in hexdigits
         @type: str
         """
 
-        self.section = section
+        self.section: Optional[str] = section
         """section or C{None}
         @type: str or C{None}
         """
 
-        self.priority = priority
+        self.priority: Optional[str] = priority
         """priority or C{None}
         @type: str of C{None}
         """
 
     @classmethod
-    def from_file(cls, directory, filename, section=None, priority=None):
+    def from_file(cls, directory: str, filename: str, section: Optional[str] = None, priority: Optional[str] = None) -> 'HashedFile':
         """create with values for an existing file
 
         Create a C{HashedFile} object that refers to an already existing file.
@@ -159,7 +163,7 @@ class HashedFile:
             hashes = daklib.dakapt.DakHashes(fh)
         return cls(filename, size, hashes.md5, hashes.sha1, hashes.sha256, section, priority)
 
-    def check(self, directory):
+    def check(self, directory: str) -> None:
         """Validate hashes
 
         Check if size and hashes match the expected value.
@@ -178,7 +182,7 @@ class HashedFile:
                 raise FileDoesNotExist(self.input_filename)
             raise
 
-    def check_fh(self, fh):
+    def check_fh(self, fh) -> None:
         size = os.fstat(fh.fileno()).st_size
         fh.seek(0)
         hashes = daklib.dakapt.DakHashes(fh)
@@ -196,7 +200,12 @@ class HashedFile:
             raise InvalidHashException(self.filename, 'sha256sum', self.sha256sum, hashes.sha256)
 
 
-def parse_file_list(control, has_priority_and_section, safe_file_regexp=re_file_safe, fields=('Files', 'Checksums-Sha1', 'Checksums-Sha256')):
+def parse_file_list(
+        control: Mapping[str, str],
+        has_priority_and_section: bool,
+        safe_file_regexp = re_file_safe,
+        fields=('Files', 'Checksums-Sha1', 'Checksums-Sha256')
+) -> dict[str, HashedFile]:
     """Parse Files and Checksums-* fields
 
     @type  control: dict-like
@@ -271,16 +280,16 @@ class Changes:
     """Representation of a .changes file
     """
 
-    def __init__(self, directory, filename, keyrings, require_signature=True):
+    def __init__(self, directory: str, filename: str, keyrings, require_signature: bool = True):
         if not re_file_safe.match(filename):
             raise InvalidChangesException('{0}: unsafe filename'.format(filename))
 
-        self.directory = directory
+        self.directory: str = directory
         """directory the .changes is located in
         @type: str
         """
 
-        self.filename = filename
+        self.filename: str = filename
         """name of the .changes file
         @type: str
         """
@@ -293,64 +302,64 @@ class Changes:
         @type: dict-like
         """
 
-        self._binaries = None
-        self._source = None
-        self._files = None
+        self._binaries: 'Optional[list[Binary]]' = None
+        self._source: 'Optional[Source]' = None
+        self._files: Optional[dict[str, HashedFile]] = None
         self._keyrings = keyrings
-        self._require_signature = require_signature
+        self._require_signature: bool = require_signature
 
     @property
-    def path(self):
+    def path(self) -> str:
         """path to the .changes file
         @type: str
         """
         return os.path.join(self.directory, self.filename)
 
     @property
-    def primary_fingerprint(self):
+    def primary_fingerprint(self) -> str:
         """fingerprint of the key used for signing the .changes file
         @type: str
         """
         return self.signature.primary_fingerprint
 
     @property
-    def valid_signature(self):
+    def valid_signature(self) -> bool:
         """C{True} if the .changes has a valid signature
         @type: bool
         """
         return self.signature.valid
 
     @property
-    def weak_signature(self):
+    def weak_signature(self) -> bool:
         """C{True} if the .changes was signed using a weak algorithm
         @type: bool
         """
         return self.signature.weak_signature
 
     @property
-    def signature_timestamp(self):
+    def signature_timestamp(self) -> 'datetime.datetime':
         return self.signature.signature_timestamp
 
     @property
-    def contents_sha1(self):
+    def contents_sha1(self) -> str:
         return self.signature.contents_sha1
 
     @property
-    def architectures(self):
+    def architectures(self) -> list[str]:
         """list of architectures included in the upload
         @type: list of str
         """
         return self.changes.get('Architecture', '').split()
 
     @property
-    def distributions(self):
+    def distributions(self) -> list[str]:
         """list of target distributions for the upload
         @type: list of str
         """
         return self.changes['Distribution'].split()
 
     @property
-    def source(self):
+    def source(self) -> 'Optional[Source]':
         """included source or C{None}
         @type: L{daklib.upload.Source} or C{None}
         """
@@ -364,21 +373,21 @@ class Changes:
         return self._source
 
     @property
-    def sourceful(self):
+    def sourceful(self) -> bool:
         """C{True} if the upload includes source
         @type: bool
         """
         return "source" in self.architectures
 
     @property
-    def source_name(self):
+    def source_name(self) -> str:
         """source package name
         @type: str
         """
         return re_field_source.match(self.changes['Source']).group('package')
 
     @property
-    def binaries(self):
+    def binaries(self) -> 'list[Binary]':
         """included binary packages
         @type: list of L{daklib.upload.Binary}
         """
@@ -391,7 +400,7 @@ class Changes:
         return self._binaries
 
     @property
-    def byhand_files(self):
+    def byhand_files(self) -> list[HashedFile]:
         """included byhand files
         @type: list of L{daklib.upload.HashedFile}
         """
@@ -411,7 +420,7 @@ class Changes:
         return byhand
 
     @property
-    def buildinfo_files(self):
+    def buildinfo_files(self) -> list[HashedFile]:
         """included buildinfo files
         @type: list of L{daklib.upload.HashedFile}
         """
@@ -421,21 +430,21 @@ class Changes:
         ]
 
     @property
-    def binary_names(self):
+    def binary_names(self) -> list[str]:
         """names of included binary packages
         @type: list of str
         """
         return self.changes.get('Binary', '').split()
 
     @property
-    def closed_bugs(self):
+    def closed_bugs(self) -> list[str]:
         """bugs closed by this upload
         @type: list of str
         """
         return self.changes.get('Closes', '').split()
 
     @property
-    def files(self):
+    def files(self) -> dict[str, HashedFile]:
         """dict mapping filenames to L{daklib.upload.HashedFile} objects
         @type: dict
         """
@@ -444,13 +453,13 @@ class Changes:
         return self._files
 
     @property
-    def bytes(self):
+    def bytes(self) -> int:
         """total size of files included in this upload in bytes
         @type: number
         """
         return sum(f.size for f in self.files.values())
 
-    def _key(self):
+    def _key(self) -> tuple[str, AptVersion, bool, str]:
         """tuple used to compare two changes files
 
         We sort by source name and version first.  If these are identical,
@@ -467,10 +476,10 @@ class Changes:
             self.filename
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self._key() == other._key()
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return self._key() < other._key()
 
 
@@ -478,8 +487,8 @@ class Binary:
     """Representation of a binary package
     """
 
-    def __init__(self, directory, hashed_file):
-        self.hashed_file = hashed_file
+    def __init__(self, directory: str, hashed_file: HashedFile):
+        self.hashed_file: HashedFile = hashed_file
         """file object for the .deb
         @type: HashedFile
         """
@@ -493,12 +502,12 @@ class Binary:
         """
 
     @classmethod
-    def from_file(cls, directory, filename):
+    def from_file(cls, directory, filename) -> 'Binary':
         hashed_file = HashedFile.from_file(directory, filename)
         return cls(directory, hashed_file)
 
     @property
-    def source(self):
+    def source(self) -> tuple[str, str]:
         """get tuple with source package name and version
         @type: tuple of str
         """
@@ -514,11 +523,11 @@ class Binary:
         return (match.group('package'), version)
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.control['Package']
 
     @property
-    def type(self):
+    def type(self) -> str:
         """package type ('deb' or 'udeb')
         @type: str
         """
@@ -528,7 +537,7 @@ class Binary:
         return match.group('type')
 
     @property
-    def component(self):
+    def component(self) -> str:
         """component name
         @type: str
         """
@@ -542,22 +551,23 @@ class Source:
     """Representation of a source package
     """
 
-    def __init__(self, directory, hashed_files, keyrings, require_signature=True):
-        self.hashed_files = hashed_files
+    def __init__(self, directory: str, hashed_files: list[HashedFile], keyrings, require_signature=True):
+        self.hashed_files: list[HashedFile] = hashed_files
         """list of source files (including the .dsc itself)
         @type: list of L{HashedFile}
         """
 
-        self._dsc_file = None
+        dsc_file = None
         for f in hashed_files:
             if re_file_dsc.match(f.filename):
-                if self._dsc_file is not None:
+                if dsc_file is not None:
                     raise InvalidSourceException("Multiple .dsc found ({0} and {1})".format(self._dsc_file.filename, f.filename))
                 else:
-                    self._dsc_file = f
+                    dsc_file = f
 
-        if self._dsc_file is None:
+        if dsc_file is None:
             raise InvalidSourceException("No .dsc included in source files")
+        self._dsc_file: HashedFile = dsc_file
 
         # make sure the hash for the dsc is valid before we use it
         self._dsc_file.check(directory)
@@ -566,7 +576,7 @@ class Source:
         with open(dsc_file_path, 'rb') as fd:
             data = fd.read()
         self.signature = SignedFile(data, keyrings, require_signature)
-        self.dsc = apt_pkg.TagSection(self.signature.contents)
+        self.dsc: Mapping[str, str] = apt_pkg.TagSection(self.signature.contents)
         """dict to access fields in the .dsc file
         @type: dict-like
         """
@@ -576,15 +586,15 @@ class Source:
         @type: daklib.packagelist.PackageList
         """
 
-        self._files = None
+        self._files: Optional[dict[str, HashedFile]] = None
 
     @classmethod
-    def from_file(cls, directory, filename, keyrings, require_signature=True):
+    def from_file(cls, directory, filename, keyrings, require_signature=True) -> 'Source':
         hashed_file = HashedFile.from_file(directory, filename)
         return cls(directory, [hashed_file], keyrings, require_signature)
 
     @property
-    def files(self):
+    def files(self) -> dict[str, HashedFile]:
         """dict mapping filenames to L{HashedFile} objects for additional source files
 
         This list does not include the .dsc itself.
@@ -596,28 +606,28 @@ class Source:
         return self._files
 
     @property
-    def primary_fingerprint(self):
+    def primary_fingerprint(self) -> str:
         """fingerprint of the key used to sign the .dsc
         @type: str
         """
         return self.signature.primary_fingerprint
 
     @property
-    def valid_signature(self):
+    def valid_signature(self) -> bool:
         """C{True} if the .dsc has a valid signature
         @type: bool
         """
         return self.signature.valid
 
     @property
-    def weak_signature(self):
+    def weak_signature(self) -> bool:
         """C{True} if the .dsc was signed using a weak algorithm
         @type: bool
         """
         return self.signature.weak_signature
 
     @property
-    def component(self):
+    def component(self) -> str:
         """guessed component name
 
         Might be wrong. Don't rely on this.
@@ -632,7 +642,7 @@ class Source:
         return "main"
 
     @property
-    def filename(self):
+    def filename(self) -> str:
         """filename of .dsc file
         @type: str
         """

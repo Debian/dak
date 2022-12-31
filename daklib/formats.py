@@ -33,7 +33,7 @@ from .regexes import re_verwithext
 from .dak_exceptions import UnknownFormatError
 
 
-def parse_format(txt):
+def parse_format(txt: str):
     """
     Parse a .changes Format string into a tuple representation for easy
     comparison.

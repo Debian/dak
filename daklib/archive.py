@@ -23,7 +23,7 @@ from daklib.dbconn import *
 import daklib.checks as checks
 from daklib.config import Config
 from daklib.externalsignature import check_upload_for_external_signature_request
-import daklib.upload as upload
+import daklib.upload
 import daklib.utils
 from daklib.fstransactions import FilesystemTransaction
 from daklib.regexes import re_changelog_versions, re_bin_only_nmu
@@ -32,6 +32,7 @@ import os
 import shutil
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import object_session
+from typing import Callable, Iterable, Optional
 import sqlalchemy.exc
 import subprocess
 import traceback
@@ -53,7 +54,7 @@ class ArchiveTransaction:
         self.fs = FilesystemTransaction()
         self.session = DBConn().session()
 
-    def get_file(self, hashed_file, source_name, check_hashes=True):
+    def get_file(self, hashed_file: daklib.upload.HashedFile, source_name: str, check_hashes: bool = True) -> PoolFile:
         """Look for file C{hashed_file} in database
 
         @type  hashed_file: L{daklib.upload.HashedFile}
@@ -83,7 +84,7 @@ class ArchiveTransaction:
         except NoResultFound:
             raise KeyError('{0} not found in database.'.format(poolname))
 
-    def _install_file(self, directory, hashed_file, archive, component, source_name):
+    def _install_file(self, directory, hashed_file, archive, component, source_name) -> PoolFile:
         """Install a file
 
         Will not give an error when the file is already present.
@@ -117,7 +118,7 @@ class ArchiveTransaction:
 
         return poolfile
 
-    def install_binary(self, directory, binary, suite, component, allow_tainted=False, fingerprint=None, source_suites=None, extra_source_archives=None):
+    def install_binary(self, directory: str, binary: daklib.upload.Binary, suite: Suite, component: Component, allow_tainted: bool = False, fingerprint: Optional[Fingerprint] = None, source_suites=None, extra_source_archives: Optional[Iterable[Archive]] = None) -> DBBinary:
         """Install a binary package
 
         @type  directory: str
@@ -246,7 +247,7 @@ class ArchiveTransaction:
             # We were given an explicit list of archives so it is okay to copy from tainted archives.
             self._copy_file(af.file, archive, db_file.component, allow_tainted=True)
 
-    def _add_built_using(self, db_binary, filename, control, suite, extra_archives=None):
+    def _add_built_using(self, db_binary, filename, control, suite, extra_archives=None) -> None:
         """Add Built-Using sources to C{db_binary.extra_sources}
         """
         session = self.session
@@ -260,7 +261,7 @@ class ArchiveTransaction:
 
             db_binary.extra_sources.append(bu_source)
 
-    def install_source_to_archive(self, directory, source, archive, component, changed_by, allow_tainted=False, fingerprint=None):
+    def install_source_to_archive(self, directory, source, archive, component, changed_by, allow_tainted=False, fingerprint=None) -> DBSource:
         session = self.session
         control = source.dsc
         maintainer = get_or_set_maintainer(control['Maintainer'], session)
@@ -346,7 +347,7 @@ class ArchiveTransaction:
 
         return db_source
 
-    def install_source(self, directory, source, suite, component, changed_by, allow_tainted=False, fingerprint=None):
+    def install_source(self, directory: str, source: daklib.upload.Source, suite: Suite, component: Component, changed_by: Maintainer, allow_tainted: bool = False, fingerprint: Optional[Fingerprint] = None) -> DBSource:
         """Install a source package
 
         @type  directory: str
@@ -382,7 +383,7 @@ class ArchiveTransaction:
 
         return db_source
 
-    def _copy_file(self, db_file, archive, component, allow_tainted=False):
+    def _copy_file(self, db_file: PoolFile, archive: Archive, component: Component, allow_tainted=False) -> None:
         """Copy a file to the given archive and component
 
         @type  db_file: L{daklib.dbconn.PoolFile}
@@ -412,7 +413,7 @@ class ArchiveTransaction:
             session.flush()
             self.fs.copy(source_af.path, target_af.path, link=False, mode=archive.mode)
 
-    def copy_binary(self, db_binary, suite, component, allow_tainted=False, extra_archives=None):
+    def copy_binary(self, db_binary: DBBinary, suite: Suite, component: Component, allow_tainted: bool = False, extra_archives: Optional[Iterable[Archive]] = None) -> None:
         """Copy a binary package to the given suite and component
 
         @type  db_binary: L{daklib.dbconn.DBBinary}
@@ -453,7 +454,7 @@ class ArchiveTransaction:
             db_binary.suites.append(suite)
         self.session.flush()
 
-    def copy_source(self, db_source, suite, component, allow_tainted=False):
+    def copy_source(self, db_source: DBSource, suite: Suite, component: Component, allow_tainted: bool = False) -> None:
         """Copy a source package to the given suite and component
 
         @type  db_source: L{daklib.dbconn.DBSource}
@@ -477,7 +478,7 @@ class ArchiveTransaction:
             db_source.suites.append(suite)
         self.session.flush()
 
-    def remove_file(self, db_file, archive, component):
+    def remove_file(self, db_file: PoolFile, archive: Archive, component: Component) -> None:
         """Remove a file from a given archive and component
 
         @type  db_file: L{daklib.dbconn.PoolFile}
@@ -493,7 +494,7 @@ class ArchiveTransaction:
         self.fs.unlink(af.path)
         self.session.delete(af)
 
-    def remove_binary(self, binary, suite):
+    def remove_binary(self, binary: DBBinary, suite: Suite) -> None:
         """Remove a binary from a given suite and component
 
         @type  binary: L{daklib.dbconn.DBBinary}
@@ -505,7 +506,7 @@ class ArchiveTransaction:
         binary.suites.remove(suite)
         self.session.flush()
 
-    def remove_source(self, source, suite):
+    def remove_source(self, source: DBSource, suite: Suite) -> None:
         """Remove a source from a given suite and component
 
         @type  source: L{daklib.dbconn.DBSource}
@@ -527,7 +528,7 @@ class ArchiveTransaction:
         source.suites.remove(suite)
         session.flush()
 
-    def commit(self):
+    def commit(self) -> None:
         """commit changes"""
         try:
             self.session.commit()
@@ -536,12 +537,12 @@ class ArchiveTransaction:
             self.session.rollback()
             self.fs.rollback()
 
-    def rollback(self):
+    def rollback(self) -> None:
         """rollback changes"""
         self.session.rollback()
         self.fs.rollback()
 
-    def flush(self):
+    def flush(self) -> None:
         self.session.flush()
 
     def __enter__(self):
@@ -555,7 +556,7 @@ class ArchiveTransaction:
         return None
 
 
-def source_component_from_package_list(package_list, suite):
+def source_component_from_package_list(package_list, suite) -> Optional[Component]:
     """Get component for a source package
 
     This function will look at the Package-List field to determine the
@@ -596,7 +597,7 @@ class ArchiveUpload:
     transaction if it was not committed.
     """
 
-    def __init__(self, directory, changes, keyrings):
+    def __init__(self, directory: str, changes, keyrings):
         self.transaction = ArchiveTransaction()
         """transaction used to handle the upload
         @type: L{daklib.archive.ArchiveTransaction}
@@ -638,12 +639,12 @@ class ArchiveUpload:
 
         self.final_suites = None
 
-        self.new = False
+        self.new: bool = False
         """upload is NEW. set by C{check}
         @type: bool
         """
 
-        self._checked = False
+        self._checked: bool = False
         """checks passes. set by C{check}
         @type: bool
         """
@@ -689,12 +690,12 @@ class ArchiveUpload:
             dst = os.path.join(self.directory, self.original_changes.filename)
             fs.copy(src, dst, mode=0o640)
 
-            self.changes = upload.Changes(self.directory, self.original_changes.filename, self.keyrings)
+            self.changes = daklib.upload.Changes(self.directory, self.original_changes.filename, self.keyrings)
 
             files = {}
             try:
                 files = self.changes.files
-            except upload.InvalidChangesException:
+            except daklib.upload.InvalidChangesException:
                 # Do not raise an exception; upload will be rejected later
                 # due to the missing files
                 pass
@@ -1046,7 +1047,16 @@ class ArchiveUpload:
             self.reject_reasons.append("Processing raised an exception: {0}.\n{1}".format(e, traceback.format_exc()))
         return False
 
-    def _install_to_suite(self, target_suite, suite, source_component_func, binary_component_func, source_suites=None, extra_source_archives=None, policy_upload=False):
+    def _install_to_suite(
+            self,
+            target_suite: Suite,
+            suite: Suite,
+            source_component_func: Callable[[daklib.upload.Source], Component],
+            binary_component_func: Callable[[daklib.upload.Binary], Component],
+            source_suites = None,
+            extra_source_archives: Optional[Iterable[Archive]] = None,
+            policy_upload: bool = False
+    ) -> tuple[Optional[DBSource], list[DBBinary]]:
         """Install upload to the given suite
 
         @type  target_suite: L{daklib.dbconn.Suite}
@@ -1125,7 +1135,7 @@ class ArchiveUpload:
 
         return (db_source, db_binaries)
 
-    def _install_changes(self):
+    def _install_changes(self) -> DBChange:
         assert self.changes.valid_signature
         control = self.changes.changes
         session = self.transaction.session
@@ -1161,7 +1171,7 @@ class ArchiveUpload:
 
         return db_changes
 
-    def _install_policy(self, policy_queue, target_suite, db_changes, db_source, db_binaries):
+    def _install_policy(self, policy_queue, target_suite, db_changes, db_source, db_binaries) -> PolicyQueueUpload:
         u = PolicyQueueUpload()
         u.policy_queue = policy_queue
         u.target_suite = target_suite
@@ -1180,7 +1190,7 @@ class ArchiveUpload:
 
         return u
 
-    def try_autobyhand(self):
+    def try_autobyhand(self) -> bool:
         """Try AUTOBYHAND
 
         Try to handle byhand packages automatically.
@@ -1248,7 +1258,7 @@ class ArchiveUpload:
 
         return len(remaining) == 0
 
-    def _install_byhand(self, policy_queue_upload, hashed_file):
+    def _install_byhand(self, policy_queue_upload, hashed_file) -> PolicyQueueByhandFile:
         """install byhand file
 
         @type  policy_queue_upload: L{daklib.dbconn.PolicyQueueUpload}
@@ -1271,7 +1281,7 @@ class ArchiveUpload:
 
         return byhand_file
 
-    def _do_bts_versiontracking(self):
+    def _do_bts_versiontracking(self) -> None:
         cnf = Config()
         fs = self.transaction.fs
 
@@ -1302,12 +1312,12 @@ class ArchiveUpload:
                 print(line, file=debinfo)
             debinfo.close()
 
-    def _policy_queue(self, suite):
+    def _policy_queue(self, suite) -> Optional[PolicyQueue]:
         if suite.policy_queue is not None:
             return suite.policy_queue
         return None
 
-    def install(self):
+    def install(self) -> None:
         """install upload
 
         Install upload to a suite or policy queue.  This method does B{not}
@@ -1363,7 +1373,7 @@ class ArchiveUpload:
 
         self._do_bts_versiontracking()
 
-    def install_to_new(self):
+    def install_to_new(self) -> None:
         """install upload to NEW
 
         Install upload to NEW.  This method does B{not} handle regular uploads
@@ -1427,11 +1437,11 @@ class ArchiveUpload:
 
         self._do_bts_versiontracking()
 
-    def commit(self):
+    def commit(self) -> None:
         """commit changes"""
         self.transaction.commit()
 
-    def rollback(self):
+    def rollback(self) -> None:
         """rollback changes"""
         self.transaction.rollback()
 
