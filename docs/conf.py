@@ -21,6 +21,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
 ]
 
@@ -36,6 +37,13 @@ autodoc_mock_imports = [
 ]
 
 autosummary_generate = True
+
+intersphinx_mapping = {
+    'apt': ('https://apt-team.pages.debian.net/python-apt', None),
+    'debian': ('https://python-debian-team.pages.debian.net/python-debian/html', None),
+    'python': ('https://docs.python.org/3', None),
+    'sqlalchemy': ('https://docs.sqlalchemy.org/en/14', None),
+}
 
 
 # -- Options for HTML output -------------------------------------------------
