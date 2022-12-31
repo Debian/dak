@@ -625,12 +625,12 @@ def parse_args(Options):
 
     # Process architecture
     con_architectures = ""
-    check_source = 0
+    check_source = False
     if Options["Architecture"]:
         arch_ids_list = []
         for archname in split_args(Options["Architecture"]):
             if archname == "source":
-                check_source = 1
+                check_source = True
             else:
                 arch = get_architecture(archname, session=session)
                 if arch is None:
@@ -643,7 +643,7 @@ def parse_args(Options):
             if not check_source:
                 fubar("No valid architecture given.")
     else:
-        check_source = 1
+        check_source = True
 
     return (con_suites, con_architectures, con_components, check_source)
 
