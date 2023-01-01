@@ -1395,7 +1395,7 @@ class SignatureHistory(ORMObject):
         self = cls()
         self.fingerprint = signed_file.primary_fingerprint
         self.signature_timestamp = signed_file.signature_timestamp
-        self.contents_sha1 = signed_file.contents_sha1()
+        self.contents_sha1 = signed_file.contents_sha1
         return self
 
     def query(self, session):
