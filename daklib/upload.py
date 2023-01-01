@@ -240,7 +240,7 @@ def parse_file_list(
         if 'sha256sum' not in entry:
             raise InvalidChangesException('No sha256sum for {0}.'.format(filename))
         if safe_file_regexp is not None and not safe_file_regexp.match(filename):
-            raise InvalidChangesException("{0}: References file with unsafe filename {1}.".format(self.filename, filename))
+            raise InvalidChangesException(f"References file with unsafe filename '{filename}'.")
         files[filename] = HashedFile(**entry)
 
     return files
