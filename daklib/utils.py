@@ -670,7 +670,9 @@ class ArchKey:
             return False
         return self.arch < other.arch
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ArchKey):
+            return NotImplemented
         return self.arch == other.arch
 
 

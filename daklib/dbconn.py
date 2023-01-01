@@ -1247,7 +1247,9 @@ class PolicyQueueUpload:
             self.changes.changesname
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, PolicyQueueUpload):
+            return NotImplemented
         return self._key() == other._key()
 
     def __lt__(self, other):

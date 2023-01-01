@@ -407,7 +407,9 @@ class Changes:
             self.filename
         )
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Changes):
+            return NotImplemented
         return self._key() == other._key()
 
     def __lt__(self, other) -> bool:
