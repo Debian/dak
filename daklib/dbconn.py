@@ -68,6 +68,12 @@ warnings.filterwarnings('ignore',
     "Predicate of partial index .* ignored during reflection",
     SAWarning)
 
+# (Debian 12 "bookworm") Silence warning targeted at SQLAlchemy dialect maintainers
+warnings.filterwarnings(
+    "ignore",
+    "Dialect postgresql:psycopg2 will not make use of SQL compilation caching.*",
+    SAWarning)
+
 from .database.base import Base
 
 if TYPE_CHECKING:
