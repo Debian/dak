@@ -30,6 +30,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 autodoc_default_options = {
     'members': True,
+    'private-members': True,
+    'undoc-members': True,
 }
 autodoc_mock_imports = [
     'bottle',
