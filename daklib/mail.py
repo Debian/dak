@@ -10,6 +10,8 @@ import email
 import email.message
 import email.policy
 
+from typing import cast
+
 
 def sign_mail(msg: email.message.EmailMessage, *, digest_algorithm: str = "SHA256", **kwargs) -> email.message.EmailMessage:
     """sign an email message using GnuPG.
@@ -35,6 +37,8 @@ def sign_mail(msg: email.message.EmailMessage, *, digest_algorithm: str = "SHA25
 # def parse_mail(msg: bytes | str) -> email.message.EmailMessage:
 def parse_mail(msg) -> email.message.EmailMessage:
     if isinstance(msg, str):
-        return email.message_from_string(msg, policy=email.policy.SMTPUTF8)
+        # We need a cast as the return type depends on the `policy` argument.
+        return cast(email.message.EmailMessage, email.message_from_string(msg, policy=email.policy.SMTPUTF8))
     else:
-        return email.message_from_bytes(msg, policy=email.policy.SMTPUTF8)
+        # We need a cast as the return type depends on the `policy` argument.
+        return cast(email.message.EmailMessage, email.message_from_bytes(msg, policy=email.policy.SMTPUTF8))

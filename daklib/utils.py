@@ -59,6 +59,7 @@ from collections import defaultdict
 
 if TYPE_CHECKING:
     import daklib.daklog
+    import daklib.fstransactions
     import daklib.upload
 
 ################################################################################
@@ -326,7 +327,7 @@ def build_file_list(changes, is_a_dsc: bool = False, field="files", hashname="md
 ################################################################################
 
 
-def send_mail(message, whitelists: Optional[list[Optional[str]]] = None) -> None:
+def send_mail(message, whitelists: Optional[list[str]] = None) -> None:
     """sendmail wrapper, takes a message string
 
     :param whitelists: path to whitelists. :const:`None` or an empty list whitelists
@@ -839,7 +840,7 @@ def clean_symlink(src, dest, root):
 ################################################################################
 
 
-def temp_dirname(parent: Optional[str] = None, prefix: str = "dak", suffix: str = "", mode: Optional[str] = None, group: Optional[str] = None) -> tuple:
+def temp_dirname(parent: Optional[str] = None, prefix: str = "dak", suffix: str = "", mode: Optional[int] = None, group: Optional[str] = None) -> str:
     """
     Return a secure and unique directory by pre-creating it.
 
@@ -853,9 +854,9 @@ def temp_dirname(parent: Optional[str] = None, prefix: str = "dak", suffix: str 
     """
 
     tfname = tempfile.mkdtemp(suffix, prefix, parent)
-    if mode:
+    if mode is not None:
         os.chmod(tfname, mode)
-    if group:
+    if group is not None:
         gid = grp.getgrnam(group).gr_gid
         os.chown(tfname, -1, gid)
     return tfname
