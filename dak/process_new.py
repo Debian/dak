@@ -149,7 +149,7 @@ def takenover_binaries(upload, missing, session):
 ################################################################################
 
 
-def print_new(upload: daklib.dbconn.PolicyQueueUpload, missing, indexed, session, file=sys.stdout):
+def print_new(upload: daklib.dbconn.PolicyQueueUpload, missing, indexed: bool, session, file=sys.stdout):
     check_valid(missing, session)
     for index, m in enumerate(missing, 1):
         if m['type'] != 'deb':
@@ -201,7 +201,7 @@ def index_range(index: int) -> str:
 def edit_new(overrides, upload: daklib.dbconn.PolicyQueueUpload, session):
     with tempfile.NamedTemporaryFile(mode="w+t") as fh:
         # Write the current data to a temporary file
-        print_new(upload, overrides, indexed=0, session=session, file=fh)
+        print_new(upload, overrides, indexed=False, session=session, file=fh)
         fh.flush()
         utils.call_editor_for_file(fh.name)
         # Read the edited data back in
@@ -320,7 +320,7 @@ def edit_overrides(new, upload: daklib.dbconn.PolicyQueueUpload, session):
     print()
     done = False
     while not done:
-        print_new(upload, new, indexed=1, session=session)
+        print_new(upload, new, indexed=True, session=session)
         prompt = "edit override <n>, Editor, Done ? "
 
         got_answer = 0
@@ -516,7 +516,7 @@ def do_new(upload: daklib.dbconn.PolicyQueueUpload, upload_copy: UploadCopy, han
         if Options["No-Action"] or Options["Automatic"]:
             answer = 'S'
 
-        note = print_new(upload, missing, indexed=0, session=session)
+        note = print_new(upload, missing, indexed=False, session=session)
         prompt = ""
 
         has_unprocessed_byhand = False
