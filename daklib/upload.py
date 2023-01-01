@@ -412,7 +412,7 @@ class Changes:
             return NotImplemented
         return self._key() == other._key()
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: 'Changes') -> bool:
         return self._key() < other._key()
 
 

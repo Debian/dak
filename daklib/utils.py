@@ -37,7 +37,7 @@ import subprocess
 import errno
 import functools
 from collections.abc import Iterable, Mapping, Sequence
-from typing import NoReturn, Optional, TYPE_CHECKING, Union
+from typing import Literal, NoReturn, Optional, TYPE_CHECKING, Union
 
 import daklib.config as config
 import daklib.mail
@@ -167,7 +167,7 @@ def parse_deb822(armored_contents: bytes, signing_rules=0, keyrings=None) -> dic
 ################################################################################
 
 
-def parse_changes(filename: str, signing_rules=0, dsc_file: bool = False, keyrings=None) -> dict[str, str]:
+def parse_changes(filename: str, signing_rules: Literal[-1, 0, 1] = 0, dsc_file: bool = False, keyrings=None) -> dict[str, str]:
     """
     Parses a changes file and returns a dictionary where each field is a
     key.  The mandatory first argument is the filename of the .changes

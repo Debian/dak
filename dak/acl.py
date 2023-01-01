@@ -18,12 +18,12 @@
 
 import os
 import sys
-from typing import Optional
+from typing import NoReturn, Optional
 
 from daklib.dbconn import DBConn, Fingerprint, Keyring, Uid, ACL
 
 
-def usage(status=0):
+def usage(status: int = 0) -> NoReturn:
     print("""Usage:
   dak acl set-fingerprints <acl-name>
   dak acl export-per-source <acl-name>
@@ -75,7 +75,7 @@ def get_fingerprint(entry: str, session) -> Optional[Fingerprint]:
     return q.all()
 
 
-def acl_set_fingerprints(acl_name, entries):
+def acl_set_fingerprints(acl_name, entries) -> None:
     session = DBConn().session()
     acl = session.query(ACL).filter_by(name=acl_name).one()
 
@@ -94,7 +94,7 @@ def acl_set_fingerprints(acl_name, entries):
     session.commit()
 
 
-def acl_export_per_source(acl_name):
+def acl_export_per_source(acl_name: str) -> None:
     session = DBConn().session()
     acl = session.query(ACL).filter_by(name=acl_name).one()
 
@@ -152,7 +152,7 @@ def acl_allow(acl_name, fingerprint, sources):
     session.commit()
 
 
-def acl_deny(acl_name, fingerprint, sources):
+def acl_deny(acl_name: str, fingerprint: str, sources: list[str]) -> None:
     tbl = DBConn().tbl_acl_per_source
 
     session = DBConn().session()

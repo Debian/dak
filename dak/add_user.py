@@ -20,6 +20,7 @@ add his key to the GPGKeyring
 import subprocess
 import sys
 import apt_pkg
+from typing import NoReturn
 
 from daklib import utils
 from daklib.dbconn import DBConn, get_or_set_uid, get_active_keyring_paths
@@ -33,7 +34,7 @@ Logger = None
 ################################################################################
 
 
-def usage(exit_code=0):
+def usage(exit_code: int = 0) -> NoReturn:
     print("""Usage: add-user [OPTION]...
 Adds a new user to the dak databases and keyrings
 

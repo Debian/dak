@@ -23,7 +23,7 @@ import collections
 import json
 import sys
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, NoReturn, Optional, Sequence
 
 import apt_pkg
 
@@ -42,21 +42,21 @@ dryrun = False
 ################################################################################
 
 
-def warn(msg):
+def warn(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def die(msg, exit_code=1):
+def die(msg: str, exit_code: int = 1) -> NoReturn:
     print(msg, file=sys.stderr)
     sys.exit(exit_code)
 
 
-def die_arglen(args, args_needed, msg):
+def die_arglen(args: Sequence, args_needed: int, msg: str) -> None:
     if len(args) < args_needed:
         die(msg)
 
 
-def get_suite_or_die(suite_name, session=None, error_message=None):
+def get_suite_or_die(suite_name: str, session=None, error_message: Optional[str] = None) -> Suite:
     suite = get_suite(suite_name.lower(), session=session)
     if suite is None:
         if error_message is None:
@@ -65,7 +65,7 @@ def get_suite_or_die(suite_name, session=None, error_message=None):
     return suite
 
 
-def usage(exit_code=0):
+def usage(exit_code: int = 0) -> NoReturn:
     """Perform administrative work on the dak database."""
 
     print("""Usage: dak admin COMMAND
@@ -192,7 +192,7 @@ Perform administrative work on the dak database.
 ################################################################################
 
 
-def __architecture_list(d, args):
+def __architecture_list(d, args) -> NoReturn:
     q = d.session().query(Architecture).order_by(Architecture.arch_string)
     for j in q.all():
         # HACK: We should get rid of source from the arch table
@@ -304,7 +304,7 @@ def component_add(args):
         session.commit()
 
 
-def component_rm(name):
+def component_rm(name: str) -> None:
     session = DBConn().session()
     component = get_component(name, session)
     session.delete(component)
@@ -316,7 +316,7 @@ def component_rm(name):
         session.commit()
 
 
-def component_rename(oldname, newname):
+def component_rename(oldname: str, newname: str) -> None:
     session = DBConn().session()
     component = get_component(oldname, session)
     component.component_name = newname
@@ -366,7 +366,7 @@ def __suite_show(d, args):
     print(su.details())
 
 
-def __suite_add(d, args, addallarches=False):
+def __suite_add(d, args, addallarches=False) -> None:
     die_arglen(args, 4, "E: adding a suite requires at least a name and a version")
     suite_name = args[2].lower()
     version = args[3]
