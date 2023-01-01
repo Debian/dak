@@ -137,8 +137,8 @@ class CommandFile:
     def evaluate(self) -> bool:
         """evaluate commands file
 
-        :return: C{True} if the file was processed sucessfully,
-                 C{False} otherwise
+        :return: :const:`True` if the file was processed sucessfully,
+                 :const:`False` otherwise
         """
         result = True
 

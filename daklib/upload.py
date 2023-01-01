@@ -17,7 +17,7 @@
 """module to handle uploads not yet installed to the archive
 
 This module provides classes to handle uploads not yet installed to the
-archive.  Central is the L{Changes} class which represents a changes file.
+archive.  Central is the :class:`Changes` class which represents a changes file.
 It provides methods to access the included binary and source packages.
 """
 
@@ -118,10 +118,10 @@ class HashedFile:
         """SHA256 hash in hexdigits"""
 
         self.section: Optional[str] = section
-        """section or C{None}"""
+        """section or :const:`None`"""
 
         self.priority: Optional[str] = priority
-        """priority or C{None}"""
+        """priority or :const:`None`"""
 
     @classmethod
     def from_file(cls, directory: str, filename: str, section: Optional[str] = None, priority: Optional[str] = None) -> 'HashedFile':
@@ -187,7 +187,7 @@ def parse_file_list(
     :param control: control file to take fields from
     :param has_priority_and_section: Files field include section and priority
                                      (as in .changes)
-    :return: dict mapping filenames to L{daklib.upload.HashedFile} objects
+    :return: dict mapping filenames to :class:`HashedFile` objects
 
     :raises InvalidChangesException: missing fields or other grave errors
     """
@@ -285,12 +285,12 @@ class Changes:
 
     @property
     def valid_signature(self) -> bool:
-        """C{True} if the .changes has a valid signature"""
+        """:const:`True` if the .changes has a valid signature"""
         return self.signature.valid
 
     @property
     def weak_signature(self) -> bool:
-        """C{True} if the .changes was signed using a weak algorithm"""
+        """:const:`True` if the .changes was signed using a weak algorithm"""
         return self.signature.weak_signature
 
     @property
@@ -313,7 +313,7 @@ class Changes:
 
     @property
     def source(self) -> 'Optional[Source]':
-        """included source or C{None}"""
+        """included source or :const:`None`"""
         if self._source is None:
             source_files = []
             for f in self.files.values():
@@ -325,7 +325,7 @@ class Changes:
 
     @property
     def sourceful(self) -> bool:
-        """C{True} if the upload includes source"""
+        """:const:`True` if the upload includes source"""
         return "source" in self.architectures
 
     @property
@@ -382,7 +382,7 @@ class Changes:
 
     @property
     def files(self) -> dict[str, HashedFile]:
-        """dict mapping filenames to L{daklib.upload.HashedFile} objects"""
+        """dict mapping filenames to :class:`HashedFile` objects"""
         if self._files is None:
             self._files = parse_file_list(self.changes, True)
         return self._files
@@ -510,7 +510,7 @@ class Source:
 
     @property
     def files(self) -> dict[str, HashedFile]:
-        """dict mapping filenames to L{HashedFile} objects for additional source files
+        """dict mapping filenames to :class:`HashedFile` objects for additional source files
 
         This list does not include the .dsc itself.
         """
@@ -525,12 +525,12 @@ class Source:
 
     @property
     def valid_signature(self) -> bool:
-        """C{True} if the .dsc has a valid signature"""
+        """:const:`True` if the .dsc has a valid signature"""
         return self.signature.valid
 
     @property
     def weak_signature(self) -> bool:
-        """C{True} if the .dsc was signed using a weak algorithm"""
+        """:const:`True` if the .dsc was signed using a weak algorithm"""
         return self.signature.weak_signature
 
     @property

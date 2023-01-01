@@ -68,7 +68,7 @@ def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: arg
     Generates package reject messages by comparing parsed lintian output with
     tag definitions. Returns a generator containing the reject messages.
 
-    :param parsed_tags: Parsed lintian tags as returned by L{parse_lintian_output}
+    :param parsed_tags: Parsed lintian tags as returned by :func:`parse_lintian_output`
     :param tag_definitions: YAML.load lintian tag definitions to reject on
 
     :return: Reject message(s), if any

@@ -281,7 +281,7 @@ __all__.append('Architecture')
 @session_wrapper
 def get_architecture(architecture: str, session=None) -> Optional[Architecture]:
     """
-    Returns database id for given C{architecture}.
+    Returns database id for given `architecture`.
 
     :param architecture: The name of the architecture
     :param session: Optional SQLA session object (a temporary one will be
@@ -312,7 +312,7 @@ __all__.append('Archive')
 @session_wrapper
 def get_archive(archive: str, session=None) -> Optional[Archive]:
     """
-    returns database id for given C{archive}.
+    returns database id for given `archive`.
 
     :param archive: the name of the arhive
     :param session: Optional SQLA session object (a temporary one will be
@@ -444,7 +444,7 @@ __all__.append('DBBinary')
 @session_wrapper
 def get_suites_binary_in(package: str, session=None) -> 'list[Suite]':
     """
-    Returns list of Suite objects which given C{package} name is in
+    Returns list of Suite objects which given `package` name is in
 
     :param package: DBBinary package name to search for
     :return: list of Suite objects for the given package
@@ -530,7 +530,7 @@ __all__.append('Component')
 @session_wrapper
 def get_component(component: str, session=None) -> Optional[Component]:
     """
-    Returns database id for given C{component}.
+    Returns database id for given `component`.
 
     :param component: The name of the override type
     :return: the database id for the given component
@@ -571,7 +571,7 @@ def get_mapped_component(component_name: str, session=None) -> Optional[Componen
 
     :param component_name: component name
     :param session: database session
-    :return: component after applying maps or C{None}
+    :return: component after applying maps or :const:`None`
     """
     component_name = get_mapped_component_name(component_name)
     component = session.query(Component).filter_by(component_name=component_name).first()
@@ -917,11 +917,11 @@ __all__.append('Keyring')
 @session_wrapper
 def get_keyring(keyring: str, session=None) -> Optional[Keyring]:
     """
-    If C{keyring} does not have an entry in the C{keyrings} table yet, return None
-    If C{keyring} already has an entry, simply return the existing Keyring
+    If `keyring` does not have an entry in the `keyrings` table yet, return None
+    If `keyring` already has an entry, simply return the existing :class:`Keyring`
 
     :param keyring: the keyring name
-    :return: the Keyring object for this keyring
+    :return: the :class:`Keyring` object for this keyring
     """
 
     q = session.query(Keyring).filter_by(keyring_name=keyring)
@@ -958,12 +958,12 @@ __all__.append('DBChange')
 @session_wrapper
 def get_dbchange(filename: str, session=None) -> Optional[DBChange]:
     """
-    returns DBChange object for given C{filename}.
+    returns DBChange object for given `filename`.
 
     :param filename: the name of the file
     :param session: Optional SQLA session object (a temporary one will be
        generated if not supplied)
-    :return:  DBChange object for the given filename (C{None} if not present)
+    :return:  DBChange object for the given filename (:const:`None` if not present)
     """
     q = session.query(DBChange).filter_by(changesname=filename)
     return q.one_or_none()
@@ -1025,11 +1025,11 @@ __all__.append('get_or_set_maintainer')
 @session_wrapper
 def get_maintainer(maintainer_id: int, session=None) -> Optional[Maintainer]:
     """
-    Return the name of the maintainer behind C{maintainer_id} or None if that
-    maintainer_id is invalid.
+    Return the name of the maintainer behind `maintainer_id` or :const:`None`
+    if that `maintainer_id` is invalid.
 
     :param maintainer_id: the id of the maintainer
-    :return: the Maintainer with this C{maintainer_id}
+    :return: the Maintainer with this `maintainer_id`
     """
 
     return session.query(Maintainer).get(maintainer_id)
@@ -1054,7 +1054,7 @@ __all__.append('NewComment')
 @session_wrapper
 def has_new_comment(policy_queue, package: str, version: str, session=None) -> bool:
     """
-    Returns true if the given combination of C{package}, C{version} has a comment.
+    Returns :const:`True` if the given combination of `package`, `version` has a comment.
 
     :param package: name of the package
     :param version: package version
@@ -1189,7 +1189,7 @@ __all__.append('OverrideType')
 @session_wrapper
 def get_override_type(override_type: str, session=None) -> Optional[OverrideType]:
     """
-    Returns OverrideType object for given C{override type}.
+    Returns OverrideType object for given `override_type`.
 
     :param override_type: The name of the override type
     :param session: Optional SQLA session object (a temporary one will be
@@ -1220,7 +1220,7 @@ __all__.append('PolicyQueue')
 @session_wrapper
 def get_policy_queue(queuename: str, session=None) -> Optional[PolicyQueue]:
     """
-    Returns PolicyQueue object for given C{queue name}
+    Returns PolicyQueue object for given `queuename`
 
     :param queuename: The name of the queue
     :param session: Optional SQLA session object (a temporary one will be
@@ -1299,7 +1299,7 @@ __all__.append('Priority')
 @session_wrapper
 def get_priority(priority: str, session=None) -> Optional[Priority]:
     """
-    Returns Priority object for given C{priority name}.
+    Returns Priority object for given `priority` name.
 
     :param priority: The name of the priority
     :param session: Optional SQLA session object (a temporary one will be
@@ -1345,7 +1345,7 @@ __all__.append('Section')
 @session_wrapper
 def get_section(section: str, session=None) -> Optional[Section]:
     """
-    Returns Section object for given C{section name}.
+    Returns Section object for given `section` name.
 
     :param section: The name of the section
     :param session: Optional SQLA session object (a temporary one will be
@@ -1486,7 +1486,7 @@ __all__.append('DBSource')
 @session_wrapper
 def get_suites_source_in(source: str, session=None) -> 'list[Suite]':
     """
-    Returns list of Suite objects which given C{source} name is in
+    Returns list of Suite objects which given `source` name is in
 
     :param source: DBSource package name to search for
     :return: list of Suite objects for the given source
@@ -1504,14 +1504,11 @@ __all__.append('get_suites_source_in')
 @session_wrapper
 def get_source_in_suite(source: str, suite_name: Optional[str], session=None) -> Optional[DBSource]:
     """
-    Returns a DBSource object for a combination of C{source} and C{suite_name}.
-
-      - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
-      - B{suite_name} - a suite name, eg. I{unstable}
+    Returns a DBSource object for a combination of `source` and `suite_name`.
 
     :param source: source package name
     :param suite_name: the suite name
-    :return: the version for I{source} in I{suite}
+    :return: the version for `source` in `suite`
     """
     suite = get_suite(suite_name, session)
     if suite is None:
@@ -1637,9 +1634,7 @@ class Suite(ORMObject):
 
     def get_sources(self, source: str) -> sqlalchemy.orm.query.Query:
         """
-        Returns a query object representing DBSource that is part of C{suite}.
-
-          - B{source} - source package name, eg. I{mailfilter}, I{bbdb}, I{glibc}
+        Returns a query object representing DBSource that is part of this suite.
 
         :param source: source package name
         :return: a query of DBSource
@@ -1675,7 +1670,7 @@ __all__.append('Suite')
 @session_wrapper
 def get_suite(suite: str, session=None) -> Optional[Suite]:
     """
-    Returns Suite object for given C{suite name}.
+    Returns Suite object for given `suite` name.
 
     :param suite: The name of the suite
     :param session: Optional SQLA session object (a temporary one will be
@@ -1710,8 +1705,8 @@ __all__.append('get_suite')
 @session_wrapper
 def get_suite_architectures(suite: str, skipsrc: bool = False, skipall: bool = False, session=None) -> list[Architecture]:
     """
-    Returns list of Architecture objects for given C{suite} name. The list is
-    empty if suite does not exist.
+    Returns list of Architecture objects for given `suite` name. The list is
+    empty if `suite` does not exist.
 
     :param suite: Suite name to search for
     :param skipsrc: Whether to skip returning the 'source' architecture entry

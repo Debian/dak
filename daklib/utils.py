@@ -217,8 +217,8 @@ def check_dsc_files(dsc_filename: str, dsc: Mapping[str, str], dsc_files: Mappin
     those expected given the announced Format.
 
     :param dsc_filename: path of .dsc file
-    :param dsc: the content of the .dsc parsed by C{parse_changes()}
-    :param dsc_files: the file list returned by C{build_file_list()}
+    :param dsc: the content of the .dsc parsed by :func:`parse_changes`
+    :param dsc_files: the file list returned by :func:`build_file_list`
     :return: all errors detected
     """
     rejmsg = []
@@ -329,7 +329,7 @@ def build_file_list(changes, is_a_dsc: bool = False, field="files", hashname="md
 def send_mail(message, whitelists: Optional[list[Optional[str]]] = None) -> None:
     """sendmail wrapper, takes a message string
 
-    :param whitelists: path to whitelists. C{None} or an empty list whitelists
+    :param whitelists: path to whitelists. :const:`None` or an empty list whitelists
                        everything, otherwise an address is whitelisted if it is
                        included in any of the lists.
                        In addition a global whitelist can be specified in

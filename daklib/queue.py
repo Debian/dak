@@ -51,7 +51,7 @@ def check_valid(overrides: list[dict], session) -> bool:
                       - type: type of requested override ('dsc', 'deb' or 'udeb')
 
                       All values are strings.
-    :return: C{True} if all overrides are valid, C{False} if there is any
+    :return: :const:`True` if all overrides are valid, :const:`False` if there is any
              invalid override.
     """
     all_valid = True

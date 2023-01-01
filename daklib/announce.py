@@ -58,7 +58,7 @@ def _subst_for_upload(upload: ProcessedUpload) -> dict:
     """ Prepare substitutions used for announce mails.
 
     :param upload: upload to handle
-    :return: A dict of substition values for use by L{daklib.utils.TemplateSubst}
+    :return: A dict of substition values for use by :func:`daklib.utils.TemplateSubst`
     """
     cnf = Config()
 

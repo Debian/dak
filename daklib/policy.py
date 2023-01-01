@@ -38,8 +38,8 @@ class UploadCopy:
           ...
 
     Doing so will provide a temporary copy of the upload in the directory
-    given by the C{directory} attribute.  The copy will be removed on leaving
-    the with-block.
+    given by the :attr:`directory` attribute.  The copy will be removed
+    on leaving the with-block.
     """
 
     def __init__(self, upload: PolicyQueueUpload, group=None):

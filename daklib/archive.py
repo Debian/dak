@@ -58,7 +58,7 @@ class ArchiveTransaction:
         self.session = DBConn().session()
 
     def get_file(self, hashed_file: daklib.upload.HashedFile, source_name: str, check_hashes: bool = True) -> PoolFile:
-        """Look for file C{hashed_file} in database
+        """Look for file `hashed_file` in database
 
         :param hashed_file: file to look for in the database
         :param source_name: source package name
@@ -122,9 +122,9 @@ class ArchiveTransaction:
         :param allow_tainted: allow to copy additional files from tainted archives
         :param fingerprint: optional fingerprint
         :param source_suites: suites to copy the source from if they are not
-                              in C{suite} or C{True} to allow copying from any
+                              in `suite` or :const:`True` to allow copying from any
                               suite.
-                              Can be a SQLAlchemy subquery for C{daklib.dbconn.Suite} or C{True}.
+                              Can be a SQLAlchemy subquery for :class:`Suite` or :const:`True`.
         :param extra_source_archives: extra archives to copy Built-Using sources from
         :return: database object for the new package
         """
@@ -198,7 +198,7 @@ class ArchiveTransaction:
         :param source: source to look for
         :param archive: archive to look in
         :param extra_archives: list of archives to copy the source package from
-                               if it is not yet present in C{archive}
+                               if it is not yet present in `archive`
         """
         session = self.session
         db_file = session.query(ArchiveFile).filter_by(file=source.poolfile, archive=archive).first()
@@ -219,7 +219,7 @@ class ArchiveTransaction:
             self._copy_file(af.file, archive, db_file.component, allow_tainted=True)
 
     def _add_built_using(self, db_binary, filename, control, suite, extra_archives=None) -> None:
-        """Add Built-Using sources to C{db_binary.extra_sources}
+        """Add Built-Using sources to ``db_binary.extra_sources``
         """
         session = self.session
 
@@ -490,7 +490,7 @@ def source_component_from_package_list(package_list: 'daklib.packagelist.Package
 
     :param package_list: package list of the source to get the override for
     :param suite: suite to consider for binaries produced
-    :return: component for the given source or C{None}
+    :return: component for the given source or :const:`None`
     """
     if package_list.fallback:
         return None
@@ -528,7 +528,7 @@ class ArchiveUpload:
         """upload to process"""
 
         self.directory: str = None
-        """directory with temporary copy of files. set by C{prepare}"""
+        """directory with temporary copy of files. set by :meth:`prepare`"""
 
         self.keyrings = keyrings
 
@@ -549,10 +549,10 @@ class ArchiveUpload:
         self.final_suites = None
 
         self.new: bool = False
-        """upload is NEW. set by C{check}"""
+        """upload is NEW. set by :meth:`check`"""
 
         self._checked: bool = False
-        """checks passes. set by C{check}"""
+        """checks passes. set by :meth:`check`"""
 
         self._new_queue = self.session.query(PolicyQueue).filter_by(queue_name='new').one()
         self._new = self._new_queue.suite
@@ -560,7 +560,7 @@ class ArchiveUpload:
     def warn(self, message: str) -> None:
         """add a warning message
 
-        Adds a warning message that can later be seen in C{self.warnings}
+        Adds a warning message that can later be seen in :attr:`warnings`
 
         :param message: warning message
         """
@@ -571,7 +571,7 @@ class ArchiveUpload:
 
         This copies the files involved to a temporary directory.  If you use
         this method directly, you have to remove the directory given by the
-        C{directory} attribute later on your own.
+        :attr:`directory` attribute later on your own.
 
         Instead of using the method directly, you can also use a with-statement::
 
@@ -636,11 +636,11 @@ class ArchiveUpload:
         """Path to unpacked source
 
         Get path to the unpacked source. This method does unpack the source
-        into a temporary directory under C{self.directory} if it has not
+        into a temporary directory under :attr:`directory` if it has not
         been done so already.
 
         :return: string giving the path to the unpacked source directory
-                 or C{None} if no source was included in the upload.
+                 or :const:`None` if no source was included in the upload.
         """
         assert self.directory is not None
 
@@ -734,13 +734,13 @@ class ArchiveUpload:
         """Check if upload is NEW
 
         An upload is NEW if it has binary or source packages that do not have
-        an override in C{overridesuite} OR if it references files ONLY in a
+        an override in `overridesuite` OR if it references files ONLY in a
         tainted archive (eg. when it references files in NEW).
 
         Debug packages (*-dbgsym in Section: debug) are not considered as NEW
-        if C{suite} has a separate debug suite.
+        if `suite` has a separate debug suite.
 
-        :return: C{True} if the upload is NEW, C{False} otherwise
+        :return: :const:`True` if the upload is NEW, :const:`False` otherwise
         """
         session = self.session
         new = False
@@ -793,7 +793,7 @@ class ArchiveUpload:
 
         :param suite: suite to get override for
         :param binary: binary to get override for
-        :return: override for the given binary or C{None}
+        :return: override for the given binary or :const:`None`
         """
         if suite.overridesuite is not None:
             suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
@@ -813,7 +813,7 @@ class ArchiveUpload:
 
         :param suite: suite to get override for
         :param source: source to get override for
-        :return: override for the given source or C{None}
+        :return: override for the given source or :const:`None`
         """
         if suite.overridesuite is not None:
             suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
@@ -831,7 +831,7 @@ class ArchiveUpload:
         """get component for a binary
 
         By default this will only look at overrides to get the right component;
-        if C{only_overrides} is C{False} this method will also look at the
+        if `only_overrides` is :const:`False` this method will also look at the
         Section field.
 
         :param only_overrides: only use overrides to get the right component
@@ -847,7 +847,7 @@ class ArchiveUpload:
         """get component for a source
 
         By default this will only look at overrides to get the right component;
-        if C{only_overrides} is C{False} this method will also look at the
+        if `only_overrides` is :const:`False` this method will also look at the
         Section field.
 
         :param only_overrides: only use overrides to get the right component
@@ -863,7 +863,7 @@ class ArchiveUpload:
         """run checks against the upload
 
         :param force: ignore failing forcable checks
-        :return: C{True} if all checks passed, C{False} otherwise
+        :return: :const:`True` if all checks passed, :const:`False` otherwise
         """
         # XXX: needs to be better structured.
         assert self.changes.valid_signature
@@ -936,16 +936,16 @@ class ArchiveUpload:
         :param target_suite: target suite (before redirection to policy queue or NEW)
         :param suite: suite to install the package into. This is the real suite,
                       ie. after any redirection to NEW or a policy queue
-        :param source_component_func: function to get the L{daklib.dbconn.Component}
-                                      for a L{daklib.upload.Source} object
-        :param binary_component_func: function to get the L{daklib.dbconn.Component}
-                                      for a L{daklib.upload.Binary} object
-        :param source_suites: see L{daklib.archive.ArchiveTransaction.install_binary}
-        :param extra_source_archives: see L{daklib.archive.ArchiveTransaction.install_binary}
+        :param source_component_func: function to get the :class:`daklib.dbconn.Component`
+                                      for a :class:`daklib.upload.Source` object
+        :param binary_component_func: function to get the :class:`daklib.dbconn.Component`
+                                      for a :class:`daklib.upload.Binary` object
+        :param source_suites: see :meth:`daklib.archive.ArchiveTransaction.install_binary`
+        :param extra_source_archives: see :meth:`daklib.archive.ArchiveTransaction.install_binary`
         :param policy_upload: Boolean indicating upload to policy queue (including NEW)
-        :return: tuple with two elements. The first is a L{daklib.dbconn.DBSource}
-                 object for the install source or C{None} if no source was
-                 included. The second is a list of L{daklib.dbconn.DBBinary}
+        :return: tuple with two elements. The first is a :class:`daklib.dbconn.DBSource`
+                 object for the install source or :const:`None` if no source was
+                 included. The second is a list of :class:`daklib.dbconn.DBBinary`
                  objects for the installed binary packages.
         """
         # XXX: move this function to ArchiveTransaction?
@@ -1177,10 +1177,10 @@ class ArchiveUpload:
     def install(self) -> None:
         """install upload
 
-        Install upload to a suite or policy queue.  This method does B{not}
+        Install upload to a suite or policy queue.  This method does **not**
         handle uploads to NEW.
 
-        You need to have called the C{check} method before calling this method.
+        You need to have called the :meth:`check` method before calling this method.
         """
         assert len(self.reject_reasons) == 0
         assert self.changes.valid_signature
@@ -1233,10 +1233,10 @@ class ArchiveUpload:
     def install_to_new(self) -> None:
         """install upload to NEW
 
-        Install upload to NEW.  This method does B{not} handle regular uploads
+        Install upload to NEW.  This method does **not** handle regular uploads
         to suites or policy queues.
 
-        You need to have called the C{check} method before calling this method.
+        You need to have called the :meth:`check` method before calling this method.
         """
         # Uploads to NEW are special as we don't have overrides.
         assert len(self.reject_reasons) == 0

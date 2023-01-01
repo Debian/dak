@@ -20,7 +20,7 @@
 
 """module provided pre-acceptance tests
 
-Please read the documentation for the L{Check} class for the interface.
+Please read the documentation for the :class:`Check` class for the interface.
 """
 
 from daklib.config import Config
@@ -89,8 +89,8 @@ class RejectACL(Reject):
 class Check:
     """base class for checks
 
-    checks are called by L{daklib.archive.ArchiveUpload}. Failing tests should
-    raise a L{daklib.checks.Reject} exception including a human-readable
+    checks are called by :class:`daklib.archive.ArchiveUpload`. Failing tests should
+    raise a :exc:`daklib.checks.Reject` exception including a human-readable
     description why the upload should be rejected.
     """
 
@@ -117,8 +117,8 @@ class Check:
     def forcable(self) -> bool:
         """allow to force ignore failing test
 
-        C{True} if it is acceptable to force ignoring a failing test,
-        C{False} otherwise
+        :const:`True` if it is acceptable to force ignoring a failing test,
+        :const:`False` otherwise
         """
         return False
 

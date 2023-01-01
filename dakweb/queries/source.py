@@ -23,7 +23,6 @@ def dsc_in_suite(suite: Optional[str] = None, source: Optional[str] = None) -> s
     .. versionadded: December 2014
 
     :param suite: Name of the suite.
-       @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
     :param source: Source package to query for.
     :return: List of dictionaries made out of
              - version
@@ -31,6 +30,8 @@ def dsc_in_suite(suite: Optional[str] = None, source: Optional[str] = None) -> s
              - filename
              - filesize
              - sha256sum
+
+    .. seealso:: :func:`~dakweb.queries.suite.suites` on how to receive a list of valid suites.
     """
     if suite is None:
         return bottle.HTTPError(503, 'Suite not specified.')
@@ -144,10 +145,11 @@ def sources_in_suite(suite: Optional[str] = None) -> str:
     .. versionadded:: December 2014
 
     :param suite: Name of the suite.
-       @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
     :return: List of dictionaries made out of
              - source
              - version
+
+    .. seealso:: :func:`~dakweb.queries.suite.suites` on how to receive a list of valid suites.
     """
     if suite is None:
         return bottle.HTTPError(503, 'Suite not specified.')

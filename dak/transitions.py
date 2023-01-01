@@ -60,7 +60,9 @@ def init():
     """
     Initialize. Sets up database connection, parses commandline arguments.
 
-    @attention: This function may run B{within sudo}
+    .. warning::
+
+       This function may run **within sudo**
 
     """
     global Cnf, Options
@@ -129,11 +131,11 @@ def load_transitions(trans_file: str) -> Optional[dict]:
 
     .. warning::
 
-       This function may run B{within sudo}
+       This function may run **within sudo**
 
     :param trans_file: filename to parse
     :return: validated dictionary of transition entries or None
-             if validation fails, empty string if reading C{trans_file}
+             if validation fails, empty string if reading `trans_file`
              returned something else than a dict
 
     """
@@ -228,7 +230,7 @@ def lock_file(f):
 
     .. warning::
 
-       This function may run B{within sudo}
+       This function may run **within sudo**
     """
     for retry in range(10):
         lock_fd = os.open(f, os.O_RDWR | os.O_CREAT)
@@ -262,9 +264,9 @@ def write_transitions(from_trans: dict) -> None:
 
     .. warning::
 
-       This function may run B{within sudo}
+       This function may run **within sudo**
 
-    :param from_trans: transitions dictionary, as returned by L{load_transitions}
+    :param from_trans: transitions dictionary, as returned by :func:`load_transitions`
     """
 
     trans_file = Cnf["Dinstall::ReleaseTransitions"]
@@ -294,7 +296,7 @@ def write_transitions_from_file(from_file: str) -> None:
 
     .. warning::
 
-       This function usually runs B{within sudo}
+       This function usually runs **within sudo**
 
     :param from_file: filename of a transitions file
     """
@@ -523,7 +525,7 @@ Blocked Packages (total: %d): %s
 def transition_info(transitions: dict):
     """
     Print information about all defined transitions.
-    Calls L{get_info} for every transition and then tells user if the transition is
+    Calls :func:`get_info` for every transition and then tells user if the transition is
     still ongoing or if the expected version already hit testing.
 
     :param transitions: defined transitions
@@ -563,8 +565,9 @@ def main():
     """
     Prepare the work to be done, do basic checks.
 
-    @attention: This function may run B{within sudo}
+    .. warning::
 
+       This function may run **within sudo**
     """
     global Cnf
 

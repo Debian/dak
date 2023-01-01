@@ -130,13 +130,13 @@ class FilesystemTransaction:
         self.actions = []
 
     def copy(self, source: str, destination: str, link: bool = False, symlink: bool = False, mode: Optional[int] = None) -> None:
-        """copy C{source} to C{destination}
+        """copy `source` to `destination`
 
         :param source: source file
         :param destination: destination file
         :param link: try hardlinking, falling back to copying
         :param symlink: create a symlink instead of copying
-        :param mode: permissions to change C{destination} to
+        :param mode: permissions to change `destination` to
         """
         if isinstance(mode, str):
             mode = int(mode, 8)
@@ -144,24 +144,24 @@ class FilesystemTransaction:
         self.actions.append(_FilesystemCopyAction(source, destination, link=link, symlink=symlink, mode=mode))
 
     def move(self, source: str, destination: str, mode: Optional[int] = None) -> None:
-        """move C{source} to C{destination}
+        """move `source` to `destination`
 
         :param source: source file
         :param destination: destination file
-        :param mode: permissions to change C{destination} to
+        :param mode: permissions to change `destination` to
         """
         self.copy(source, destination, link=True, mode=mode)
         self.unlink(source)
 
     def unlink(self, path: str) -> None:
-        """unlink C{path}
+        """unlink `path`
 
         :param path: file to unlink
         """
         self.actions.append(_FilesystemUnlinkAction(path))
 
     def create(self, path: str, mode: Optional[int] = None, text: bool = True) -> IO:
-        """create C{filename} and return file handle
+        """create `filename` and return file handle
 
         :param path: file to create
         :param mode: permissions for the new file

@@ -16,7 +16,7 @@ from dakweb.webregister import QueryRegister
 @bottle.route('/madison')
 def madison():
     """
-    Display information about B{package(s)}.
+    Display information about `package`\ (s).
 
     .. versionadded:: December 2014
 
@@ -27,9 +27,10 @@ def madison():
     @keyword s: only show info for this suite.
     @keyword S: show info for the binary children of source pkgs. I{true/false}
     @keyword f: output json format. I{json}
-    @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
 
     :return: Text or Json format of the data
+
+    .. seealso:: :func:`~dakweb.queries.suite.suites` on how to receive a list of valid suites.
     """
 
     r = bottle.request

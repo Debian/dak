@@ -64,7 +64,6 @@ def suite(suite: Optional[str] = None) -> str:
     names.
 
     :param suite: Name or codename of the suite.
-      @see: L{I{suites}<dakweb.queries.suite.suites>} on how to receive a list of valid suites.
 
     :return: A dictionary of
              - name: maps to `Suite:` in the Release file
@@ -73,6 +72,8 @@ def suite(suite: Optional[str] = None) -> str:
              - archive
              - architectures
              - components
+
+    .. seealso:: :func:`~dakweb.queries.suite.suites` on how to receive a list of valid suites.
     """
 
     if suite is None:

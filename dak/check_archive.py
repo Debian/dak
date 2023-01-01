@@ -83,7 +83,7 @@ The following MODEs are available:
 def process_dir(unused, dirname: str, filenames: dict) -> None:
     """
     Process a directory and output every files name which is not listed already
-    in the C{filenames} or global C{excluded} dictionaries.
+    in the `filenames` or global :data:`excluded` dictionaries.
 
     :param dirname: the directory to look at
     :param filenames: Known filenames to ignore
