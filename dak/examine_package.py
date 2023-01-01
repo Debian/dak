@@ -309,7 +309,7 @@ def read_changes_or_dsc(suite, filename, session=None):
 
     with open(filename) as dsc_file:
         try:
-            dsc = utils.parse_changes(filename, dsc_file=1)
+            dsc = utils.parse_changes(filename, dsc_file=True)
         except:
             return formatted_text("can't parse .dsc control info")
 
