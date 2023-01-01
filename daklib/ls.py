@@ -19,7 +19,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 import sqlalchemy.sql as sql
-import daklib.daksql as daksql
+import sqlalchemy.dialects.postgresql as pgsql
 
 from daklib.dbconn import DBConn
 from collections import defaultdict
@@ -50,7 +50,7 @@ def list_packages(packages, suites=None, components=None, architectures=None, bi
             where = where & t.c.type.in_(binary_types)
 
         if format is None:
-            c_architectures = daksql.string_agg(t.c.architecture, ', ', order_by=[t.c.architecture_is_source.desc(), t.c.architecture])
+            c_architectures = sql.func.string_agg(t.c.architecture, pgsql.aggregate_order_by(', ', t.c.architecture_is_source.desc(), t.c.architecture))
             query = sql.select([t.c.package, t.c.version, t.c.display_suite, c_architectures]) \
                        .where(where) \
                        .group_by(t.c.package, t.c.version, t.c.display_suite) \
@@ -75,7 +75,7 @@ def list_packages(packages, suites=None, components=None, architectures=None, bi
             for row in result:
                 yield "{0} {1} {2}".format(row[t.c.package], row[t.c.version], row[t.c.architecture])
         elif format == "python":
-            c_architectures = daksql.string_agg(t.c.architecture, ',', order_by=[t.c.architecture_is_source.desc(), t.c.architecture])
+            c_architectures = sql.func.string_agg(t.c.architecture, pgsql.aggregate_order_by(',', t.c.architecture_is_source.desc(), t.c.architecture))
             query = sql.select([t.c.package,
                                 t.c.version,
                                 t.c.display_suite,
