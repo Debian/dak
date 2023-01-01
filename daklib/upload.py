@@ -299,7 +299,7 @@ class Changes:
 
     @property
     def contents_sha1(self) -> str:
-        return self.signature.contents_sha1()
+        return self.signature.contents_sha1
 
     @property
     def architectures(self) -> list[str]:

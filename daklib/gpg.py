@@ -319,7 +319,8 @@ class SignedFile:
                 pass
             os._exit(3)
 
-    def contents_sha1(self):
+    @property
+    def contents_sha1(self) -> str:
         return apt_pkg.sha1sum(self.contents)
 
 
