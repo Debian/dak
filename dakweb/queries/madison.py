@@ -15,7 +15,7 @@ from dakweb.webregister import QueryRegister
 
 @bottle.route('/madison')
 def madison():
-    """
+    r"""
     Display information about `package`\ (s).
 
     .. versionadded:: December 2014
