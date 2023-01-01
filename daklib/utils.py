@@ -544,7 +544,7 @@ def result_join(original: Iterable[Optional[str]], sep: str = '\t') -> str:
 ################################################################################
 
 
-def prefix_multi_line_string(str, prefix, include_blank_lines=0):
+def prefix_multi_line_string(str, prefix, include_blank_lines: bool = False):
     out = ""
     for line in str.split('\n'):
         line = line.strip()

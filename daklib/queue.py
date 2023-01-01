@@ -86,7 +86,7 @@ def prod_maintainer(notes, upload: "daklib.dbconn.PolicyQueueUpload", session, t
     while answer == 'E':
         prod_message = utils.call_editor(prod_message)
         print("Prod message:")
-        print(utils.prefix_multi_line_string(prod_message, "  ", include_blank_lines=1))
+        print(utils.prefix_multi_line_string(prod_message, "  ", include_blank_lines=True))
         prompt = "[P]rod, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:

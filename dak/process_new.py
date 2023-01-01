@@ -461,7 +461,7 @@ def get_reject_reason(reason: str = '') -> Optional[str]:
     while answer == 'E':
         reason = utils.call_editor(reason)
         print("Reject message:")
-        print(utils.prefix_multi_line_string(reason, "  ", include_blank_lines=1))
+        print(utils.prefix_multi_line_string(reason, "  ", include_blank_lines=True))
         prompt = "[R]eject, Edit, Abandon, Quit ?"
         answer = "XXX"
         while prompt.find(answer) == -1:
