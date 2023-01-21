@@ -53,6 +53,8 @@ sphinx:
   artifacts:
     paths:
       - docs/_build/html
+  except:
+    - deploy@ftp-team/dak
 
 contributors:
   image: debian:bullseye
