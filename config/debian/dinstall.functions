@@ -105,7 +105,7 @@ function dep11() {
         # Yay, worked, lets copy around
         for dir in ${extimportdists}; do
             if [[ -d ${dir}/  ]]; then
-                for comp in main contrib non-free; do
+                for comp in main contrib non-free non-free-firmware; do
                     mkdir -p ${ftpdir}/dists/${dir}/${comp}/dep11
                     cd ${dir}/${comp}
                     rsync -rtq --delete --delete-after --exclude by-hash --exclude "./*.tmp" . ${ftpdir}/dists/${dir}/${comp}/dep11/.
