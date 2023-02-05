@@ -79,16 +79,15 @@ def input_or_exit(prompt: Optional[str] = None) -> str:
 
 
 def extract_component_from_section(section: str) -> tuple[str, str]:
-    component = ""
+    """split "component/section" into "section", "component" parts
 
+    If "component" is not given, "main" is used instead.
+
+    :return: tuple (section, component)
+    """
     if section.find('/') != -1:
-        component = section.split('/')[0]
-
-    # Expand default component
-    if component == "":
-        component = "main"
-
-    return (section, component)
+        return tuple(reversed(section.split('/', 1)))
+    return section, "main"
 
 ################################################################################
 
@@ -129,8 +128,7 @@ def parse_deb822(armored_contents: bytes, signing_rules: Literal[-1, 0, 1] = 0, 
             if index != num_of_lines:
                 raise InvalidDscError(index)
             break
-        slf = re_single_line_field.match(line)
-        if slf:
+        if slf := re_single_line_field.match(line):
             field = slf.groups()[0].lower()
             changes[field] = slf.groups()[1]
             first = 1
@@ -138,8 +136,7 @@ def parse_deb822(armored_contents: bytes, signing_rules: Literal[-1, 0, 1] = 0, 
         if line == " .":
             changes[field] += '\n'
             continue
-        mlf = re_multi_line_field.match(line)
-        if mlf:
+        if mlf := re_multi_line_field.match(line):
             if first == -1:
                 raise ParseChangesError("'%s'\n [Multi-line field continuing on from nothing?]" % (line))
             if first == 1 and changes[field] != "":
@@ -154,8 +151,7 @@ def parse_deb822(armored_contents: bytes, signing_rules: Literal[-1, 0, 1] = 0, 
     if "source" in changes:
         # Strip the source version in brackets from the source field,
         # put it in the "source-version" field instead.
-        srcver = re_srchasver.search(changes["source"])
-        if srcver:
+        if srcver := re_srchasver.search(changes["source"]):
             changes["source"] = srcver.group(1)
             changes["source-version"] = srcver.group(2)
 
@@ -405,8 +401,7 @@ def send_mail(message: str, whitelists: Optional[list[str]] = None) -> None:
                 call_sendmail = False
 
     # sign mail
-    mailkey = Cnf.get('Dinstall::Mail-Signature-Key', '')
-    if mailkey:
+    if mailkey := Cnf.get('Dinstall::Mail-Signature-Key', ''):
         kwargs = {
             'keyids': [mailkey],
             'pubring': Cnf.get('Dinstall::SigningPubKeyring') or None,
@@ -552,16 +547,13 @@ def result_join(original: Iterable[Optional[str]], sep: str = '\t') -> str:
 ################################################################################
 
 
-def prefix_multi_line_string(str, prefix, include_blank_lines: bool = False):
-    out = ""
-    for line in str.split('\n'):
-        line = line.strip()
-        if line or include_blank_lines:
-            out += "%s%s\n" % (prefix, line)
-    # Strip trailing new line
-    if out:
-        out = out[:-1]
-    return out
+def prefix_multi_line_string(lines: str, prefix: str, include_blank_lines: bool = False) -> str:
+    """prepend `prefix` to each line in `lines`"""
+    return "\n".join(
+        prefix + cleaned_line
+        for line in lines.split("\n")
+        if (cleaned_line := line.strip()) or include_blank_lines
+    )
 
 ################################################################################
 

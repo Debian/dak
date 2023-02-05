@@ -25,9 +25,6 @@ TermColor utils for dak
 
 from typing import Optional
 
-__all__ = []
-
-###############################################################################
 
 _COLORS_ = ('red', 'green', 'yellow', 'blue', 'violet', 'cyan', 'white')
 _COLOR_CODES_ = {k: 31 + _COLORS_.index(k) for k in _COLORS_}
