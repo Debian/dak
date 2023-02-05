@@ -2040,12 +2040,12 @@ class DBConn:
                    architectures=relation(Architecture, secondary=self.tbl_acl_architecture_map, collection_class=set),
                    fingerprints=relation(Fingerprint, secondary=self.tbl_acl_fingerprint_map, collection_class=set),
                    match_keyring=relation(Keyring, primaryjoin=(self.tbl_acl.c.match_keyring_id == self.tbl_keyrings.c.id)),
-                   per_source=relation(ACLPerSource, collection_class=set),
+                   per_source=relation(ACLPerSource, collection_class=set, back_populates="acl"),
             ))
 
         mapper(ACLPerSource, self.tbl_acl_per_source,
                properties=dict(
-                   acl=relation(ACL),
+                   acl=relation(ACL, back_populates="per_source"),
                    fingerprint=relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.fingerprint_id == self.tbl_fingerprint.c.id)),
                    created_by=relation(Fingerprint, primaryjoin=(self.tbl_acl_per_source.c.created_by_id == self.tbl_fingerprint.c.id)),
             ))
@@ -2084,7 +2084,7 @@ class DBConn:
                                  extra_sources=relation(DBSource, secondary=self.tbl_extra_src_references,
                                      backref=backref('extra_binary_references', lazy='dynamic')),
                                  key=relation(BinaryMetadata, cascade='all',
-                                     collection_class=attribute_mapped_collection('key'))),
+                                     collection_class=attribute_mapped_collection('key'), back_populates="binary")),
         )
 
         mapper(Component, self.tbl_component,
@@ -2098,7 +2098,7 @@ class DBConn:
         mapper(DSCFile, self.tbl_dsc_files,
                properties=dict(dscfile_id=self.tbl_dsc_files.c.id,
                                  source_id=self.tbl_dsc_files.c.source,
-                                 source=relation(DBSource),
+                                 source=relation(DBSource, back_populates="srcfiles"),
                                  poolfile_id=self.tbl_dsc_files.c.file,
                                  poolfile=relation(PoolFile)))
 
@@ -2117,7 +2117,7 @@ class DBConn:
         mapper(Fingerprint, self.tbl_fingerprint,
                properties=dict(fingerprint_id=self.tbl_fingerprint.c.id,
                                  uid_id=self.tbl_fingerprint.c.uid,
-                                 uid=relation(Uid),
+                                 uid=relation(Uid, back_populates="fingerprint"),
                                  keyring_id=self.tbl_fingerprint.c.keyring,
                                  keyring=relation(Keyring),
                                  acl=relation(ACL)),
@@ -2208,13 +2208,14 @@ class DBConn:
                                  fingerprint=relation(Fingerprint),
                                  changedby_id=self.tbl_source.c.changedby,
                                  srcfiles=relation(DSCFile,
-                                                     primaryjoin=(self.tbl_source.c.id == self.tbl_dsc_files.c.source)),
+                                                     primaryjoin=(self.tbl_source.c.id == self.tbl_dsc_files.c.source),
+                                                     back_populates="source"),
                                  suites=relation(Suite, secondary=self.tbl_src_associations,
                                      backref=backref('sources', lazy='dynamic')),
                                  uploaders=relation(Maintainer,
                                      secondary=self.tbl_src_uploaders),
                                  key=relation(SourceMetadata, cascade='all',
-                                     collection_class=attribute_mapped_collection('key'))),
+                                     collection_class=attribute_mapped_collection('key'), back_populates="source")),
         )
 
         mapper(SrcFormat, self.tbl_src_format,
@@ -2241,7 +2242,7 @@ class DBConn:
 
         mapper(Uid, self.tbl_uid,
                properties=dict(uid_id=self.tbl_uid.c.id,
-                                 fingerprint=relation(Fingerprint)),
+                                 fingerprint=relation(Fingerprint, back_populates="uid")),
         )
 
         mapper(BinContents, self.tbl_bin_contents,
@@ -2264,7 +2265,7 @@ class DBConn:
         mapper(BinaryMetadata, self.tbl_binaries_metadata,
             properties=dict(
                 binary_id=self.tbl_binaries_metadata.c.bin_id,
-                binary=relation(DBBinary),
+                binary=relation(DBBinary, back_populates="key"),
                 key_id=self.tbl_binaries_metadata.c.key_id,
                 key=relation(MetadataKey),
                 value=self.tbl_binaries_metadata.c.value))
@@ -2272,7 +2273,7 @@ class DBConn:
         mapper(SourceMetadata, self.tbl_source_metadata,
             properties=dict(
                 source_id=self.tbl_source_metadata.c.src_id,
-                source=relation(DBSource),
+                source=relation(DBSource, back_populates="key"),
                 key_id=self.tbl_source_metadata.c.key_id,
                 key=relation(MetadataKey),
                 value=self.tbl_source_metadata.c.value))
