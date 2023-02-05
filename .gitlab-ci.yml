@@ -44,7 +44,7 @@ get coverage:
       - logs
 
 sphinx:
-  image: debian:bullseye
+  image: debian:bookworm
   script:
     - apt-get update
     - apt-get install -y build-essential python3-sphinx
