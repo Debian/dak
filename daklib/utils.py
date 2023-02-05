@@ -79,14 +79,14 @@ def input_or_exit(prompt: Optional[str] = None) -> str:
 
 
 def extract_component_from_section(section: str) -> tuple[str, str]:
-    """split "component/section" into "section", "component" parts
+    """split "section" into "section", "component" parts
 
     If "component" is not given, "main" is used instead.
 
     :return: tuple (section, component)
     """
     if section.find('/') != -1:
-        return tuple(reversed(section.split('/', 1)))
+        return section, section.split('/', 1)[0]
     return section, "main"
 
 ################################################################################
