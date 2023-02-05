@@ -21,6 +21,7 @@
 from daklib.architecture import match_architecture
 from daklib.utils import extract_component_from_section
 
+from collections.abc import Mapping
 from typing import Optional
 
 
@@ -78,21 +79,21 @@ class PackageListEntry:
 
 
 class PackageList:
-    def __init__(self, source):
+    def __init__(self, source: Mapping[str, str]):
         if 'Package-List' in source:
-            self._parse(source)
+            self.package_list = self._parse(source)
         elif 'Binary' in source:
-            self._parse_fallback(source)
+            self.package_list = self._parse_fallback(source)
         else:
             raise InvalidSource('Source package has neither Package-List nor Binary field.')
 
         self.fallback = any(entry.architectures is None for entry in self.package_list)
 
-    def _binaries(self, source) -> set[str]:
+    def _binaries(self, source: Mapping[str, str]) -> set[str]:
         return set(name.strip() for name in source['Binary'].split(","))
 
-    def _parse(self, source):
-        self.package_list = []
+    def _parse(self, source: Mapping[str, str]) -> list[PackageListEntry]:
+        package_list = []
 
         binaries_binary = self._binaries(source)
         binaries_package_list = set()
@@ -118,13 +119,15 @@ class PackageList:
             binaries_package_list.add(name)
 
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
-            self.package_list.append(entry)
+            package_list.append(entry)
 
         if len(binaries_binary) != len(binaries_package_list):
             raise InvalidSource("Package-List and Binaries fields have a different number of entries.")
 
-    def _parse_fallback(self, source):
-        self.package_list = []
+        return package_list
+
+    def _parse_fallback(self, source: Mapping[str, str]) -> list[PackageListEntry]:
+        package_list = []
 
         for binary in self._binaries(source):
             name = binary
@@ -135,7 +138,9 @@ class PackageList:
             other = dict()
 
             entry = PackageListEntry(name, package_type, section, component, priority, **other)
-            self.package_list.append(entry)
+            package_list.append(entry)
+
+        return package_list
 
     def packages_for_suite(self, suite, only_default_profile=True) -> list[PackageListEntry]:
         packages = []
