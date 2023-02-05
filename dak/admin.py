@@ -57,11 +57,13 @@ def die_arglen(args: Sequence, args_needed: int, msg: str) -> None:
         die(msg)
 
 
-def get_suite_or_die(suite_name: str, session=None, error_message: Optional[str] = None) -> Suite:
+def get_suite_or_die(
+        suite_name: str,
+        session=None,
+        error_message="E: Invalid/unknown suite %(suite_name)s",
+) -> Suite:
     suite = get_suite(suite_name.lower(), session=session)
     if suite is None:
-        if error_message is None:
-            error_message = "E: Invalid/unknown suite %(suite_name)s"
         die(error_message % {'suite_name': suite_name})
     return suite
 
