@@ -59,10 +59,11 @@ def parse_lintian_output(output: str) -> Iterable[dict]:
     :param output: The output from lintian
     """
 
-    for line in output.split('\n'):
-        m = re_parse_lintian.match(line)
-        if m:
-            yield m.groupdict()
+    return (
+        m.groupdict()
+        for line in output.split('\n')
+        if (m := re_parse_lintian.match(line))
+    )
 
 
 def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: args) -> Iterable[str]:
