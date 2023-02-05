@@ -101,9 +101,9 @@ class SignedFile:
         self.expired = False
         self.invalid = False
         self.weak_signature = False
-        self.fingerprints = []
-        self.primary_fingerprints = []
-        self.signature_ids = []
+        self.fingerprints: list[str] = []
+        self.primary_fingerprints: list[str] = []
+        self.signature_ids: list[str] = []
 
         self._verify(data, require_signature)
 
@@ -321,7 +321,7 @@ class SignedFile:
 
     @property
     def contents_sha1(self) -> str:
-        return apt_pkg.sha1sum(self.contents)
+        return apt_pkg.sha1sum(self.contents)  # type: ignore[attr-defined]
 
 
 def sign(infile, outfile=None, keyids=[], inline=False, pubring=None, secring=None, homedir=None, passphrase_file=None, *, digest_algorithm="SHA256"):

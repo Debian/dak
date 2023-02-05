@@ -295,8 +295,8 @@ class ReverseDependencyChecker:
 
 def remove(session, reason: str, suites: list, removals: list,
            whoami: Optional[str] = None, partial: bool = False,
-           components: list = None, done_bugs: list = None,
-           date: Optional[str] = None, carbon_copy: list[str] = None,
+           components: Optional[list] = None, done_bugs: Optional[list] = None,
+           date: Optional[str] = None, carbon_copy: Optional[list[str]] = None,
            close_related_bugs: bool = False) -> None:
     """Batch remove a number of packages
     Verify that the files listed in the Files field of the .dsc are

@@ -23,6 +23,8 @@ TermColor utils for dak
 
 ###############################################################################
 
+from typing import Optional
+
 __all__ = []
 
 ###############################################################################
@@ -31,11 +33,11 @@ _COLORS_ = ('red', 'green', 'yellow', 'blue', 'violet', 'cyan', 'white')
 _COLOR_CODES_ = {k: 31 + _COLORS_.index(k) for k in _COLORS_}
 
 
-def colorize(s, fg, bg=None, bold=False, ul=False):
+def colorize(s: str, fg: str, bg: Optional[str] = None, bold=False, ul=False) -> str:
     '''
     s: str -- string to be colorized
-    fg: str/int -- foreground color. See _COLORS_ for choices
-    bg: str/int -- background color. See _COLORS_ for choices
+    fg: str -- foreground color. See _COLORS_ for choices
+    bg: str -- background color. See _COLORS_ for choices
     bold: bool -- bold font?
     ul: bool -- underline?
     '''

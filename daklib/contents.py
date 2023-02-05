@@ -31,6 +31,8 @@ from daklib.filewriter import BinaryContentsFileWriter, SourceContentsFileWriter
 from .dakmultiprocessing import DakProcessPool
 from shutil import rmtree
 from tempfile import mkdtemp
+from collections.abc import Iterable
+from typing import Optional
 
 import subprocess
 import os.path
@@ -103,13 +105,13 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         return self.session.query(sql.column("file"), sql.column("pkglist")) \
             .from_statement(query).params(params)
 
-    def formatline(self, filename, package_list):
+    def formatline(self, filename, package_list) -> str:
         '''
         Returns a formatted string for the filename argument.
         '''
         return "%-55s %s\n" % (filename, package_list)
 
-    def fetch(self):
+    def fetch(self) -> Iterable[str]:
         '''
         Yields a new line of the Contents-$arch.gz file in filename order.
         '''
@@ -118,7 +120,7 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         # end transaction to return connection to pool
         self.session.rollback()
 
-    def get_list(self):
+    def get_list(self) -> list[str]:
         '''
         Returns a list of lines for the Contents-$arch.gz file.
         '''
@@ -137,7 +139,7 @@ select bc.file, string_agg(o.section || '/' || b.package, ',' order by b.package
         }
         return BinaryContentsFileWriter(**values)
 
-    def write_file(self):
+    def write_file(self) -> None:
         '''
         Write the output file.
         '''
@@ -233,7 +235,7 @@ select sc.file, string_agg(s.source, ',' order by s.source) as pkglist
         writer.close()
 
 
-def binary_helper(suite_id, arch_id, overridetype_id, component_id):
+def binary_helper(suite_id: int, arch_id: int, overridetype_id: int, component_id: int):
     '''
     This function is called in a new subprocess and multiprocessing wants a top
     level function.
@@ -251,7 +253,7 @@ def binary_helper(suite_id, arch_id, overridetype_id, component_id):
     return log_message
 
 
-def source_helper(suite_id, component_id):
+def source_helper(suite_id: int, component_id: int):
     '''
     This function is called in a new subprocess and multiprocessing wants a top
     level function.
@@ -272,7 +274,7 @@ class ContentsWriter:
     all contents files.
     '''
     @classmethod
-    def log_result(class_, result):
+    def log_result(class_, result) -> None:
         '''
         Writes a result message to the logfile.
         '''
@@ -337,14 +339,14 @@ class BinaryContentsScanner:
     contents of a DBBinary object.
     '''
 
-    def __init__(self, binary_id):
+    def __init__(self, binary_id: int):
         '''
         The argument binary_id is the id of the DBBinary object that
         should be scanned.
         '''
-        self.binary_id = binary_id
+        self.binary_id: int = binary_id
 
-    def scan(self):
+    def scan(self) -> None:
         '''
         This method does the actual scan and fills in the associated BinContents
         property. It commits any changes to the database. The argument dummy_arg
@@ -384,7 +386,7 @@ class BinaryContentsScanner:
         return {'processed': processed, 'remaining': remaining}
 
 
-def binary_scan_helper(binary_id):
+def binary_scan_helper(binary_id: int) -> None:
     '''
     This function runs in a subprocess.
     '''
@@ -401,25 +403,25 @@ class UnpackedSource:
     gives you some convinient function for accessing it.
     '''
 
-    def __init__(self, dscfilename, tmpbasedir=None):
+    def __init__(self, dscfilename: str, tmpbasedir: Optional[str] = None):
         '''
         The dscfilename is a name of a DSC file that will be extracted.
         '''
         basedir = tmpbasedir if tmpbasedir else Config()['Dir::TempPath']
         temp_directory = mkdtemp(dir=basedir)
-        self.root_directory = os.path.join(temp_directory, 'root')
+        self.root_directory: Optional[str] = os.path.join(temp_directory, 'root')
         command = ('dpkg-source', '--no-copy', '--no-check', '-q', '-x',
             dscfilename, self.root_directory)
         subprocess.check_call(command)
 
-    def get_root_directory(self):
+    def get_root_directory(self) -> str:
         '''
         Returns the name of the package's root directory which is the directory
         where the debian subdirectory is located.
         '''
         return self.root_directory
 
-    def get_all_filenames(self):
+    def get_all_filenames(self) -> Iterable[str]:
         '''
         Returns an iterator over all filenames. The filenames will be relative
         to the root directory.
@@ -429,7 +431,7 @@ class UnpackedSource:
             for name in files:
                 yield os.path.join(root[skip:], name)
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         '''
         Removes all temporary files.
         '''
@@ -452,14 +454,14 @@ class SourceContentsScanner:
     DBSource object.
     '''
 
-    def __init__(self, source_id):
+    def __init__(self, source_id: int):
         '''
         The argument source_id is the id of the DBSource object that
         should be scanned.
         '''
-        self.source_id = source_id
+        self.source_id: int = source_id
 
-    def scan(self):
+    def scan(self) -> None:
         '''
         This method does the actual scan and fills in the associated SrcContents
         property. It commits any changes to the database.
@@ -496,7 +498,7 @@ class SourceContentsScanner:
         return {'processed': processed, 'remaining': remaining}
 
 
-def source_scan_helper(source_id):
+def source_scan_helper(source_id: int) -> None:
     '''
     This function runs in a subprocess.
     '''

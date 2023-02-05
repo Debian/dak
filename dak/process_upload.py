@@ -162,11 +162,14 @@ Checks Debian packages from Incoming
 import datetime
 import errno
 import fcntl
+import functools
 import os
 import sys
 import traceback
 import apt_pkg
 import time
+from collections.abc import Iterable
+from typing import NoReturn
 
 from daklib import daklog
 from daklib.dbconn import *
@@ -189,7 +192,7 @@ Logger = None
 ###############################################################################
 
 
-def usage(exit_code=0):
+def usage(exit_code=0) -> NoReturn:
     print("""Usage: dak process-upload [OPTION]... [CHANGES]...
   -a, --automatic           automatic run
   -d, --directory <DIR>     process uploads in <DIR>
@@ -206,7 +209,8 @@ def usage(exit_code=0):
 def try_or_reject(function):
     """Try to call function or reject the upload if that fails
     """
-    def wrapper(directory, upload, *args, **kwargs):
+    @functools.wraps(function)
+    def wrapper(directory: str, upload: daklib.archive.ArchiveUpload, *args, **kwargs):
         reason = 'No exception caught. This should not happen.'
 
         try:
@@ -229,7 +233,7 @@ def try_or_reject(function):
     return wrapper
 
 
-def get_processed_upload(upload) -> daklib.announce.ProcessedUpload:
+def get_processed_upload(upload: daklib.archive.ArchiveUpload) -> daklib.announce.ProcessedUpload:
     changes = upload.changes
     control = upload.changes.changes
 
@@ -259,7 +263,7 @@ def get_processed_upload(upload) -> daklib.announce.ProcessedUpload:
 
 
 @try_or_reject
-def accept(directory, upload):
+def accept(directory: str, upload: daklib.archive.ArchiveUpload) -> None:
     cnf = Config()
 
     Logger.log(['ACCEPT', upload.changes.filename])
@@ -303,7 +307,7 @@ def accept(directory, upload):
 
 
 @try_or_reject
-def accept_to_new(directory, upload):
+def accept_to_new(directory: str, upload: daklib.archive.ArchiveUpload) -> None:
 
     Logger.log(['ACCEPT-TO-NEW', upload.changes.filename])
     print("ACCEPT-TO-NEW")
@@ -319,11 +323,11 @@ def accept_to_new(directory, upload):
 
 
 @try_or_reject
-def reject(directory, upload, reason=None, notify=True):
+def reject(directory: str, upload: daklib.archive.ArchiveUpload, reason=None, notify=True) -> None:
     real_reject(directory, upload, reason, notify)
 
 
-def real_reject(directory, upload, reason=None, notify=True):
+def real_reject(directory: str, upload: daklib.archive.ArchiveUpload, reason=None, notify=True) -> None:
     # XXX: rejection itself should go to daklib.archive.ArchiveUpload
     cnf = Config()
 
@@ -365,7 +369,7 @@ def real_reject(directory, upload, reason=None, notify=True):
 ###############################################################################
 
 
-def action(directory, upload):
+def action(directory: str, upload: daklib.archive.ArchiveUpload) -> bool:
     changes = upload.changes
     processed = True
 
@@ -461,7 +465,7 @@ def action(directory, upload):
 ###############################################################################
 
 
-def unlink_if_exists(path):
+def unlink_if_exists(path: str) -> None:
     try:
         os.unlink(path)
     except OSError as e:
@@ -469,7 +473,7 @@ def unlink_if_exists(path):
             raise
 
 
-def process_it(directory, changes, keyrings):
+def process_it(directory: str, changes: daklib.upload.Changes, keyrings: list[str]) -> None:
     global Logger
 
     print("\n{0}\n".format(changes.filename))
@@ -492,7 +496,7 @@ def process_it(directory, changes, keyrings):
 ###############################################################################
 
 
-def process_changes(changes_filenames):
+def process_changes(changes_filenames: Iterable[str]):
     session = DBConn().session()
     keyrings = session.query(Keyring).filter_by(active=True).order_by(Keyring.priority)
     keyring_files = [k.keyring_name for k in keyrings]

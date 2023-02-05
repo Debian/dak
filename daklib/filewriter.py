@@ -28,13 +28,15 @@ import errno
 import os
 import os.path
 import subprocess
+from dataclasses import dataclass
+from typing import Optional, TextIO
 
 
+@dataclass
 class CompressionMethod:
-    def __init__(self, keyword, extension, command):
-        self.keyword = keyword
-        self.extension = extension
-        self.command = command
+    keyword: str
+    extension: str
+    command: Optional[list[str]]
 
 
 _compression_methods = (
@@ -64,7 +66,7 @@ class BaseFileWriter:
         self.compression = keywords.get('compression', ['none'])
         self.path = template % keywords
 
-    def open(self):
+    def open(self) -> TextIO:
         '''
         Returns a file object for writing.
         '''
@@ -77,13 +79,13 @@ class BaseFileWriter:
         return self.file
 
     # internal helper function
-    def rename(self, filename):
+    def rename(self, filename: str) -> None:
         tempfilename = filename + '.new'
         os.chmod(tempfilename, 0o644)
         os.rename(tempfilename, filename)
 
     # internal helper function to compress output
-    def compress(self, cmd, suffix, path):
+    def compress(self, cmd, suffix, path) -> None:
         in_filename = "{0}.new".format(path)
         out_filename = "{0}{1}.new".format(path, suffix)
         if cmd is not None:
@@ -91,7 +93,7 @@ class BaseFileWriter:
                 subprocess.check_call(cmd, stdin=in_fh, stdout=out_fh, close_fds=True)
         self.rename("{0}{1}".format(path, suffix))
 
-    def close(self):
+    def close(self) -> None:
         '''
         Closes the file object and does the compression and rename work.
         '''

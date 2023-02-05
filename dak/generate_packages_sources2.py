@@ -28,11 +28,13 @@ Generate Packages/Sources files
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from typing import NoReturn
+
 import apt_pkg
 import sys
 
 
-def usage():
+def usage() -> NoReturn:
     print("""Usage: dak generate-packages-sources2 [OPTIONS]
 Generate the Packages/Sources files
 
@@ -106,7 +108,7 @@ s.source, s.version
 """
 
 
-def generate_sources(suite_id, component_id):
+def generate_sources(suite_id: int, component_id: int):
     global _sources_query
     from daklib.filewriter import SourcesFileWriter
     from daklib.dbconn import Component, DBConn, OverrideType, Suite
@@ -237,7 +239,7 @@ ORDER BY tmp.source, tmp.package, tmp.version
 """
 
 
-def generate_packages(suite_id, component_id, architecture_id, type_name):
+def generate_packages(suite_id: int, component_id: int, architecture_id: int, type_name: str):
     global _packages_query
     from daklib.filewriter import PackagesFileWriter
     from daklib.dbconn import Architecture, Component, DBConn, OverrideType, Suite
@@ -324,7 +326,7 @@ ORDER BY MIN(s.source), b.package, bm_description_md5.value
 """
 
 
-def generate_translations(suite_id, component_id):
+def generate_translations(suite_id: int, component_id: int):
     global _translations_query
     from daklib.filewriter import TranslationFileWriter
     from daklib.dbconn import DBConn, Suite, Component

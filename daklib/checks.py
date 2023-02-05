@@ -475,13 +475,13 @@ class BinaryTimestampCheck(Check):
                 self.future_files: dict[str, int] = {}
                 self.past_files: dict[str, int] = {}
 
-            def callback(self, member, data):
+            def callback(self, member, data) -> None:
                 if member.mtime > future_cutoff:
                     self.future_files[member.name] = member.mtime
                 elif member.mtime < past_cutoff:
                     self.past_files[member.name] = member.mtime
 
-        def format_reason(filename, direction, files):
+        def format_reason(filename, direction, files) -> str:
             reason = "{0}: has {1} file(s) with a timestamp too far in the {2}:\n".format(filename, len(files), direction)
             for fn, ts in files.items():
                 reason += "  {0} ({1})".format(fn, time.ctime(ts))
@@ -503,7 +503,7 @@ class BinaryTimestampCheck(Check):
 class SourceCheck(Check):
     """Check source package for syntax errors."""
 
-    def check_filename(self, control, filename, regex: re.Pattern):
+    def check_filename(self, control, filename, regex: re.Pattern) -> None:
         # In case we have an .orig.tar.*, we have to strip the Debian revison
         # from the version number. So handle this special case first.
         is_orig = True

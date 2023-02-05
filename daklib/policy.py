@@ -42,13 +42,13 @@ class UploadCopy:
     on leaving the with-block.
     """
 
-    def __init__(self, upload: PolicyQueueUpload, group=None):
+    def __init__(self, upload: PolicyQueueUpload, group: Optional[str] = None):
         """initializer
 
         :param upload: upload to handle
         """
 
-        self.directory = None
+        self.directory: Optional[str] = None
         self.upload = upload
         self.group = group
 
@@ -130,13 +130,13 @@ class PolicyQueueUploadHandler:
         self.session = session
 
     @property
-    def _overridesuite(self):
+    def _overridesuite(self) -> Suite:
         overridesuite = self.upload.target_suite
         if overridesuite.overridesuite is not None:
             overridesuite = self.session.query(Suite).filter_by(suite_name=overridesuite.overridesuite).one()
         return overridesuite
 
-    def _source_override(self, component_name):
+    def _source_override(self, component_name: str) -> Override:
         package = self.upload.source.source
         suite = self._overridesuite
         component = get_mapped_component(component_name, self.session)
@@ -145,7 +145,7 @@ class PolicyQueueUploadHandler:
             .filter(Override.component == component)
         return query.first()
 
-    def _binary_override(self, name, binarytype, component_name):
+    def _binary_override(self, name: str, binarytype, component_name: str) -> Override:
         suite = self._overridesuite
         component = get_mapped_component(component_name, self.session)
         query = self.session.query(Override).filter_by(package=name, suite=suite) \
@@ -154,7 +154,7 @@ class PolicyQueueUploadHandler:
         return query.first()
 
     @property
-    def _changes_prefix(self):
+    def _changes_prefix(self) -> str:
         changesname = self.upload.changes.changesname
         assert changesname.endswith('.changes')
         assert re_file_changes.match(changesname)
@@ -304,7 +304,7 @@ class PolicyQueueUploadHandler:
 
         return missing
 
-    def add_overrides(self, new_overrides, suite):
+    def add_overrides(self, new_overrides, suite: Suite) -> None:
         if suite.overridesuite is not None:
             suite = self.session.query(Suite).filter_by(suite_name=suite.overridesuite).one()
 

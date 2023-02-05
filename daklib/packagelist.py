@@ -55,7 +55,7 @@ class PackageListEntry:
         return False
 
     def built_in_suite(self, suite) -> Optional[bool]:
-        built = False
+        built: Optional[bool] = False
         for arch in suite.architectures:
             if arch.arch_string == 'source':
                 continue
@@ -148,7 +148,7 @@ class PackageList:
         return packages
 
     def has_arch_indep_packages(self) -> Optional[bool]:
-        has_arch_indep = False
+        has_arch_indep: Optional[bool] = False
         for entry in self.package_list:
             built = entry.built_on_architecture('all')
             if built:
@@ -158,7 +158,7 @@ class PackageList:
         return has_arch_indep
 
     def has_arch_dep_packages(self) -> Optional[bool]:
-        has_arch_dep = False
+        has_arch_dep: Optional[bool] = False
         for entry in self.package_list:
             built_on_all = entry.built_on_architecture('all')
             if built_on_all is False:

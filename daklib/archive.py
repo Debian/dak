@@ -30,9 +30,10 @@ from daklib.regexes import re_changelog_versions, re_bin_only_nmu
 
 import os
 import shutil
+from collections.abc import Callable, Iterable
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm import object_session
-from typing import Callable, Iterable, Optional, TYPE_CHECKING, Union
+from typing import Optional, TYPE_CHECKING, Union
 import sqlalchemy.exc
 import subprocess
 import traceback

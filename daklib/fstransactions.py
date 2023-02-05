@@ -25,10 +25,10 @@ from typing import IO, Optional
 
 class _FilesystemAction:
     @property
-    def temporary_name(self):
+    def temporary_name(self) -> str:
         raise NotImplementedError()
 
-    def check_for_temporary(self):
+    def check_for_temporary(self) -> None:
         try:
             if os.path.exists(self.temporary_name):
                 raise OSError(errno.EEXIST, os.strerror(errno.EEXIST), self.temporary_name)
@@ -82,42 +82,42 @@ class _FilesystemCopyAction(_FilesystemAction):
 
 
 class _FilesystemUnlinkAction(_FilesystemAction):
-    def __init__(self, path):
-        self.path = path
-        self.need_cleanup = False
+    def __init__(self, path: str):
+        self.path: str = path
+        self.need_cleanup: bool = False
 
         self.check_for_temporary()
         os.rename(self.path, self.temporary_name)
-        self.need_cleanup = True
+        self.need_cleanup: bool = True
 
     @property
-    def temporary_name(self):
+    def temporary_name(self) -> str:
         return "{0}.dak-rm".format(self.path)
 
-    def commit(self):
+    def commit(self) -> None:
         if self.need_cleanup:
             os.unlink(self.temporary_name)
             self.need_cleanup = False
 
-    def rollback(self):
+    def rollback(self) -> None:
         if self.need_cleanup:
             os.rename(self.temporary_name, self.path)
             self.need_cleanup = False
 
 
 class _FilesystemCreateAction(_FilesystemAction):
-    def __init__(self, path):
-        self.path = path
-        self.need_cleanup = True
+    def __init__(self, path: str):
+        self.path: str = path
+        self.need_cleanup: bool = True
 
     @property
-    def temporary_name(self):
+    def temporary_name(self) -> str:
         return self.path
 
-    def commit(self):
+    def commit(self) -> None:
         pass
 
-    def rollback(self):
+    def rollback(self) -> None:
         if self.need_cleanup:
             os.unlink(self.path)
             self.need_cleanup = False

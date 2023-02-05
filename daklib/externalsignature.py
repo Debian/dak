@@ -59,7 +59,7 @@ def export_external_signature_requests(session, path: str) -> None:
         json.dump(data, fh, indent=2)
 
 
-def sign_external_signature_requests(session, path, keyids, args={}) -> None:
+def sign_external_signature_requests(session, path: str, keyids, args={}) -> None:
     outpath = '{}.gpg'.format(path)
     with open(path, 'r') as infile, open(outpath, 'w') as outfile:
         daklib.gpg.sign(infile, outfile, keyids, inline=False, **args)

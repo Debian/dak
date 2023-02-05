@@ -67,7 +67,7 @@ class UrgencyLog:
 
             self.writes = 0
 
-    def log(self, source: str, version: str, urgency: str):
+    def log(self, source: str, version: str, urgency: str) -> None:
         "Log an event"
 
         # Don't try and log if Dir::UrgencyLog is not configured
@@ -78,7 +78,7 @@ class UrgencyLog:
         self.log_file.flush()
         self.writes += 1
 
-    def close(self):
+    def close(self) -> None:
         "Close a Logger object"
         # Don't try and log if Dir::UrgencyLog is not configured
         if self.log_file is None:

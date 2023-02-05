@@ -21,21 +21,22 @@ Helper methods to deal with (de)compressing files
 import os
 import shutil
 import subprocess
+from typing import IO, Optional
 
 
-def decompress_zstd(input, output):
+def decompress_zstd(input: IO, output: IO) -> None:
     subprocess.check_call(["zstd", "--decompress"], stdin=input, stdout=output)
 
 
-def decompress_xz(input, output):
+def decompress_xz(input: IO, output: IO) -> None:
     subprocess.check_call(["xz", "--decompress"], stdin=input, stdout=output)
 
 
-def decompress_bz2(input, output):
+def decompress_bz2(input: IO, output: IO) -> None:
     subprocess.check_call(["bzip2", "--decompress"], stdin=input, stdout=output)
 
 
-def decompress_gz(input, output):
+def decompress_gz(input: IO, output: IO) -> None:
     subprocess.check_call(["gzip", "--decompress"], stdin=input, stdout=output)
 
 
@@ -47,7 +48,7 @@ decompressors = {
 }
 
 
-def decompress(input, output, filename=None):
+def decompress(input: IO, output: IO, filename: Optional[str] = None) -> None:
     if filename is None:
         filename = input.name
 

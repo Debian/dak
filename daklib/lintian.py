@@ -44,10 +44,12 @@
 
 ################################################################################
 
+from collections.abc import Iterable
+
 from .regexes import re_parse_lintian
 
 
-def parse_lintian_output(output: str):
+def parse_lintian_output(output: str) -> Iterable[dict]:
     """
     Parses Lintian output and returns a generator with the data.
 
@@ -63,7 +65,7 @@ def parse_lintian_output(output: str):
             yield m.groupdict()
 
 
-def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: args):
+def generate_reject_messages(parsed_tags, tag_definitions, log=lambda *args: args) -> Iterable[str]:
     """
     Generates package reject messages by comparing parsed lintian output with
     tag definitions. Returns a generator containing the reject messages.

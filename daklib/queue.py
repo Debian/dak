@@ -75,7 +75,7 @@ def check_valid(overrides: list[dict], session) -> bool:
 ###############################################################################
 
 
-def prod_maintainer(notes, upload: "daklib.dbconn.PolicyQueueUpload", session, trainee=False):
+def prod_maintainer(notes, upload: PolicyQueueUpload, session, trainee=False):
     cnf = Config()
     changes = upload.changes
     whitelists = [upload.target_suite.mail_whitelist]
@@ -179,14 +179,14 @@ def edit_note(note, upload, session, trainee=False):
 ###############################################################################
 
 
-def get_suite_version_by_source(source, session):
+def get_suite_version_by_source(source: str, session) -> list[tuple[str, str]]:
     'returns a list of tuples (suite_name, version) for source package'
     q = session.query(Suite.suite_name, DBSource.version). \
         join(Suite.sources).filter_by(source=source)
     return q.all()
 
 
-def get_suite_version_by_package(package, arch_string, session):
+def get_suite_version_by_package(package: str, arch_string: str, session) -> list[tuple[str, str]]:
     '''
     returns a list of tuples (suite_name, version) for binary package and
     arch_string

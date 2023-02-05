@@ -71,7 +71,7 @@ class Logger:
 
         self.logfile = logfile
 
-    def log(self, details):
+    def log(self, details: list[str]) -> None:
         "Log an event"
         # Prepend timestamp, program name, and user name
         details.insert(0, utils.getusername())
@@ -93,7 +93,7 @@ class Logger:
         for line in traceback.format_exc().split('\n')[:-1]:
             self.log(['traceback', line])
 
-    def close(self):
+    def close(self) -> None:
         "Close a Logger object"
         self.log(["program end"])
         self.logfile.close()

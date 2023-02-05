@@ -33,12 +33,15 @@
 
 import os
 import datetime
+import functools
 import re
 import sys
 import traceback
 import apt_pkg
 from sqlalchemy.orm.exc import NoResultFound
 import sqlalchemy.sql as sql
+from collections.abc import Callable, Iterable
+from typing import NoReturn
 
 from daklib.dbconn import *
 from daklib import daklog
@@ -59,10 +62,20 @@ Logger = None
 
 ################################################################################
 
+ProcessingCallable = Callable[[PolicyQueueUpload, PolicyQueue, str, ArchiveTransaction], None]
 
-def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
+
+def do_comments(
+        dir: str,
+        srcqueue: PolicyQueue,
+        opref: str,
+        npref: str,
+        line: str,
+        fn: ProcessingCallable,
+        transaction: ArchiveTransaction
+) -> None:
     session = transaction.session
-    actions = []
+    actions: list[tuple[PolicyQueueUpload, str]] = []
     for comm in [x for x in os.listdir(dir) if x.startswith(opref)]:
         with open(os.path.join(dir, comm)) as fd:
             lines = fd.readlines()
@@ -101,8 +114,9 @@ def do_comments(dir, srcqueue, opref, npref, line, fn, transaction):
 ################################################################################
 
 
-def try_or_reject(function):
-    def wrapper(upload, srcqueue, comments, transaction):
+def try_or_reject(function: ProcessingCallable) -> ProcessingCallable:
+    @functools.wraps(function)
+    def wrapper(upload: PolicyQueueUpload, srcqueue: PolicyQueue, comments: str, transaction: ArchiveTransaction) -> None:
         try:
             function(upload, srcqueue, comments, transaction)
         except Exception as e:
@@ -124,7 +138,12 @@ def try_or_reject(function):
 
 
 @try_or_reject
-def comment_accept(upload, srcqueue, comments, transaction):
+def comment_accept(
+        upload: PolicyQueueUpload,
+        srcqueue: PolicyQueue,
+        comments: str,
+        transaction: ArchiveTransaction
+) -> None:
     for byhand in upload.byhand:
         path = os.path.join(srcqueue.path, byhand.filename)
         if os.path.exists(path):
@@ -142,20 +161,20 @@ def comment_accept(upload, srcqueue, comments, transaction):
     if overridesuite.overridesuite is not None:
         overridesuite = session.query(Suite).filter_by(suite_name=overridesuite.overridesuite).one()
 
-    def binary_component_func(db_binary):
+    def binary_component_func(db_binary: DBBinary) -> Component:
         section = db_binary.proxy['Section']
         component_name = 'main'
         if section.find('/') != -1:
             component_name = section.split('/', 1)[0]
         return get_mapped_component(component_name, session=session)
 
-    def is_debug_binary(db_binary):
+    def is_debug_binary(db_binary: DBBinary) -> bool:
         return daklib.utils.is_in_debug_section(db_binary.proxy)
 
-    def has_debug_binaries(upload):
+    def has_debug_binaries(upload: PolicyQueueUpload) -> bool:
         return any((is_debug_binary(x) for x in upload.binaries))
 
-    def source_component_func(db_source):
+    def source_component_func(db_source: DBSource) -> Component:
         package_list = PackageList(db_source.proxy)
         component = source_component_from_package_list(package_list, upload.target_suite)
         if component is not None:
@@ -343,11 +362,18 @@ def comment_accept(upload, srcqueue, comments, transaction):
 
 
 @try_or_reject
-def comment_reject(*args):
+def comment_reject(*args) -> None:
     real_comment_reject(*args, manual=True)
 
 
-def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, manual=False):
+def real_comment_reject(
+        upload: PolicyQueueUpload,
+        srcqueue: PolicyQueue,
+        comments: str,
+        transaction: ArchiveTransaction,
+        notify=True,
+        manual=False
+) -> None:
     cnf = Config()
 
     fs = transaction.fs
@@ -415,7 +441,7 @@ def real_comment_reject(upload, srcqueue, comments, transaction, notify=True, ma
 ################################################################################
 
 
-def remove_upload(upload, transaction):
+def remove_upload(upload: PolicyQueueUpload, transaction: ArchiveTransaction) -> None:
     fs = transaction.fs
     session = transaction.session
     changes = upload.changes
@@ -445,7 +471,7 @@ def remove_upload(upload, transaction):
 ################################################################################
 
 
-def get_processed_upload(upload) -> daklib.announce.ProcessedUpload:
+def get_processed_upload(upload: PolicyQueueUpload) -> daklib.announce.ProcessedUpload:
     pu = daklib.announce.ProcessedUpload()
 
     pu.maintainer = upload.changes.maintainer
@@ -521,7 +547,7 @@ def remove_unreferenced_sources(policy_queue: PolicyQueue, transaction: ArchiveT
 ################################################################################
 
 
-def usage(status=0):
+def usage(status=0) -> NoReturn:
     print("""Usage: dak process-policy QUEUE""")
     sys.exit(status)
 

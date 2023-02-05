@@ -22,8 +22,9 @@
 import collections
 import json
 import sys
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, Callable, NoReturn, Optional, Sequence
+from typing import Any, NoReturn, Optional
 
 import apt_pkg
 
@@ -739,7 +740,7 @@ SUITE_CONFIG_WRITABLE_ONLY_VIA_JSON = object()
 class SuiteConfigSerializer:
     db_name: str
     serialize: Callable[[Any], str]
-    deserialize: Callable[[str], Any]
+    deserialize: Optional[Callable[[str], Any]]
 
 
 def _serialize_suite(x):
