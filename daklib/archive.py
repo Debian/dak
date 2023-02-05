@@ -234,6 +234,7 @@ class ArchiveTransaction:
             db_binary.extra_sources.append(bu_source)
 
     def install_source_to_archive(self, directory, source, archive, component, changed_by, allow_tainted=False, fingerprint=None) -> DBSource:
+        """Install source package to archive"""
         session = self.session
         control = source.dsc
         maintainer = get_or_set_maintainer(control['Maintainer'], session)
@@ -466,6 +467,7 @@ class ArchiveTransaction:
         self.fs.rollback()
 
     def flush(self) -> None:
+        """flush underlying database session"""
         self.session.flush()
 
     def __enter__(self):
@@ -1038,6 +1040,7 @@ class ArchiveUpload:
         return db_changes
 
     def _install_policy(self, policy_queue, target_suite, db_changes, db_source, db_binaries) -> PolicyQueueUpload:
+        """install upload to policy queue"""
         u = PolicyQueueUpload()
         u.policy_queue = policy_queue
         u.target_suite = target_suite

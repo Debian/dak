@@ -41,7 +41,7 @@ from typing import Literal, NoReturn, Optional, TYPE_CHECKING, Union
 
 import daklib.config as config
 import daklib.mail
-from .dbconn import DBConn, get_architecture, get_component, get_suite, \
+from daklib.dbconn import Architecture, DBConn, get_architecture, get_component, get_suite, \
                    get_active_keyring_paths, \
                    get_suite_architectures, get_or_set_metadatakey, \
                    Component, Override, OverrideType
@@ -93,7 +93,7 @@ def extract_component_from_section(section: str) -> tuple[str, str]:
 ################################################################################
 
 
-def parse_deb822(armored_contents: bytes, signing_rules=0, keyrings=None) -> dict[str, str]:
+def parse_deb822(armored_contents: bytes, signing_rules: Literal[-1, 0, 1] = 0, keyrings=None) -> dict[str, str]:
     require_signature = True
     if keyrings is None:
         keyrings = []
@@ -169,9 +169,9 @@ def parse_deb822(armored_contents: bytes, signing_rules=0, keyrings=None) -> dic
 
 def parse_changes(filename: str, signing_rules: Literal[-1, 0, 1] = 0, dsc_file: bool = False, keyrings=None) -> dict[str, str]:
     """
-    Parses a changes file and returns a dictionary where each field is a
-    key.  The mandatory first argument is the filename of the .changes
-    file.
+    Parses a changes or source control (.dsc) file and returns a dictionary
+    where each field is a key.  The mandatory first argument is the
+    filename of the .changes file.
 
     signing_rules is an optional argument:
 
@@ -187,6 +187,8 @@ def parse_changes(filename: str, signing_rules: Literal[-1, 0, 1] = 0, dsc_file:
 
       - The data section must end with a blank line and must be followed by
         "-----BEGIN PGP SIGNATURE-----".
+
+    :param dsc_file: `filename` is a Debian source control (.dsc) file
     """
 
     with open(filename, 'rb') as changes_in:
@@ -284,7 +286,7 @@ def check_dsc_files(dsc_filename: str, dsc: Mapping[str, str], dsc_files: Mappin
 # Dropped support for 1.4 and ``buggy dchanges 3.4'' (?!) compared to di.pl
 
 
-def build_file_list(changes, is_a_dsc: bool = False, field="files", hashname="md5sum") -> dict[str, dict[str, str]]:
+def build_file_list(changes: Mapping[str, str], is_a_dsc: bool = False, field="files", hashname="md5sum") -> dict[str, dict[str, str]]:
     files = {}
 
     # Make sure we have a Files: field to parse...
@@ -327,7 +329,7 @@ def build_file_list(changes, is_a_dsc: bool = False, field="files", hashname="md
 ################################################################################
 
 
-def send_mail(message, whitelists: Optional[list[str]] = None) -> None:
+def send_mail(message: str, whitelists: Optional[list[str]] = None) -> None:
     """sendmail wrapper, takes a message string
 
     :param whitelists: path to whitelists. :const:`None` or an empty list whitelists
@@ -438,6 +440,7 @@ def send_mail(message, whitelists: Optional[list[str]] = None) -> None:
 
 
 def poolify(source: str) -> str:
+    """convert `source` name into directory path used in pool structure"""
     if source[:3] == "lib":
         return source[:4] + '/' + source + '/'
     else:
@@ -485,24 +488,29 @@ def TemplateSubst(subst_map: Mapping[str, str], filename: str) -> str:
 
 
 def fubar(msg: str, exit_code: int = 1) -> NoReturn:
+    """print error message and exit program"""
     print("E:", msg, file=sys.stderr)
     sys.exit(exit_code)
 
 
 def warn(msg: str) -> None:
+    """print warning message"""
     print("W:", msg, file=sys.stderr)
 
 ################################################################################
 
-# Returns the user name with a laughable attempt at rfc822 conformancy
-# (read: removing stray periods).
-
 
 def whoami() -> str:
+    """get user name
+
+    Returns the user name with a laughable attempt at rfc822 conformancy
+    (read: removing stray periods).
+    """
     return pwd.getpwuid(os.getuid())[4].split(',')[0].replace('.', '')
 
 
 def getusername() -> str:
+    """get login name"""
     return pwd.getpwuid(os.getuid())[0]
 
 ################################################################################
@@ -718,15 +726,15 @@ def _gpg_get_addresses_from_listing(output: bytes) -> list[str]:
             # Skip uid that is invalid, disabled or revoked
             continue
         try:
-            uid = parts[9]
+            uid_bytes = parts[9]
         except IndexError:
             continue
         try:
-            uid = uid.decode(encoding='utf-8')
+            uid = uid_bytes.decode(encoding='utf-8')
         except UnicodeDecodeError:
             # If the uid is not valid UTF-8, we assume it is an old uid
             # still encoding in Latin-1.
-            uid = uid.decode(encoding='latin1')
+            uid = uid_bytes.decode(encoding='latin1')
         m = re_parse_maintainer.match(uid)
         if not m:
             continue
@@ -765,7 +773,7 @@ def gpg_get_key_addresses(fingerprint: str) -> list[str]:
 
 def open_ldap_connection():
     """open connection to the configured LDAP server"""
-    import ldap
+    import ldap  # type: ignore
 
     LDAPDn = Cnf["Import-LDAP-Fingerprints::LDAPDn"]
     LDAPServer = Cnf["Import-LDAP-Fingerprints::LDAPServer"]
@@ -828,7 +836,7 @@ def get_users_from_ldap() -> dict[str, str]:
 ################################################################################
 
 
-def clean_symlink(src, dest, root):
+def clean_symlink(src: str, dest: str, root: str) -> str:
     """
     Relativize an absolute symlink from 'src' -> 'dest' relative to 'root'.
     Returns fixed 'src'
@@ -892,7 +900,7 @@ Cnf = config.Config().Cnf
 ################################################################################
 
 
-def parse_wnpp_bug_file(file="/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm"):
+def parse_wnpp_bug_file(file: str = "/srv/ftp-master.debian.org/scripts/masterfiles/wnpp_rm") -> dict[str, list[str]]:
     """
     Parses the wnpp bug list available at https://qa.debian.org/data/bts/wnpp_rm
     Well, actually it parsed a local copy, but let's document the source
@@ -1014,12 +1022,12 @@ def call_editor(text: str = "", suffix: str = ".txt") -> str:
 ################################################################################
 
 
-def check_reverse_depends(removals, suite, arches=None, session=None, cruft=False, quiet=False, include_arch_all=True):
+def check_reverse_depends(removals: Iterable[str], suite: str, arches: Optional[Iterable[Architecture]] = None, session=None, cruft: bool = False, quiet: bool = False, include_arch_all: bool = True) -> bool:
     dbsuite = get_suite(suite, session)
     overridesuite = dbsuite
     if dbsuite.overridesuite is not None:
         overridesuite = get_suite(dbsuite.overridesuite, session)
-    dep_problem = 0
+    dep_problem = False
     p2c = {}
     all_broken = defaultdict(lambda: defaultdict(set))
     if arches:
@@ -1110,7 +1118,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                     if component != "main":
                         source = "%s/%s" % (source, component)
                     all_broken[source][package].add(architecture)
-                    dep_problem = 1
+                    dep_problem = True
 
     if all_broken and not quiet:
         if cruft:
@@ -1187,7 +1195,7 @@ def check_reverse_depends(removals, suite, arches=None, session=None, cruft=Fals
                 if component != "main":
                     key = "%s/%s" % (source, component)
                 all_broken[key].add(pp_deps(dep))
-                dep_problem = 1
+                dep_problem = True
 
     if all_broken and not quiet:
         if cruft:

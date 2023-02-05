@@ -49,7 +49,7 @@ class Logger:
         if print_starting:
             self.log(["program start"])
 
-    def _open_log(self, debug):
+    def _open_log(self, debug) -> None:
         # Create the log directory if it doesn't exist
         from daklib.config import Config
         logdir = Config()["Dir::Log"]
@@ -87,7 +87,7 @@ class Logger:
         self.logfile.flush()
         fcntl.lockf(self.logfile, fcntl.LOCK_UN)
 
-    def log_traceback(self, info, ex):
+    def log_traceback(self, info, ex) -> None:
         "Log an exception with a traceback"
         self.log([info, repr(ex)])
         for line in traceback.format_exc().split('\n')[:-1]:

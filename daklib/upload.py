@@ -210,7 +210,7 @@ def parse_file_list(
         if len(line) == 0:
             continue
         (sha1sum, size, filename) = line.split()
-        entry = entries.get(filename, None)
+        entry = entries.get(filename)
         if entry is None:
             raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[1], fields[0]))
         if entry is not None and entry.get('size', None) != int(size):
@@ -221,7 +221,7 @@ def parse_file_list(
         if len(line) == 0:
             continue
         (sha256sum, size, filename) = line.split()
-        entry = entries.get(filename, None)
+        entry = entries.get(filename)
         if entry is None:
             raise InvalidChangesException('{0} is listed in {1}, but not in {2}.'.format(filename, fields[2], fields[0]))
         if entry is not None and entry.get('size', None) != int(size):
