@@ -313,7 +313,7 @@ def write_transitions_from_file(from_file: str) -> None:
     else:
         trans = load_transitions(from_file)
         if trans is None:
-            raise TransitionsError("Unparsable transitions file %s" % (file))
+            raise TransitionsError("Unparsable transitions file %s" % (from_file))
         write_transitions(trans)
 
 ################################################################################
