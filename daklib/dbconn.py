@@ -1059,7 +1059,7 @@ __all__.append('NewComment')
 
 
 @session_wrapper
-def has_new_comment(policy_queue: PolicyQueue, package: str, version: str, session=None) -> bool:
+def has_new_comment(policy_queue: "PolicyQueue", package: str, version: str, session=None) -> bool:
     """
     Returns :const:`True` if the given combination of `package`, `version` has a comment.
 
@@ -1081,7 +1081,7 @@ __all__.append('has_new_comment')
 
 @session_wrapper
 def get_new_comments(
-        policy_queue: PolicyQueue,
+        policy_queue: "PolicyQueue",
         package: Optional[str] = None,
         version: Optional[str] = None,
         comment_id: Optional[int] = None,
