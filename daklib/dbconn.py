@@ -39,6 +39,7 @@ from os.path import normpath
 import re
 import subprocess
 import warnings
+from collections.abc import Iterable
 from typing import Optional, TYPE_CHECKING, Union
 
 from debian.debfile import Deb822
@@ -163,7 +164,7 @@ class ORMObject:
     derived classes must implement the properties() method.
     """
 
-    def properties(self):
+    def properties(self) -> list[str]:
         '''
         This method should be implemented by all derived classes and returns a
         list of the important properties. The properties 'created' and
@@ -174,7 +175,7 @@ class ORMObject:
         '''
         return []
 
-    def classname(self):
+    def classname(self) -> str:
         '''
         Returns the name of the class.
         '''
@@ -357,7 +358,7 @@ class BinContents(ORMObject):
         self.file = file
         self.binary = binary
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['file', 'binary']
 
 
@@ -380,25 +381,25 @@ class DBBinary(ORMObject):
         self.fingerprint = fingerprint
 
     @property
-    def pkid(self):
+    def pkid(self) -> int:
         return self.binary_id
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.package
 
     @property
-    def arch_string(self):
+    def arch_string(self) -> str:
         return "%s" % self.architecture
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['package', 'version', 'maintainer', 'source', 'architecture',
             'poolfile', 'binarytype', 'fingerprint', 'install_date',
             'suites_count', 'binary_id', 'contents_count', 'extra_sources']
 
     metadata = association_proxy('key', 'value')
 
-    def scan_contents(self):
+    def scan_contents(self) -> Iterable[str]:
         '''
         Yields the contents of the package. Only regular files are yielded and
         the path names are normalized after converting them from either utf-8
@@ -438,7 +439,7 @@ class DBBinary(ORMObject):
         return apt_pkg.TagSection(stanza)
 
     @property
-    def proxy(self):
+    def proxy(self) -> MetadataProxy:
         session = object_session(self)
         query = session.query(BinaryMetadata).filter_by(binary=self)
         return MetadataProxy(session, query)
@@ -525,7 +526,7 @@ class Component(ORMObject):
 
     __hash__ = ORMObject.__hash__
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['component_name', 'component_id', 'description',
             'meets_dfsg', 'overrides_count']
 
@@ -683,7 +684,7 @@ class PoolFile(ORMObject):
         self.md5sum = md5sum
 
     @property
-    def fullpath(self):
+    def fullpath(self) -> str:
         session = DBConn().session().object_session(self)
         af = session.query(ArchiveFile).join(Archive) \
                     .filter(ArchiveFile.file == self) \
@@ -691,17 +692,17 @@ class PoolFile(ORMObject):
         return af.path
 
     @property
-    def component(self):
+    def component(self) -> Component:
         session = DBConn().session().object_session(self)
         component_id = session.query(ArchiveFile.component_id).filter(ArchiveFile.file == self) \
                               .group_by(ArchiveFile.component_id).one()
         return session.query(Component).get(component_id)
 
     @property
-    def basename(self):
+    def basename(self) -> str:
         return os.path.basename(self.filename)
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['filename', 'file_id', 'filesize', 'md5sum', 'sha1sum',
             'sha256sum', 'source', 'binary', 'last_used']
 
@@ -715,7 +716,7 @@ class Fingerprint(ORMObject):
     def __init__(self, fingerprint=None):
         self.fingerprint = fingerprint
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['fingerprint', 'fingerprint_id', 'keyring', 'uid',
             'binary_reject']
 
@@ -777,7 +778,7 @@ __all__.append('get_or_set_fingerprint')
 # Helper routine for Keyring class
 
 
-def get_ldap_name(entry):
+def get_ldap_name(entry) -> str:
     name = []
     for k in ["cn", "mn", "sn"]:
         ret = entry.get(k)
@@ -793,7 +794,7 @@ def get_ldap_name(entry):
 
 class Keyring:
     keys = {}
-    fpr_lookup = {}
+    fpr_lookup: dict[str, str] = {}
 
     def __init__(self, *args, **kwargs):
         pass
@@ -801,13 +802,13 @@ class Keyring:
     def __repr__(self):
         return '<Keyring %s>' % self.keyring_name
 
-    def de_escape_gpg_str(self, txt):
+    def de_escape_gpg_str(self, txt: str) -> str:
         esclist = re.split(r'(\\x..)', txt)
         for x in range(1, len(esclist), 2):
             esclist[x] = "%c" % (int(esclist[x][2:], 16))
         return "".join(esclist)
 
-    def parse_address(self, uid):
+    def parse_address(self, uid: str) -> tuple[str, str]:
         """parses uid and returns a tuple of real name and email address"""
         import email.utils
         (name, address) = email.utils.parseaddr(uid)
@@ -817,7 +818,7 @@ class Keyring:
             name = uid
         return (name, address)
 
-    def load_keys(self, keyring):
+    def load_keys(self, keyring: str) -> None:
         if not self.keyring_id:
             raise Exception('Must be initialized with database information')
 
@@ -859,7 +860,7 @@ class Keyring:
         if r != 0:
             raise daklib.gpg.GpgException("command failed: %s\nstdout: %s\nstderr: %s\n" % (cmd, out, err))
 
-    def import_users_from_ldap(self, session):
+    def import_users_from_ldap(self, session) -> tuple[dict[str, tuple[int, str]], dict[int, tuple[str, str]]]:
         from .utils import open_ldap_connection
         import ldap  # type: ignore
         l = open_ldap_connection()
@@ -869,8 +870,8 @@ class Keyring:
                "(&(keyfingerprint=*)(supplementaryGid=%s))" % (cnf["Import-Users-From-Passwd::ValidGID"]),
                ["uid", "keyfingerprint", "cn", "mn", "sn"])
 
-        byuid = {}
-        byname = {}
+        byuid: dict[int, tuple[str, str]] = {}
+        byname: dict[str, tuple[int, str]] = {}
 
         for i in Attrs:
             entry = i[1]
@@ -893,9 +894,9 @@ class Keyring:
 
         return (byname, byuid)
 
-    def generate_users_from_keyring(self, format, session):
-        byuid = {}
-        byname = {}
+    def generate_users_from_keyring(self, format: str, session) -> tuple[dict[str, tuple[int, str]], dict[int, tuple[str, str]]]:
+        byuid: dict[int, tuple[str, str]] = {}
+        byname: dict[str, tuple[int, str]] = {}
         any_invalid = False
         for x in list(self.keys.keys()):
             if "email" not in self.keys[x]:
@@ -984,10 +985,10 @@ class Maintainer(ORMObject):
     def __init__(self, name=None):
         self.name = name
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['name', 'maintainer_id']
 
-    def get_split_maintainer(self):
+    def get_split_maintainer(self) -> tuple[str, str, str, str]:
         if not hasattr(self, 'name') or self.name is None:
             return ('', '', '', '')
 
@@ -1058,7 +1059,7 @@ __all__.append('NewComment')
 
 
 @session_wrapper
-def has_new_comment(policy_queue, package: str, version: str, session=None) -> bool:
+def has_new_comment(policy_queue: PolicyQueue, package: str, version: str, session=None) -> bool:
     """
     Returns :const:`True` if the given combination of `package`, `version` has a comment.
 
@@ -1080,7 +1081,7 @@ __all__.append('has_new_comment')
 
 @session_wrapper
 def get_new_comments(
-        policy_queue,
+        policy_queue: PolicyQueue,
         package: Optional[str] = None,
         version: Optional[str] = None,
         comment_id: Optional[int] = None,
@@ -1124,7 +1125,7 @@ class Override(ORMObject):
         self.section = section
         self.priority = priority
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['package', 'suite', 'component', 'overridetype', 'section',
             'priority']
 
@@ -1185,7 +1186,7 @@ class OverrideType(ORMObject):
     def __init__(self, overridetype=None):
         self.overridetype = overridetype
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['overridetype', 'overridetype_id', 'overrides_count']
 
 
@@ -1281,7 +1282,7 @@ class Priority(ORMObject):
         self.priority = priority
         self.level = level
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['priority', 'priority_id', 'level', 'overrides_count']
 
     def __eq__(self, val):
@@ -1418,7 +1419,7 @@ class SrcContents(ORMObject):
         self.file = file
         self.source = source
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['file', 'source']
 
 
@@ -1439,18 +1440,18 @@ class DBSource(ORMObject):
         self.fingerprint = fingerprint
 
     @property
-    def pkid(self):
+    def pkid(self) -> int:
         return self.source_id
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.source
 
     @property
-    def arch_string(self):
+    def arch_string(self) -> str:
         return 'source'
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['source', 'source_id', 'maintainer', 'changedby',
             'fingerprint', 'poolfile', 'version', 'suites_count',
             'install_date', 'binaries_count', 'uploaders_count']
@@ -1467,7 +1468,7 @@ class DBSource(ORMObject):
 
     metadata = association_proxy('key', 'value')
 
-    def scan_contents(self):
+    def scan_contents(self) -> set[str]:
         '''
         Returns a set of names for non directories. The path names are
         normalized after converting them from either utf-8 or iso8859-1
@@ -1482,7 +1483,7 @@ class DBSource(ORMObject):
         return fileset
 
     @property
-    def proxy(self):
+    def proxy(self) -> MetadataProxy:
         session = object_session(self)
         query = session.query(SourceMetadata).filter_by(source=self)
         return MetadataProxy(session, query)
@@ -1528,7 +1529,7 @@ __all__.append('get_source_in_suite')
 
 
 @session_wrapper
-def import_metadata_into_db(obj, session=None):
+def import_metadata_into_db(obj: Union[DBBinary, DBSource], session=None) -> None:
     """
     This routine works on either DBBinary or DBSource objects and imports
     their metadata into the database
@@ -1595,7 +1596,7 @@ class Suite(ORMObject):
         self.suite_name = suite_name
         self.version = version
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['suite_name', 'version', 'sources_count', 'binaries_count',
             'overrides_count']
 
@@ -1615,7 +1616,7 @@ class Suite(ORMObject):
 
     __hash__ = ORMObject.__hash__
 
-    def details(self):
+    def details(self) -> str:
         ret = []
         for disp, field in SUITE_FIELDS:
             val = getattr(self, field, None)
@@ -1652,21 +1653,21 @@ class Suite(ORMObject):
         return session.query(DBSource).filter_by(source=source). \
             with_parent(self)
 
-    def get_overridesuite(self):
+    def get_overridesuite(self) -> Suite:
         if self.overridesuite is None:
             return self
         else:
             return object_session(self).query(Suite).filter_by(suite_name=self.overridesuite).one()
 
-    def update_last_changed(self):
+    def update_last_changed(self) -> None:
         self.last_changed = sqlalchemy.func.now()
 
     @property
-    def path(self):
+    def path(self) -> str:
         return os.path.join(self.archive.path, 'dists', self.suite_name)
 
     @property
-    def release_suite_output(self):
+    def release_suite_output(self) -> str:
         if self.release_suite is not None:
             return self.release_suite
         return self.suite_name
@@ -1756,7 +1757,7 @@ class Uid(ORMObject):
 
     __hash__ = ORMObject.__hash__
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['uid', 'name', 'fingerprint']
 
 
@@ -1795,7 +1796,7 @@ __all__.append('get_or_set_uid')
 
 
 @session_wrapper
-def get_uid_from_fingerprint(fpr, session=None):
+def get_uid_from_fingerprint(fpr: str, session=None) -> Optional[Uid]:
     q = session.query(Uid)
     q = q.join(Fingerprint).filter_by(fingerprint=fpr)
 
@@ -1811,7 +1812,7 @@ class MetadataKey(ORMObject):
     def __init__(self, key=None):
         self.key = key
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['key']
 
 
@@ -1856,7 +1857,7 @@ class BinaryMetadata(ORMObject):
         if binary is not None:
             self.binary = binary
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['binary', 'key', 'value']
 
 
@@ -1872,7 +1873,7 @@ class SourceMetadata(ORMObject):
         if source is not None:
             self.source = source
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['source', 'key', 'value']
 
 
@@ -1893,18 +1894,18 @@ class MetadataProxy:
         metadata = self.query.filter_by(key=metadata_key).first()
         return metadata
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         if self._get(key) is not None:
             return True
         return False
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> str:
         metadata = self._get(key)
         if metadata is None:
             raise KeyError
         return metadata.value
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         try:
             return self[key]
         except KeyError:
@@ -1917,7 +1918,7 @@ class VersionCheck(ORMObject):
     def __init__(self, *args, **kwargs):
         pass
 
-    def properties(self):
+    def properties(self) -> list[str]:
         return ['check']
 
 
@@ -1925,7 +1926,7 @@ __all__.append('VersionCheck')
 
 
 @session_wrapper
-def get_version_checks(suite_name, check=None, session=None):
+def get_version_checks(suite_name: str, check: Optional[str] = None, session=None) -> list[VersionCheck]:
     suite = get_suite(suite_name, session)
     if not suite:
         # Make sure that what we return is iterable so that list comprehensions

@@ -50,7 +50,7 @@ def rfc2047_encode(s):
 #          incompatible!'
 
 
-def fix_maintainer(maintainer):
+def fix_maintainer(maintainer: str) -> tuple[str, str, str, str]:
     """
     Parses a Maintainer or Changed-By field and returns:
       1. an RFC822 compatible version,
