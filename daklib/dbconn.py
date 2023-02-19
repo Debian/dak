@@ -439,7 +439,7 @@ class DBBinary(ORMObject):
         return apt_pkg.TagSection(stanza)
 
     @property
-    def proxy(self) -> MetadataProxy:
+    def proxy(self) -> "MetadataProxy":
         session = object_session(self)
         query = session.query(BinaryMetadata).filter_by(binary=self)
         return MetadataProxy(session, query)
@@ -1483,7 +1483,7 @@ class DBSource(ORMObject):
         return fileset
 
     @property
-    def proxy(self) -> MetadataProxy:
+    def proxy(self) -> "MetadataProxy":
         session = object_session(self)
         query = session.query(SourceMetadata).filter_by(source=self)
         return MetadataProxy(session, query)
