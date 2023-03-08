@@ -9,7 +9,7 @@ function fix_overrides() {
     done
     find . -maxdepth 1 -mindepth 1 -type l -delete
 
-    for suite in oldoldstable oldstable stable-security testing-security; do
+    for suite in oldstable stable-security testing-security; do
         override_suite=$(dak admin suite-config get-value "${suite}" codename)
         override_suite="${override_suite%-security}"
         for component in $components; do
