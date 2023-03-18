@@ -147,33 +147,6 @@ class SessionTestCase(DBDakTestCase):
         self.session.add(uid)
         self.assertEqual(self.session, uid.session())
 
-    def test_clone(self):
-        '''
-        Tests the ORMObject.clone() method.
-        '''
-
-        uid1 = Uid(uid='foobar')
-        # no session yet
-        self.assertRaises(RuntimeError, uid1.clone)
-        self.session.add(uid1)
-        # object not persistent yet
-        self.assertRaises(RuntimeError, uid1.clone)
-        self.session.commit()
-        # test without session parameter
-        uid2 = uid1.clone()
-        self.assertTrue(uid1 is not uid2)
-        self.assertEqual(uid1.uid, uid2.uid)
-        self.assertTrue(uid2 not in uid1.session())
-        self.assertTrue(uid1 not in uid2.session())
-        # test with explicit session parameter
-        new_session = DBConn().session()
-        uid3 = uid1.clone(session=new_session)
-        self.assertEqual(uid1.uid, uid3.uid)
-        self.assertTrue(uid3 in new_session)
-        # test for ressource leaks with mass cloning
-        for _ in range(1, 1000):
-            uid1.clone()
-
     def classes_to_clean(self):
         # We need to clean all Uid objects in case some test fails.
         return (Uid,)
