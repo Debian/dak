@@ -27,7 +27,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import object_session, aliased
 
 
-def newer_version(lowersuite_name, highersuite_name, session, include_equal=False):
+def newer_version(lowersuite_name: str, highersuite_name: str, session, include_equal=False) -> list[tuple[str, str, str]]:
     '''
     Finds newer versions in lowersuite_name than in highersuite_name. Returns a
     list of tuples (source, higherversion, lowerversion) where higherversion is
@@ -132,7 +132,7 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
     return list
 
 
-def get_package_names(suite):
+def get_package_names(suite: Suite):
     '''
     Returns a query that selects all distinct package names from suite ordered
     by package name.
@@ -149,7 +149,7 @@ class NamedSource:
     suite.
     '''
 
-    def __init__(self, suite, source):
+    def __init__(self, suite: Suite, source: str):
         self.source = source
         query = suite.sources.filter_by(source=source). \
             order_by(DBSource.version)
@@ -171,7 +171,7 @@ class DejavuBinary:
     built from multiple source packages.
     '''
 
-    def __init__(self, suite, package):
+    def __init__(self, suite: Suite, package: str):
         self.package = package
         session = object_session(suite)
         # We need a subquery to make sure that both binary and source packages
@@ -184,7 +184,7 @@ class DejavuBinary:
             for source, in src_query:
                 self.sources.append(str(NamedSource(suite, source)))
 
-    def has_multiple_sources(self):
+    def has_multiple_sources(self) -> bool:
         'Has the package been built by multiple sources?'
         return len(self.sources) > 1
 
@@ -192,7 +192,7 @@ class DejavuBinary:
         return "%s built by: %s" % (self.package, ", ".join(self.sources))
 
 
-def report_multiple_source(suite):
+def report_multiple_source(suite: Suite) -> None:
     '''
     Reports binary packages built from multiple source package with different
     names.
@@ -208,7 +208,7 @@ def report_multiple_source(suite):
     print()
 
 
-def query_without_source(suite_id, session):
+def query_without_source(suite_id: int, session):
     """searches for arch: all packages from suite that do no longer
     reference a source package in the same suite
 
@@ -230,7 +230,7 @@ def query_without_source(suite_id, session):
     return session.execute(query, {'suite_id': suite_id})
 
 
-def queryNBS(suite_id, session):
+def queryNBS(suite_id: int, session):
     """This one is really complex. It searches arch != all packages that
     are no longer built from current source packages in suite.
 
@@ -305,7 +305,7 @@ with
     return session.execute(query, {'suite_id': suite_id})
 
 
-def queryNBS_metadata(suite_id, session):
+def queryNBS_metadata(suite_id: int, session):
     """searches for NBS packages based on metadata extraction of the
        newest source for a given suite"""
 
