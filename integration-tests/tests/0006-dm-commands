@@ -85,6 +85,8 @@ EOF
 
 dm_command() {
   export GNUPGHOME=$DDRING
+  export DEBEMAIL=someone@example.invalid
+  export DEBFULLNAME="Some One"
   signer=$1
   dm=$2
   action=$3
