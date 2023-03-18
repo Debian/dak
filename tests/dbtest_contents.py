@@ -32,7 +32,10 @@ class ContentsTestCase(DBDakTestCase):
         contents2 = BinContents(file='usr/bin/hello',
                                 binary=self.binary['hello_2.2-1_i386'])
         self.session.add(contents2)
-        self.assertRaises(FlushError, self.session.flush)
+        # SQLAlchemy 1.4 raises IntegrityError, previous versions
+        # raised FlushError.
+        # Reference: https://docs.sqlalchemy.org/en/14/changelog/changelog_14.html#change-f7b996813d7921f404e0cc8457951f9a
+        self.assertRaises((FlushError, IntegrityError), self.session.flush)
 
     def test_duplicates2(self):
         '''
