@@ -53,9 +53,9 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
                            func.max(DBSource.version).label('version'),
                            Architecture.arch_string,
                            func.max(DBBinary.version).label('binversion')). \
-            join(DBSource). \
-            with_parent(suite). \
-            join(Architecture). \
+            filter(DBBinary.suites.contains(suite)). \
+            join(DBBinary.source). \
+            join(DBBinary.architecture). \
             group_by(
                 DBBinary.package,
                 DBSource.source,
@@ -89,9 +89,9 @@ def newer_version(lowersuite_name, highersuite_name, session, include_equal=Fals
                            DBSource.version,
                            Architecture.arch_string
             ). \
-            join(DBSource). \
-            with_parent(highersuite). \
-            join(Architecture). \
+            filter(DBBinary.suites.contains(highersuite)). \
+            join(DBBinary.source). \
+            join(DBBinary.architecture). \
             filter(DBSource.source == source). \
             subquery()
         q2 = session.query(q1.c.arch_string).group_by(q1.c.arch_string)
